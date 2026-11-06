@@ -1,8 +1,30 @@
 import SnapiousFFI
+import AppKit
 import SwiftUI
+
+/// Beim Beenden mit offenen Änderungen an der Sequenz nachfragen.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        MainActor.assumeIsolated {
+            guard let m = AppModel.current, m.currentDirty else { return .terminateNow }
+            let alert = NSAlert()
+            alert.messageText = "Änderungen an „\(m.selectedName)“ speichern?"
+            alert.informativeText = "Verwerfen nimmt alle Änderungen seit dem Öffnen zurück."
+            alert.addButton(withTitle: "Speichern")
+            alert.addButton(withTitle: "Verwerfen")
+            alert.addButton(withTitle: "Abbrechen")
+            switch alert.runModal() {
+            case .alertFirstButtonReturn: m.commitEdits(); return .terminateNow
+            case .alertSecondButtonReturn: m.discardEdits(); return .terminateNow
+            default: return .terminateCancel
+            }
+        }
+    }
+}
 
 @main
 struct SnapiousApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var model = AppModel()
 
     init() {

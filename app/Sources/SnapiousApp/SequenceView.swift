@@ -64,30 +64,7 @@ struct SequenceView: View {
             coverageStrip
             statusBar
         }
-        .focusable()
-        .focused($focused)
-        .focusEffectDisabled()
-        .onPasteCommand(of: [.plainText]) { providers in
-            _ = providers.first?.loadObject(ofClass: NSString.self) { obj, _ in
-                if let t = obj as? String { Task { @MainActor in model.replaceSelection(with: t) } }
-            }
-        }
-        .onKeyPress(phases: .down) { press in
-            if press.modifiers.contains(.command) { return .ignored }
-            switch press.key {
-            case .delete: model.backspace(); return .handled
-            case .leftArrow: model.moveCaret(by: -1); return .handled
-            case .rightArrow: model.moveCaret(by: 1); return .handled
-            default: break
-            }
-            let ch = press.characters.uppercased()
-            let allowed = model.summary?.seqType == "PROTEIN" ? "ACDEFGHIKLMNPQRSTVWYXBZUOJ*" : "ACGTUNRYSWKMBDHV"
-            if ch.count == 1, allowed.contains(ch), model.selStart != nil {
-                model.replaceSelection(with: ch)
-                return .handled
-            }
-            return .ignored
-        }
+        .editKeys(model, focus: $focused)
     }
 
     /// Lesetiefe als Fläche über die ganze Sequenz (nur wenn eine SAM/BAM-Datei gewählt wurde).

@@ -33,7 +33,8 @@ struct MapView: View {
                 toolbar(s)
                 Divider()
                 GeometryReader { geo in
-                    let pixelsPerBase = (geo.size.width - 80) / model.viewSpan
+                    let pixelsPerBase = (geo.size.width - 80) / model.viewSpan + 0.02
+                    let _ = { model.viewWidth = Double(geo.size.width) }()
                     if s.seqType == "PROTEIN" || (!ring && pixelsPerBase >= 9) {
                         SequenceView(model: model)
                             .simultaneousGesture(pinch)
@@ -58,7 +59,7 @@ struct MapView: View {
     private func toolbar(_ s: DocumentSummary) -> some View {
         HStack(spacing: 12) {
             if s.seqType != "PROTEIN" {
-                Picker("", selection: Binding(get: { ring ? "ring" : "linear" }, set: { model.mapStyle = $0 })) {
+                Picker("", selection: Binding(get: { ring ? "ring" : "linear" }, set: { model.mapStyle = $0; model.setZoom(model.zoom) })) {
                     Text("Plasmid").tag("ring")
                     Text("Linear").tag("linear")
                 }
@@ -71,6 +72,7 @@ struct MapView: View {
                 Slider(value: Binding(get: { zoomPosition }, set: { model.setZoom(zoom(from: $0)) }), in: 0...1)
                     .frame(width: 140)
                 Button { model.setZoom(model.zoom * 1.6) } label: { Image(systemName: "plus.magnifyingglass") }
+                    .disabled(model.zoom >= model.maxZoom - 0.001)
                     .accessibilityLabel("Hineinzoomen")
                 Text(model.zoom <= 1.001 ? "Ganz" : String(format: "%.0f×", model.zoom)).font(Theme.label(11)).foregroundStyle(Theme.inkSoft).frame(width: 40, alignment: .leading)
             }
@@ -111,7 +113,7 @@ struct MapView: View {
     }
 
     // Zoom auf einer logarithmischen Skala
-    private var maxZoom: Double { max(2, Double(max(8, model.docLength)) / 8) }
+    private var maxZoom: Double { max(1.01, model.maxZoom) }
     private var zoomPosition: Double { log(model.zoom) / log(maxZoom) }
     private func zoom(from v: Double) -> Double { exp(v * log(maxZoom)) }
 
@@ -262,24 +264,7 @@ struct CircularMap: View {
             }.onEnded { _ in pinchBase = nil })
         }
         .padding(8)
-        .focusable()
-        .focused($focused)
-        .focusEffectDisabled()
-        .onKeyPress(phases: .down) { press in
-            if press.modifiers.contains(.command) { return .ignored }
-            switch press.key {
-            case .delete: model.backspace(); return .handled
-            case .leftArrow: model.moveCaret(by: -1); return .handled
-            case .rightArrow: model.moveCaret(by: 1); return .handled
-            default: break
-            }
-            let ch = press.characters.uppercased()
-            if ch.count == 1, "ACGTUNRYSWKMBDHV".contains(ch), model.selStart != nil {
-                model.replaceSelection(with: ch)
-                return .handled
-            }
-            return .ignored
-        }
+        .editKeys(model, focus: $focused)
     }
 
     @State private var pinchBase: Double?
@@ -295,7 +280,7 @@ struct CircularMap: View {
 
     /// Zoomt so, dass die Base `anchor` unter dem Mauszeiger/den Fingern `p` bleibt.
     private func zoom(to z: Double, anchor: Double, at p: CGPoint, size: CGSize) {
-        let maxZ = max(1, Double(length) / 8)
+        let maxZ = model.maxZoom
         let nz = min(max(1, z), maxZ)
         let r0 = max(40, min(size.width, size.height) / 2 - 95)
         let r = r0 * nz
@@ -420,6 +405,7 @@ struct LinearMap: View {
     private let left: CGFloat = 30
     @State private var pinchBase: Double?
     @State private var pinchAnchor = 0.0
+    @FocusState private var focused: Bool
 
     private func bp(at x: CGFloat, width: CGFloat) -> Int {
         let t = Double((x - left) / max(1, width - 2 * left))
@@ -431,6 +417,7 @@ struct LinearMap: View {
             Canvas { ctx, size in draw(ctx, size) }
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0).onChanged { v in
+                    focused = true
                     model.select(from: bp(at: v.startLocation.x, width: geo.size.width), to: bp(at: v.location.x, width: geo.size.width))
                 })
                 .simultaneousGesture(MagnifyGesture().onChanged { v in
@@ -440,13 +427,14 @@ struct LinearMap: View {
                         pinchAnchor = model.viewStart + t * model.viewSpan
                     }
                     let t = Double((v.startLocation.x - left) / max(1, geo.size.width - 2 * left))
-                    let nz = min(max(1, (pinchBase ?? 1) * Double(v.magnification)), max(1, Double(length) / 8))
+                    let nz = min(max(1, (pinchBase ?? 1) * Double(v.magnification)), model.maxZoom)
                     let span = max(1, Double(length) / nz)
                     model.zoom = nz
                     model.viewStart = min(max(0, pinchAnchor - t * span), max(0, Double(length) - span))
                 }.onEnded { _ in pinchBase = nil })
         }
         .padding(8)
+        .editKeys(model, focus: $focused)
     }
 
     private func draw(_ ctx: GraphicsContext, _ size: CGSize) {

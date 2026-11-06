@@ -300,6 +300,19 @@ struct DetailView: View {
     }
 
     var body: some View {
+        content
+            .alert("Änderungen an „\(model.selectedName)“ speichern?",
+                   isPresented: Binding(get: { model.pendingLeave != nil }, set: { if !$0 { model.pendingLeave = nil } })) {
+                Button("Speichern") { model.resolveLeave("save") }
+                Button("Verwerfen", role: .destructive) { model.resolveLeave("discard") }
+                Button("Abbrechen", role: .cancel) { model.resolveLeave("cancel") }
+            } message: {
+                Text("Du hast die Sequenz bearbeitet. Verwerfen nimmt alle Änderungen seit dem Öffnen zurück.")
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         if model.project == nil {
             WelcomeView(model: model)
         } else if model.multiSelection.count >= 2 {

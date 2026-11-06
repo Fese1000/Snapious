@@ -28,6 +28,15 @@ final class AppModel: ObservableObject {
     @Published var documents: [DocumentInfoDto] = []
     @Published var selection: String? {
         didSet {
+            if !guardBypass, oldValue != selection, let old = oldValue, isDirty(old) {
+                pendingLeave = .selection(selection)
+                guardBypass = true
+                selection = old
+                multiSelection = [old]
+                guardBypass = false
+                return
+            }
+            if let id = selection, baselines[id] == nil { baselines[id] = undoCount(of: id) }
             let wanted: Set<String> = selection.map { [$0] } ?? []
             if multiSelection.count <= 1 && multiSelection != wanted { multiSelection = wanted }
             coverage = []
@@ -44,6 +53,60 @@ final class AppModel: ObservableObject {
             }
         }
     }
+    // MARK: Ungespeicherte Änderungen
+    enum Leave { case tab(Int); case selection(String?) }
+    /// Ziel, das der Nutzer ansteuern wollte, während Änderungen an der Sequenz offen sind (löst die Rückfrage aus).
+    @Published var pendingLeave: Leave?
+    var guardBypass = false
+    /// Zahl der Rückgängig-Schritte beim Öffnen bzw. beim letzten „Speichern“ je Dokument.
+    var baselines: [String: Int] = [:]
+    /// Schritte je Nutzeraktion (Einfügen + Annotation = 2), damit Rückgängig die Aktion als Ganzes zurücknimmt.
+    /// Mehrschrittige Aktionen: (Zahl der Schritte danach, Zahl der Schritte der Aktion).
+    private var undoGroups: [String: [(after: Int, steps: Int)]] = [:]
+    private var redoGroups: [String: [(after: Int, steps: Int)]] = [:]
+    static weak var current: AppModel?
+
+    func undoCount(of id: String) -> Int {
+        guard let project, let s = try? project.editState(id: id), s.count == 2 else { return 0 }
+        return Int(s[0])
+    }
+
+    func isDirty(_ id: String) -> Bool {
+        guard project != nil else { return false }
+        return undoCount(of: id) != (baselines[id] ?? undoCount(of: id))
+    }
+
+    var currentDirty: Bool { selection.map { isDirty($0) } ?? false }
+    var selectedName: String { summary?.name ?? "Sequenz" }
+
+    /// Änderungen sind schon im Projekt gespeichert; „Speichern“ übernimmt sie als neuen Ausgangspunkt.
+    func commitEdits() {
+        if let id = selection { baselines[id] = undoCount(of: id); undoGroups[id] = []; redoGroups[id] = [] }
+    }
+
+    /// Verwirft alle Änderungen seit dem Öffnen bzw. dem letzten Speichern.
+    func discardEdits() {
+        guard let project, let id = selection else { return }
+        let base = baselines[id] ?? 0
+        while undoCount(of: id) > base, (try? project.editUndo(id: id)) == true {}
+        undoGroups[id] = []; redoGroups[id] = []
+        reloadCurrent()
+    }
+
+    /// Antwort auf die Rückfrage: `save`, `discard` oder `cancel`.
+    func resolveLeave(_ choice: String) {
+        guard let target = pendingLeave else { return }
+        pendingLeave = nil
+        if choice == "cancel" { return }
+        if choice == "discard" { discardEdits() } else { commitEdits() }
+        guardBypass = true
+        switch target {
+        case .tab(let t): tab = t
+        case .selection(let id): selection = id; multiSelection = id.map { [$0] } ?? []
+        }
+        guardBypass = false
+    }
+
     /// Das gewählte Alignment (wenn das gewählte Dokument eines ist).
     @Published var alignment: AlignmentDto?
     @Published var summary: DocumentSummary?
@@ -89,7 +152,16 @@ final class AppModel: ObservableObject {
     @Published var selStats: SelectionStatsDto?
     @Published var errorMessage: String?
     /// Gewählter Reiter der Detailansicht (0 = Übersicht … 12 = NGS).
-    @Published var tab = 0
+    @Published var tab = 0 {
+        didSet {
+            if !guardBypass, oldValue == 1, tab != 1, let id = selection, isDirty(id) {
+                pendingLeave = .tab(tab)
+                guardBypass = true
+                tab = oldValue
+                guardBypass = false
+            }
+        }
+    }
     /// Kurze Rückmeldung unten im Fenster (verschwindet nach wenigen Sekunden).
     @Published var notice: String?
     private var noticeToken = 0
@@ -104,6 +176,7 @@ final class AppModel: ObservableObject {
     static let fullLimit: UInt64 = 2_000_000
 
     init() {
+        Self.current = self
         if let path = UserDefaults.standard.string(forKey: Self.lastProjectKey),
            FileManager.default.fileExists(atPath: path) {
             open(path: path)
@@ -565,11 +638,22 @@ final class AppModel: ObservableObject {
     /// Sichtbare Spanne in Basen bei der aktuellen Vergrößerung.
     var viewSpan: Double { max(1, Double(docLength) / zoom) }
 
+    /// Breite der Kartenansicht in Punkten (von der Ansicht gesetzt).
+    var viewWidth: Double = 1000
+
+    /// Größte Vergrößerung: im linearen Modus die Stufe, ab der die Basen als Text erscheinen (neun Punkte je Base); im Ring bis acht Basen.
+    var maxZoom: Double {
+        let len = Double(max(1, docLength))
+        let ringMode = mapStyle == "ring" || (mapStyle == "auto" && summary?.topology == "CIRCULAR")
+        if ringMode || summary?.seqType == "PROTEIN" { return max(1, len / 8) }
+        return max(1, min(len / 8, len * 9 / max(100, viewWidth - 80)))
+    }
+
     func setZoom(_ z: Double) {
         let len = Double(max(1, docLength))
         var centre = viewStart + viewSpan / 2
         if let a = selStart, let b = selEnd { centre = Double(a + b) / 2 }
-        zoom = min(max(1, z), max(1, len / 8))
+        zoom = min(max(1, z), maxZoom)
         viewStart = min(max(0, centre - viewSpan / 2), max(0, len - viewSpan))
     }
 
@@ -587,6 +671,9 @@ final class AppModel: ObservableObject {
         guard let a = selStart, let b = selEnd else { return }
         let lo = min(a, b), hi = max(a, b)
         if cleaned.isEmpty && lo == hi { return }
+        // Weitertippen direkt hinter einer automatisch angelegten „Neu“-Annotation verlängert sie
+        let before = undoCount(of: id)
+        let joined = features.first { $0.name == Self.newName && $0.featureType == "misc_feature" && Int($0.end) == lo && lo == hi }
         run {
             if lo == hi {
                 try project.editInsert(id: id, position: UInt64(lo), bases: cleaned)
@@ -595,6 +682,18 @@ final class AppModel: ObservableObject {
             } else {
                 try project.editReplace(id: id, start: UInt64(lo), end: UInt64(hi), bases: cleaned)
             }
+            if !cleaned.isEmpty, self.summary?.seqType != "PROTEIN" {
+                // Neues als Annotation markieren (ein Rückgängig-Schritt zusammen mit dem Einfügen)
+                var start = lo
+                if let j = joined, let idx = try? project.features(id: id).firstIndex(where: { $0.name == Self.newName && Int($0.end) == lo }) {
+                    start = Int(j.start)
+                    try project.removeFeature(id: id, index: UInt64(idx))
+                }
+                try project.addFeatures(id: id, features: [FeatureInfo(featureType: "misc_feature", name: Self.newName, start: UInt64(start), end: UInt64(lo + cleaned.count), strand: "NONE")])
+            }
+            let after = self.undoCount(of: id)
+            if after - before > 1 { self.undoGroups[id, default: []].append((after, after - before)) }
+            self.redoGroups[id] = []
             self.reloadCurrent()
             let caret = lo + cleaned.count
             self.selStart = caret
@@ -630,8 +729,39 @@ final class AppModel: ObservableObject {
         selStats = nil
     }
 
-    func undo() { step { try $0.editUndo(id: $1) } }
-    func redo() { step { try $0.editRedo(id: $1) } }
+    static let newName = "Neu"
+
+    func undo() {
+        guard let id = selection else { return }
+        let c = undoCount(of: id)
+        var n = 1
+        if let g = undoGroups[id]?.last, g.after == c { n = g.steps; undoGroups[id]?.removeLast(); redoGroups[id, default: []].append(g) }
+        step { p, i in var any = false; for _ in 0..<n { any = try p.editUndo(id: i) || any }; return any }
+    }
+
+    func redo() {
+        guard let id = selection else { return }
+        var n = 1
+        if let g = redoGroups[id]?.last, undoCount(of: id) == g.after - g.steps { n = g.steps; redoGroups[id]?.removeLast(); undoGroups[id, default: []].append(g) }
+        step { p, i in var any = false; for _ in 0..<n { any = try p.editRedo(id: i) || any }; return any }
+    }
+
+    /// Text der Auswahl (für Kopieren/Ausschneiden per Tastatur).
+    func selectionString() -> String? {
+        guard let a = selStart, let b = selEnd, a != b else { return nil }
+        let lo = max(0, min(a, b)), hi = min(fullBytes.count, max(a, b))
+        guard lo < hi else { return nil }
+        return String(decoding: fullBytes[lo..<hi], as: UTF8.self)
+    }
+
+    /// Entf-Taste: löscht die Auswahl oder die Base hinter dem Cursor.
+    func forwardDelete() {
+        guard let a = selStart, let b = selEnd else { return }
+        if a != b { replaceSelection(with: ""); return }
+        guard a < fullBytes.count else { return }
+        selStart = a; selEnd = a + 1
+        replaceSelection(with: "")
+    }
 
     private func step(_ action: (Project, String) throws -> Bool) {
         guard let project, let id = selection else { return }
