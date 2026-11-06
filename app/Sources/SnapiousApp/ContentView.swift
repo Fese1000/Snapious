@@ -262,13 +262,13 @@ struct DetailView: View {
     @State private var featSort = "start"
     @State private var featAsc = true
 
-    static let tabNames = ["Übersicht", "Sequenz", "Karte", "Verdau", "CRISPR", "Klonieren", "Primer", "Analyse", "Protein", "Sequenzierung", "RNA", "Werkzeuge", "NGS"]
+    static let tabNames = ["Übersicht", "Sequenz & Karte", "Verdau", "CRISPR", "Klonieren", "Primer", "Analyse", "Protein", "Sequenzierung", "RNA", "Werkzeuge", "NGS"]
     /// Aufgabengruppen: Name und Indizes der Reiter.
     private static let groups: [(String, [Int])] = [
-        ("Ansehen", [0, 1, 2]),
-        ("Bauen", [3, 4, 5, 6]),
-        ("Prüfen", [7, 8, 9, 10]),
-        ("Daten", [11, 12]),
+        ("Ansehen", [0, 1]),
+        ("Bauen", [2, 3, 4, 5]),
+        ("Prüfen", [6, 7, 8, 9]),
+        ("Daten", [10, 11]),
     ]
 
     private var group: Int { Self.groups.firstIndex { $0.1.contains(model.tab) } ?? 0 }
@@ -312,17 +312,16 @@ struct DetailView: View {
                 Divider()
                 switch model.tab {
                 case 0: overview(s)
-                case 1: SequenceView(model: model)
-                case 2: MapView(model: model)
-                case 3: DigestView(model: model)
-                case 4: GuideView(model: model)
-                case 5: CloneView(model: model)
-                case 6: PrimerView(model: model)
-                case 7: AnalysisView(model: model)
-                case 8: ProteinView(model: model)
-                case 9: ReadCheckView(model: model)
-                case 10: RnaView(model: model)
-                case 11: ToolsView(model: model)
+                case 1: MapView(model: model)
+                case 2: DigestView(model: model)
+                case 3: GuideView(model: model)
+                case 4: CloneView(model: model)
+                case 5: PrimerView(model: model)
+                case 6: AnalysisView(model: model)
+                case 7: ProteinView(model: model)
+                case 8: ReadCheckView(model: model)
+                case 9: RnaView(model: model)
+                case 10: ToolsView(model: model)
                 default: NgsView(model: model)
                 }
             }
@@ -436,14 +435,15 @@ struct DetailView: View {
 
     private func previewBox(_ s: DocumentSummary) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionHeader(text: "Anfang der Sequenz")
+            SectionHeader(text: "Ganze Sequenz")
             Card(padding: 12) {
-                Text(s.seqType == "PROTEIN" ? AttributedString(grouped(model.preview)) : coloredBases(grouped(model.preview)))
+                let full = String(model.fullBases.prefix(200_000))
+                Text(s.seqType == "PROTEIN" || full.count > 30_000 ? AttributedString(grouped(full)) : coloredBases(grouped(full)))
                     .font(Theme.mono(13))
                     .textSelection(.enabled)
             }
-            if s.length > AppModel.previewLength {
-                Text("… weitere \(s.length - AppModel.previewLength) Basen")
+            if s.length > 200_000 {
+                Text("… weitere \(s.length - 200_000) Basen (nicht angezeigt)")
                     .font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
             }
         }

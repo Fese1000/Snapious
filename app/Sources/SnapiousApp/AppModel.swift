@@ -63,6 +63,20 @@ final class AppModel: ObservableObject {
     @Published var enzymes: [EnzymeInfoDto] = []
     /// Einzelschneider-Enzyme mit ihrer Position (eine Zeile je Schnittstelle), nach Position sortiert.
     @Published var uniqueSites: [EnzymeSite] = []
+    /// Alle Schnittstellen aller Enzyme der Standarddatenbank (Grundlage für den Filter der Kartenansicht).
+    @Published var allSites: [EnzymeSite] = []
+    /// Enzymfilter der Karte: `unique`, `double`, `all`, `custom` oder `set:<Name>`.
+    @Published var siteFilter: String = UserDefaults.standard.string(forKey: "siteFilter") ?? "set:Häufige Klonierung" {
+        didSet { UserDefaults.standard.set(siteFilter, forKey: "siteFilter") }
+    }
+    @Published var customEnzymes: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "customEnzymes") ?? []) {
+        didSet { UserDefaults.standard.set(Array(customEnzymes), forKey: "customEnzymes") }
+    }
+    /// Darstellung der Karte: `auto` (nach Topologie), `ring` oder `linear`.
+    @Published var mapStyle = "auto"
+    /// Vergrößerung (1 = ganze Sequenz) und linker Rand des sichtbaren Ausschnitts in Basen.
+    @Published var zoom = 1.0
+    @Published var viewStart = 0.0
     /// Ganze Sequenz für die Sequenzansicht (bis `fullLimit` Basen).
     @Published var fullBases: String = "" {
         didSet { fullBytes = Array(fullBases.utf8) }
@@ -326,12 +340,18 @@ final class AppModel: ObservableObject {
             return
         }
         do {
+            let previous = summary?.id
             summary = try project.summary(id: id)
+            if previous != summary?.id { zoom = 1; viewStart = 0; mapStyle = "auto" }
             features = try project.features(id: id)
             preview = try project.bases(id: id, start: 0, end: Self.previewLength)
             lanes = try project.featureLanes(id: id).filter { $0.featureType.lowercased() != "source" }
             codons = loadCodons(project: project, id: id)
             uniqueSites = try project.enzymeSites(id: id, filter: "unique")
+                .flatMap { e in e.positions.map { EnzymeSite(enzyme: e.enzyme, position: Int($0)) } }
+                .sorted { $0.position < $1.position }
+            if setMembers.isEmpty { refreshEnzymeSets() }
+            allSites = try project.enzymeSites(id: id, filter: "all")
                 .flatMap { e in e.positions.map { EnzymeSite(enzyme: e.enzyme, position: Int($0)) } }
                 .sorted { $0.position < $1.position }
             fullBases = try project.bases(id: id, start: 0, end: Self.fullLimit)
@@ -507,6 +527,54 @@ final class AppModel: ObservableObject {
         let h = motifHits[motifIndex]
         select(from: Int(h.start), to: Int(min(h.end, UInt64(fullBytes.count))))
         motifMessage = "Treffer \(motifIndex + 1) von \(motifHits.count)" + (h.reverse ? " (Gegenstrang)" : "")
+    }
+
+    // MARK: Karte: Enzymfilter und Zoom
+
+    /// Zahl der Schnittstellen je Enzym in der aktuellen Sequenz.
+    var siteCounts: [String: Int] {
+        Dictionary(allSites.map { ($0.enzyme, 1) }, uniquingKeysWith: +)
+    }
+
+    /// Die nach `siteFilter` ausgewählten Schnittstellen.
+    var visibleSites: [EnzymeSite] {
+        let counts = siteCounts
+        switch siteFilter {
+        case "all": return allSites
+        case "double": return allSites.filter { counts[$0.enzyme] == 2 }
+        case "custom": return allSites.filter { customEnzymes.contains($0.enzyme) }
+        case let f where f.hasPrefix("set:"):
+            let name = String(f.dropFirst(4))
+            let members = setMembers[name] ?? []
+            return allSites.filter { members.contains($0.enzyme) }
+        default: return allSites.filter { counts[$0.enzyme] == 1 }
+        }
+    }
+
+    /// Mitglieder der Enzymsets (Name → Enzyme), damit das Zeichnen nicht jedes Mal die Datei liest.
+    var setMembers: [String: Set<String>] = [:]
+
+    func refreshEnzymeSets() {
+        setMembers = Dictionary(enzymeSets().map { ($0.name, Set($0.enzymes)) }, uniquingKeysWith: { a, _ in a })
+        objectWillChange.send()
+    }
+
+    /// Länge des Dokuments in Basen.
+    var docLength: Int { Int(summary?.length ?? 0) }
+
+    /// Sichtbare Spanne in Basen bei der aktuellen Vergrößerung.
+    var viewSpan: Double { max(1, Double(docLength) / zoom) }
+
+    func setZoom(_ z: Double) {
+        let len = Double(max(1, docLength))
+        var centre = viewStart + viewSpan / 2
+        if let a = selStart, let b = selEnd { centre = Double(a + b) / 2 }
+        zoom = min(max(1, z), max(1, len / 8))
+        viewStart = min(max(0, centre - viewSpan / 2), max(0, len - viewSpan))
+    }
+
+    func panView(to start: Double) {
+        viewStart = min(max(0, start), max(0, Double(docLength) - viewSpan))
     }
 
     // MARK: Bearbeiten

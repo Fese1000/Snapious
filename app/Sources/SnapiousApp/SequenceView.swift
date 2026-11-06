@@ -29,8 +29,11 @@ struct SequenceView: View {
     /// Platz für die Aminosäurezeile unter den Basen (nur wenn CDS-Features vorhanden sind).
     private var codonRow: CGFloat { model.codons.isEmpty ? 0 : CGFloat((model.codons.map { $0.row }.max() ?? 0) + 1) * 14 }
 
+    /// Platz über den Basen für die Namen der Schnittstellen (zwei versetzte Zeilen).
+    private var siteRow: CGFloat { model.summary?.seqType == "PROTEIN" || model.visibleSites.isEmpty ? 0 : 26 }
+
     private var rowHeight: CGFloat {
-        20 + codonRow + CGFloat(laneCount) * laneHeight + 8
+        siteRow + 20 + codonRow + CGFloat(laneCount) * laneHeight + 8
     }
 
     var body: some View {
@@ -39,16 +42,23 @@ struct SequenceView: View {
                 let bpl = basesPerLine(width: geo.size.width)
                 let total = model.fullBytes.count
                 let lines = max(1, (total + bpl - 1) / bpl)
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(0..<lines, id: \.self) { line in
-                            lineView(line: line, bpl: bpl, total: total)
-                                .frame(height: rowHeight)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            ForEach(0..<lines, id: \.self) { line in
+                                lineView(line: line, bpl: bpl, total: total)
+                                    .frame(height: rowHeight)
+                                    .id(line)
+                            }
                         }
+                        .frame(width: geo.size.width, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .gesture(dragGesture(bpl: bpl, total: total))
                     }
-                    .frame(width: geo.size.width, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .gesture(dragGesture(bpl: bpl, total: total))
+                    .onAppear { proxy.scrollTo(Int(model.viewStart + model.viewSpan / 2) / bpl, anchor: .center) }
+                    .onChange(of: model.viewStart) { _, _ in
+                        withAnimation(.easeInOut(duration: 0.15)) { proxy.scrollTo(Int(model.viewStart + model.viewSpan / 2) / bpl, anchor: .center) }
+                    }
                 }
             }
             coverageStrip
@@ -171,19 +181,19 @@ struct SequenceView: View {
                 if lo < hi {
                     let x0 = x(forColumn: lo - start)
                     let x1 = x(forColumn: hi - 1 - start) + cw
-                    ctx.fill(Path(CGRect(x: x0, y: 0, width: x1 - x0, height: 20)), with: .color(Theme.accent.opacity(0.3)))
+                    ctx.fill(Path(CGRect(x: x0, y: siteRow, width: x1 - x0, height: 20)), with: .color(Theme.accent.opacity(0.3)))
                 }
             }
             // Positionszahl
             ctx.draw(Text("\(start + 1)").font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.inkSoft),
-                     at: CGPoint(x: marginWidth - 8, y: 10), anchor: .trailing)
+                     at: CGPoint(x: marginWidth - 8, y: siteRow + 10), anchor: .trailing)
             // Basen
             let bases = model.fullBytes
             for i in start..<end {
                 let c = i - start
                 let ch = String(UnicodeScalar(bases[i]))
                 ctx.draw(Text(ch).font(.system(size: 13, design: .monospaced)).foregroundStyle(color(of: bases[i])),
-                         at: CGPoint(x: x(forColumn: c), y: 10), anchor: .leading)
+                         at: CGPoint(x: x(forColumn: c), y: siteRow + 10), anchor: .leading)
             }
             // Aminosäuren: der Buchstabe steht unter der mittleren Codonbase
             if codonRow > 0 {
@@ -192,7 +202,20 @@ struct SequenceView: View {
                     guard mid >= start && mid < end else { continue }
                     let color: Color = m.isStop ? .red : (m.isStart ? .green : .secondary)
                     ctx.draw(Text(m.letter).font(.system(size: 10, design: .monospaced)).foregroundStyle(color),
-                             at: CGPoint(x: x(forColumn: mid - start) + cw / 2, y: 26 + CGFloat(m.row) * 14), anchor: .center)
+                             at: CGPoint(x: x(forColumn: mid - start) + cw / 2, y: siteRow + 26 + CGFloat(m.row) * 14), anchor: .center)
+                }
+            }
+            // Schnittstellen: Strich durch die Basenzeile, Name darüber (abwechselnd in zwei Zeilen)
+            if siteRow > 0 {
+                var n = 0
+                for site in model.visibleSites where site.position >= start && site.position <= end {
+                    let col = site.position - start
+                    let gap: CGFloat = (col > 0 && col % groupSize == 0) ? charWidth / 2 : 0
+                    let sx: CGFloat = x(forColumn: col) - gap
+                    ctx.stroke(Path { $0.move(to: CGPoint(x: sx, y: siteRow - 4 - CGFloat(n % 2) * 11)); $0.addLine(to: CGPoint(x: sx, y: siteRow + 18)) },
+                               with: .color(.red.opacity(0.8)), lineWidth: 1)
+                    ctx.draw(Text(site.enzyme).font(.system(size: 9)).foregroundStyle(.red), at: CGPoint(x: sx + 2, y: siteRow - 6 - CGFloat(n % 2) * 11), anchor: .bottomLeading)
+                    n += 1
                 }
             }
             // Annotationen
@@ -202,7 +225,7 @@ struct SequenceView: View {
                 let lo = max(s, start), hi = min(e, end)
                 let x0 = x(forColumn: lo - start)
                 let x1 = x(forColumn: hi - 1 - start) + cw
-                let y = 22 + codonRow + CGFloat(f.lane) * laneHeight
+                let y = siteRow + 22 + codonRow + CGFloat(f.lane) * laneHeight
                 let rect = CGRect(x: x0, y: y, width: x1 - x0, height: laneHeight - 2)
                 ctx.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(featureColor(f.featureType)))
                 if rect.width > 40 {
