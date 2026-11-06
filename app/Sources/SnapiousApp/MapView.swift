@@ -1,3 +1,4 @@
+import AppKit
 import SnapiousFFI
 import SwiftUI
 
@@ -32,14 +33,20 @@ struct MapView: View {
             VStack(spacing: 0) {
                 toolbar(s)
                 Divider()
-                if s.seqType == "PROTEIN" || !ring {
-                    SequenceView(model: model)
-                        .simultaneousGesture(pinch)
-                } else {
-                    VStack(spacing: 0) {
-                        CircularMap(model: model, length: max(1, Int(s.length)), name: s.name)
-                        panSlider
-                        MapEditBar(model: model)
+                HStack(spacing: 0) {
+                    if s.seqType == "PROTEIN" || !ring {
+                        SequenceView(model: model)
+                            .simultaneousGesture(pinch)
+                    } else {
+                        VStack(spacing: 0) {
+                            CircularMap(model: model, length: max(1, Int(s.length)), name: s.name)
+                            panSlider
+                            MapEditBar(model: model)
+                        }
+                    }
+                    if model.showAnnotations {
+                        Divider()
+                        AnnotationPanel(model: model)
                     }
                 }
             }
@@ -98,6 +105,8 @@ struct MapView: View {
                 .menuStyle(.borderlessButton).fixedSize()
                 .popover(isPresented: $showEnzymes) { EnzymePicker(model: model) }
             }
+            Button { model.showAnnotations.toggle() } label: { Label("Annotationen", systemImage: "tag") }
+                .help("Annotationsliste ein-/ausblenden")
         }
         .font(Theme.label(13))
         .padding(.horizontal, 12).padding(.vertical, 6)
@@ -125,7 +134,7 @@ struct MapView: View {
         if model.zoom > 1.001 {
             HStack {
                 Text("\(Int(model.viewStart) + 1)").font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
-                Slider(value: Binding(get: { model.viewStart }, set: { model.panView(to: $0) }),
+                Slider(value: Binding(get: { min(model.viewStart, max(0, Double(model.docLength) - model.viewSpan)) }, set: { model.panView(to: $0) }),
                        in: 0...max(1, Double(model.docLength) - model.viewSpan))
                 Text("\(Int(model.viewStart + model.viewSpan))").font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
             }
@@ -192,6 +201,7 @@ struct MapEditBar: View {
                     .foregroundStyle(Theme.inkSoft)
             }
             Spacer()
+            AminoMenu(model: model)
             Button { model.undo() } label: { Image(systemName: "arrow.uturn.backward") }.accessibilityLabel("Rückgängig")
                 .disabled(model.undoState.undo == 0)
             Button { model.redo() } label: { Image(systemName: "arrow.uturn.forward") }.accessibilityLabel("Wiederholen")
@@ -228,7 +238,7 @@ struct CircularMap: View {
 
     private var zoomed: Bool { model.zoom > 1.001 }
     /// Position, die oben in der Mitte steht (bei Vergrößerung die Mitte des Ausschnitts).
-    private var centreBP: Double { zoomed ? model.viewStart + model.viewSpan / 2 : 0 }
+    private var centreBP: Double { zoomed ? model.viewStart + model.viewSpan / 2 : model.ringRotation }
 
     /// Bei Vergrößerung wächst der Ring um den Faktor `zoom`; sein oberer Rand bleibt im Bild.
     private func geometry(_ size: CGSize) -> (c: CGPoint, r: CGFloat) {
@@ -257,7 +267,12 @@ struct CircularMap: View {
             .gesture(DragGesture(minimumDistance: 0).onChanged { v in
                 focused = true
                 model.select(from: position(at: v.startLocation, size: geo.size), to: position(at: v.location, size: geo.size))
+            }.onEnded { v in
+                if hypot(v.translation.width, v.translation.height) < 3, let idx = featureHit(v.startLocation, size: geo.size) {
+                    model.focusFeature(idx, scroll: false)
+                }
             })
+            .background(ScrollMonitor { dx in rotate(by: dx, size: geo.size) })
             .simultaneousGesture(MagnifyGesture().onChanged { v in
                 if pinchBase == nil {
                     pinchBase = model.zoom
@@ -273,6 +288,44 @@ struct CircularMap: View {
     @State private var pinchBase: Double?
     @State private var pinchAnchor = 0.0
     @FocusState private var focused: Bool
+
+    /// Ob die Basen am Ring stehen und wie weit Skala und Features dafür nach innen rücken.
+    private func innerLayout(_ size: CGSize) -> CGFloat {
+        let r = geometry(size).r
+        guard zoomed, 2 * Double.pi * Double(r) / Double(length) >= 8, model.summary?.seqType != "PROTEIN" else { return 0 }
+        let rows = model.allCodons.isEmpty ? 0 : (model.allCodons.map { $0.row }.max() ?? 0) + 1
+        return 20 + CGFloat(rows) * 17
+    }
+
+    /// Index der Annotation unter einem Klick auf die Spuren im Ring, sonst `nil`.
+    private func featureHit(_ p: CGPoint, size: CGSize) -> Int? {
+        let (c, r) = geometry(size)
+        let dist = hypot(Double(p.x - c.x), Double(p.y - c.y))
+        let pos = anchorBP(at: p, size: size)
+        let inner = innerLayout(size)
+        for f in model.visibleLanes where f.featureType.lowercased() != "source" {
+            let rad = Double(r - 26 - inner - CGFloat(f.lane) * 14)
+            guard abs(dist - rad) <= 12 else { continue }
+            var d = pos
+            let len = Double(length)
+            d = d.truncatingRemainder(dividingBy: len); if d < 0 { d += len }
+            if d >= Double(f.start) && d < Double(f.end) { return Int(f.featureIndex) }
+        }
+        return nil
+    }
+
+    /// Zwei Finger waagerecht auf dem Trackpad drehen den Ring (der Ring folgt den Fingern).
+    private func rotate(by dx: CGFloat, size: CGSize) {
+        let r = geometry(size).r
+        let bp = -Double(dx) * Double(length) / (2 * .pi * Double(r))
+        if zoomed {
+            model.panView(to: model.viewStart + bp)
+        } else {
+            var v = (model.ringRotation + bp).truncatingRemainder(dividingBy: Double(length))
+            if v < 0 { v += Double(length) }
+            model.ringRotation = v
+        }
+    }
 
     /// Position (Basen), die unter einem Punkt der Ansicht liegt (nicht gerundet).
     private func anchorBP(at p: CGPoint, size: CGSize) -> Double {
@@ -292,7 +345,7 @@ struct CircularMap: View {
         let centre = anchor - a / (2 * .pi) * Double(length)
         let span = max(1, Double(length) / nz)
         model.zoom = nz
-        model.viewStart = min(max(0, centre - span / 2), max(0, Double(length) - span))
+        model.viewStart = model.clampStart(centre - span / 2)
     }
 
     private func draw(_ ctx: GraphicsContext, _ size: CGSize) {
@@ -331,14 +384,31 @@ struct CircularMap: View {
                 ctx.stroke(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r)),
                            with: .color(.secondary), lineWidth: 2)
             }
+            let codons = showBases ? model.allCodons : []
+            let aaRows = codons.isEmpty ? 0 : (codons.map { $0.row }.max() ?? 0) + 1
+            let inner: CGFloat = showBases ? 20 + CGFloat(aaRows) * 17 : 0
+            // Aminosäuren: ein Bogenblock über die drei Basen des Codons, der Buchstabe in der Mitte
+            for m in codons where inView(Double(m.lo)) || inView(Double(m.hi)) {
+                let rad = r - 34 - CGFloat(m.row) * 17
+                let a0 = angle(Double(m.lo)) - .pi / 2, a1 = angle(Double(m.hi + 1)) - .pi / 2
+                var arc = Path()
+                arc.addArc(center: c, radius: rad, startAngle: .radians(a0), endAngle: .radians(a1), clockwise: false)
+                ctx.stroke(arc, with: .color(aminoColor(m).opacity(0.4)), style: StrokeStyle(lineWidth: 14, lineCap: .butt))
+                let am = angle(Double(m.lo) + 1.5)
+                var g = ctx
+                g.translateBy(x: c.x + rad * CGFloat(sin(am)), y: c.y - rad * CGFloat(cos(am)))
+                g.rotate(by: .radians(am))
+                g.draw(Text(m.letter).font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(.primary), at: .zero, anchor: .center)
+            }
             // Basen entlang des Rings (obere Reihe: Sequenz, untere: Gegenstrang)
             if showBases {
                 let bytes = model.fullBytes
-                let lo = max(0, Int(model.viewStart) - 1), hi = min(bytes.count, Int(model.viewStart + model.viewSpan) + 2)
+                let lo = Int(model.viewStart) - 1, hi = Int(model.viewStart + model.viewSpan) + 2
                 let comp: [UInt8: String] = [65: "T", 84: "A", 67: "G", 71: "C", 85: "A"]
-                if lo < hi {
-                    for i in lo..<hi {
-                        let a = angle(Double(i) + 0.5)
+                if lo < hi, !bytes.isEmpty {
+                    for k in lo..<hi {
+                        let i = ((k % bytes.count) + bytes.count) % bytes.count
+                        let a = angle(Double(k) + 0.5)
                         let ch = Character(UnicodeScalar(bytes[i]))
                         for (rad, text, dim) in [(r + 0, String(ch), false), (r - 16, comp[bytes[i] & 0xDF] ?? "N", true)] {
                             var g = ctx
@@ -353,22 +423,22 @@ struct CircularMap: View {
             // Skala
             let step = niceStep(length: zoomed ? Int(model.viewSpan) : length, maxTicks: 12)
             var t = zoomed ? (Int(model.viewStart) / step) * step : 0
-            while t < length && (!zoomed || Double(t) <= model.viewStart + model.viewSpan) {
+            while zoomed ? Double(t) <= model.viewStart + model.viewSpan : t < length {
                 defer { t += step }
+                let pos = ((t % length) + length) % length
                 guard inView(Double(t)) else { continue }
                 var p = Path()
                 p.move(to: point(Double(t), r - 4))
                 p.addLine(to: point(Double(t), r + 4))
                 ctx.stroke(p, with: .color(.secondary), lineWidth: 1)
-                ctx.draw(Text(verbatim: "\(t)").font(.system(size: 9)).foregroundStyle(Theme.inkSoft),
-                         at: point(Double(t), r - 16 - (showBases ? 20 : 0)), anchor: .center)
-                t += step
+                ctx.draw(Text(verbatim: "\(pos)").font(.system(size: 9)).foregroundStyle(Theme.inkSoft),
+                         at: point(Double(t), r - 16 - inner), anchor: .center)
             }
             // Features (Spuren nach innen)
-            for f in model.lanes where f.featureType.lowercased() != "source" {
-                let rad = r - 26 - (showBases ? 20 : 0) - CGFloat(f.lane) * 14
+            for f in model.visibleLanes where f.featureType.lowercased() != "source" {
+                let rad = r - 26 - inner - CGFloat(f.lane) * 14
                 guard rad > 20 else { continue }
-                guard !zoomed || (inView(Double(f.start)) || inView(Double(f.end)) || (Double(f.start) <= model.viewStart && Double(f.end) >= model.viewStart + model.viewSpan)) else { continue }
+                guard !zoomed || (inView(Double(f.start)) || inView(Double(f.end)) || (Double(f.start) <= centreBP && Double(f.end) >= centreBP)) else { continue }
                 let a0 = angle(Double(f.start)) - .pi / 2
                 let a1 = a0 + 2 * .pi * Double(f.end - f.start) / Double(length)
                 var arc = Path()
@@ -399,5 +469,37 @@ struct CircularMap: View {
             ctx.draw(Text(name).font(Theme.heading()), at: CGPoint(x: c.x, y: c.y - 8), anchor: .center)
             ctx.draw(Text(verbatim: "\(length) bp").font(.subheadline).foregroundStyle(Theme.inkSoft),
                      at: CGPoint(x: c.x, y: c.y + 12), anchor: .center)
+    }
+}
+
+/// Fängt waagerechtes Zwei-Finger-Wischen über der Ansicht ab (SwiftUI hat dafür keine eigene Geste).
+struct ScrollMonitor: NSViewRepresentable {
+    var onScroll: (CGFloat) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let v = MonitorView()
+        v.onScroll = onScroll
+        return v
+    }
+
+    func updateNSView(_ v: NSView, context: Context) { (v as? MonitorView)?.onScroll = onScroll }
+
+    final class MonitorView: NSView {
+        var onScroll: (CGFloat) -> Void = { _ in }
+        private var monitor: Any?
+
+        override func viewDidMoveToWindow() {
+            if let m = monitor { NSEvent.removeMonitor(m); monitor = nil }
+            guard window != nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] e in
+                guard let self, e.window == self.window else { return e }
+                let p = self.convert(e.locationInWindow, from: nil)
+                guard self.bounds.contains(p), abs(e.scrollingDeltaX) > abs(e.scrollingDeltaY) else { return e }
+                self.onScroll(e.scrollingDeltaX)
+                return nil
+            }
+        }
+
+        deinit { if let m = monitor { NSEvent.removeMonitor(m) } }
     }
 }

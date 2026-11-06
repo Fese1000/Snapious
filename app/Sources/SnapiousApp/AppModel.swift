@@ -140,6 +140,8 @@ final class AppModel: ObservableObject {
     /// Vergrößerung (1 = ganze Sequenz) und linker Rand des sichtbaren Ausschnitts in Basen.
     @Published var zoom = 1.0
     @Published var viewStart = 0.0
+    /// Drehung des ganzen Rings (Position, die oben steht), solange er nicht vergrößert ist.
+    @Published var ringRotation = 0.0
     /// Ganze Sequenz für die Sequenzansicht (bis `fullLimit` Basen).
     @Published var fullBases: String = "" {
         didSet { fullBytes = Array(fullBases.utf8) }
@@ -653,14 +655,27 @@ final class AppModel: ObservableObject {
 
     func setZoom(_ z: Double) {
         let len = Double(max(1, docLength))
-        var centre = viewStart + viewSpan / 2
+        var centre = zoom <= 1.001 && mapStyle != "linear" ? ringRotation : viewStart + viewSpan / 2
         if let a = selStart, let b = selEnd { centre = Double(a + b) / 2 }
         zoom = min(max(1, z), maxZoom)
-        viewStart = min(max(0, centre - viewSpan / 2), max(0, len - viewSpan))
+        viewStart = clampStart(centre - viewSpan / 2)
+    }
+
+    /// Im Plasmid-Ring läuft der Ausschnitt über die Nahtstelle hinweg (endlos drehen); sonst bleibt er innerhalb der Sequenz.
+    var ringMode: Bool { summary?.seqType != "PROTEIN" && (mapStyle == "ring" || (mapStyle == "auto" && summary?.topology == "CIRCULAR")) }
+
+    func clampStart(_ v: Double) -> Double {
+        let len = Double(max(1, docLength))
+        if ringMode {
+            var w = v.truncatingRemainder(dividingBy: len)
+            if w < 0 { w += len }
+            return w
+        }
+        return min(max(0, v), max(0, len - viewSpan))
     }
 
     func panView(to start: Double) {
-        viewStart = min(max(0, start), max(0, Double(docLength) - viewSpan))
+        viewStart = clampStart(start)
     }
 
     // MARK: Bearbeiten
@@ -732,6 +747,57 @@ final class AppModel: ObservableObject {
     }
 
     static let newName = "Neu"
+
+    // MARK: Annotationen
+
+    /// Annotationstypen, die in Karte und Sequenz ausgeblendet sind.
+    /// Markierte Basen übersetzen: `off`, `forward` (ab der ersten markierten Base) oder `reverse` (Gegenstrang der Markierung).
+    @Published var translateSelection = "off"
+    @Published var hiddenTypes: Set<String> = []
+    /// Seitenleiste mit der Annotationsliste.
+    @Published var showAnnotations = true
+    @Published var selectedFeature: Int?
+    /// Position, zu der die lineare Ansicht scrollen soll.
+    @Published var scrollBP = 0
+
+    var visibleLanes: [PlacedFeatureDto] { lanes.filter { !hiddenTypes.contains($0.featureType) } }
+
+    /// Wählt eine Annotation: Bereich markieren und dorthin scrollen bzw. den Ring-Ausschnitt verschieben.
+    func focusFeature(_ index: Int, scroll: Bool = true) {
+        guard features.indices.contains(index) else { return }
+        let f = features[index]
+        selectedFeature = index
+        select(from: Int(f.start), to: Int(f.end))
+        let mid = Double(f.start + f.end) / 2
+        guard scroll else { return }
+        scrollBP = Int(mid)
+        if zoom > 1.001 { panView(to: mid - viewSpan / 2) }
+    }
+
+    /// Neue Annotation anlegen (ein Rückgängig-Schritt).
+    func addAnnotation(_ info: FeatureInfo) {
+        guard let project, let id = selection else { return }
+        run {
+            try project.addFeatures(id: id, features: [info])
+            self.reloadCurrent()
+            self.selectedFeature = self.features.firstIndex { $0.name == info.name && $0.start == info.start && $0.end == info.end }
+        }
+    }
+
+    /// Annotation ändern (entfernen + neu anlegen, als ein Rückgängig-Schritt).
+    func updateAnnotation(index: Int, to info: FeatureInfo) {
+        guard let project, let id = selection else { return }
+        let before = undoCount(of: id)
+        run {
+            try project.removeFeature(id: id, index: UInt64(index))
+            try project.addFeatures(id: id, features: [info])
+            let after = self.undoCount(of: id)
+            if after - before > 1 { self.undoGroups[id, default: []].append((after, after - before)) }
+            self.redoGroups[id] = []
+            self.reloadCurrent()
+            self.selectedFeature = self.features.firstIndex { $0.name == info.name && $0.start == info.start && $0.end == info.end }
+        }
+    }
 
     func undo() {
         guard let id = selection else { return }

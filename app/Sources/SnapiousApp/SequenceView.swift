@@ -23,11 +23,18 @@ struct SequenceView: View {
     }
 
     private var laneCount: Int {
-        (model.lanes.map { Int($0.lane) }.max() ?? -1) + 1
+        (model.visibleLanes.map { Int($0.lane) }.max() ?? -1) + 1
     }
 
     /// Platz für die Aminosäurezeile unter den Basen (nur wenn CDS-Features vorhanden sind).
-    private var codonRow: CGFloat { model.codons.isEmpty ? 0 : CGFloat((model.codons.map { $0.row }.max() ?? 0) + 1) * 14 }
+    /// Platz für die Aminosäurezeilen; bei aktiver Markierungsübersetzung bleibt eine Zeile frei, damit sich beim Markieren nichts verschiebt.
+    private var codonRow: CGFloat {
+        let base = model.codons.isEmpty ? 0 : (model.codons.map { $0.row }.max() ?? 0) + 1
+        let extra = model.translateSelection != "off" && model.summary?.seqType != "PROTEIN" ? 1 : 0
+        return CGFloat(base + extra) * 14
+    }
+
+    private var allCodons: [CodonMark] { model.allCodons }
 
     /// Platz über den Basen für die Namen der Schnittstellen (zwei versetzte Zeilen).
     private var siteRow: CGFloat { model.summary?.seqType == "PROTEIN" || model.visibleSites.isEmpty ? 0 : 2 * (siteFont + 2) + 4 }
@@ -62,6 +69,9 @@ struct SequenceView: View {
                         .gesture(dragGesture(bpl: bpl, total: total))
                     }
                     .onAppear { proxy.scrollTo(Int(model.viewStart + model.viewSpan / 2) / bpl, anchor: .center) }
+                    .onChange(of: model.scrollBP) { _, v in
+                        withAnimation(.easeInOut(duration: 0.15)) { proxy.scrollTo(v / bpl, anchor: .center) }
+                    }
                     .onChange(of: model.viewStart) { _, _ in
                         withAnimation(.easeInOut(duration: 0.15)) { proxy.scrollTo(Int(model.viewStart + model.viewSpan / 2) / bpl, anchor: .center) }
                     }
@@ -150,6 +160,18 @@ struct SequenceView: View {
                 let b = position(at: CGPoint(x: value.location.x / s, y: value.location.y / s), bpl: bpl, total: total)
                 model.select(from: a, to: b)
             }
+            .onEnded { value in
+                guard hypot(value.translation.width, value.translation.height) < 3 else { return }
+                let s = scale
+                let pos = position(at: CGPoint(x: value.startLocation.x / s, y: value.startLocation.y / s), bpl: bpl, total: total)
+                let line = max(0, Int(value.startLocation.y / s / rowHeight))
+                let localY = value.startLocation.y / s - CGFloat(line) * rowHeight - siteRow - 22 - codonRow
+                guard localY >= 0 else { return }
+                let lane = Int(localY / laneHeight)
+                if let f = model.visibleLanes.first(where: { Int($0.lane) == lane && Int($0.start) <= pos && pos < Int($0.end) && $0.featureType.lowercased() != "source" }) {
+                    model.focusFeature(Int(f.featureIndex), scroll: false)
+                }
+            }
     }
 
     // MARK: Zeichnen
@@ -162,6 +184,7 @@ struct SequenceView: View {
             ctx.scaleBy(x: scale, y: scale)
             let cw = charWidth
             let tiny = cw * scale < 6
+            let codons = allCodons
             // Auswahl
             if let a = model.selStart, let b = model.selEnd, a != b {
                 let lo = max(min(a, b), start), hi = min(max(a, b), end)
@@ -186,14 +209,20 @@ struct SequenceView: View {
                 ctx.draw(Text(ch).font(.system(size: 13, design: .monospaced)).foregroundStyle(color(of: bases[i])),
                          at: CGPoint(x: x(forColumn: c), y: siteRow + 10), anchor: .leading)
             }
-            // Aminosäuren: der Buchstabe steht unter der mittleren Codonbase
+            // Aminosäuren: ein farbiger Block über die drei Basen des Codons, der Buchstabe in der Mitte
             if codonRow > 0 {
-                for m in model.codons where m.hi >= start && m.lo < end {
+                for m in codons where m.hi >= start && m.lo < end {
+                    let y = siteRow + 22 + CGFloat(m.row) * 14
+                    let x0 = x(forColumn: max(m.lo, start) - start)
+                    let x1 = x(forColumn: min(m.hi, end - 1) - start) + cw
+                    let rect = CGRect(x: x0 + 0.5, y: y, width: max(2, x1 - x0 - 1), height: 13)
+                    ctx.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(aminoColor(m).opacity(0.38)))
+                    ctx.stroke(Path(roundedRect: rect, cornerRadius: 3), with: .color(aminoColor(m).opacity(0.8)), lineWidth: 0.6)
                     let mid = m.lo + 1
-                    guard mid >= start && mid < end else { continue }
-                    let color: Color = m.isStop ? .red : (m.isStart ? .green : .secondary)
-                    ctx.draw(Text(m.letter).font(.system(size: 10, design: .monospaced)).foregroundStyle(color),
-                             at: CGPoint(x: x(forColumn: mid - start) + cw / 2, y: siteRow + 26 + CGFloat(m.row) * 14), anchor: .center)
+                    if mid >= start && mid < end {
+                        ctx.draw(Text(m.letter).font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(.primary),
+                                 at: CGPoint(x: x(forColumn: mid - start) + cw / 2, y: y + 6.5), anchor: .center)
+                    }
                 }
             }
             // Schnittstellen: Strich durch die Basenzeile, Name darüber (abwechselnd in zwei Zeilen)
@@ -211,7 +240,7 @@ struct SequenceView: View {
                 }
             }
             // Annotationen
-            for f in model.lanes {
+            for f in model.visibleLanes {
                 let s = Int(f.start), e = Int(f.end)
                 if e <= start || s >= end { continue }
                 let lo = max(s, start), hi = min(e, end)
@@ -236,34 +265,6 @@ struct SequenceView: View {
     private func featureColor(_ type: String) -> Color { Theme.feature(type) }
 
     // MARK: Statusleiste
-
-    /// Auswahl der angezeigten Aminosäure-Leserahmen.
-    private var frameMenu: some View {
-        Menu {
-            Toggle("Aminosäuren der CDS-Features", isOn: Binding(
-                get: { model.showCdsTranslation },
-                set: { model.setFrames(model.aaFrames, cds: $0) }))
-            Divider()
-            ForEach([1, 2, 3, -1, -2, -3], id: \.self) { f in
-                Toggle(f > 0 ? "Rahmen +\(f)" : "Rahmen −\(-f) (Gegenstrang)", isOn: Binding(
-                    get: { model.aaFrames.contains(f) },
-                    set: { on in
-                        var list = model.aaFrames.filter { $0 != f }
-                        if on { list.append(f) }
-                        let order = [1, 2, 3, -1, -2, -3]
-                        model.setFrames(list.sorted { order.firstIndex(of: $0)! < order.firstIndex(of: $1)! }, cds: model.showCdsTranslation)
-                    }))
-            }
-            Divider()
-            Button("Alle 6 Rahmen") { model.setFrames([1, 2, 3, -1, -2, -3], cds: model.showCdsTranslation) }
-            Button("Aus") { model.setFrames([], cds: false) }
-        } label: {
-            Label("Aminosäuren", systemImage: "textformat.abc")
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .help("Aminosäuren unter der Sequenz anzeigen")
-    }
 
     private var statusBar: some View {
         HStack(spacing: 16) {
@@ -314,7 +315,7 @@ struct SequenceView: View {
                 if let m = model.motifMessage { Text(m).foregroundStyle(Theme.inkSoft) }
                 Spacer()
             }
-            if model.summary?.seqType != "PROTEIN" { frameMenu }
+            if model.summary?.seqType != "PROTEIN" { AminoMenu(model: model) }
             Button { model.undo() } label: { Image(systemName: "arrow.uturn.backward") }.accessibilityLabel("Rückgängig")
                 .keyboardShortcut("z", modifiers: .command)
                 .disabled(model.undoState.undo == 0)
