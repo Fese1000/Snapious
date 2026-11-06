@@ -21,8 +21,8 @@ struct MapView: View {
     private var pinch: some Gesture {
         MagnifyGesture()
             .onChanged { v in
-                if pinchBase == nil { pinchBase = model.zoom }
-                model.setZoom((pinchBase ?? 1) * Double(v.magnification))
+                if pinchBase == nil { pinchBase = model.textScale }
+                model.textScale = min(max(0.15, (pinchBase ?? 1) * Double(v.magnification)), 4)
             }
             .onEnded { _ in pinchBase = nil }
     }
@@ -32,24 +32,14 @@ struct MapView: View {
             VStack(spacing: 0) {
                 toolbar(s)
                 Divider()
-                GeometryReader { geo in
-                    let pixelsPerBase = (geo.size.width - 80) / model.viewSpan + 0.02
-                    let _ = { model.viewWidth = Double(geo.size.width) }()
-                    if s.seqType == "PROTEIN" || (!ring && pixelsPerBase >= 9) {
-                        SequenceView(model: model)
-                            .simultaneousGesture(pinch)
-                    } else if ring {
-                        VStack(spacing: 0) {
-                            CircularMap(model: model, length: max(1, Int(s.length)), name: s.name)
-                            panSlider
-                            MapEditBar(model: model)
-                        }
-                    } else {
-                        VStack(spacing: 0) {
-                            LinearMap(model: model, length: max(1, Int(s.length)))
-                            panSlider
-                            MapEditBar(model: model)
-                        }
+                if s.seqType == "PROTEIN" || !ring {
+                    SequenceView(model: model)
+                        .simultaneousGesture(pinch)
+                } else {
+                    VStack(spacing: 0) {
+                        CircularMap(model: model, length: max(1, Int(s.length)), name: s.name)
+                        panSlider
+                        MapEditBar(model: model)
                     }
                 }
             }
@@ -64,17 +54,30 @@ struct MapView: View {
                     Text("Linear").tag("linear")
                 }
                 .pickerStyle(.segmented).labelsHidden().frame(width: 150)
-                .help("Darstellung: Plasmidring oder lineare Karte (bearbeitbar in beiden)")
+                .help("Darstellung: Plasmidring oder lineare Sequenz (bearbeitbar in beiden)")
             }
-            HStack(spacing: 4) {
-                Button { model.setZoom(model.zoom / 1.6) } label: { Image(systemName: "minus.magnifyingglass") }
-                    .accessibilityLabel("Herauszoomen").disabled(model.zoom <= 1.001)
-                Slider(value: Binding(get: { zoomPosition }, set: { model.setZoom(zoom(from: $0)) }), in: 0...1)
-                    .frame(width: 140)
-                Button { model.setZoom(model.zoom * 1.6) } label: { Image(systemName: "plus.magnifyingglass") }
-                    .disabled(model.zoom >= model.maxZoom - 0.001)
-                    .accessibilityLabel("Hineinzoomen")
-                Text(model.zoom <= 1.001 ? "Ganz" : String(format: "%.0f×", model.zoom)).font(Theme.label(11)).foregroundStyle(Theme.inkSoft).frame(width: 40, alignment: .leading)
+            if ring && s.seqType != "PROTEIN" {
+                HStack(spacing: 4) {
+                    Button { model.setZoom(model.zoom / 1.6) } label: { Image(systemName: "minus.magnifyingglass") }
+                        .accessibilityLabel("Herauszoomen").disabled(model.zoom <= 1.001)
+                    Slider(value: Binding(get: { zoomPosition }, set: { model.setZoom(zoom(from: $0)) }), in: 0...1)
+                        .frame(width: 140)
+                    Button { model.setZoom(model.zoom * 1.6) } label: { Image(systemName: "plus.magnifyingglass") }
+                        .disabled(model.zoom >= model.maxZoom - 0.001)
+                        .accessibilityLabel("Hineinzoomen")
+                    Text(model.zoom <= 1.001 ? "Ganz" : String(format: "%.0f×", model.zoom)).font(Theme.label(11)).foregroundStyle(Theme.inkSoft).frame(width: 40, alignment: .leading)
+                }
+            } else {
+                HStack(spacing: 4) {
+                    Button { model.textScale = max(0.15, model.textScale / 1.25) } label: { Image(systemName: "minus.magnifyingglass") }
+                        .accessibilityLabel("Herauszoomen").disabled(model.textScale <= 0.151)
+                    Slider(value: Binding(get: { log(model.textScale / 0.15) / log(4 / 0.15) },
+                                          set: { model.textScale = 0.15 * exp($0 * log(4 / 0.15)) }), in: 0...1)
+                        .frame(width: 140)
+                    Button { model.textScale = min(4, model.textScale * 1.25) } label: { Image(systemName: "plus.magnifyingglass") }
+                        .accessibilityLabel("Hineinzoomen").disabled(model.textScale >= 3.99)
+                    Text("\(Int(model.textScale * 100)) %").font(Theme.label(11)).foregroundStyle(Theme.inkSoft).frame(width: 44, alignment: .leading)
+                }
             }
             Spacer()
             if s.seqType != "PROTEIN" {
@@ -396,94 +399,5 @@ struct CircularMap: View {
             ctx.draw(Text(name).font(Theme.heading()), at: CGPoint(x: c.x, y: c.y - 8), anchor: .center)
             ctx.draw(Text(verbatim: "\(length) bp").font(.subheadline).foregroundStyle(Theme.inkSoft),
                      at: CGPoint(x: c.x, y: c.y + 12), anchor: .center)
-    }
-}
-
-struct LinearMap: View {
-    @ObservedObject var model: AppModel
-    let length: Int
-    private let left: CGFloat = 30
-    @State private var pinchBase: Double?
-    @State private var pinchAnchor = 0.0
-    @FocusState private var focused: Bool
-
-    private func bp(at x: CGFloat, width: CGFloat) -> Int {
-        let t = Double((x - left) / max(1, width - 2 * left))
-        return min(length, max(0, Int((model.viewStart + t * model.viewSpan).rounded())))
-    }
-
-    var body: some View {
-        GeometryReader { geo in
-            Canvas { ctx, size in draw(ctx, size) }
-                .contentShape(Rectangle())
-                .gesture(DragGesture(minimumDistance: 0).onChanged { v in
-                    focused = true
-                    model.select(from: bp(at: v.startLocation.x, width: geo.size.width), to: bp(at: v.location.x, width: geo.size.width))
-                })
-                .simultaneousGesture(MagnifyGesture().onChanged { v in
-                    if pinchBase == nil {
-                        pinchBase = model.zoom
-                        let t = Double((v.startLocation.x - left) / max(1, geo.size.width - 2 * left))
-                        pinchAnchor = model.viewStart + t * model.viewSpan
-                    }
-                    let t = Double((v.startLocation.x - left) / max(1, geo.size.width - 2 * left))
-                    let nz = min(max(1, (pinchBase ?? 1) * Double(v.magnification)), model.maxZoom)
-                    let span = max(1, Double(length) / nz)
-                    model.zoom = nz
-                    model.viewStart = min(max(0, pinchAnchor - t * span), max(0, Double(length) - span))
-                }.onEnded { _ in pinchBase = nil })
-        }
-        .padding(8)
-        .editKeys(model, focus: $focused)
-    }
-
-    private func draw(_ ctx: GraphicsContext, _ size: CGSize) {
-        var ctx = ctx
-        let right = size.width - 30
-        let y0: CGFloat = 90
-        let lo = model.viewStart, span = model.viewSpan
-        func x(_ p: Double) -> CGFloat { left + (right - left) * CGFloat((p - lo) / span) }
-        func inView(_ p: Double) -> Bool { p >= lo - 1 && p <= lo + span + 1 }
-        // Auswahl
-        if let a = model.selStart, let b = model.selEnd {
-            let s0 = Double(min(a, b)), s1 = Double(max(a, b))
-            if s0 == s1 {
-                if inView(s0) { ctx.stroke(Path { $0.move(to: CGPoint(x: x(s0), y: y0 - 50)); $0.addLine(to: CGPoint(x: x(s0), y: y0 + 130)) }, with: .color(Theme.accent), lineWidth: 2) }
-            } else {
-                let r = CGRect(x: max(left, x(s0)), y: y0 - 50, width: max(2, min(right, x(s1)) - max(left, x(s0))), height: 180)
-                ctx.fill(Path(r), with: .color(Theme.accent.opacity(0.18)))
-            }
-        }
-        let x0 = max(left, x(0)), x1 = min(right, x(Double(length)))
-        ctx.stroke(Path { $0.move(to: CGPoint(x: x0, y: y0)); $0.addLine(to: CGPoint(x: x1, y: y0)) }, with: .color(.secondary), lineWidth: 2)
-        let step = niceStep(length: Int(span), maxTicks: 10)
-        var t = (Int(lo) / step) * step
-        while Double(t) <= lo + span {
-            if t >= 0 && t <= length {
-                ctx.stroke(Path { $0.move(to: CGPoint(x: x(Double(t)), y: y0 - 4)); $0.addLine(to: CGPoint(x: x(Double(t)), y: y0 + 4)) }, with: .color(.secondary), lineWidth: 1)
-                ctx.draw(Text(verbatim: "\(t)").font(.system(size: 9)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: x(Double(t)), y: y0 + 14), anchor: .center)
-            }
-            t += step
-        }
-        for f in model.lanes where f.featureType.lowercased() != "source" {
-            guard Double(f.end) >= lo, Double(f.start) <= lo + span else { continue }
-            let y = y0 + 30 + CGFloat(f.lane) * 18
-            let fx0 = max(left, x(Double(f.start))), fx1 = min(right, x(Double(f.end)))
-            let rect = CGRect(x: fx0, y: y, width: max(2, fx1 - fx0), height: 14)
-            ctx.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(Theme.feature(f.featureType)))
-            if rect.width > 40 {
-                ctx.draw(Text(f.name).font(.system(size: 9)).foregroundStyle(.white), at: CGPoint(x: rect.midX, y: rect.midY), anchor: .center)
-            }
-        }
-        var lastX: CGFloat = -100
-        var row = 0
-        for s in model.visibleSites where inView(Double(s.position)) {
-            let px = x(Double(s.position))
-            guard px >= left, px <= right else { continue }
-            row = px < lastX + 70 ? (row + 1) % 5 : 0
-            lastX = px
-            ctx.stroke(Path { $0.move(to: CGPoint(x: px, y: y0)); $0.addLine(to: CGPoint(x: px, y: y0 - 8 - CGFloat(row) * 12)) }, with: .color(.primary), lineWidth: 1)
-            ctx.draw(Text(s.enzyme).font(.system(size: 10)), at: CGPoint(x: px + 2, y: y0 - 12 - CGFloat(row) * 12), anchor: .bottomLeading)
-        }
     }
 }

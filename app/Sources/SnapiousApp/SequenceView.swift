@@ -16,7 +16,7 @@ struct SequenceView: View {
     private let font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
     private let marginWidth: CGFloat = 76
     private let laneHeight: CGFloat = 12
-    private let groupSize = 10
+    private let groupSize = 9
 
     private var charWidth: CGFloat {
         ("M" as NSString).size(withAttributes: [.font: font]).width
@@ -30,7 +30,13 @@ struct SequenceView: View {
     private var codonRow: CGFloat { model.codons.isEmpty ? 0 : CGFloat((model.codons.map { $0.row }.max() ?? 0) + 1) * 14 }
 
     /// Platz über den Basen für die Namen der Schnittstellen (zwei versetzte Zeilen).
-    private var siteRow: CGFloat { model.summary?.seqType == "PROTEIN" || model.visibleSites.isEmpty ? 0 : 26 }
+    private var siteRow: CGFloat { model.summary?.seqType == "PROTEIN" || model.visibleSites.isEmpty ? 0 : 2 * (siteFont + 2) + 4 }
+
+    /// Schriftgröße der Enzymnamen: beim Herauszoomen wächst sie mit, damit sie auf dem Bildschirm lesbar bleiben.
+    private var siteFont: CGFloat { scale < 1 ? min(13 / scale, 70) : 9 }
+
+    /// Vergrößerungsfaktor der linearen Ansicht (Pinch, Knöpfe, Regler).
+    private var scale: CGFloat { CGFloat(model.textScale) }
 
     private var rowHeight: CGFloat {
         siteRow + 20 + codonRow + CGFloat(laneCount) * laneHeight + 8
@@ -39,7 +45,7 @@ struct SequenceView: View {
     var body: some View {
         VStack(spacing: 0) {
             GeometryReader { geo in
-                let bpl = basesPerLine(width: geo.size.width)
+                let bpl = basesPerLine(width: geo.size.width / scale)
                 let total = model.fullBytes.count
                 let lines = max(1, (total + bpl - 1) / bpl)
                 ScrollViewReader { proxy in
@@ -47,7 +53,7 @@ struct SequenceView: View {
                         LazyVStack(alignment: .leading, spacing: 0) {
                             ForEach(0..<lines, id: \.self) { line in
                                 lineView(line: line, bpl: bpl, total: total)
-                                    .frame(height: rowHeight)
+                                    .frame(height: rowHeight * scale)
                                     .id(line)
                             }
                         }
@@ -106,7 +112,7 @@ struct SequenceView: View {
         let total = model.fullBytes.count
         return VStack(alignment: .leading, spacing: 0) {
             ForEach(0..<lines, id: \.self) { line in
-                lineView(line: line, bpl: bpl, total: total).frame(height: rowHeight)
+                lineView(line: line, bpl: bpl, total: total).frame(height: rowHeight * scale)
             }
         }
         .frame(width: width, alignment: .leading)
@@ -139,8 +145,9 @@ struct SequenceView: View {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
                 focused = true
-                let a = position(at: value.startLocation, bpl: bpl, total: total)
-                let b = position(at: value.location, bpl: bpl, total: total)
+                let s = scale
+                let a = position(at: CGPoint(x: value.startLocation.x / s, y: value.startLocation.y / s), bpl: bpl, total: total)
+                let b = position(at: CGPoint(x: value.location.x / s, y: value.location.y / s), bpl: bpl, total: total)
                 model.select(from: a, to: b)
             }
     }
@@ -150,8 +157,11 @@ struct SequenceView: View {
     private func lineView(line: Int, bpl: Int, total: Int) -> some View {
         let start = line * bpl
         let end = min(total, start + bpl)
-        return Canvas { ctx, size in
+        return Canvas { gc, size in
+            var ctx = gc
+            ctx.scaleBy(x: scale, y: scale)
             let cw = charWidth
+            let tiny = cw * scale < 6
             // Auswahl
             if let a = model.selStart, let b = model.selEnd, a != b {
                 let lo = max(min(a, b), start), hi = min(max(a, b), end)
@@ -168,6 +178,10 @@ struct SequenceView: View {
             let bases = model.fullBytes
             for i in start..<end {
                 let c = i - start
+                if tiny {
+                    ctx.fill(Path(CGRect(x: x(forColumn: c), y: siteRow + 3, width: cw, height: 14)), with: .color(color(of: bases[i])))
+                    continue
+                }
                 let ch = String(UnicodeScalar(bases[i]))
                 ctx.draw(Text(ch).font(.system(size: 13, design: .monospaced)).foregroundStyle(color(of: bases[i])),
                          at: CGPoint(x: x(forColumn: c), y: siteRow + 10), anchor: .leading)
@@ -189,9 +203,10 @@ struct SequenceView: View {
                     let col = site.position - start
                     let gap: CGFloat = (col > 0 && col % groupSize == 0) ? charWidth / 2 : 0
                     let sx: CGFloat = x(forColumn: col) - gap
-                    ctx.stroke(Path { $0.move(to: CGPoint(x: sx, y: siteRow - 4 - CGFloat(n % 2) * 11)); $0.addLine(to: CGPoint(x: sx, y: siteRow + 18)) },
-                               with: .color(.red.opacity(0.8)), lineWidth: 1)
-                    ctx.draw(Text(site.enzyme).font(.system(size: 9)).foregroundStyle(.red), at: CGPoint(x: sx + 2, y: siteRow - 6 - CGFloat(n % 2) * 11), anchor: .bottomLeading)
+                    let step = siteFont + 2
+                    ctx.stroke(Path { $0.move(to: CGPoint(x: sx, y: siteRow - 4 - CGFloat(n % 2) * step)); $0.addLine(to: CGPoint(x: sx, y: siteRow + 18)) },
+                               with: .color(.red.opacity(0.8)), lineWidth: max(1, 1 / scale))
+                    ctx.draw(Text(site.enzyme).font(.system(size: siteFont, weight: scale < 1 ? .semibold : .regular)).foregroundStyle(.red), at: CGPoint(x: sx + 2, y: siteRow - 6 - CGFloat(n % 2) * step), anchor: .bottomLeading)
                     n += 1
                 }
             }

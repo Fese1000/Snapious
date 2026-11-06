@@ -477,12 +477,12 @@ struct DetailView: View {
         var lines: [String] = []
         var i = bases.startIndex
         while i < bases.endIndex {
-            let end = bases.index(i, offsetBy: 60, limitedBy: bases.endIndex) ?? bases.endIndex
+            let end = bases.index(i, offsetBy: 54, limitedBy: bases.endIndex) ?? bases.endIndex
             let line = bases[i..<end]
             var parts: [String] = []
             var j = line.startIndex
             while j < line.endIndex {
-                let e = line.index(j, offsetBy: 10, limitedBy: line.endIndex) ?? line.endIndex
+                let e = line.index(j, offsetBy: 9, limitedBy: line.endIndex) ?? line.endIndex
                 parts.append(String(line[j..<e]))
                 j = e
             }

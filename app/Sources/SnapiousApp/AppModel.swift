@@ -640,13 +640,15 @@ final class AppModel: ObservableObject {
 
     /// Breite der Kartenansicht in Punkten (von der Ansicht gesetzt).
     var viewWidth: Double = 1000
+    /// Schriftgröße der linearen Sequenzansicht als Faktor (1 = normal).
+    @Published var textScale = 1.0
 
     /// Größte Vergrößerung: im linearen Modus die Stufe, ab der die Basen als Text erscheinen (neun Punkte je Base); im Ring bis acht Basen.
     var maxZoom: Double {
         let len = Double(max(1, docLength))
         let ringMode = mapStyle == "ring" || (mapStyle == "auto" && summary?.topology == "CIRCULAR")
         if ringMode || summary?.seqType == "PROTEIN" { return max(1, len / 8) }
-        return max(1, min(len / 8, len * 9 / max(100, viewWidth - 80)))
+        return max(1, len / 8)
     }
 
     func setZoom(_ z: Double) {
