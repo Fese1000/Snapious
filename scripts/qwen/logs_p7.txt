@@ -1,0 +1,79 @@
+=== record.rs Versuch 1
+[124s {'prompt_tokens': 4018, 'completion_tokens': 5501, 'total_tokens': 9519, 'completion_tokens_details': {'reasoning_tokens': 4605}}]
+=== record.rs Versuch 2
+[122s {'prompt_tokens': 4956, 'completion_tokens': 5653, 'total_tokens': 10609, 'completion_tokens_details': {'reasoning_tokens': 4734}}]
+clippy: warning: unused import: `crate::bio::kazusa::table_from_json`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Topology`
+warning: unused imports: `PamSpec` and `find_guides`
+warning: unused import: `Error`
+warning: unused import: `Topology`
+warning: unused import: `required_usize`
+warning: unused imports: `PrimerConstraints` and `pick_pairs`
+warning: unused import: `crate::seqcheck::SequencingCheck`
+warning: unused import: `Error`
+warning: unused variable: `name`
+warning: unused variable: `insert`
+warning: unused variable: `enzymes`
+warning: unused variable: `db`
+warning: unused variable: `inputs`
+warning: unused variable: `inputs`
+warning: unused variable: `params`
+warning: unused variable: `inputs`
+warning: unused variable: `params`
+warning: unused variable: `inputs`
+warning: unused variable: `params`
+warning: unused variable: `json`
+warning: unused variable: `dir`
+warning: unused variable: `directory`
+warning: unused variable: `inputs`
+warning: unused variable: `params`
+warning: unused variable: `registry`
+warning: unused variable: `plugins`
+warning: function `single` is never used
+warning: doc list item without indentation
+warning: doc list item without indentation
+warning: doc list item without indentation
+  --> crates/snapious-core/src/ops/record.rs:18:5
+warning: `snapious-core` (lib) generated 33 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 29 suggestions)
+warning: `snapious-core` (lib test) generated 28 warnings (28 duplicates)
+=== record.rs Versuch 3
+[94s {'prompt_tokens': 6319, 'completion_tokens': 4326, 'total_tokens': 10645, 'completion_tokens_details': {'reasoning_tokens': 3402}}]
+clippy: warning: unused import: `crate::bio::kazusa::table_from_json`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Topology`
+warning: unused imports: `PamSpec` and `find_guides`
+warning: unused import: `Error`
+warning: unused import: `Topology`
+warning: unused import: `required_usize`
+warning: unused imports: `PrimerConstraints` and `pick_pairs`
+warning: unused import: `crate::seqcheck::SequencingCheck`
+warning: unused import: `Error`
+warning: unused variable: `name`
+warning: unused variable: `insert`
+warning: unused variable: `enzymes`
+warning: unused variable: `db`
+warning: unused variable: `inputs`
+warning: unused variable: `inputs`
+warning: unused variable: `params`
+warning: unused variable: `inputs`
+warning: unused variable: `params`
+warning: unused variable: `inputs`
+warning: unused variable: `params`
+warning: unused variable: `json`
+warning: unused variable: `dir`
+warning: unused variable: `directory`
+warning: unused variable: `inputs`
+warning: unused variable: `params`
+warning: unused variable: `registry`
+warning: unused variable: `plugins`
+warning: function `single` is never used
+warning: doc list item without indentation
+warning: doc list item without indentation
+warning: doc list item without indentation
+  --> crates/snapious-core/src/ops/record.rs:18:5
+warning: `snapious-core` (lib) generated 33 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 29 suggestions)
+warning: `snapious-core` (lib test) generated 28 warnings (28 duplicates)
+ERGEBNIS record.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

@@ -1,0 +1,67 @@
+=== variants.rs Versuch 1
+[211s {'prompt_tokens': 2700, 'completion_tokens': 9188, 'total_tokens': 11888, 'completion_tokens_details': {'reasoning_tokens': 7971}}]
+|
+58 | pub fn find_inverted_repeats(seq: &str, min_arm: usize, max_spacer: usize) -> Vec<InvertedRepeat> {
+   |                                                         ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_max_spacer`
+
+warning: unused variable: `text`
+  --> crates/snapious-core/src/io/embl.rs:19:14
+   |
+19 | pub fn parse(text: &str) -> Result<Vec<SequenceDocument>> {
+   |              ^^^^ help: if this is intentional, prefix it with an underscore: `_text`
+
+warning: unused variable: `doc`
+  --> crates/snapious-core/src/io/embl.rs:25:15
+   |
+25 | pub fn format(doc: &SequenceDocument) -> String {
+   |               ^^^ help: if this is intentional, prefix it with an underscore: `_doc`
+
+For more information about this error, try `rustc --explain E0308`.
+warning: `snapious-core` (lib) generated 33 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 33 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: unused import: `crate::cloning::enzymes::iupac_reverse_complement`
+ --> crates/snapious-core/src/bio/dotplot.rs:3:5
+  |
+3 | use crate::cloning::enzymes::iupac_reverse_complement;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `snapious-core` (lib test) generated 30 warnings (29 duplicates)
+error: could not compile `snapious-core` (lib test) due to 1 previous error; 30 warnings emitted
+
+=== variants.rs Versuch 2
+[588s {'prompt_tokens': 4685, 'completion_tokens': 23999, 'total_tokens': 28684, 'completion_tokens_details': {'reasoning_tokens': 23999}}]
+=== variants.rs Versuch 3
+[205s {'prompt_tokens': 4702, 'completion_tokens': 8777, 'total_tokens': 13479, 'completion_tokens_details': {'reasoning_tokens': 7596}}]
+   |
+58 | pub fn find_inverted_repeats(seq: &str, min_arm: usize, max_spacer: usize) -> Vec<InvertedRepeat> {
+   |                                         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_min_arm`
+
+warning: unused variable: `max_spacer`
+  --> crates/snapious-core/src/bio/repeats.rs:58:57
+   |
+58 | pub fn find_inverted_repeats(seq: &str, min_arm: usize, max_spacer: usize) -> Vec<InvertedRepeat> {
+   |                                                         ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_max_spacer`
+
+warning: unused variable: `text`
+  --> crates/snapious-core/src/io/embl.rs:19:14
+   |
+19 | pub fn parse(text: &str) -> Result<Vec<SequenceDocument>> {
+   |              ^^^^ help: if this is intentional, prefix it with an underscore: `_text`
+
+warning: unused variable: `doc`
+  --> crates/snapious-core/src/io/embl.rs:25:15
+   |
+25 | pub fn format(doc: &SequenceDocument) -> String {
+   |               ^^^ help: if this is intentional, prefix it with an underscore: `_doc`
+
+For more information about this error, try `rustc --explain E0308`.
+warning: `snapious-core` (lib) generated 33 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 33 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 30 warnings (29 duplicates)
+error: could not compile `snapious-core` (lib test) due to 1 previous error; 30 warnings emitted
+
+ERGEBNIS variants.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

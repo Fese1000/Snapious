@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = ["crates/snapious-core", "crates/snapious-ffi"]
+
+[profile.release]
+lto = "fat"
+codegen-units = 1

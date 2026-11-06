@@ -1,0 +1,77 @@
+=== allele_binning.rs Versuch 1
+[21s {'prompt_tokens': 1728, 'completion_tokens': 859, 'total_tokens': 2587}]
+=== allele_binning.rs Versuch 2
+[20s {'prompt_tokens': 2631, 'completion_tokens': 830, 'total_tokens': 3461}]
+ing)>> {
+   |                   ^^^^ help: if this is intentional, prefix it with an underscore: `_text`
+
+warning: unused variable: `rows`
+  --> crates/snapious-core/src/io/mega.rs:16:19
+   |
+16 | pub fn write_mega(rows: &[(String, String)]) -> String {
+   |                   ^^^^ help: if this is intentional, prefix it with an underscore: `_rows`
+
+warning: unused variable: `reads`
+  --> crates/snapious-core/src/ngs/barcode.rs:17:5
+   |
+17 |     reads: &[String],
+   |     ^^^^^ help: if this is intentional, prefix it with an underscore: `_reads`
+
+warning: unused variable: `barcodes`
+  --> crates/snapious-core/src/ngs/barcode.rs:18:5
+   |
+18 |     barcodes: &[(String, String)],
+   |     ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_barcodes`
+
+warning: unused variable: `max_mismatch`
+  --> crates/snapious-core/src/ngs/barcode.rs:19:5
+   |
+19 |     max_mismatch: usize,
+   |     ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_max_mismatch`
+
+Some errors have detailed explanations: E0308, E0425.
+For more information about an error, try `rustc --explain E0308`.
+warning: `snapious-core` (lib) generated 10 warnings
+error: could not compile `snapious-core` (lib) due to 2 previous errors; 10 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 10 warnings (10 duplicates)
+error: could not compile `snapious-core` (lib test) due to 2 previous errors; 10 warnings emitted
+
+=== allele_binning.rs Versuch 3
+[21s {'prompt_tokens': 4230, 'completion_tokens': 830, 'total_tokens': 5060}]
+ing)>> {
+   |                   ^^^^ help: if this is intentional, prefix it with an underscore: `_text`
+
+warning: unused variable: `rows`
+  --> crates/snapious-core/src/io/mega.rs:16:19
+   |
+16 | pub fn write_mega(rows: &[(String, String)]) -> String {
+   |                   ^^^^ help: if this is intentional, prefix it with an underscore: `_rows`
+
+warning: unused variable: `reads`
+  --> crates/snapious-core/src/ngs/barcode.rs:17:5
+   |
+17 |     reads: &[String],
+   |     ^^^^^ help: if this is intentional, prefix it with an underscore: `_reads`
+
+warning: unused variable: `barcodes`
+  --> crates/snapious-core/src/ngs/barcode.rs:18:5
+   |
+18 |     barcodes: &[(String, String)],
+   |     ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_barcodes`
+
+warning: unused variable: `max_mismatch`
+  --> crates/snapious-core/src/ngs/barcode.rs:19:5
+   |
+19 |     max_mismatch: usize,
+   |     ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_max_mismatch`
+
+Some errors have detailed explanations: E0308, E0425.
+For more information about an error, try `rustc --explain E0308`.
+warning: `snapious-core` (lib) generated 10 warnings
+error: could not compile `snapious-core` (lib) due to 2 previous errors; 10 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 10 warnings (10 duplicates)
+error: could not compile `snapious-core` (lib test) due to 2 previous errors; 10 warnings emitted
+
+ERGEBNIS allele_binning.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

@@ -1,0 +1,121 @@
+=== nussinov.rs Versuch 1
+[43s {'prompt_tokens': 2207, 'completion_tokens': 1785, 'total_tokens': 3992}]
+ pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 22 warnings (run `cargo fix --lib -p snapious-core` to apply 22 suggestions)
+warning: `snapious-core` (lib test) generated 22 warnings (22 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.91s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test bio::nussinov::tests::schleife_und_eigenschaften ... FAILED
+test bio::nussinov::tests::haarnadel ... FAILED
+
+failures:
+
+---- bio::nussinov::tests::schleife_und_eigenschaften stdout ----
+
+thread 'bio::nussinov::tests::schleife_und_eigenschaften' (5528262) panicked at crates/snapious-core/src/bio/nussinov.rs:144:13:
+assertion `left == right` failed: GCGCAAUGCGC (.........)
+  left: 1
+ right: 4
+
+---- bio::nussinov::tests::haarnadel stdout ----
+
+thread 'bio::nussinov::tests::haarnadel' (5528261) panicked at crates/snapious-core/src/bio/nussinov.rs:109:9:
+assertion `left == right` failed
+  left: (3, "(.......)")
+ right: (3, "(((...)))")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    bio::nussinov::tests::haarnadel
+    bio::nussinov::tests::schleife_und_eigenschaften
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== nussinov.rs Versuch 2
+[49s {'prompt_tokens': 4764, 'completion_tokens': 1968, 'total_tokens': 6732}]
+ pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 22 warnings (run `cargo fix --lib -p snapious-core` to apply 22 suggestions)
+warning: `snapious-core` (lib test) generated 22 warnings (22 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.35s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test bio::nussinov::tests::haarnadel ... FAILED
+test bio::nussinov::tests::schleife_und_eigenschaften ... FAILED
+
+failures:
+
+---- bio::nussinov::tests::haarnadel stdout ----
+
+thread 'bio::nussinov::tests::haarnadel' (5530468) panicked at crates/snapious-core/src/bio/nussinov.rs:121:9:
+assertion `left == right` failed
+  left: (3, "(.......)")
+ right: (3, "(((...)))")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- bio::nussinov::tests::schleife_und_eigenschaften stdout ----
+
+thread 'bio::nussinov::tests::schleife_und_eigenschaften' (5530469) panicked at crates/snapious-core/src/bio/nussinov.rs:156:13:
+assertion `left == right` failed: GCGCAAUGCGC (.........)
+  left: 1
+ right: 4
+
+
+failures:
+    bio::nussinov::tests::haarnadel
+    bio::nussinov::tests::schleife_und_eigenschaften
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== nussinov.rs Versuch 3
+[51s {'prompt_tokens': 7504, 'completion_tokens': 1946, 'total_tokens': 9450}]
+ pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 22 warnings (run `cargo fix --lib -p snapious-core` to apply 22 suggestions)
+warning: `snapious-core` (lib test) generated 22 warnings (22 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.24s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test bio::nussinov::tests::schleife_und_eigenschaften ... FAILED
+test bio::nussinov::tests::haarnadel ... FAILED
+
+failures:
+
+---- bio::nussinov::tests::schleife_und_eigenschaften stdout ----
+
+thread 'bio::nussinov::tests::schleife_und_eigenschaften' (5532988) panicked at crates/snapious-core/src/bio/nussinov.rs:156:13:
+assertion `left == right` failed: GCGCAAUGCGC (.........)
+  left: 1
+ right: 4
+
+---- bio::nussinov::tests::haarnadel stdout ----
+
+thread 'bio::nussinov::tests::haarnadel' (5532987) panicked at crates/snapious-core/src/bio/nussinov.rs:121:9:
+assertion `left == right` failed
+  left: (3, "(.......)")
+ right: (3, "(((...)))")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    bio::nussinov::tests::haarnadel
+    bio::nussinov::tests::schleife_und_eigenschaften
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+ERGEBNIS nussinov.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

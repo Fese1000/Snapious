@@ -1,0 +1,3 @@
+=== progress_format.rs Versuch 1
+[148s {'prompt_tokens': 2166, 'completion_tokens': 6216, 'total_tokens': 8382, 'completion_tokens_details': {'reasoning_tokens': 5441}}]
+ERGEBNIS progress_format.rs: GRÜN (3 Tests) nach 1 Versuch(en)

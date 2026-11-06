@@ -1,0 +1,97 @@
+=== analysis.rs Versuch 1
+[348s {'prompt_tokens': 7510, 'completion_tokens': 13826, 'total_tokens': 21336, 'completion_tokens_details': {'reasoning_tokens': 11697}}]
+src/plugin.rs:69:9
+   |
+69 |         inputs: &[Document],
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+warning: unused variable: `params`
+  --> crates/snapious-core/src/plugin.rs:70:9
+   |
+70 |         params: &Params,
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+warning: unused variable: `registry`
+  --> crates/snapious-core/src/plugin.rs:79:25
+   |
+79 | pub fn register_plugins(registry: &mut OperationRegistry, plugins: &[Plugin]) -> Vec<String> {
+   |                         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_registry`
+
+warning: unused variable: `plugins`
+  --> crates/snapious-core/src/plugin.rs:79:59
+   |
+79 | pub fn register_plugins(registry: &mut OperationRegistry, plugins: &[Plugin]) -> Vec<String> {
+   |                                                           ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_plugins`
+
+Some errors have detailed explanations: E0599, E0609, E0615, E0616.
+For more information about an error, try `rustc --explain E0599`.
+warning: `snapious-core` (lib) generated 20 warnings
+error: could not compile `snapious-core` (lib) due to 15 previous errors; 20 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 15 warnings (15 duplicates)
+error: could not compile `snapious-core` (lib test) due to 15 previous errors; 15 warnings emitted
+
+=== analysis.rs Versuch 2
+[257s {'prompt_tokens': 10361, 'completion_tokens': 10126, 'total_tokens': 20487, 'completion_tokens_details': {'reasoning_tokens': 8070}}]
+nce.bases().as_bytes(), &[]);
+    |                                                                                                 ++
+
+error[E0616]: field `sequence` of struct `document::SequenceDocument` is private
+   --> crates/snapious-core/src/ops/analysis.rs:152:107
+    |
+152 | ...   let res = SequencingCheck::new(min_quality).check(ref_bases, circular, &read_sd.name, read_sd.sequence.bases().as_bytes(), &[]);
+    |                                                                                                     ^^^^^^^^ private field
+    |
+help: a method `sequence` also exists, call it with parentheses
+    |
+152 |             let res = SequencingCheck::new(min_quality).check(ref_bases, circular, &read_sd.name, read_sd.sequence().bases().as_bytes(), &[]);
+    |                                                                                                                   ++
+
+error[E0616]: field `name` of struct `document::SequenceDocument` is private
+   --> crates/snapious-core/src/ops/analysis.rs:157:26
+    |
+157 |                 &read_sd.name, res.identity, k, revers));
+    |                          ^^^^ private field
+    |
+help: a method `name` also exists, call it with parentheses
+    |
+157 |                 &read_sd.name(), res.identity, k, revers));
+    |                              ++
+
+warning: `snapious-core` (lib test) generated 15 warnings (15 duplicates)
+error: could not compile `snapious-core` (lib test) due to 15 previous errors; 15 warnings emitted
+
+=== analysis.rs Versuch 3
+[128s {'prompt_tokens': 13050, 'completion_tokens': 4932, 'total_tokens': 17982, 'completion_tokens_details': {'reasoning_tokens': 2876}}]
+src/plugin.rs:69:9
+   |
+69 |         inputs: &[Document],
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+warning: unused variable: `params`
+  --> crates/snapious-core/src/plugin.rs:70:9
+   |
+70 |         params: &Params,
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+warning: unused variable: `registry`
+  --> crates/snapious-core/src/plugin.rs:79:25
+   |
+79 | pub fn register_plugins(registry: &mut OperationRegistry, plugins: &[Plugin]) -> Vec<String> {
+   |                         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_registry`
+
+warning: unused variable: `plugins`
+  --> crates/snapious-core/src/plugin.rs:79:59
+   |
+79 | pub fn register_plugins(registry: &mut OperationRegistry, plugins: &[Plugin]) -> Vec<String> {
+   |                                                           ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_plugins`
+
+Some errors have detailed explanations: E0308, E0599, E0609, E0615.
+For more information about an error, try `rustc --explain E0308`.
+warning: `snapious-core` (lib) generated 20 warnings
+error: could not compile `snapious-core` (lib) due to 10 previous errors; 20 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 15 warnings (15 duplicates)
+error: could not compile `snapious-core` (lib test) due to 10 previous errors; 15 warnings emitted
+
+ERGEBNIS analysis.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

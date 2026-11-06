@@ -1,0 +1,41 @@
+=== mapper.rs Versuch 1
+[146s {'prompt_tokens': 2457, 'completion_tokens': 7462, 'total_tokens': 9919, 'completion_tokens_details': {'reasoning_tokens': 6534}}]
+,
+   |     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_reads2`
+
+warning: unused variable: `work_dir`
+  --> crates/snapious-core/src/ngs/spades.rs:12:5
+   |
+12 |     work_dir: &str,
+   |     ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_work_dir`
+
+warning: unused variable: `threads`
+  --> crates/snapious-core/src/ngs/spades.rs:13:5
+   |
+13 |     threads: usize,
+   |     ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_threads`
+
+warning: unused variable: `name`
+  --> crates/snapious-core/src/ngs/spades.rs:20:24
+   |
+20 | pub fn parse_node_name(name: &str) -> Option<(u64, f64)> {
+   |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_name`
+
+warning: unused variable: `fasta_text`
+  --> crates/snapious-core/src/ngs/spades.rs:27:29
+   |
+27 | pub fn contigs_to_documents(fasta_text: &str) -> Result<Vec<SequenceDocument>> {
+   |                             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_fasta_text`
+
+For more information about this error, try `rustc --explain E0599`.
+warning: `snapious-core` (lib) generated 39 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 39 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 34 warnings (33 duplicates)
+error: could not compile `snapious-core` (lib test) due to 1 previous error; 34 warnings emitted
+
+=== mapper.rs Versuch 2
+[507s {'prompt_tokens': 4166, 'completion_tokens': 23999, 'total_tokens': 28165, 'completion_tokens_details': {'reasoning_tokens': 23999}}]
+=== mapper.rs Versuch 3
+[505s {'prompt_tokens': 4183, 'completion_tokens': 23999, 'total_tokens': 28182, 'completion_tokens_details': {'reasoning_tokens': 23999}}]
+ERGEBNIS mapper.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

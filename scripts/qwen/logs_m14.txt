@@ -1,0 +1,118 @@
+=== hin.rs Versuch 1
+[92s {'prompt_tokens': 2372, 'completion_tokens': 3942, 'total_tokens': 6314}]
+ional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 28 warnings (run `cargo fix --lib -p snapious-core` to apply 28 suggestions)
+warning: `snapious-core` (lib test) generated 28 warnings (28 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.80s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 10 tests
+test view::error_hint::tests::regeln ... ok
+test view::error_hint::tests::reihenfolge_und_fallback ... ok
+test view::recent_files::tests::hinzufuegen ... ok
+test view::edit_session::tests::features_hinzufuegen_und_entfernen ... ok
+test model::document::tests::einfuegen_direkt_hinter_dem_feature_aendert_nichts ... ok
+test model::rotate::tests::basen_und_feature_hinter_dem_ursprung ... ok
+test cloning::enzymes::tests::eigenes_enzym_hinzufuegen ... ok
+test io::genbank::tests::feature_hinter_dem_ende_ist_fehler ... ok
+test io::hin::tests::ordnung_und_fehler ... ok
+test io::hin::tests::wasser ... FAILED
+
+failures:
+
+---- io::hin::tests::wasser stdout ----
+
+thread 'io::hin::tests::wasser' (5517209) panicked at crates/snapious-core/src/io/hin.rs:282:9:
+assertion `left == right` failed
+  left: 6
+ right: 3
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    io::hin::tests::wasser
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 851 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== hin.rs Versuch 2
+[98s {'prompt_tokens': 7095, 'completion_tokens': 3811, 'total_tokens': 10906}]
+ional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 28 warnings (run `cargo fix --lib -p snapious-core` to apply 28 suggestions)
+warning: `snapious-core` (lib test) generated 28 warnings (28 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.43s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 10 tests
+test view::error_hint::tests::regeln ... ok
+test view::recent_files::tests::hinzufuegen ... ok
+test view::error_hint::tests::reihenfolge_und_fallback ... ok
+test view::edit_session::tests::features_hinzufuegen_und_entfernen ... ok
+test model::document::tests::einfuegen_direkt_hinter_dem_feature_aendert_nichts ... ok
+test model::rotate::tests::basen_und_feature_hinter_dem_ursprung ... ok
+test cloning::enzymes::tests::eigenes_enzym_hinzufuegen ... ok
+test io::genbank::tests::feature_hinter_dem_ende_ist_fehler ... ok
+test io::hin::tests::ordnung_und_fehler ... ok
+test io::hin::tests::wasser ... FAILED
+
+failures:
+
+---- io::hin::tests::wasser stdout ----
+
+thread 'io::hin::tests::wasser' (5520572) panicked at crates/snapious-core/src/io/hin.rs:275:9:
+assertion `left == right` failed
+  left: 6
+ right: 3
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    io::hin::tests::wasser
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 851 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== hin.rs Versuch 3
+[102s {'prompt_tokens': 11687, 'completion_tokens': 3811, 'total_tokens': 15498}]
+ional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 28 warnings (run `cargo fix --lib -p snapious-core` to apply 28 suggestions)
+warning: `snapious-core` (lib test) generated 28 warnings (28 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.27s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 10 tests
+test view::error_hint::tests::regeln ... ok
+test view::recent_files::tests::hinzufuegen ... ok
+test view::error_hint::tests::reihenfolge_und_fallback ... ok
+test view::edit_session::tests::features_hinzufuegen_und_entfernen ... ok
+test model::document::tests::einfuegen_direkt_hinter_dem_feature_aendert_nichts ... ok
+test model::rotate::tests::basen_und_feature_hinter_dem_ursprung ... ok
+test io::genbank::tests::feature_hinter_dem_ende_ist_fehler ... ok
+test cloning::enzymes::tests::eigenes_enzym_hinzufuegen ... ok
+test io::hin::tests::ordnung_und_fehler ... ok
+test io::hin::tests::wasser ... FAILED
+
+failures:
+
+---- io::hin::tests::wasser stdout ----
+
+thread 'io::hin::tests::wasser' (5523764) panicked at crates/snapious-core/src/io/hin.rs:275:9:
+assertion `left == right` failed
+  left: 6
+ right: 3
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    io::hin::tests::wasser
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 851 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+ERGEBNIS hin.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

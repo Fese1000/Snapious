@@ -1,0 +1,75 @@
+=== uniprot_entry.rs Versuch 1
+[223s {'prompt_tokens': 8483, 'completion_tokens': 8655, 'total_tokens': 17138, 'completion_tokens_details': {'reasoning_tokens': 7121}}]
+: if this is intentional, prefix it with an underscore: `_text`
+
+warning: unused variable: `chain`
+  --> crates/snapious-core/src/io/pdb.rs:53:28
+   |
+53 |     pub fn sequence(&self, chain: char) -> String {
+   |                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_chain`
+
+warning: unused variable: `chain`
+  --> crates/snapious-core/src/io/pdb.rs:58:33
+   |
+58 |     pub fn residue_count(&self, chain: char) -> usize {
+   |                                 ^^^^^ help: if this is intentional, prefix it with an underscore: `_chain`
+
+warning: unused variable: `inputs`
+  --> crates/snapious-core/src/ops/phase4.rs:30:9
+   |
+30 |         inputs: &[Document],
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+warning: unused variable: `inputs`
+  --> crates/snapious-core/src/ops/phase4.rs:54:9
+   |
+54 |         inputs: &[Document],
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+Some errors have detailed explanations: E0061, E0308.
+For more information about an error, try `rustc --explain E0061`.
+warning: `snapious-core` (lib) generated 10 warnings
+error: could not compile `snapious-core` (lib) due to 2 previous errors; 10 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 9 warnings (8 duplicates)
+error: could not compile `snapious-core` (lib test) due to 2 previous errors; 9 warnings emitted
+
+=== uniprot_entry.rs Versuch 2
+[174s {'prompt_tokens': 10767, 'completion_tokens': 6538, 'total_tokens': 17305, 'completion_tokens_details': {'reasoning_tokens': 4019}}]
+b(text: &str) -> Pdb {
+   |                  ^^^^ help: if this is intentional, prefix it with an underscore: `_text`
+
+warning: unused variable: `chain`
+  --> crates/snapious-core/src/io/pdb.rs:53:28
+   |
+53 |     pub fn sequence(&self, chain: char) -> String {
+   |                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_chain`
+
+warning: unused variable: `chain`
+  --> crates/snapious-core/src/io/pdb.rs:58:33
+   |
+58 |     pub fn residue_count(&self, chain: char) -> usize {
+   |                                 ^^^^^ help: if this is intentional, prefix it with an underscore: `_chain`
+
+warning: unused variable: `inputs`
+  --> crates/snapious-core/src/ops/phase4.rs:30:9
+   |
+30 |         inputs: &[Document],
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+warning: unused variable: `inputs`
+  --> crates/snapious-core/src/ops/phase4.rs:54:9
+   |
+54 |         inputs: &[Document],
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+For more information about this error, try `rustc --explain E0061`.
+warning: `snapious-core` (lib) generated 10 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 10 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 9 warnings (8 duplicates)
+error: could not compile `snapious-core` (lib test) due to 1 previous error; 9 warnings emitted
+
+=== uniprot_entry.rs Versuch 3
+[203s {'prompt_tokens': 14040, 'completion_tokens': 7656, 'total_tokens': 21696, 'completion_tokens_details': {'reasoning_tokens': 6112}}]
+ERGEBNIS uniprot_entry.rs: GRÜN (4 Tests) nach 3 Versuch(en)

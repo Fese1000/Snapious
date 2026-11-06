@@ -1,0 +1,14 @@
+target/
+.DS_Store
+*.class
+app/.build/
+build/
+
+# Snapious
+scripts/qwen/logs/
+scripts/qwen/STOP
+*.snapious
+*.dateien/
+.claude/
+.vscode/
+.idea/

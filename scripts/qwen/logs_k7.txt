@@ -1,0 +1,3 @@
+=== annotation_extract.rs Versuch 1
+[18s {'prompt_tokens': 1863, 'completion_tokens': 788, 'total_tokens': 2651}]
+ERGEBNIS annotation_extract.rs: GRÜN (2 Tests) nach 1 Versuch(en)

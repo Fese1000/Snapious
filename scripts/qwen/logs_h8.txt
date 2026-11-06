@@ -1,0 +1,44 @@
+=== mol.rs Versuch 1
+[34s {'prompt_tokens': 2303, 'completion_tokens': 1493, 'total_tokens': 3796}]
+l, prefix it with an underscore: `_values`
+
+warning: unused variable: `bin_width`
+ --> crates/snapious-core/src/ngs/histogram.rs:5:36
+  |
+5 | pub fn histogram(values: &[usize], bin_width: usize) -> Vec<(usize, usize)> {
+  |                                    ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_bin_width`
+
+warning: unused variable: `names`
+  --> crates/snapious-core/src/ngs/pairs.rs:16:19
+   |
+16 | pub fn pair_reads(names: &[String]) -> PairResult {
+   |                   ^^^^^ help: if this is intentional, prefix it with an underscore: `_names`
+
+warning: `snapious-core` (lib) generated 30 warnings (run `cargo fix --lib -p snapious-core` to apply 30 suggestions)
+warning: `snapious-core` (lib test) generated 30 warnings (30 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.94s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test io::mol::tests::wasser ... ok
+test io::mol::tests::fehler ... FAILED
+
+failures:
+
+---- io::mol::tests::fehler stdout ----
+
+thread 'io::mol::tests::fehler' (5253871) panicked at crates/snapious-core/src/io/mol.rs:146:9:
+assertion failed: parse_mol(&kurz).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    io::mol::tests::fehler
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 800 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== mol.rs Versuch 2
+[34s {'prompt_tokens': 4610, 'completion_tokens': 1550, 'total_tokens': 6160}]
+ERGEBNIS mol.rs: GRÜN (2 Tests) nach 2 Versuch(en)

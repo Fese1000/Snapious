@@ -1,0 +1,3 @@
+=== variants.rs Versuch 1
+[137s {'prompt_tokens': 3518, 'completion_tokens': 5980, 'total_tokens': 9498, 'completion_tokens_details': {'reasoning_tokens': 4707}}]
+ERGEBNIS variants.rs: GRÜN (5 Tests) nach 1 Versuch(en)

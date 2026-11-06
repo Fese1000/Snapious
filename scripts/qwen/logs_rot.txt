@@ -1,0 +1,78 @@
+=== rotate.rs Versuch 1
+[333s {'prompt_tokens': 5936, 'completion_tokens': 15110, 'total_tokens': 21046, 'completion_tokens_details': {'reasoning_tokens': 14177}}]
+=== rotate.rs Versuch 2
+[119s {'prompt_tokens': 6911, 'completion_tokens': 5637, 'total_tokens': 12548, 'completion_tokens_details': {'reasoning_tokens': 3642}}]
+ase2.rs:53:9
+   |
+53 |         params: &Params,
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+warning: unused variable: `inputs`
+  --> crates/snapious-core/src/ops/phase2.rs:79:9
+   |
+79 |         inputs: &[Document],
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+warning: unused variable: `params`
+  --> crates/snapious-core/src/ops/phase2.rs:80:9
+   |
+80 |         params: &Params,
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+warning: unused variable: `inputs`
+   --> crates/snapious-core/src/ops/phase2.rs:106:9
+    |
+106 |         inputs: &[Document],
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+warning: unused variable: `params`
+   --> crates/snapious-core/src/ops/phase2.rs:107:9
+    |
+107 |         params: &Params,
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+Some errors have detailed explanations: E0308, E0433.
+For more information about an error, try `rustc --explain E0308`.
+warning: `snapious-core` (lib) generated 20 warnings
+error: could not compile `snapious-core` (lib) due to 10 previous errors; 20 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 17 warnings (16 duplicates)
+error: could not compile `snapious-core` (lib test) due to 10 previous errors; 17 warnings emitted
+
+=== rotate.rs Versuch 3
+[259s {'prompt_tokens': 9682, 'completion_tokens': 11579, 'total_tokens': 21261, 'completion_tokens_details': {'reasoning_tokens': 9584}}]
+ms`
+  --> crates/snapious-core/src/ops/phase2.rs:80:9
+   |
+80 |         params: &Params,
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+warning: unused variable: `inputs`
+   --> crates/snapious-core/src/ops/phase2.rs:106:9
+    |
+106 |         inputs: &[Document],
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+warning: unused variable: `params`
+   --> crates/snapious-core/src/ops/phase2.rs:107:9
+    |
+107 |         params: &Params,
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+Some errors have detailed explanations: E0308, E0433.
+For more information about an error, try `rustc --explain E0308`.
+warning: `snapious-core` (lib) generated 20 warnings
+error: could not compile `snapious-core` (lib) due to 10 previous errors; 20 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: unused imports: `CodonTable`, `OptimizationOptions`, and `optimize_dna`
+ --> crates/snapious-core/src/ops/phase2.rs:3:34
+  |
+3 | use crate::bio::codon_optimize::{optimize_dna, CodonTable, OptimizationOptions};
+  |                                  ^^^^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `snapious-core` (lib test) generated 17 warnings (16 duplicates)
+error: could not compile `snapious-core` (lib test) due to 10 previous errors; 17 warnings emitted
+
+ERGEBNIS rotate.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

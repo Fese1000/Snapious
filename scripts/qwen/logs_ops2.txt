@@ -1,0 +1,100 @@
+=== phase2.rs Versuch 1
+[332s {'prompt_tokens': 8781, 'completion_tokens': 14518, 'total_tokens': 23299, 'completion_tokens_details': {'reasoning_tokens': 10156}}]
+,
+79 -             vector.sequence().bases(),
+80 -             insert.sequence().bases(),
+81 -             vector.topology() == Topology::Circular,
+82 -         ).map_err(|e| Error::Operation(e.to_string()))?;
+77 +         let candidates = restriction_candidates(/* &SequenceDocument */, /* &[&str] */, /* &SequenceDocument */, /* &[&str] */, /* &EnzymeDb */).map_err(|e| Error::Operation(e.to_string()))?;
+   |
+
+error[E0308]: arguments to this function are incorrect
+   --> crates/snapious-core/src/ops/phase2.rs:249:29
+    |
+249 |         let optimized_seq = optimize_dna(
+    |                             ^^^^^^^^^^^^
+250 |             coding_dna.sequence().bases(),
+    |             ----------------------------- expected `&codon_optimize::CodonTable`, found `&str`
+251 |             &table,
+    |             ------ expected `&str`, found `&codon_optimize::CodonTable`
+    |
+note: function defined here
+   --> crates/snapious-core/src/bio/codon_optimize.rs:376:8
+    |
+376 | pub fn optimize_dna(
+    |        ^^^^^^^^^^^^
+help: swap these arguments
+    |
+249 ~         let optimized_seq = optimize_dna(
+250 +             &table,
+251 +             coding_dna.sequence().bases(),
+252 +             &options,
+253 ~         ).map_err(|e| Error::Operation(e.to_string()))?; // Assuming optimize_dna returns Result<String>
+    |
+
+warning: `snapious-core` (lib test) generated 8 warnings (7 duplicates)
+error: could not compile `snapious-core` (lib test) due to 5 previous errors; 8 warnings emitted
+
+=== phase2.rs Versuch 2
+[163s {'prompt_tokens': 13878, 'completion_tokens': 7244, 'total_tokens': 21122, 'completion_tokens_details': {'reasoning_tokens': 4387}}]
+^ help: if this is intentional, prefix it with an underscore: `_organism`
+
+warning: unused variable: `counts`
+  --> crates/snapious-core/src/bio/kazusa.rs:27:39
+   |
+27 | pub fn counts_to_json(organism: &str, counts: &CodonCounts) -> Result<String> {
+   |                                       ^^^^^^ help: if this is intentional, prefix it with an underscore: `_counts`
+
+warning: unused variable: `doc`
+  --> crates/snapious-core/src/model/rotate.rs:16:24
+   |
+16 | pub fn rotate_document(doc: &SequenceDocument, new_origin: usize) -> Result<SequenceDocument> {
+   |                        ^^^ help: if this is intentional, prefix it with an underscore: `_doc`
+
+warning: unused variable: `new_origin`
+  --> crates/snapious-core/src/model/rotate.rs:16:48
+   |
+16 | pub fn rotate_document(doc: &SequenceDocument, new_origin: usize) -> Result<SequenceDocument> {
+   |                                                ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_new_origin`
+
+Some errors have detailed explanations: E0061, E0282, E0308.
+For more information about an error, try `rustc --explain E0061`.
+warning: `snapious-core` (lib) generated 10 warnings
+error: could not compile `snapious-core` (lib) due to 4 previous errors; 10 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 8 warnings (7 duplicates)
+error: could not compile `snapious-core` (lib test) due to 4 previous errors; 8 warnings emitted
+
+=== phase2.rs Versuch 3
+[228s {'prompt_tokens': 17485, 'completion_tokens': 9970, 'total_tokens': 27455, 'completion_tokens_details': {'reasoning_tokens': 5521}}]
+  |                                       ^^^^^^ help: if this is intentional, prefix it with an underscore: `_counts`
+
+warning: unused variable: `doc`
+  --> crates/snapious-core/src/model/rotate.rs:16:24
+   |
+16 | pub fn rotate_document(doc: &SequenceDocument, new_origin: usize) -> Result<SequenceDocument> {
+   |                        ^^^ help: if this is intentional, prefix it with an underscore: `_doc`
+
+warning: unused variable: `new_origin`
+  --> crates/snapious-core/src/model/rotate.rs:16:48
+   |
+16 | pub fn rotate_document(doc: &SequenceDocument, new_origin: usize) -> Result<SequenceDocument> {
+   |                                                ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_new_origin`
+
+Some errors have detailed explanations: E0282, E0308.
+For more information about an error, try `rustc --explain E0282`.
+warning: `snapious-core` (lib) generated 11 warnings
+error: could not compile `snapious-core` (lib) due to 2 previous errors; 11 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: unused import: `std::collections::BTreeMap`
+ --> crates/snapious-core/src/ops/phase2.rs:3:5
+  |
+3 | use std::collections::BTreeMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `snapious-core` (lib test) generated 9 warnings (8 duplicates)
+error: could not compile `snapious-core` (lib test) due to 2 previous errors; 9 warnings emitted
+
+ERGEBNIS phase2.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

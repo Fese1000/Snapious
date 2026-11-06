@@ -1,0 +1,66 @@
+=== phase3.rs Versuch 1
+[664s {'prompt_tokens': 10240, 'completion_tokens': 15161, 'total_tokens': 25401, 'completion_tokens_details': {'reasoning_tokens': 11991}}]
+s-core` (lib) generated 13 warnings
+error: could not compile `snapious-core` (lib) due to 9 previous errors; 13 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+error[E0599]: no method named `to_uppercase` found for reference `&sequence::Sequence` in the current scope
+   --> crates/snapious-core/src/ops/phase3.rs:127:35
+    |
+127 |                     &s.sequence().to_uppercase(),
+    |                                   ^^^^^^^^^^^^ method not found in `&sequence::Sequence`
+
+error[E0616]: field `name` of struct `sequence::Sequence` is private
+   --> crates/snapious-core/src/ops/phase3.rs:134:56
+    |
+134 |         let names: Vec<String> = seqs.iter().map(|s| s.name.clone()).collect();
+    |                                                        ^^^^ private field
+    |
+help: a method `name` also exists, call it with parentheses
+    |
+134 |         let names: Vec<String> = seqs.iter().map(|s| s.name().clone()).collect();
+    |                                                            ++
+
+error[E0609]: no field `sequence` on type `&sequence::Sequence`
+   --> crates/snapious-core/src/ops/phase3.rs:135:56
+    |
+135 |         let bases: Vec<String> = seqs.iter().map(|s| s.sequence.clone()).collect();
+    |                                                        ^^^^^^^^ unknown field
+
+warning: `snapious-core` (lib test) generated 12 warnings (11 duplicates)
+error: could not compile `snapious-core` (lib test) due to 9 previous errors; 12 warnings emitted
+
+=== phase3.rs Versuch 2
+Traceback (most recent call last):
+  File "/Users/felixcuntz/Documents/Snapious/GeneiousRebuild/scripts/qwen/run_card.py", line 57, in <module>
+    rep=ask(msgs); open(f"{LOG}/{name}.reply{a}","w").write(rep)
+  File "/Users/felixcuntz/Documents/Snapious/GeneiousRebuild/scripts/qwen/run_card.py", line 38, in ask
+    with urllib.request.urlopen(r,timeout=1800) as f: d=json.load(f)
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/felixcuntz/miniconda3/lib/python3.13/urllib/request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Users/felixcuntz/miniconda3/lib/python3.13/urllib/request.py", line 489, in open
+    response = self._open(req, data)
+  File "/Users/felixcuntz/miniconda3/lib/python3.13/urllib/request.py", line 506, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/Users/felixcuntz/miniconda3/lib/python3.13/urllib/request.py", line 466, in _call_chain
+    result = func(*args)
+  File "/Users/felixcuntz/miniconda3/lib/python3.13/urllib/request.py", line 1348, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/felixcuntz/miniconda3/lib/python3.13/urllib/request.py", line 1323, in do_open
+    r = h.getresponse()
+  File "/Users/felixcuntz/miniconda3/lib/python3.13/http/client.py", line 1450, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "/Users/felixcuntz/miniconda3/lib/python3.13/http/client.py", line 336, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "/Users/felixcuntz/miniconda3/lib/python3.13/http/client.py", line 297, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/felixcuntz/miniconda3/lib/python3.13/socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+TimeoutError: timed out

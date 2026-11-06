@@ -1,0 +1,38 @@
+=== cache.rs Versuch 1
+[225s {'prompt_tokens': 4615, 'completion_tokens': 9794, 'total_tokens': 14409, 'completion_tokens_details': {'reasoning_tokens': 8276}}]
+clippy: warning: unused import: `parse_tabular`
+warning: unused import: `crate::db::ncbi::percent_encode`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused imports: `aromaticity`, `extinction_coefficient_280`, `isoelectric_point`, and `molecular_weight`
+warning: unused import: `crate::bio::rna_fold::fold_rna`
+warning: unused import: `Error`
+warning: unused imports: `aromaticity`, `extinction_coefficient_280`, and `isoelectric_point`
+warning: unused variable: `program`
+warning: unused variable: `database`
+warning: unused variable: `query`
+warning: unused variable: `rid`
+warning: unused variable: `rid`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `transport`
+warning: unused variable: `sleeper`
+warning: unused variable: `program`
+warning: unused variable: `database`
+warning: unused variable: `query`
+warning: unused variable: `file_time_str`
+  --> crates/snapious-core/src/db/cache.rs:85:30
+warning: unused variable: `accession`
+warning: unused variable: `json`
+warning: unused variable: `residue`
+warning: unused variable: `text`
+warning: unused variable: `chain`
+warning: unused variable: `chain`
+warning: unused variable: `inputs`
+warning: unused variable: `inputs`
+warning: `snapious-core` (lib) generated 29 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 29 suggestions)
+warning: `snapious-core` (lib test) generated 26 warnings (25 duplicates) (run `cargo clippy --fix --lib -p snapious-core --tests -- ` to apply 1 suggestion)
+=== cache.rs Versuch 2
+[189s {'prompt_tokens': 6609, 'completion_tokens': 8825, 'total_tokens': 15434, 'completion_tokens_details': {'reasoning_tokens': 7315}}]
+ERGEBNIS cache.rs: GRÜN (5 Tests) nach 2 Versuch(en)

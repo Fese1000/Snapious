@@ -1,0 +1,39 @@
+=== ace.rs Versuch 1
+[75s {'prompt_tokens': 2381, 'completion_tokens': 3781, 'total_tokens': 6162}]
+ng: unused variable: `colors`
+  --> crates/snapious-core/src/io/csfasta.rs:18:27
+   |
+18 | pub fn decode_color_space(colors: &str) -> Result<String> {
+   |                           ^^^^^^ help: if this is intentional, prefix it with an underscore: `_colors`
+
+warning: unused variable: `text`
+  --> crates/snapious-core/src/io/csfasta.rs:25:25
+   |
+25 | pub fn parse_solid_qual(text: &str) -> Result<Vec<(String, Vec<u8>)>> {
+   |                         ^^^^ help: if this is intentional, prefix it with an underscore: `_text`
+
+warning: unused variable: `data`
+  --> crates/snapious-core/src/io/scf.rs:23:18
+   |
+23 | pub fn parse_scf(data: &[u8]) -> Result<ScfRead> {
+   |                  ^^^^ help: if this is intentional, prefix it with an underscore: `_data`
+
+warning: unused variable: `data`
+  --> crates/snapious-core/src/io/sff.rs:37:18
+   |
+37 | pub fn parse_sff(data: &[u8]) -> Result<SffFile> {
+   |                  ^^^^ help: if this is intentional, prefix it with an underscore: `_data`
+
+Some errors have detailed explanations: E0277, E0425.
+For more information about an error, try `rustc --explain E0277`.
+warning: `snapious-core` (lib) generated 31 warnings
+error: could not compile `snapious-core` (lib) due to 2 previous errors; 31 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 31 warnings (31 duplicates)
+error: could not compile `snapious-core` (lib test) due to 2 previous errors; 31 warnings emitted
+
+=== ace.rs Versuch 2
+[60s {'prompt_tokens': 6947, 'completion_tokens': 2697, 'total_tokens': 9644}]
+=== ace.rs Versuch 3
+[59s {'prompt_tokens': 9688, 'completion_tokens': 2696, 'total_tokens': 12384}]
+ERGEBNIS ace.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

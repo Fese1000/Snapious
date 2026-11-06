@@ -1,0 +1,100 @@
+=== chimera.rs Versuch 1
+[52s {'prompt_tokens': 2307, 'completion_tokens': 2533, 'total_tokens': 4840}]
+clippy: warning: unused import: `crate::cloning::enzymes::iupac_reverse_complement`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused variable: `seq`
+warning: unused variable: `reference`
+warning: unused variable: `max_mismatch`
+warning: unused variable: `trace`
+warning: unused variable: `min_height`
+warning: unused variable: `position`
+warning: unused variable: `positions`
+warning: unused variable: `sizes`
+warning: unused variable: `hits`
+warning: unused variable: `hits`
+warning: unused variable: `rows`
+warning: unused variable: `values`
+warning: unused variable: `window`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `colors`
+warning: unused variable: `text`
+warning: unused variable: `data`
+warning: unused variable: `data`
+warning: this function has too many arguments (9/7)
+   --> crates/snapious-core/src/bio/chimera.rs:128:1
+warning: `snapious-core` (lib) generated 27 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 26 suggestions)
+warning: manual implementation of `.is_multiple_of()`
+warning: `snapious-core` (lib test) generated 28 warnings (27 duplicates) (run `cargo clippy --fix --lib -p snapious-core --tests -- ` to apply 1 suggestion)
+=== chimera.rs Versuch 2
+[54s {'prompt_tokens': 5257, 'completion_tokens': 2454, 'total_tokens': 7711}]
+clippy: warning: unused import: `crate::cloning::enzymes::iupac_reverse_complement`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused variable: `seq`
+warning: unused variable: `reference`
+warning: unused variable: `max_mismatch`
+warning: unused variable: `trace`
+warning: unused variable: `min_height`
+warning: unused variable: `position`
+warning: unused variable: `positions`
+warning: unused variable: `sizes`
+warning: unused variable: `hits`
+warning: unused variable: `hits`
+warning: unused variable: `rows`
+warning: unused variable: `values`
+warning: unused variable: `window`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `colors`
+warning: unused variable: `text`
+warning: unused variable: `data`
+warning: unused variable: `data`
+warning: this function has too many arguments (9/7)
+   --> crates/snapious-core/src/bio/chimera.rs:124:1
+warning: `snapious-core` (lib) generated 27 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 26 suggestions)
+warning: manual implementation of `.is_multiple_of()`
+warning: `snapious-core` (lib test) generated 28 warnings (27 duplicates) (run `cargo clippy --fix --lib -p snapious-core --tests -- ` to apply 1 suggestion)
+=== chimera.rs Versuch 3
+[55s {'prompt_tokens': 8129, 'completion_tokens': 2454, 'total_tokens': 10583}]
+clippy: warning: unused import: `crate::cloning::enzymes::iupac_reverse_complement`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused variable: `seq`
+warning: unused variable: `reference`
+warning: unused variable: `max_mismatch`
+warning: unused variable: `trace`
+warning: unused variable: `min_height`
+warning: unused variable: `position`
+warning: unused variable: `positions`
+warning: unused variable: `sizes`
+warning: unused variable: `hits`
+warning: unused variable: `hits`
+warning: unused variable: `rows`
+warning: unused variable: `values`
+warning: unused variable: `window`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `colors`
+warning: unused variable: `text`
+warning: unused variable: `data`
+warning: unused variable: `data`
+warning: this function has too many arguments (9/7)
+   --> crates/snapious-core/src/bio/chimera.rs:124:1
+warning: `snapious-core` (lib) generated 27 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 26 suggestions)
+warning: manual implementation of `.is_multiple_of()`
+warning: `snapious-core` (lib test) generated 28 warnings (27 duplicates) (run `cargo clippy --fix --lib -p snapious-core --tests -- ` to apply 1 suggestion)
+ERGEBNIS chimera.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

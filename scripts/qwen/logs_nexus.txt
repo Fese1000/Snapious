@@ -1,0 +1,27 @@
+=== nexus.rs Versuch 1
+[199s {'prompt_tokens': 3445, 'completion_tokens': 9278, 'total_tokens': 12723, 'completion_tokens_details': {'reasoning_tokens': 7615}}]
+   Compiling snapious-core v0.1.0 (/Users/felixcuntz/Documents/Snapious/GeneiousRebuild/crates/snapious-core)
+error[E0425]: cannot find function `write_nexus` in this scope
+   --> crates/snapious-core/src/io/nexus.rs:154:17
+    |
+154 |         let t = write_nexus(&r).unwrap();
+    |                 ^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `write_nexus` in this scope
+   --> crates/snapious-core/src/io/nexus.rs:166:17
+    |
+166 |         let t = write_nexus(&rows(&[("p1", "MKV-L"), ("p2", "MKVAL")])).unwrap();
+    |                 ^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `write_nexus` in this scope
+   --> crates/snapious-core/src/io/nexus.rs:185:17
+    |
+185 |         assert!(write_nexus(&[]).is_err());
+    |                 ^^^^^^^^^^^ not found in this scope
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `snapious-core` (lib test) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+
+=== nexus.rs Versuch 2
+./worker.sh: line 12: 52708 Terminated: 15          python3 run_card.py io/nexus.rs io::nexus::tests io/alignment_formats.rs

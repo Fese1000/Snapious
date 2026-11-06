@@ -1,0 +1,46 @@
+=== qual.rs Versuch 1
+[16s {'prompt_tokens': 1720, 'completion_tokens': 572, 'total_tokens': 2292}]
+clippy: warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused variable: `sizes`
+warning: unused variable: `max_gap`
+warning: unused variable: `len`
+warning: unused variable: `positions`
+warning: unused variable: `circular`
+warning: unused variable: `spans`
+warning: unused variable: `at_start`
+warning: unused variable: `at_end`
+warning: unused variable: `rows`
+warning: unused variable: `sep`
+warning: unused variable: `text`
+warning: unused variable: `sep`
+warning: unused variable: `text`
+warning: unused variable: `rows`
+warning: unused variable: `text`
+warning: unused variable: `rows`
+warning: unused variable: `name_col`
+warning: unused variable: `seq_col`
+warning: unused variable: `has_header`
+warning: unused variable: `text`
+warning: unused variable: `reads`
+warning: unused variable: `barcodes`
+warning: unused variable: `max_mismatch`
+warning: unused variable: `count`
+warning: unused variable: `length_bp`
+warning: unused variable: `total_reads`
+warning: unused variable: `counts`
+warning: unused variable: `lengths`
+warning: unused variable: `a`
+warning: unused variable: `b`
+warning: unused variable: `pseudo`
+warning: unused variable: `values`
+warning: unused variable: `bin_width`
+warning: unused variable: `names`
+warning: calling `push_str()` using a single-character string literal
+ --> crates/snapious-core/src/io/qual.rs:9:9
+warning: `snapious-core` (lib) generated 38 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 38 suggestions)
+warning: `snapious-core` (lib test) generated 38 warnings (38 duplicates)
+=== qual.rs Versuch 2
+[14s {'prompt_tokens': 2767, 'completion_tokens': 571, 'total_tokens': 3338}]
+ERGEBNIS qual.rs: GRÜN (20 Tests) nach 2 Versuch(en)

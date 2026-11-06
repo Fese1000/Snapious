@@ -1,0 +1,50 @@
+=== liabilities.rs Versuch 1
+[39s {'prompt_tokens': 2213, 'completion_tokens': 1592, 'total_tokens': 3805}]
+clippy: warning: unused imports: `Error` and `Result`
+ --> crates/snapious-core/src/bio/liabilities.rs:3:20
+warning: unused import: `crate::bio::protein::hydropathy_value`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `parse_mol`
+warning: unused import: `crate::view::shortcut_conflicts::normalize_keys`
+warning: unused variable: `seq`
+warning: unused variable: `min_loop`
+warning: unused variable: `protein`
+warning: unused variable: `protein`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `depth`
+warning: unused variable: `thresholds`
+warning: unused variable: `reads`
+warning: unused variable: `records`
+warning: unused variable: `sizes`
+warning: unused variable: `seqs`
+warning: unused variable: `k`
+warning: unused variable: `counts`
+warning: unused variable: `n`
+warning: unused variable: `p`
+warning: unused variable: `counts`
+warning: unused variable: `rows`
+warning: unused variable: `type_filter`
+warning: unused variable: `text`
+warning: unused variable: `rows`
+warning: unused variable: `indices`
+warning: unused variable: `column`
+warning: unused variable: `ascending`
+warning: unused variable: `list`
+warning: unused variable: `path`
+warning: unused variable: `max`
+warning: unused variable: `list`
+warning: unused variable: `exists`
+warning: unused variable: `keys`
+warning: `snapious-core` (lib) generated 42 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 42 suggestions)
+warning: `snapious-core` (lib test) generated 42 warnings (42 duplicates)
+=== liabilities.rs Versuch 2
+[40s {'prompt_tokens': 4326, 'completion_tokens': 1582, 'total_tokens': 5908}]
+ERGEBNIS liabilities.rs: GRÜN (2 Tests) nach 2 Versuch(en)

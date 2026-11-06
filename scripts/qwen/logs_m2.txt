@@ -1,0 +1,94 @@
+=== protein_extra.rs Versuch 1
+[21s {'prompt_tokens': 3123, 'completion_tokens': 725, 'total_tokens': 3848}]
+usize) -> Vec<String> {
+  |                                                ^^^ help: if this is intentional, prefix it with an underscore: `_max`
+
+warning: unused variable: `list`
+  --> crates/snapious-core/src/view/recent_files.rs:10:23
+   |
+10 | pub fn remove_missing(list: &[String], exists: &dyn Fn(&str) -> bool) -> Vec<String> {
+   |                       ^^^^ help: if this is intentional, prefix it with an underscore: `_list`
+
+warning: unused variable: `exists`
+  --> crates/snapious-core/src/view/recent_files.rs:10:40
+   |
+10 | pub fn remove_missing(list: &[String], exists: &dyn Fn(&str) -> bool) -> Vec<String> {
+   |                                        ^^^^^^ help: if this is intentional, prefix it with an underscore: `_exists`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+Some errors have detailed explanations: E0277, E0308, E0606.
+For more information about an error, try `rustc --explain E0277`.
+warning: `snapious-core` (lib) generated 38 warnings
+error: could not compile `snapious-core` (lib) due to 5 previous errors; 38 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 38 warnings (38 duplicates)
+error: could not compile `snapious-core` (lib test) due to 5 previous errors; 38 warnings emitted
+
+=== protein_extra.rs Versuch 2
+[19s {'prompt_tokens': 4585, 'completion_tokens': 725, 'total_tokens': 5310}]
+usize) -> Vec<String> {
+  |                                                ^^^ help: if this is intentional, prefix it with an underscore: `_max`
+
+warning: unused variable: `list`
+  --> crates/snapious-core/src/view/recent_files.rs:10:23
+   |
+10 | pub fn remove_missing(list: &[String], exists: &dyn Fn(&str) -> bool) -> Vec<String> {
+   |                       ^^^^ help: if this is intentional, prefix it with an underscore: `_list`
+
+warning: unused variable: `exists`
+  --> crates/snapious-core/src/view/recent_files.rs:10:40
+   |
+10 | pub fn remove_missing(list: &[String], exists: &dyn Fn(&str) -> bool) -> Vec<String> {
+   |                                        ^^^^^^ help: if this is intentional, prefix it with an underscore: `_exists`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+Some errors have detailed explanations: E0277, E0308, E0606.
+For more information about an error, try `rustc --explain E0277`.
+warning: `snapious-core` (lib) generated 38 warnings
+error: could not compile `snapious-core` (lib) due to 5 previous errors; 38 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 38 warnings (38 duplicates)
+error: could not compile `snapious-core` (lib test) due to 5 previous errors; 38 warnings emitted
+
+=== protein_extra.rs Versuch 3
+[20s {'prompt_tokens': 6047, 'completion_tokens': 725, 'total_tokens': 6772}]
+usize) -> Vec<String> {
+  |                                                ^^^ help: if this is intentional, prefix it with an underscore: `_max`
+
+warning: unused variable: `list`
+  --> crates/snapious-core/src/view/recent_files.rs:10:23
+   |
+10 | pub fn remove_missing(list: &[String], exists: &dyn Fn(&str) -> bool) -> Vec<String> {
+   |                       ^^^^ help: if this is intentional, prefix it with an underscore: `_list`
+
+warning: unused variable: `exists`
+  --> crates/snapious-core/src/view/recent_files.rs:10:40
+   |
+10 | pub fn remove_missing(list: &[String], exists: &dyn Fn(&str) -> bool) -> Vec<String> {
+   |                                        ^^^^^^ help: if this is intentional, prefix it with an underscore: `_exists`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+Some errors have detailed explanations: E0277, E0308, E0606.
+For more information about an error, try `rustc --explain E0277`.
+warning: `snapious-core` (lib) generated 38 warnings
+error: could not compile `snapious-core` (lib) due to 5 previous errors; 38 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 38 warnings (38 duplicates)
+error: could not compile `snapious-core` (lib test) due to 5 previous errors; 38 warnings emitted
+
+ERGEBNIS protein_extra.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

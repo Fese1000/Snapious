@@ -1,0 +1,3 @@
+=== pdb.rs Versuch 1
+[231s {'prompt_tokens': 3096, 'completion_tokens': 9772, 'total_tokens': 12868, 'completion_tokens_details': {'reasoning_tokens': 8009}}]
+ERGEBNIS pdb.rs: GRÜN (4 Tests) nach 1 Versuch(en)

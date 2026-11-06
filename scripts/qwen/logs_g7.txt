@@ -1,0 +1,41 @@
+=== concatenate.rs Versuch 1
+[163s {'prompt_tokens': 6580, 'completion_tokens': 7078, 'total_tokens': 13658, 'completion_tokens_details': {'reasoning_tokens': 6444}}]
+   Compiling snapious-core v0.1.0 (/Users/felixcuntz/Documents/Snapious/GeneiousRebuild/crates/snapious-core)
+error[E0061]: this function takes 7 arguments but 3 arguments were supplied
+  --> crates/snapious-core/src/cloning/concatenate.rs:49:15
+   |
+49 |     let doc = SequenceDocument::new(&new_id(), final_name, seq);
+   |               ^^^^^^^^^^^^^^^^^^^^^---------------------------- multiple arguments are missing
+   |
+note: associated function defined here
+  --> crates/snapious-core/src/model/document.rs:32:12
+   |
+32 |     pub fn new(
+   |            ^^^
+...
+36 |         topology: Topology,
+   |         ------------------
+37 |         features: Vec<Feature>,
+   |         ----------------------
+38 |         metadata: BTreeMap<String, String>,
+   |         ----------------------------------
+39 |         created: i64,
+   |         ------------
+help: provide the arguments
+   |
+49 |     let doc = SequenceDocument::new(&new_id(), final_name, seq, /* Topology */, /* Vec<Feature> */, /* BTreeMap<String, String> */, /* i64 */);
+   |                                                               +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+For more information about this error, try `rustc --explain E0061`.
+error: could not compile `snapious-core` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `snapious-core` (lib test) due to 1 previous error
+
+=== concatenate.rs Versuch 2
+[109s {'prompt_tokens': 7617, 'completion_tokens': 4870, 'total_tokens': 12487, 'completion_tokens_details': {'reasoning_tokens': 4206}}]
+clippy: warning: unnecessary use of `clone` to create a slice from a reference
+   --> crates/snapious-core/src/cloning/concatenate.rs:115:29
+warning: `snapious-core` (lib test) generated 1 warning (run `cargo clippy --fix --lib -p snapious-core --tests -- ` to apply 1 suggestion)
+=== concatenate.rs Versuch 3
+[767s {'prompt_tokens': 8393, 'completion_tokens': 31999, 'total_tokens': 40392, 'completion_tokens_details': {'reasoning_tokens': 31999}}]
+ERGEBNIS concatenate.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

@@ -1,0 +1,46 @@
+=== align_tools.rs Versuch 1
+[267s {'prompt_tokens': 5153, 'completion_tokens': 12260, 'total_tokens': 17413, 'completion_tokens_details': {'reasoning_tokens': 8906}}]
+=== align_tools.rs Versuch 2
+[299s {'prompt_tokens': 8549, 'completion_tokens': 13441, 'total_tokens': 21990, 'completion_tokens_details': {'reasoning_tokens': 10148}}]
+ts::translation_fehler ... ok
+test bio::align_tools::tests::profile_ohne_ungappte_aenderung ... FAILED
+test bio::align_tools::tests::bereich_neu_ausrichten ... FAILED
+test bio::align_tools::tests::profile_verbinden ... FAILED
+
+failures:
+
+---- bio::align_tools::tests::profile_ohne_ungappte_aenderung stdout ----
+
+thread 'bio::align_tools::tests::profile_ohne_ungappte_aenderung' (3766467) panicked at crates/snapious-core/src/bio/align_tools.rs:339:9:
+assertion `left == right` failed
+  left: 2
+ right: 4
+
+---- bio::align_tools::tests::bereich_neu_ausrichten stdout ----
+
+thread 'bio::align_tools::tests::bereich_neu_ausrichten' (3766465) panicked at crates/snapious-core/src/bio/align_tools.rs:394:9:
+assertion `left == right` failed
+  left: ["AACGT-T", "AACGGTT", "AAAAA"]
+ right: ["ACG-T", "ACGGT", "AAAAA"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- bio::align_tools::tests::profile_verbinden stdout ----
+
+thread 'bio::align_tools::tests::profile_verbinden' (3766468) panicked at crates/snapious-core/src/bio/align_tools.rs:308:9:
+assertion `left == right` failed
+  left: ["AA-A", "CC-G"]
+ right: ["ACGT", "ACGT", "A-GT"]
+
+
+failures:
+    bio::align_tools::tests::bereich_neu_ausrichten
+    bio::align_tools::tests::profile_ohne_ungappte_aenderung
+    bio::align_tools::tests::profile_verbinden
+
+test result: FAILED. 5 passed; 3 failed; 0 ignored; 0 measured; 631 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== align_tools.rs Versuch 3
+[570s {'prompt_tokens': 12657, 'completion_tokens': 23999, 'total_tokens': 36656, 'completion_tokens_details': {'reasoning_tokens': 23999}}]
+ERGEBNIS align_tools.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

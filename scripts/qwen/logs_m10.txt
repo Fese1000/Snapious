@@ -1,0 +1,136 @@
+=== kmers.rs Versuch 1
+[23s {'prompt_tokens': 1882, 'completion_tokens': 912, 'total_tokens': 2794}]
+, prefix it with an underscore: `_exists`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 28 warnings (run `cargo fix --lib -p snapious-core` to apply 28 suggestions)
+warning: `snapious-core` (lib test) generated 28 warnings (28 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.02s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test ngs::kmers::tests::zaehlen ... FAILED
+test ngs::kmers::tests::randfaelle ... FAILED
+
+failures:
+
+---- ngs::kmers::tests::zaehlen stdout ----
+
+thread 'ngs::kmers::tests::zaehlen' (5496780) panicked at crates/snapious-core/src/ngs/kmers.rs:55:9:
+assertion `left == right` failed
+  left: None
+ right: Some(1)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- ngs::kmers::tests::randfaelle stdout ----
+
+thread 'ngs::kmers::tests::randfaelle' (5496779) panicked at crates/snapious-core/src/ngs/kmers.rs:73:9:
+assertion `left == right` failed
+  left: None
+ right: Some(1)
+
+
+failures:
+    ngs::kmers::tests::randfaelle
+    ngs::kmers::tests::zaehlen
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== kmers.rs Versuch 2
+[24s {'prompt_tokens': 3577, 'completion_tokens': 912, 'total_tokens': 4489}]
+, prefix it with an underscore: `_exists`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 28 warnings (run `cargo fix --lib -p snapious-core` to apply 28 suggestions)
+warning: `snapious-core` (lib test) generated 28 warnings (28 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.14s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test ngs::kmers::tests::zaehlen ... FAILED
+test ngs::kmers::tests::randfaelle ... FAILED
+
+failures:
+
+---- ngs::kmers::tests::zaehlen stdout ----
+
+thread 'ngs::kmers::tests::zaehlen' (5498507) panicked at crates/snapious-core/src/ngs/kmers.rs:55:9:
+assertion `left == right` failed
+  left: None
+ right: Some(1)
+
+---- ngs::kmers::tests::randfaelle stdout ----
+
+thread 'ngs::kmers::tests::randfaelle' (5498506) panicked at crates/snapious-core/src/ngs/kmers.rs:73:9:
+assertion `left == right` failed
+  left: None
+ right: Some(1)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ngs::kmers::tests::randfaelle
+    ngs::kmers::tests::zaehlen
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== kmers.rs Versuch 3
+[25s {'prompt_tokens': 5272, 'completion_tokens': 912, 'total_tokens': 6184}]
+, prefix it with an underscore: `_exists`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 28 warnings (run `cargo fix --lib -p snapious-core` to apply 28 suggestions)
+warning: `snapious-core` (lib test) generated 28 warnings (28 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.95s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test ngs::kmers::tests::zaehlen ... FAILED
+test ngs::kmers::tests::randfaelle ... FAILED
+
+failures:
+
+---- ngs::kmers::tests::zaehlen stdout ----
+
+thread 'ngs::kmers::tests::zaehlen' (5500377) panicked at crates/snapious-core/src/ngs/kmers.rs:55:9:
+assertion `left == right` failed
+  left: None
+ right: Some(1)
+
+---- ngs::kmers::tests::randfaelle stdout ----
+
+thread 'ngs::kmers::tests::randfaelle' (5500376) panicked at crates/snapious-core/src/ngs/kmers.rs:73:9:
+assertion `left == right` failed
+  left: None
+ right: Some(1)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ngs::kmers::tests::randfaelle
+    ngs::kmers::tests::zaehlen
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+ERGEBNIS kmers.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

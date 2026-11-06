@@ -1,0 +1,112 @@
+=== kazusa.rs Versuch 1
+[298s {'prompt_tokens': 6967, 'completion_tokens': 13375, 'total_tokens': 20342, 'completion_tokens_details': {'reasoning_tokens': 11208}}]
+n underscore: `_inputs`
+
+warning: unused variable: `params`
+  --> crates/snapious-core/src/ops/phase2.rs:80:9
+   |
+80 |         params: &Params,
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+warning: unused variable: `inputs`
+   --> crates/snapious-core/src/ops/phase2.rs:106:9
+    |
+106 |         inputs: &[Document],
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+warning: unused variable: `params`
+   --> crates/snapious-core/src/ops/phase2.rs:107:9
+    |
+107 |         params: &Params,
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+For more information about this error, try `rustc --explain E0277`.
+warning: `snapious-core` (lib) generated 18 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 18 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: unused imports: `CodonTable`, `OptimizationOptions`, and `optimize_dna`
+ --> crates/snapious-core/src/ops/phase2.rs:3:34
+  |
+3 | use crate::bio::codon_optimize::{optimize_dna, CodonTable, OptimizationOptions};
+  |                                  ^^^^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `snapious-core` (lib test) generated 15 warnings (14 duplicates)
+error: could not compile `snapious-core` (lib test) due to 1 previous error; 15 warnings emitted
+
+=== kazusa.rs Versuch 2
+[181s {'prompt_tokens': 9905, 'completion_tokens': 8188, 'total_tokens': 18093, 'completion_tokens_details': {'reasoning_tokens': 6763}}]
+n underscore: `_inputs`
+
+warning: unused variable: `params`
+  --> crates/snapious-core/src/ops/phase2.rs:80:9
+   |
+80 |         params: &Params,
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+warning: unused variable: `inputs`
+   --> crates/snapious-core/src/ops/phase2.rs:106:9
+    |
+106 |         inputs: &[Document],
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+warning: unused variable: `params`
+   --> crates/snapious-core/src/ops/phase2.rs:107:9
+    |
+107 |         params: &Params,
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+For more information about this error, try `rustc --explain E0277`.
+warning: `snapious-core` (lib) generated 18 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 18 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: unused imports: `CodonTable`, `OptimizationOptions`, and `optimize_dna`
+ --> crates/snapious-core/src/ops/phase2.rs:3:34
+  |
+3 | use crate::bio::codon_optimize::{optimize_dna, CodonTable, OptimizationOptions};
+  |                                  ^^^^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `snapious-core` (lib test) generated 15 warnings (14 duplicates)
+error: could not compile `snapious-core` (lib test) due to 1 previous error; 15 warnings emitted
+
+=== kazusa.rs Versuch 3
+[139s {'prompt_tokens': 12101, 'completion_tokens': 6195, 'total_tokens': 18296, 'completion_tokens_details': {'reasoning_tokens': 4023}}]
+n underscore: `_inputs`
+
+warning: unused variable: `params`
+  --> crates/snapious-core/src/ops/phase2.rs:80:9
+   |
+80 |         params: &Params,
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+warning: unused variable: `inputs`
+   --> crates/snapious-core/src/ops/phase2.rs:106:9
+    |
+106 |         inputs: &[Document],
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_inputs`
+
+warning: unused variable: `params`
+   --> crates/snapious-core/src/ops/phase2.rs:107:9
+    |
+107 |         params: &Params,
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+
+For more information about this error, try `rustc --explain E0277`.
+warning: `snapious-core` (lib) generated 18 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 18 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: unused imports: `CodonTable`, `OptimizationOptions`, and `optimize_dna`
+ --> crates/snapious-core/src/ops/phase2.rs:3:34
+  |
+3 | use crate::bio::codon_optimize::{optimize_dna, CodonTable, OptimizationOptions};
+  |                                  ^^^^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `snapious-core` (lib test) generated 15 warnings (14 duplicates)
+error: could not compile `snapious-core` (lib test) due to 1 previous error; 15 warnings emitted
+
+ERGEBNIS kazusa.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

@@ -1,0 +1,88 @@
+=== feature_match.rs Versuch 1
+[27s {'prompt_tokens': 1909, 'completion_tokens': 1240, 'total_tokens': 3149}]
+clippy: warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused variable: `query`
+warning: unused variable: `parents`
+warning: unused variable: `min_improvement`
+warning: unused variable: `hits`
+warning: unused variable: `hits`
+warning: unused variable: `rows`
+warning: unused variable: `values`
+warning: unused variable: `window`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `colors`
+warning: unused variable: `text`
+warning: unused variable: `data`
+warning: unused variable: `data`
+warning: manual case-insensitive ASCII comparison
+  --> crates/snapious-core/src/bio/feature_match.rs:41:16
+warning: manual case-insensitive ASCII comparison
+  --> crates/snapious-core/src/bio/feature_match.rs:61:16
+warning: `snapious-core` (lib) generated 22 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 22 suggestions)
+warning: manual implementation of `.is_multiple_of()`
+warning: `snapious-core` (lib test) generated 23 warnings (22 duplicates) (run `cargo clippy --fix --lib -p snapious-core --tests -- ` to apply 1 suggestion)
+=== feature_match.rs Versuch 2
+[25s {'prompt_tokens': 3525, 'completion_tokens': 1143, 'total_tokens': 4668}]
+clippy: warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused variable: `query`
+warning: unused variable: `parents`
+warning: unused variable: `min_improvement`
+warning: unused variable: `hits`
+warning: unused variable: `hits`
+warning: unused variable: `rows`
+warning: unused variable: `values`
+warning: unused variable: `window`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `colors`
+warning: unused variable: `text`
+warning: unused variable: `data`
+warning: unused variable: `data`
+warning: manual case-insensitive ASCII comparison
+  --> crates/snapious-core/src/bio/feature_match.rs:41:16
+warning: manual case-insensitive ASCII comparison
+  --> crates/snapious-core/src/bio/feature_match.rs:61:16
+warning: `snapious-core` (lib) generated 22 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 22 suggestions)
+warning: manual implementation of `.is_multiple_of()`
+warning: `snapious-core` (lib test) generated 23 warnings (22 duplicates) (run `cargo clippy --fix --lib -p snapious-core --tests -- ` to apply 1 suggestion)
+=== feature_match.rs Versuch 3
+[26s {'prompt_tokens': 5044, 'completion_tokens': 1143, 'total_tokens': 6187}]
+clippy: warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused import: `Error`
+warning: unused variable: `query`
+warning: unused variable: `parents`
+warning: unused variable: `min_improvement`
+warning: unused variable: `hits`
+warning: unused variable: `hits`
+warning: unused variable: `rows`
+warning: unused variable: `values`
+warning: unused variable: `window`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `text`
+warning: unused variable: `colors`
+warning: unused variable: `text`
+warning: unused variable: `data`
+warning: unused variable: `data`
+warning: manual case-insensitive ASCII comparison
+  --> crates/snapious-core/src/bio/feature_match.rs:41:16
+warning: manual case-insensitive ASCII comparison
+  --> crates/snapious-core/src/bio/feature_match.rs:61:16
+warning: `snapious-core` (lib) generated 22 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 22 suggestions)
+warning: manual implementation of `.is_multiple_of()`
+warning: `snapious-core` (lib test) generated 23 warnings (22 duplicates) (run `cargo clippy --fix --lib -p snapious-core --tests -- ` to apply 1 suggestion)
+ERGEBNIS feature_match.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

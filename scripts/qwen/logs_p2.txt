@@ -1,0 +1,95 @@
+=== versions.rs Versuch 1
+[242s {'prompt_tokens': 3538, 'completion_tokens': 11173, 'total_tokens': 14711, 'completion_tokens_details': {'reasoning_tokens': 8823}}]
+warning: unused variable: `favorite`
+  --> crates/snapious-core/src/store/folders.rs:69:50
+   |
+69 |     pub fn set_favorite(&mut self, doc_id: &str, favorite: bool) -> Result<()> {
+   |                                                  ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_favorite`
+
+warning: variable does not need to be mutable
+   --> crates/snapious-core/src/store/versions.rs:118:13
+    |
+118 |         let mut tmp = ProjectStore::open_in_memory()?;
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+For more information about this error, try `rustc --explain E0599`.
+warning: `snapious-core` (lib) generated 90 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 90 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+error[E0599]: no method named `type_str` found for reference `&document::SequenceDocument` in the current scope
+  --> crates/snapious-core/src/store/versions.rs:60:49
+   |
+60 |                     Document::Sequence(s) => (s.type_str().to_string(), s.name().to_string(), s.created()),
+   |                                                 ^^^^^^^^ method not found in `&document::SequenceDocument`
+
+warning: `snapious-core` (lib test) generated 79 warnings (78 duplicates)
+error: could not compile `snapious-core` (lib test) due to 1 previous error; 79 warnings emitted
+
+=== versions.rs Versuch 2
+[208s {'prompt_tokens': 6603, 'completion_tokens': 9142, 'total_tokens': 15745, 'completion_tokens_details': {'reasoning_tokens': 6793}}]
+, prefix it with an underscore: `_doc_id`
+
+warning: unused variable: `doc_id`
+  --> crates/snapious-core/src/store/folders.rs:69:36
+   |
+69 |     pub fn set_favorite(&mut self, doc_id: &str, favorite: bool) -> Result<()> {
+   |                                    ^^^^^^ help: if this is intentional, prefix it with an underscore: `_doc_id`
+
+warning: unused variable: `favorite`
+  --> crates/snapious-core/src/store/folders.rs:69:50
+   |
+69 |     pub fn set_favorite(&mut self, doc_id: &str, favorite: bool) -> Result<()> {
+   |                                                  ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_favorite`
+
+For more information about this error, try `rustc --explain E0599`.
+warning: `snapious-core` (lib) generated 89 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 89 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+error[E0599]: no method named `doc_type` found for reference `&document::SequenceDocument` in the current scope
+  --> crates/snapious-core/src/store/versions.rs:60:49
+   |
+60 |                     Document::Sequence(s) => (s.doc_type().to_string(), s.name().to_string(), s.created()),
+   |                                                 ^^^^^^^^ method not found in `&document::SequenceDocument`
+
+warning: `snapious-core` (lib test) generated 78 warnings (77 duplicates)
+error: could not compile `snapious-core` (lib test) due to 1 previous error; 78 warnings emitted
+
+=== versions.rs Versuch 3
+[177s {'prompt_tokens': 9658, 'completion_tokens': 7944, 'total_tokens': 17602, 'completion_tokens_details': {'reasoning_tokens': 5600}}]
+:versions::tests::wiederherstellen ... FAILED
+test store::versions::tests::erste_fassung_wird_version ... FAILED
+test store::versions::tests::hoechstens_fuenfzig ... FAILED
+
+failures:
+
+---- store::versions::tests::wiederherstellen stdout ----
+
+thread 'store::versions::tests::wiederherstellen' (4228236) panicked at crates/snapious-core/src/store/versions.rs:259:65:
+called `Result::unwrap()` on an `Err` value: Io("Datenbank: Invalid column type Text at index: 0, name: payload")
+
+---- store::versions::tests::erste_fassung_wird_version stdout ----
+
+thread 'store::versions::tests::erste_fassung_wird_version' (4228234) panicked at crates/snapious-core/src/store/versions.rs:241:68:
+called `Result::unwrap()` on an `Err` value: Io("Datenbank: Invalid column type Text at index: 0, name: payload")
+
+---- store::versions::tests::hoechstens_fuenfzig stdout ----
+
+thread 'store::versions::tests::hoechstens_fuenfzig' (4228235) panicked at crates/snapious-core/src/store/versions.rs:277:65:
+called `Result::unwrap()` on an `Err` value: Io("Datenbank: Invalid column type Text at index: 0, name: payload")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    store::versions::tests::erste_fassung_wird_version
+    store::versions::tests::hoechstens_fuenfzig
+    store::versions::tests::wiederherstellen
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 734 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+ERGEBNIS versions.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

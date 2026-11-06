@@ -1,0 +1,3 @@
+=== blast_table.rs Versuch 1
+[26s {'prompt_tokens': 1972, 'completion_tokens': 1042, 'total_tokens': 3014}]
+ERGEBNIS blast_table.rs: GRÜN (2 Tests) nach 1 Versuch(en)

@@ -1,0 +1,13 @@
+LOCUS       mini                      60 bp    DNA     circular   SYN 01-JAN-2024
+DEFINITION  Testplasmid.
+ACCESSION   TEST0001
+FEATURES             Location/Qualifiers
+     gene            5..20
+                     /gene="abc"
+     CDS             complement(30..50)
+                     /gene="xyz"
+                     /note="zwei Zeilen
+                     Fortsetzung"
+ORIGIN
+        1 atgcatgcat gcatgcatgc atgcatgcat gcatgcatgc atgcatgcat gcatgcatgc
+//

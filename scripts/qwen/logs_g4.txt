@@ -1,0 +1,3 @@
+=== annotation_compare.rs Versuch 1
+[117s {'prompt_tokens': 2147, 'completion_tokens': 5943, 'total_tokens': 8090, 'completion_tokens_details': {'reasoning_tokens': 5233}}]
+ERGEBNIS annotation_compare.rs: GRÜN (2 Tests) nach 1 Versuch(en)

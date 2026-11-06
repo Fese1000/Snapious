@@ -1,0 +1,37 @@
+=== minimap.rs Versuch 1
+[111s {'prompt_tokens': 2045, 'completion_tokens': 5702, 'total_tokens': 7747, 'completion_tokens_details': {'reasoning_tokens': 5069}}]
+
+   |                     value moved into `last` here
+   |                     move occurs because `last` has type `&mut (usize, usize)`, which does not implement the `Copy` trait
+   |
+help: borrow this binding in the pattern to avoid moving the value
+   |
+29 |         if let Some(ref last @ (_, ref mut end)) = merged.last_mut() {
+   |                     +++
+
+error[E0505]: cannot move out of value because it is borrowed
+  --> crates/snapious-core/src/view/minimap.rs:29:21
+   |
+29 |         if let Some(last @ (_, ref mut end)) = merged.last_mut() {
+   |                     ^^^^       ----------- borrow of value occurs here
+   |                     |
+   |                     move out of value occurs here
+30 |             if s < *end {
+   |                    ---- borrow later used here
+
+warning: unused variable: `last`
+  --> crates/snapious-core/src/view/minimap.rs:29:21
+   |
+29 |         if let Some(last @ (_, ref mut end)) = merged.last_mut() {
+   |                     ^^^^ help: if this is intentional, prefix it with an underscore: `_last`
+
+For more information about this error, try `rustc --explain E0505`.
+warning: `snapious-core` (lib) generated 2 warnings
+error: could not compile `snapious-core` (lib) due to 2 previous errors; 2 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 2 warnings (2 duplicates)
+error: could not compile `snapious-core` (lib test) due to 2 previous errors; 2 warnings emitted
+
+=== minimap.rs Versuch 2
+[88s {'prompt_tokens': 3305, 'completion_tokens': 4515, 'total_tokens': 7820, 'completion_tokens_details': {'reasoning_tokens': 3885}}]
+ERGEBNIS minimap.rs: GRÜN (5 Tests) nach 2 Versuch(en)

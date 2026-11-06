@@ -1,0 +1,3 @@
+=== label_layout.rs Versuch 1
+[155s {'prompt_tokens': 2229, 'completion_tokens': 7794, 'total_tokens': 10023, 'completion_tokens_details': {'reasoning_tokens': 7137}}]
+ERGEBNIS label_layout.rs: GRÜN (3 Tests) nach 1 Versuch(en)

@@ -1,0 +1,77 @@
+=== assembly.rs Versuch 1
+[283s {'prompt_tokens': 4630, 'completion_tokens': 12174, 'total_tokens': 16804, 'completion_tokens_details': {'reasoning_tokens': 10488}}]
+=== assembly.rs Versuch 2
+[102s {'prompt_tokens': 6358, 'completion_tokens': 4651, 'total_tokens': 11009, 'completion_tokens_details': {'reasoning_tokens': 2976}}]
+t: ["ATGGCTAGCTAGGATCCGATCGTACGTTAGCAAGCTTGCATGCCTGCAGGTCGACTCTAGAGGATCC"]
+
+---- bio::assembly::tests::enthaltene_reads_und_duplikate stdout ----
+
+thread 'bio::assembly::tests::enthaltene_reads_und_duplikate' (3577752) panicked at crates/snapious-core/src/bio/assembly.rs:224:9:
+assertion `left == right` failed
+  left: []
+ right: ["ATGGCTAGCTAGGATCCGATCGTACGTTAGCAAGCTTGCA"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- bio::assembly::tests::zwei_contigs_und_zu_grosse_ueberlappung stdout ----
+
+thread 'bio::assembly::tests::zwei_contigs_und_zu_grosse_ueberlappung' (3577756) panicked at crates/snapious-core/src/bio/assembly.rs:237:9:
+assertion `left == right` failed
+  left: []
+ right: ["ATGGCTAGCTAGGATCCGATCGTACGTTAGCAAGCTTGCA", "CCCCCCCCCCGGGGGGGGGGAAAAATTTTTCCCCAA"]
+
+---- bio::assembly::tests::kette_vorwaerts stdout ----
+
+thread 'bio::assembly::tests::kette_vorwaerts' (3577753) panicked at crates/snapious-core/src/bio/assembly.rs:189:9:
+assertion `left == right` failed
+  left: []
+ right: ["ATGGCTAGCTAGGATCCGATCGTACGTTAGCAAGCTTGCATGCCTGCAGGTCGACTCTAGAGGATCC"]
+
+
+failures:
+    bio::assembly::tests::enthaltene_reads_und_duplikate
+    bio::assembly::tests::kette_vorwaerts
+    bio::assembly::tests::read_reverskomplementaer
+    bio::assembly::tests::zwei_contigs_und_zu_grosse_ueberlappung
+
+test result: FAILED. 1 passed; 4 failed; 0 ignored; 0 measured; 599 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== assembly.rs Versuch 3
+[295s {'prompt_tokens': 8920, 'completion_tokens': 12559, 'total_tokens': 21479, 'completion_tokens_details': {'reasoning_tokens': 10879}}]
+t: ["ATGGCTAGCTAGGATCCGATCGTACGTTAGCAAGCTTGCATGCCTGCAGGTCGACTCTAGAGGATCC"]
+
+---- bio::assembly::tests::enthaltene_reads_und_duplikate stdout ----
+
+thread 'bio::assembly::tests::enthaltene_reads_und_duplikate' (3584075) panicked at crates/snapious-core/src/bio/assembly.rs:232:9:
+assertion `left == right` failed
+  left: []
+ right: ["ATGGCTAGCTAGGATCCGATCGTACGTTAGCAAGCTTGCA"]
+
+---- bio::assembly::tests::kette_vorwaerts stdout ----
+
+thread 'bio::assembly::tests::kette_vorwaerts' (3584076) panicked at crates/snapious-core/src/bio/assembly.rs:197:9:
+assertion `left == right` failed
+  left: []
+ right: ["ATGGCTAGCTAGGATCCGATCGTACGTTAGCAAGCTTGCATGCCTGCAGGTCGACTCTAGAGGATCC"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- bio::assembly::tests::zwei_contigs_und_zu_grosse_ueberlappung stdout ----
+
+thread 'bio::assembly::tests::zwei_contigs_und_zu_grosse_ueberlappung' (3584079) panicked at crates/snapious-core/src/bio/assembly.rs:245:9:
+assertion `left == right` failed
+  left: []
+ right: ["ATGGCTAGCTAGGATCCGATCGTACGTTAGCAAGCTTGCA", "CCCCCCCCCCGGGGGGGGGGAAAAATTTTTCCCCAA"]
+
+
+failures:
+    bio::assembly::tests::enthaltene_reads_und_duplikate
+    bio::assembly::tests::kette_vorwaerts
+    bio::assembly::tests::read_reverskomplementaer
+    bio::assembly::tests::zwei_contigs_und_zu_grosse_ueberlappung
+
+test result: FAILED. 1 passed; 4 failed; 0 ignored; 0 measured; 599 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+ERGEBNIS assembly.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

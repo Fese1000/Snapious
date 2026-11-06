@@ -1,0 +1,3 @@
+=== gcg.rs Versuch 1
+[15s {'prompt_tokens': 1681, 'completion_tokens': 695, 'total_tokens': 2376}]
+ERGEBNIS gcg.rs: GRÜN (2 Tests) nach 1 Versuch(en)

@@ -1,0 +1,105 @@
+=== read_map.rs Versuch 1
+[290s {'prompt_tokens': 4647, 'completion_tokens': 12076, 'total_tokens': 16723, 'completion_tokens_details': {'reasoning_tokens': 10639}}]
+------------------------------------------------------ in this macro invocation
+    |
+   ::: /opt/homebrew/Cellar/rust/1.99.1/lib/rustlib/src/rust/library/core/src/internal_macros.rs:22:9
+    |
+ 22 |         const impl $imp<$u> for &$t {
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `&u8` implements `Add<u8>`
+...
+ 33 |         const impl $imp<&$u> for $t {
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `u8` implements `Add<&u8>`
+...
+ 44 |         const impl $imp<&$u> for &$t {
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `&u8` implements `Add`
+    = note: this error originates in the macro `add_impl` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+    --> crates/snapious-core/src/bio/read_map.rs:129:24
+     |
+ 129 |         consensus.push(b'A' + chosen);
+     |                   ---- ^^^^^^^^^^^^^ expected `char`, found `u8`
+     |                   |
+     |                   arguments to this method are incorrect
+     |
+note: method defined here
+    --> /opt/homebrew/Cellar/rust/1.99.1/lib/rustlib/src/rust/library/alloc/src/string.rs:1432:12
+     |
+1432 |     pub fn push(&mut self, ch: char) {
+     |            ^^^^
+
+Some errors have detailed explanations: E0277, E0308.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `snapious-core` (lib) due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `snapious-core` (lib test) due to 4 previous errors
+
+=== read_map.rs Versuch 2
+[158s {'prompt_tokens': 6925, 'completion_tokens': 6762, 'total_tokens': 13687, 'completion_tokens_details': {'reasoning_tokens': 5364}}]
+   Compiling snapious-core v0.1.0 (/Users/felixcuntz/Documents/Snapious/GeneiousRebuild/crates/snapious-core)
+error[E0277]: the trait bound `char: From<u32>` is not satisfied
+    --> crates/snapious-core/src/bio/read_map.rs:125:24
+     |
+ 125 |         consensus.push(char::from((b'A' + chosen as u8) as u32));
+     |                        ^^^^ the trait `From<u32>` is not implemented for `char`
+     |
+help: `char` implements trait `From<T>`
+    --> /opt/homebrew/Cellar/rust/1.99.1/lib/rustlib/src/rust/library/core/src/ascii/ascii_char.rs:1168:13
+     |
+1168 |             const impl From<AsciiChar> for $ty {
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `From<std::ascii::Char>`
+...
+1178 | into_int_impl!(u8 u16 u32 u64 u128 char);
+     | ---------------------------------------- in this macro invocation
+     |
+    ::: /opt/homebrew/Cellar/rust/1.99.1/lib/rustlib/src/rust/library/core/src/char/convert.rs:217:1
+     |
+ 217 | const impl From<u8> for char {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `From<u8>`
+     = note: this error originates in the macro `into_int_impl` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `snapious-core` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `snapious-core` (lib test) due to 1 previous error
+
+=== read_map.rs Versuch 3
+[212s {'prompt_tokens': 8809, 'completion_tokens': 9001, 'total_tokens': 17810, 'completion_tokens_details': {'reasoning_tokens': 7525}}]
+napious/GeneiousRebuild/crates/snapious-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.17s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 5 tests
+test bio::read_map::tests::fehlpaarungen_und_nichts ... ok
+test bio::read_map::tests::genau_vorwaerts_und_rueckwaerts ... ok
+test bio::read_map::tests::mehrere_reads ... ok
+test bio::read_map::tests::konsens_mit_reverskomplement_und_luecke ... FAILED
+test bio::read_map::tests::konsens_und_tiefe ... FAILED
+
+failures:
+
+---- bio::read_map::tests::konsens_mit_reverskomplement_und_luecke stdout ----
+
+thread 'bio::read_map::tests::konsens_mit_reverskomplement_und_luecke' (3598765) panicked at crates/snapious-core/src/bio/read_map.rs:237:9:
+assertion `left == right` failed
+  left: "CCBDAAABBCC"
+ right: "GGCTAAACCGG"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- bio::read_map::tests::konsens_und_tiefe stdout ----
+
+thread 'bio::read_map::tests::konsens_und_tiefe' (3598766) panicked at crates/snapious-core/src/bio/read_map.rs:209:9:
+assertion `left == right` failed
+  left: "ACGTTGCAACCBDDAABBCCATATCGCGATTAGC"
+ right: "ACGTTGCAAGGCTTAACCGGATATCGCGATTAGC"
+
+
+failures:
+    bio::read_map::tests::konsens_mit_reverskomplement_und_luecke
+    bio::read_map::tests::konsens_und_tiefe
+
+test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 599 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+ERGEBNIS read_map.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

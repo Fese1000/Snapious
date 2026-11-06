@@ -1,0 +1,46 @@
+=== wizard.rs Versuch 1
+[120s {'prompt_tokens': 2039, 'completion_tokens': 5584, 'total_tokens': 7623, 'completion_tokens_details': {'reasoning_tokens': 4817}}]
+| pub fn eta_secs(done: u64, total: u64, elapsed_secs: f64) -> Option<u64> {
+   |                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_total`
+
+warning: unused variable: `elapsed_secs`
+  --> crates/snapious-core/src/view/progress_format.rs:18:40
+   |
+18 | pub fn eta_secs(done: u64, total: u64, elapsed_secs: f64) -> Option<u64> {
+   |                                        ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_elapsed_secs`
+
+warning: unused variable: `keys`
+  --> crates/snapious-core/src/view/shortcut_conflicts.rs:14:23
+   |
+14 | pub fn normalize_keys(keys: &str) -> Option<String> {
+   |                       ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: unused variable: `shortcuts`
+  --> crates/snapious-core/src/view/shortcut_conflicts.rs:20:23
+   |
+20 | pub fn find_conflicts(shortcuts: &[Shortcut]) -> Vec<(usize, usize)> {
+   |                       ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_shortcuts`
+
+For more information about this error, try `rustc --explain E0282`.
+warning: `snapious-core` (lib) generated 7 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 7 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `snapious-core` (lib test) generated 7 warnings (7 duplicates)
+error: could not compile `snapious-core` (lib test) due to 1 previous error; 7 warnings emitted
+
+=== wizard.rs Versuch 2
+[847s {'prompt_tokens': 3561, 'completion_tokens': 31999, 'total_tokens': 35560, 'completion_tokens_details': {'reasoning_tokens': 31999}}]
+=== wizard.rs Versuch 3
+[104s {'prompt_tokens': 3578, 'completion_tokens': 4465, 'total_tokens': 8043, 'completion_tokens_details': {'reasoning_tokens': 3689}}]
+clippy: warning: unused variable: `secs`
+warning: unused variable: `bytes`
+warning: unused variable: `done`
+warning: unused variable: `total`
+warning: unused variable: `elapsed_secs`
+warning: unused variable: `keys`
+warning: unused variable: `shortcuts`
+warning: method `next` can be confused for the standard trait method `std::iter::Iterator::next`
+  --> crates/snapious-core/src/view/wizard.rs:41:5
+warning: `snapious-core` (lib) generated 8 warnings (run `cargo clippy --fix --lib -p snapious-core -- ` to apply 7 suggestions)
+warning: `snapious-core` (lib test) generated 8 warnings (8 duplicates)
+ERGEBNIS wizard.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

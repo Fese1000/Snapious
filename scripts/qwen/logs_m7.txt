@@ -1,0 +1,121 @@
+=== insert_size.rs Versuch 1
+[37s {'prompt_tokens': 4704, 'completion_tokens': 1307, 'total_tokens': 6011}]
+t_files.rs:10:40
+   |
+10 | pub fn remove_missing(list: &[String], exists: &dyn Fn(&str) -> bool) -> Vec<String> {
+   |                                        ^^^^^^ help: if this is intentional, prefix it with an underscore: `_exists`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 33 warnings (run `cargo fix --lib -p snapious-core` to apply 33 suggestions)
+warning: `snapious-core` (lib test) generated 33 warnings (33 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.30s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test ngs::insert_size::tests::kennzahlen ... ok
+test ngs::insert_size::tests::auswahl ... FAILED
+
+failures:
+
+---- ngs::insert_size::tests::auswahl stdout ----
+
+thread 'ngs::insert_size::tests::auswahl' (5482553) panicked at crates/snapious-core/src/ngs/insert_size.rs:102:9:
+assertion `left == right` failed
+  left: [300, 300, 250, 420, 700]
+ right: [300, 420]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ngs::insert_size::tests::auswahl
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== insert_size.rs Versuch 2
+[35s {'prompt_tokens': 6803, 'completion_tokens': 1319, 'total_tokens': 8122}]
+recent_files.rs:10:40
+   |
+10 | pub fn remove_missing(list: &[String], exists: &dyn Fn(&str) -> bool) -> Vec<String> {
+   |                                        ^^^^^^ help: if this is intentional, prefix it with an underscore: `_exists`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 33 warnings (run `cargo fix --lib -p snapious-core` to apply 33 suggestions)
+warning: `snapious-core` (lib test) generated 33 warnings (33 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.77s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test ngs::insert_size::tests::kennzahlen ... ok
+test ngs::insert_size::tests::auswahl ... FAILED
+
+failures:
+
+---- ngs::insert_size::tests::auswahl stdout ----
+
+thread 'ngs::insert_size::tests::auswahl' (5485395) panicked at crates/snapious-core/src/ngs/insert_size.rs:103:9:
+assertion `left == right` failed
+  left: [300, 250, 420, 700]
+ right: [300, 420]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ngs::insert_size::tests::auswahl
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== insert_size.rs Versuch 3
+[36s {'prompt_tokens': 8910, 'completion_tokens': 1319, 'total_tokens': 10229}]
+recent_files.rs:10:40
+   |
+10 | pub fn remove_missing(list: &[String], exists: &dyn Fn(&str) -> bool) -> Vec<String> {
+   |                                        ^^^^^^ help: if this is intentional, prefix it with an underscore: `_exists`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 33 warnings (run `cargo fix --lib -p snapious-core` to apply 33 suggestions)
+warning: `snapious-core` (lib test) generated 33 warnings (33 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.10s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test ngs::insert_size::tests::kennzahlen ... ok
+test ngs::insert_size::tests::auswahl ... FAILED
+
+failures:
+
+---- ngs::insert_size::tests::auswahl stdout ----
+
+thread 'ngs::insert_size::tests::auswahl' (5487321) panicked at crates/snapious-core/src/ngs/insert_size.rs:103:9:
+assertion `left == right` failed
+  left: [300, 250, 420, 700]
+ right: [300, 420]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ngs::insert_size::tests::auswahl
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+ERGEBNIS insert_size.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

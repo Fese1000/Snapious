@@ -1,0 +1,63 @@
+=== folders.rs Versuch 1
+[241s {'prompt_tokens': 3973, 'completion_tokens': 11438, 'total_tokens': 15411, 'completion_tokens_details': {'reasoning_tokens': 8260}}]
+
+warning: unused variable: `version`
+  --> crates/snapious-core/src/store/versions.rs:41:46
+   |
+41 |     pub fn load_version(&self, doc_id: &str, version: i64) -> Result<Document> {
+   |                                              ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_version`
+
+warning: unused variable: `doc_id`
+  --> crates/snapious-core/src/store/versions.rs:48:39
+   |
+48 |     pub fn restore_version(&mut self, doc_id: &str, version: i64) -> Result<()> {
+   |                                       ^^^^^^ help: if this is intentional, prefix it with an underscore: `_doc_id`
+
+warning: unused variable: `version`
+  --> crates/snapious-core/src/store/versions.rs:48:53
+   |
+48 |     pub fn restore_version(&mut self, doc_id: &str, version: i64) -> Result<()> {
+   |                                                     ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_version`
+
+For more information about this error, try `rustc --explain E0425`.
+warning: `snapious-core` (lib) generated 60 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 60 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+Some errors have detailed explanations: E0425, E0433.
+For more information about an error, try `rustc --explain E0425`.
+warning: `snapious-core` (lib test) generated 53 warnings (51 duplicates)
+error: could not compile `snapious-core` (lib test) due to 6 previous errors; 53 warnings emitted
+
+=== folders.rs Versuch 2
+[285s {'prompt_tokens': 7864, 'completion_tokens': 12921, 'total_tokens': 20785, 'completion_tokens_details': {'reasoning_tokens': 9699}}]
+
+warning: unused variable: `version`
+  --> crates/snapious-core/src/store/versions.rs:41:46
+   |
+41 |     pub fn load_version(&self, doc_id: &str, version: i64) -> Result<Document> {
+   |                                              ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_version`
+
+warning: unused variable: `doc_id`
+  --> crates/snapious-core/src/store/versions.rs:48:39
+   |
+48 |     pub fn restore_version(&mut self, doc_id: &str, version: i64) -> Result<()> {
+   |                                       ^^^^^^ help: if this is intentional, prefix it with an underscore: `_doc_id`
+
+warning: unused variable: `version`
+  --> crates/snapious-core/src/store/versions.rs:48:53
+   |
+48 |     pub fn restore_version(&mut self, doc_id: &str, version: i64) -> Result<()> {
+   |                                                     ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_version`
+
+For more information about this error, try `rustc --explain E0425`.
+warning: `snapious-core` (lib) generated 60 warnings
+error: could not compile `snapious-core` (lib) due to 1 previous error; 60 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+Some errors have detailed explanations: E0425, E0433.
+For more information about an error, try `rustc --explain E0425`.
+warning: `snapious-core` (lib test) generated 53 warnings (51 duplicates)
+error: could not compile `snapious-core` (lib test) due to 6 previous errors; 53 warnings emitted
+
+=== folders.rs Versuch 3
+[1852s {'prompt_tokens': 11799, 'completion_tokens': 63999, 'total_tokens': 75798, 'completion_tokens_details': {'reasoning_tokens': 63999}}]
+ERGEBNIS folders.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

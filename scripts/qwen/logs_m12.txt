@@ -1,0 +1,87 @@
+=== recent_files.rs Versuch 1
+[17s {'prompt_tokens': 1795, 'completion_tokens': 640, 'total_tokens': 2435}]
+core: `_column`
+
+warning: unused variable: `ascending`
+  --> crates/snapious-core/src/view/feature_table.rs:37:5
+   |
+37 |     ascending: bool,
+   |     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_ascending`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 27 warnings (run `cargo fix --lib -p snapious-core` to apply 27 suggestions)
+warning: `snapious-core` (lib test) generated 27 warnings (27 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.09s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test view::recent_files::tests::fehlende ... ok
+test view::recent_files::tests::hinzufuegen ... FAILED
+
+failures:
+
+---- view::recent_files::tests::hinzufuegen stdout ----
+
+thread 'view::recent_files::tests::hinzufuegen' (5504063) panicked at crates/snapious-core/src/view/recent_files.rs:53:9:
+assertion failed: add_recent(&v(&["a"]), "b", 0).is_empty()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    view::recent_files::tests::hinzufuegen
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== recent_files.rs Versuch 2
+[20s {'prompt_tokens': 3206, 'completion_tokens': 640, 'total_tokens': 3846}]
+rscore: `_column`
+
+warning: unused variable: `ascending`
+  --> crates/snapious-core/src/view/feature_table.rs:37:5
+   |
+37 |     ascending: bool,
+   |     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_ascending`
+
+warning: unused variable: `keys`
+ --> crates/snapious-core/src/view/shortcut_format.rs:9:24
+  |
+9 | pub fn format_shortcut(keys: &str) -> String {
+  |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_keys`
+
+warning: `snapious-core` (lib) generated 27 warnings (run `cargo fix --lib -p snapious-core` to apply 27 suggestions)
+warning: `snapious-core` (lib test) generated 27 warnings (27 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.10s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test view::recent_files::tests::fehlende ... ok
+test view::recent_files::tests::hinzufuegen ... FAILED
+
+failures:
+
+---- view::recent_files::tests::hinzufuegen stdout ----
+
+thread 'view::recent_files::tests::hinzufuegen' (5505754) panicked at crates/snapious-core/src/view/recent_files.rs:52:9:
+assertion `left == right` failed
+  left: []
+ right: ["a"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    view::recent_files::tests::hinzufuegen
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== recent_files.rs Versuch 3
+[18s {'prompt_tokens': 4586, 'completion_tokens': 653, 'total_tokens': 5239}]
+ERGEBNIS recent_files.rs: GRÜN (2 Tests) nach 3 Versuch(en)

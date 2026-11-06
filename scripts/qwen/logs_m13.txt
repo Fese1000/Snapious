@@ -1,0 +1,130 @@
+=== shortcut_format.rs Versuch 1
+[25s {'prompt_tokens': 3063, 'completion_tokens': 908, 'total_tokens': 3971}]
+fix it with an underscore: `_indices`
+
+warning: unused variable: `column`
+  --> crates/snapious-core/src/view/feature_table.rs:36:5
+   |
+36 |     column: SortColumn,
+   |     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_column`
+
+warning: unused variable: `ascending`
+  --> crates/snapious-core/src/view/feature_table.rs:37:5
+   |
+37 |     ascending: bool,
+   |     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_ascending`
+
+warning: `snapious-core` (lib) generated 25 warnings (run `cargo fix --lib -p snapious-core` to apply 25 suggestions)
+warning: `snapious-core` (lib test) generated 25 warnings (25 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.31s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test view::shortcut_format::tests::ungueltig ... ok
+test view::shortcut_format::tests::beispiele ... FAILED
+
+failures:
+
+---- view::shortcut_format::tests::beispiele stdout ----
+
+thread 'view::shortcut_format::tests::beispiele' (5510219) panicked at crates/snapious-core/src/view/shortcut_format.rs:64:9:
+assertion `left == right` failed
+  left: "⌘⇧K"
+ right: "⇧⌘K"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    view::shortcut_format::tests::beispiele
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== shortcut_format.rs Versuch 2
+[24s {'prompt_tokens': 4730, 'completion_tokens': 908, 'total_tokens': 5638}]
+fix it with an underscore: `_indices`
+
+warning: unused variable: `column`
+  --> crates/snapious-core/src/view/feature_table.rs:36:5
+   |
+36 |     column: SortColumn,
+   |     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_column`
+
+warning: unused variable: `ascending`
+  --> crates/snapious-core/src/view/feature_table.rs:37:5
+   |
+37 |     ascending: bool,
+   |     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_ascending`
+
+warning: `snapious-core` (lib) generated 25 warnings (run `cargo fix --lib -p snapious-core` to apply 25 suggestions)
+warning: `snapious-core` (lib test) generated 25 warnings (25 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.04s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test view::shortcut_format::tests::ungueltig ... ok
+test view::shortcut_format::tests::beispiele ... FAILED
+
+failures:
+
+---- view::shortcut_format::tests::beispiele stdout ----
+
+thread 'view::shortcut_format::tests::beispiele' (5512155) panicked at crates/snapious-core/src/view/shortcut_format.rs:64:9:
+assertion `left == right` failed
+  left: "⌘⇧K"
+ right: "⇧⌘K"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    view::shortcut_format::tests::beispiele
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+=== shortcut_format.rs Versuch 3
+[24s {'prompt_tokens': 6397, 'completion_tokens': 908, 'total_tokens': 7305}]
+fix it with an underscore: `_indices`
+
+warning: unused variable: `column`
+  --> crates/snapious-core/src/view/feature_table.rs:36:5
+   |
+36 |     column: SortColumn,
+   |     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_column`
+
+warning: unused variable: `ascending`
+  --> crates/snapious-core/src/view/feature_table.rs:37:5
+   |
+37 |     ascending: bool,
+   |     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_ascending`
+
+warning: `snapious-core` (lib) generated 25 warnings (run `cargo fix --lib -p snapious-core` to apply 25 suggestions)
+warning: `snapious-core` (lib test) generated 25 warnings (25 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.07s
+     Running unittests src/lib.rs (target/debug/deps/snapious_core-ddcd43f93d45123a)
+
+running 2 tests
+test view::shortcut_format::tests::ungueltig ... ok
+test view::shortcut_format::tests::beispiele ... FAILED
+
+failures:
+
+---- view::shortcut_format::tests::beispiele stdout ----
+
+thread 'view::shortcut_format::tests::beispiele' (5513954) panicked at crates/snapious-core/src/view/shortcut_format.rs:64:9:
+assertion `left == right` failed
+  left: "⌘⇧K"
+ right: "⇧⌘K"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    view::shortcut_format::tests::beispiele
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 859 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p snapious-core --lib`
+
+ERGEBNIS shortcut_format.rs: ROT nach 3 Versuchen, Gerüst zurückgesetzt

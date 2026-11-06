@@ -1,0 +1,3 @@
+=== histogram.rs Versuch 1
+[17s {'prompt_tokens': 1714, 'completion_tokens': 698, 'total_tokens': 2412}]
+ERGEBNIS histogram.rs: GRÜN (3 Tests) nach 1 Versuch(en)

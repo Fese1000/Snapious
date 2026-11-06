@@ -1,0 +1,47 @@
+=== phase4.rs Versuch 1
+[208s {'prompt_tokens': 6755, 'completion_tokens': 8376, 'total_tokens': 15131, 'completion_tokens_details': {'reasoning_tokens': 7423}}]
+crates/snapious-core/src/model/document.rs:309:1
+    |
+309 | pub enum Document {
+    | ----------------- method `sequence` not found for this enum
+    |
+note: the method `sequence` exists on the type `document::SequenceDocument`
+   --> crates/snapious-core/src/model/document.rs:78:5
+    |
+ 78 |     pub fn sequence(&self) -> &Sequence {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: there is a variant with a similar name (notice the capitalization)
+    |
+ 38 -         let seq = inputs[0].sequence();
+ 38 +         let seq = inputs[0].Sequence();
+    |
+
+error[E0599]: no method named `sequence` found for enum `document::Document` in the current scope
+   --> crates/snapious-core/src/ops/phase4.rs:85:29
+    |
+ 85 |         let seq = inputs[0].sequence();
+    |                             ^^^^^^^^ method not found in `document::Document`
+    |
+   ::: crates/snapious-core/src/model/document.rs:309:1
+    |
+309 | pub enum Document {
+    | ----------------- method `sequence` not found for this enum
+    |
+note: the method `sequence` exists on the type `document::SequenceDocument`
+   --> crates/snapious-core/src/model/document.rs:78:5
+    |
+ 78 |     pub fn sequence(&self) -> &Sequence {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: there is a variant with a similar name (notice the capitalization)
+    |
+ 85 -         let seq = inputs[0].sequence();
+ 85 +         let seq = inputs[0].Sequence();
+    |
+
+error: could not compile `snapious-core` (lib test) due to 2 previous errors
+
+=== phase4.rs Versuch 2
+[622s {'prompt_tokens': 8441, 'completion_tokens': 23999, 'total_tokens': 32440, 'completion_tokens_details': {'reasoning_tokens': 23999}}]
+=== phase4.rs Versuch 3
+[78s {'prompt_tokens': 8458, 'completion_tokens': 3271, 'total_tokens': 11729, 'completion_tokens_details': {'reasoning_tokens': 2246}}]
+ERGEBNIS phase4.rs: GRÜN (3 Tests) nach 3 Versuch(en)
