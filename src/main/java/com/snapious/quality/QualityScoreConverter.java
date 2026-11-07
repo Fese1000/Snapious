@@ -3,9 +3,9 @@ package com.snapious.quality;
 import java.util.*;
 
 /**
- * Quality-Score-Konvertierung und -Analyse für NGS-Daten.
- * Unterstützt: Sanger (Phred+33), Solexa (Phred-11), Illumina 1.3+/1.9+ Encoding.
- * Erkennt automatisch Encoding und konvertiert zwischen Formaten.
+ * Quality score conversion and analysis for NGS data.
+ * Supports: Sanger (Phred+33), Solexa (Phred-11), Illumina 1.3+/1.9+ encoding.
+ * Automatically detects the encoding and converts between formats.
  */
 public class QualityScoreConverter {
 
@@ -31,11 +31,11 @@ public class QualityScoreConverter {
         public int getOffset() { return offset; }
     }
 
-    // ======== QUALITY SCORE REPRESANTATION ==========
+    // ======== QUALITY SCORE REPRESENTATION ==========
 
-    /** Repräsentiert einen Quality-Score in Phred-Notation */
+    /** Represents a quality score in Phred notation */
     public static class QualityScore {
-        private final int phredScore;  // Phred-Qualität: Q = -10 * log10(P_error)
+        private final int phredScore;  // Phred quality: Q = -10 * log10(P_error)
 
         public QualityScore(int phredScore) {
             this.phredScore = Math.max(0, Math.min(93, phredScore));  // Range 0-93
@@ -43,17 +43,17 @@ public class QualityScoreConverter {
 
         public int getPhredScore() { return phredScore; }
 
-        /** Fehlerwahrscheinlichkeit berechnen */
+        /** Compute the error probability */
         public double getErrorProbability() {
             return Math.pow(10.0, -phredScore / 10.0);
         }
 
-        /** Encoding in ASCII-Zeichen (je nach Format) */
+        /** Encoding as an ASCII character (depending on format) */
         public String toAscii(EncodingType encoding) {
             return String.valueOf((char) (phredScore + encoding.getOffset()));
         }
 
-        /** Von ASCII-Zeichen erstellen */
+        /** Create from an ASCII character */
         public static QualityScore fromAscii(char asciiChar, EncodingType encoding) {
             return new QualityScore(asciiChar - encoding.getOffset());
         }
@@ -71,20 +71,20 @@ public class QualityScoreConverter {
         }
     }
 
-    // ======== ENCODING ERKENNUNG ==========
+    // ======== ENCODING DETECTION ==========
 
     /**
-     * Erkenne Quality-Encoding automatisch aus einer Sequenz von ASCII-Zeichen.
-     * Analysiert den Zeichenbereich und bestimmt das wahrscheinlichste Encoding.
+     * Automatically detect the quality encoding from a sequence of ASCII characters.
+     * Analyzes the character range and determines the most likely encoding.
      */
     public static EncodingType detectEncoding(String qualityString) {
         if (qualityString == null || qualityString.isEmpty()) {
-            throw new IllegalArgumentException("Qualitätsstring darf nicht leer sein");
+            throw new IllegalArgumentException("Quality string must not be empty");
         }
         return classify(qualityString.chars().min().getAsInt());
     }
 
-    /** Erkenne Encoding für mehrere Quality-Strings (für FASTQ) */
+    /** Detect the encoding for several quality strings (for FASTQ) */
     public static EncodingType detectEncoding(List<String> qualityStrings) {
         int globalMin = Integer.MAX_VALUE;
         for (String qs : qualityStrings) {
@@ -95,10 +95,10 @@ public class QualityScoreConverter {
     }
 
     /**
-     * Klassifikation über das kleinste vorkommende Zeichen (übliche Heuristik):
-     * &lt; ';' (59) nur bei Phred+33, &lt; '@' (64) nur bei Solexa (Scores bis -5),
-     * ab '@' Phred+64. Ohne niedrige Qualitäten ist Phred+64 nicht von Phred+33
-     * zu unterscheiden; dann gilt das heute übliche Phred+64 erst ab '@'.
+     * Classification by the smallest character present (common heuristic):
+     * &lt; ';' (59) only for Phred+33, &lt; '@' (64) only for Solexa (scores down to -5),
+     * from '@' Phred+64. Without low qualities Phred+64 cannot be distinguished from Phred+33;
+     * in that case the now common Phred+64 applies only from '@'.
      */
     private static EncodingType classify(int minChar) {
         if (minChar < 59) return EncodingType.SANGER;
@@ -109,14 +109,14 @@ public class QualityScoreConverter {
     // ======== CONVERSION ==========
 
     /**
-     * Konvertiere Quality-String von einem Encoding in ein anderes.
+     * Convert a quality string from one encoding to another.
      */
     public static String convertEncoding(String qualityString, EncodingType from, EncodingType to) {
         if (qualityString == null || qualityString.isEmpty()) return "";
         return fromPhredScores(toPhredScores(qualityString, from), to);
     }
 
-    /** Konvertiere gesamten Quality-String zu Phred-Werten */
+    /** Convert a whole quality string to Phred values */
     public static List<Integer> toPhredScores(String qualityString, EncodingType encoding) {
         List<Integer> scores = new ArrayList<>(qualityString.length());
 
@@ -129,41 +129,41 @@ public class QualityScoreConverter {
         return scores;
     }
 
-    /** Konvertiere Phred-Scores zurück zu ASCII-String */
+    /** Convert Phred scores back to an ASCII string */
     public static String fromPhredScores(List<Integer> phredScores, EncodingType encoding) {
         StringBuilder sb = new StringBuilder(phredScores.size());
 
         for (int phred : phredScores) {
             int raw = encoding == EncodingType.SOLEXA ? phredToSolexa(phred) : phred;
             int ascii = raw + encoding.getOffset();
-            sb.append((char) Math.max('!', Math.min(ascii, '~')));  // Begrenze auf druckbare Zeichen
+            sb.append((char) Math.max('!', Math.min(ascii, '~')));  // limit to printable characters
         }
 
         return sb.toString();
     }
 
-    /** Solexa-Score (Odds-basiert) → Phred: Q = 10*log10(10^(Qs/10) + 1) */
+    /** Solexa score (odds-based) → Phred: Q = 10*log10(10^(Qs/10) + 1) */
     private static int solexaToPhred(int solexa) {
         return (int) Math.round(10.0 * Math.log10(Math.pow(10.0, solexa / 10.0) + 1.0));
     }
 
-    /** Phred → Solexa-Score: Qs = 10*log10(10^(Q/10) - 1); Q=0 wird auf -5 begrenzt */
+    /** Phred → Solexa score: Qs = 10*log10(10^(Q/10) - 1); Q=0 is clamped to -5 */
     private static int phredToSolexa(int phred) {
         if (phred <= 0) return -5;
         return (int) Math.round(10.0 * Math.log10(Math.pow(10.0, phred / 10.0) - 1.0));
     }
 
-    // ======== QUALITY ANALYSE ==========
+    // ======== QUALITY ANALYSIS ==========
 
     /**
-     * Analysiere Quality-Statistik eines FASTQ-Quality-Sstrings.
+     * Analyze the quality statistics of a FASTQ quality string.
      */
     public static class QualityStatistics {
-        private final double mean;       // Mittelwert
-        private final double median;     // Median
-        private final double min;        // Minimum
-        private final double max;        // Maximum
-        private final int length;        // Sequenzlänge
+        private final double mean;       // mean
+        private final double median;     // median
+        private final double min;        // minimum
+        private final double max;        // maximum
+        private final int length;        // sequence length
 
         public QualityStatistics(double mean, double median, double min, double max, int length) {
             this.mean = mean;
@@ -179,12 +179,12 @@ public class QualityScoreConverter {
         public double getMax() { return max; }
         public int getLength() { return length; }
 
-        /** Basis-Qualitätsbewertung */
+        /** Basic quality rating */
         public String qualityLabel() {
-            if (mean >= 30) return "Hochwertig ✓✓";       // Q30+
-            if (mean >= 20) return "Mittelwertig ✓";        // Q20+
-            if (mean >= 10) return "Niedrig";               // Q10+
-            return "Unzureichend ✗";                         // <Q10
+            if (mean >= 30) return "High quality ✓✓";       // Q30+
+            if (mean >= 20) return "Medium quality ✓";        // Q20+
+            if (mean >= 10) return "Low";               // Q10+
+            return "Insufficient ✗";                         // <Q10
         }
 
         @Override
@@ -194,7 +194,7 @@ public class QualityScoreConverter {
         }
     }
 
-    /** Berechne Quality-Statistik für einen String */
+    /** Compute quality statistics for a string */
     public static QualityStatistics calculateQualityStats(String qualityString, EncodingType encoding) {
         if (qualityString == null || qualityString.isEmpty()) {
             return new QualityStatistics(0, 0, 0, 0, 0);
@@ -209,7 +209,7 @@ public class QualityScoreConverter {
         int[] scores = phredScores.stream().mapToInt(Integer::intValue).toArray();
         Arrays.sort(scores);
 
-        // Statistiken berechnen (jetzt mit int[])
+        // Compute statistics (now with int[])
         double mean = Arrays.stream(scores).average().orElse(0);
         double median = scores[scores.length / 2];
         double min = scores[0];
@@ -218,7 +218,7 @@ public class QualityScoreConverter {
         return new QualityStatistics(mean, median, min, max, qualityString.length());
     }
 
-    /** Berechne Statistik über mehrere Quality-Strings (für FASTQ-Datei) */
+    /** Compute statistics over several quality strings (for a FASTQ file) */
     public static List<QualityStatistics> calculateBatchStats(List<String> qualityStrings, EncodingType encoding) {
         List<QualityStatistics> stats = new ArrayList<>();
 
@@ -231,11 +231,11 @@ public class QualityScoreConverter {
         return stats;
     }
 
-    /** Generiere Quality-Histogramm für Visualisierung */
+    /** Generate a quality histogram for visualization */
     public static Map<Integer, Integer> qualityHistogram(String qualityString, EncodingType encoding) {
         List<Integer> phredScores = toPhredScores(qualityString, encoding);
 
-        Map<Integer, Integer> histogram = new TreeMap<>();  // Sortiert nach Score
+        Map<Integer, Integer> histogram = new TreeMap<>();  // sorted by score
 
         for (int score : phredScores) {
             histogram.merge(score, 1, Integer::sum);
@@ -244,39 +244,39 @@ public class QualityScoreConverter {
         return histogram;
     }
 
-    /** Filtere Reads mit niedriger Quality (Quality-Threshold) */
+    /** Filter reads with low quality (quality threshold) */
     public static String filterByQuality(String qualityString, EncodingType encoding, int minQuality) {
         List<Integer> phredScores = toPhredScores(qualityString, encoding);
 
-        // Prüfe ob alle Scores >= minQuality
+        // Check whether all scores are >= minQuality
         boolean allPass = phredScores.stream().allMatch(s -> s >= minQuality);
 
-        if (allPass) return qualityString;  // Alles OK → original zurück
+        if (allPass) return qualityString;  // all OK → return the original
 
-        // Ansonsten: Ersetze niedrige Quality durch '!' (Q0)
+        // Otherwise: replace low quality with '!' (Q0)
         StringBuilder sb = new StringBuilder(qualityString.length());
 
         for (int i = 0; i < qualityString.length(); i++) {
             int phredScore = qualityString.charAt(i) - encoding.getOffset();
 
             if (phredScore < minQuality) {
-                sb.append('!');  // Ersetze durch niedrigste Qualität
+                sb.append('!');  // replace with the lowest quality
             } else {
-                sb.append(qualityString.charAt(i));  // Behalte original
+                sb.append(qualityString.charAt(i));  // keep original
             }
         }
 
         return sb.toString();
     }
 
-    /** Zähle Basis mit Quality >= threshold */
+    /** Count bases with quality >= threshold */
     public static int countBasesAboveQuality(String qualityString, EncodingType encoding, int minQuality) {
         List<Integer> phredScores = toPhredScores(qualityString, encoding);
 
         return (int) phredScores.stream().filter(s -> s >= minQuality).count();
     }
 
-    /** Generiere qualitätsbasierte Maskierung (N für niedrige Quality) */
+    /** Generate quality-based masking (N for low quality) */
     public static String maskLowQualityBases(String sequence, EncodingType encoding, String qualityStr, int minQuality) {
         if (sequence == null || sequence.isEmpty() || qualityStr == null || qualityStr.isEmpty()) {
             return "";
@@ -289,38 +289,38 @@ public class QualityScoreConverter {
             int phredScore = (i < phredScores.size()) ? phredScores.get(i) : 0;
 
             if (phredScore >= minQuality) {
-                masked.append(sequence.charAt(i));  // Hohe Quality → behalten
+                masked.append(sequence.charAt(i));  // high quality → keep
             } else {
-                masked.append('N');  // Niedrige Quality → maskieren
+                masked.append('N');  // low quality → mask
             }
         }
 
         return masked.toString();
     }
 
-    // ======== HAUPTFUNKTIONEN FÜR UI ==========
+    // ======== MAIN FUNCTIONS FOR UI ==========
 
-    /** Generiere Quality-Bericht für FASTQ-Daten */
+    /** Generate a quality report for FASTQ data */
     public static String generateQualityReport(List<String> qualityStrings) {
-        if (qualityStrings.isEmpty()) return "Keine Daten vorhanden.";
+        if (qualityStrings.isEmpty()) return "No data available.";
 
         EncodingType encoding = detectEncoding(qualityStrings);
         List<QualityStatistics> statsList = calculateBatchStats(qualityStrings, encoding);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("=== Quality-Bericht ===\n\n");
-        sb.append(String.format("Erkanntes Encoding: %s (%s)\n", encoding.getDescription(), encoding.getNotation()));
-        sb.append(String.format("Anzahl Reads: %d\n", statsList.size()));
+        sb.append("=== Quality Report ===\n\n");
+        sb.append(String.format("Detected encoding: %s (%s)\n", encoding.getDescription(), encoding.getNotation()));
+        sb.append(String.format("Number of reads: %d\n", statsList.size()));
 
-        // Gesamte Statistik
+        // Overall statistics
         double[] allMeans = statsList.stream().mapToDouble(QualityStatistics::getMean).toArray();
         double overallMean = Arrays.stream(allMeans).average().orElse(0);
 
-        sb.append(String.format("Gesamter Mittelwert: %.1f\n", overallMean));
-        sb.append(String.format("Qualitätsbewertung: %s\n", qualityLabel(overallMean)));
+        sb.append(String.format("Overall mean: %.1f\n", overallMean));
+        sb.append(String.format("Quality rating: %s\n", qualityLabel(overallMean)));
 
-        // Pro-Read-Zusammenfassung
-        sb.append("\nTop 10 Reads (nach Mean-Quality):\n");
+        // Per-read summary
+        sb.append("\nTop 10 Reads (by mean quality):\n");
 
         List<QualityStatistics> sorted = statsList.stream()
             .sorted((a, b) -> Double.compare(b.getMean(), a.getMean()))
@@ -332,7 +332,7 @@ public class QualityScoreConverter {
             sb.append(String.format("%d. %s\n", i + 1, qs));
         }
 
-        // Low-Quality-Statistics
+        // Low-quality statistics
         long lowQualityCount = statsList.stream().filter(s -> s.getMean() < 20).count();
         sb.append(String.format("\nLow-Quality Reads (Mean < 20): %d (%.0f%%)\n",
             lowQualityCount, (double) lowQualityCount / statsList.size() * 100));
@@ -340,22 +340,22 @@ public class QualityScoreConverter {
         return sb.toString();
     }
 
-    /** Quality-Bewertung als Text */
+    /** Quality rating as text */
     private static String qualityLabel(double meanQ) {
-        if (meanQ >= 30) return "Hochwertig ✓✓";
-        if (meanQ >= 20) return "Mittelwertig ✓";
-        if (meanQ >= 10) return "Niedrig";
-        return "Unzureichend ✗";
+        if (meanQ >= 30) return "High quality ✓✓";
+        if (meanQ >= 20) return "Medium quality ✓";
+        if (meanQ >= 10) return "Low";
+        return "Insufficient ✗";
     }
 
-    /** Konvertiere FASTQ-Quality-Strings zu Phred-Werten für Export */
+    /** Convert FASTQ quality strings to Phred values for export */
     public static List<List<Integer>> convertToPhred(List<String> qualityStrings, EncodingType encoding) {
         return qualityStrings.stream()
             .map(qs -> toPhredScores(qs, encoding))
             .toList();
     }
 
-    /** Konvertiere Phred-Werte zurück zu FASTQ-Quality-Strings */
+    /** Convert Phred values back to FASTQ quality strings */
     public static List<String> convertFromPhred(List<List<Integer>> phredLists, EncodingType encoding) {
         return phredLists.stream()
             .map(scores -> fromPhredScores(scores, encoding))

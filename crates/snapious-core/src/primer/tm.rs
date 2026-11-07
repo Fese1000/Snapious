@@ -1,13 +1,13 @@
-//! Schmelztemperatur (Tm) von Oligonukleotiden.
+//! Melting temperature (Tm) of oligonucleotides.
 //!
-//! * Wallace: `Tm = 2·(A+T) + 4·(G+C)` (kurze Oligos).
-//! * Marmur/Doty: `Tm = 64.9 + 41·(G+C − 16.4)/N` (längere Oligos, ohne Salz und Konzentration).
-//! * Nearest-Neighbor nach SantaLucia, PNAS 95:1460–1465 (1998), mit Salzkorrektur.
+//! * Wallace: `Tm = 2*(A+T) + 4*(G+C)` (short oligos).
+//! * Marmur/Doty: `Tm = 64.9 + 41*(G+C - 16.4)/N` (longer oligos, without salt and concentration).
+//! * Nearest neighbor after SantaLucia, PNAS 95:1460-1465 (1998), with salt correction.
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::error::{Error, Result};
 
-/// Tm nach der Wallace-Regel. Nur A, C, G, T/U zählen; andere Zeichen werden ignoriert.
+/// Tm by the Wallace rule. Only A, C, G, T/U count; other characters are ignored.
 pub fn wallace(seq: &str) -> f64 {
     let (mut at, mut gc) = (0u32, 0u32);
     for b in seq.bytes() {
@@ -20,7 +20,7 @@ pub fn wallace(seq: &str) -> f64 {
     (2 * at + 4 * gc) as f64
 }
 
-/// GC-Anteil (0.0 bis 1.0) über alle Zeichen; 0.0 bei leerer Eingabe.
+/// GC fraction (0.0 to 1.0) over all characters; 0.0 for empty input.
 pub fn gc_fraction(seq: &str) -> f64 {
     if seq.is_empty() {
         return 0.0;
@@ -32,7 +32,7 @@ pub fn gc_fraction(seq: &str) -> f64 {
     gc as f64 / seq.len() as f64
 }
 
-/// Tm nach Marmur/Doty (Lehrbuchformel).
+/// Tm by Marmur/Doty (textbook formula).
 pub fn marmur_doty(seq: &str) -> f64 {
     let n = seq.len() as f64;
     if n == 0.0 {
@@ -45,7 +45,7 @@ pub fn marmur_doty(seq: &str) -> f64 {
     64.9 + 41.0 * (gc - 16.4) / n
 }
 
-/// (ΔH in kcal/mol, ΔS in cal/(mol·K)) für ein Dinukleotid 5'→3'.
+/// (dH in kcal/mol, dS in cal/(mol*K)) for a dinucleotide 5'->3'.
 fn pair_params(a: u8, b: u8) -> Option<(f64, f64)> {
     Some(match (a, b) {
         (b'A', b'A') | (b'T', b'T') => (-7.9, -22.2),
@@ -62,12 +62,12 @@ fn pair_params(a: u8, b: u8) -> Option<(f64, f64)> {
     })
 }
 
-/// Tm in °C nach dem Nearest-Neighbor-Modell.
+/// Tm in °C using the nearest-neighbor model.
 ///
-/// * `oligo_nm`: Oligokonzentration in nmol/l (z. B. 250)
-/// * `na_mm`: Natriumkonzentration in mmol/l (z. B. 50)
+/// * `oligo_nm`: oligo concentration in nmol/l (e.g. 250)
+/// * `na_mm`: sodium concentration in mmol/l (e.g. 50)
 ///
-/// Nur A, C, G, T (U wird als T gelesen); mindestens 2 Basen.
+/// Only A, C, G, T (U is read as T); at least 2 bases.
 pub fn nearest_neighbor(seq: &str, oligo_nm: f64, na_mm: f64) -> Result<f64> {
     let s: Vec<u8> = seq
         .bytes()
@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn nearest_neighbor_referenzwert() {
-        // Mit einer unabhängigen Python-Umsetzung derselben Formel berechnet: 51.7108 °C
+        // Computed with an independent Python implementation of the same formula: 51.7108 °C
         let tm = nearest_neighbor("ATGCGTACCTAGGATCCTAG", 250.0, 50.0).unwrap();
         assert!((tm - 51.7108).abs() < 0.01, "{}", tm);
     }

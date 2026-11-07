@@ -1,17 +1,17 @@
-//! Prüfung von Inserts auf zusätzliche Schnittstellen der gewählten Enzyme.
+//! Check inserts for additional cut sites of the chosen enzymes.
 
 use crate::cloning::enzymes::EnzymeDb;
 use crate::error::{Error, Result};
 use crate::model::document::{SequenceDocument, Topology};
 
-/// Meldet Enzyme, die das Insert öfter schneiden als vorgesehen.
-/// * Für jedes Enzym in `enzymes` (Namen, Reihenfolge wie übergeben; doppelte Namen nur einmal) wird die Zahl der Erkennungsstellen im Insert gezählt:
-///   `RestrictionEnzyme::find_matches(bases)` auf den Basen in Uppercase (beide Stränge sind schon enthalten; bei `Topology::Circular` zusätzlich Stellen über den
-///   Nullpunkt, indem die Basen hinten um `Erkennungslänge − 1` Zeichen vom Anfang verlängert werden und doppelte Startpositionen modulo Länge nur einmal zählen).
-/// * Vorgesehen sind bei genau einem Enzym höchstens 2 Stellen (beide Enden des Inserts), bei mehreren verschiedenen Enzymen höchstens 1 Stelle je Enzym.
-///   Gibt es mehr, entsteht die Meldung `Insert contains internal cut site of {Name}`.
+/// Reports enzymes that cut the insert more often than intended.
+/// * For each enzyme in `enzymes` (names, order as passed; duplicate names only once) the number of recognition sites in the insert is counted:
+///   `RestrictionEnzyme::find_matches(bases)` on the bases in uppercase (both strands are already included; for `Topology::Circular` additionally sites across the
+///   origin, by extending the bases at the end by `recognition length − 1` characters from the start and counting duplicate start positions modulo length only once).
+/// * Intended is at most 2 sites for exactly one enzyme (both ends of the insert), and at most 1 site per enzyme for several different enzymes.
+///   If there are more, the message `Insert contains internal cut site of {name}` is produced.
 ///
-/// Unbekannter Enzymname (`db.get`) → `Error::InvalidInput` mit dem Namen. Leere Enzymliste → leere Meldungsliste.
+/// Unknown enzyme name (`db.get`) → `Error::InvalidInput` with the name. Empty enzyme list → empty message list.
 pub fn internal_site_warnings(
     insert: &SequenceDocument,
     enzymes: &[&str],
@@ -66,7 +66,7 @@ mod tests {
     #[test]
     fn ein_enzym() {
         let db = EnzymeDb::standard();
-        // EcoRI = GAATTC; zwei Stellen sind erlaubt, drei nicht
+        // EcoRI = GAATTC; two sites are allowed, three are not
         let two = doc("GAATTCAAAAGAATTC", Topology::Linear);
         assert!(internal_site_warnings(&two, &["EcoRI"], &db)
             .unwrap()
@@ -90,7 +90,7 @@ mod tests {
             internal_site_warnings(&inner, &["EcoRI", "BamHI"], &db).unwrap(),
             vec!["Insert contains internal cut site of EcoRI".to_string()]
         );
-        // doppelter Name zählt wie ein Enzym
+        // duplicate name counts as one enzyme
         let two = doc("GAATTCAAAAGAATTC", Topology::Linear);
         assert!(internal_site_warnings(&two, &["EcoRI", "EcoRI"], &db)
             .unwrap()
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn zirkulaer_und_fehler() {
         let db = EnzymeDb::standard();
-        // eine Stelle über den Nullpunkt plus zwei normale = drei
+        // one site across the origin plus two normal ones = three
         let circ = doc("TTCAAAAGAATTCAAAAGAATTCAAAAGAA", Topology::Circular);
         assert_eq!(
             internal_site_warnings(&circ, &["EcoRI"], &db)

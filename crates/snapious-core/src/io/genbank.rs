@@ -1,8 +1,8 @@
-//! GenBank-Flatfile lesen und schreiben, einschließlich Features, Positionen und Qualifiern.
+//! Read and write GenBank flat files, including features, locations and qualifiers.
 //!
-//! Positionen in der Datei sind 1-basiert und inklusiv, intern 0-basiert mit exklusivem Ende.
-//! Unterstützt: `a..b`, `a`, `a^b`, `<a..b`, `a..>b`, `complement(...)`, `join(...)`, `order(...)`
-//! sowie `complement(join(...))`. `join(complement(...),...)` wird mit einer Fehlermeldung abgelehnt.
+//! Positions in the file are 1-based and inclusive; internally 0-based with exclusive end.
+//! Supported: `a..b`, `a`, `a^b`, `<a..b`, `a..>b`, `complement(...)`, `join(...)`, `order(...)`
+//! and `complement(join(...))`. `join(complement(...),...)` is rejected with an error message.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -13,7 +13,7 @@ use crate::model::feature::{Feature, Interval, Location, Strand};
 use crate::model::sequence::{Sequence, SequenceType};
 use crate::util::{new_id, now_secs};
 
-/// Liest alle Einträge (durch `//` getrennt) aus einem Text.
+/// Reads all records (separated by `//`) from a text.
 pub fn parse(text: &str) -> Result<Vec<SequenceDocument>> {
     let mut docs = Vec::new();
     let mut record: Vec<(usize, &str)> = Vec::new();
@@ -33,13 +33,13 @@ pub fn parse(text: &str) -> Result<Vec<SequenceDocument>> {
     Ok(docs)
 }
 
-/// Liest eine GenBank-Datei.
+/// Reads a GenBank file.
 pub fn read(path: &Path) -> Result<Vec<SequenceDocument>> {
     let text = std::fs::read_to_string(path)?;
     parse(&text)
 }
 
-/// Schreibt ein Dokument als GenBank-Datei.
+/// Writes a document as a GenBank file.
 pub fn write(doc: &SequenceDocument, path: &Path) -> Result<()> {
     std::fs::write(path, format(doc))?;
     Ok(())
@@ -49,7 +49,7 @@ struct RawFeature {
     line: usize,
     feature_type: String,
     location: String,
-    /// Roher Qualifier-Text ohne führenden Schrägstrich, z. B. `gene="abc"`.
+    /// Raw qualifier text without the leading slash, e.g. `gene="abc"`.
     qualifiers: Vec<String>,
 }
 
@@ -199,7 +199,7 @@ fn parse_feature_line(no: usize, line: &str, raws: &mut Vec<RawFeature>) {
         if let Some(q) = trimmed.strip_prefix('/') {
             current.qualifiers.push(q.to_string());
         } else if let Some(last) = current.qualifiers.last_mut() {
-            // Fortsetzungszeile; bei /translation ohne Leerzeichen anfügen
+            // Continuation line; for /translation append without a space
             if !last.starts_with("translation=") {
                 last.push(' ');
             }
@@ -322,7 +322,7 @@ fn parse_range(s: &str, line: usize) -> Result<Parsed> {
     let (a, b) = if let Some((a, b)) = s.split_once("..") {
         (a, Some(b))
     } else if let Some((a, b)) = s.split_once('^') {
-        // Position zwischen zwei Basen: leeres Intervall hinter Base a
+        // Position between two bases: empty interval after base a
         let start = parse_num(a.trim_start_matches('<'), line)?;
         let _ = parse_num(b.trim_start_matches('>'), line)?;
         return Ok((vec![(start, start)], Strand::Forward, false, false));
@@ -362,9 +362,9 @@ fn parse_range(s: &str, line: usize) -> Result<Parsed> {
     ))
 }
 
-// ---------------------------------------------------------------- Schreiben
+// ---------------------------------------------------------------- Writing
 
-/// Formatiert ein Dokument als GenBank-Text.
+/// Formats a document as GenBank text.
 pub fn format(doc: &SequenceDocument) -> String {
     let seq = doc.sequence();
     let name = doc.name().replace(' ', "_");

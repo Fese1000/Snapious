@@ -1,16 +1,16 @@
-//! Punktdiagramm (Dotplot) zum Vergleich zweier Sequenzen.
+//! Dot plot for comparing two sequences.
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::error::{Error, Result};
 
-/// Berechnet die Punkte eines Dotplots. Ein Punkt `(i, j)` gehört dazu, wenn das Fenster `a[i..i+window]`
-/// und das Fenster `b[j..j+window]` an mindestens `min_matches` Stellen (Stelle für Stelle verglichen) übereinstimmen.
-/// * Beide Sequenzen werden in Uppercase verglichen.
-/// * `reverse`: `b` wird vorher durch sein Reverskomplement (`iupac_reverse_complement`) ersetzt; `j` zählt dann im
-///   Reverskomplement.
-/// * Sortierung zeilenweise: erst nach `i`, dann nach `j`. Ist eine Sequenz kürzer als `window`, ist das Ergebnis leer.
+/// Computes the points of a dot plot. A point `(i, j)` belongs to it if the window `a[i..i+window]`
+/// and the window `b[j..j+window]` agree at at least `min_matches` positions (compared position by position).
+/// * Both sequences are compared in uppercase.
+/// * `reverse`: `b` is first replaced by its reverse complement (`iupac_reverse_complement`); `j` then counts in the
+///   reverse complement.
+/// * Sorted row by row: first by `i`, then by `j`. If a sequence is shorter than `window`, the result is empty.
 ///
-/// Fehler `Error::InvalidInput`, wenn `window == 0`, `min_matches == 0` oder `min_matches > window`.
+/// Error `Error::InvalidInput` if `window == 0`, `min_matches == 0` or `min_matches > window`.
 pub fn dotplot_points(
     a: &str,
     b: &str,
@@ -61,8 +61,8 @@ pub fn dotplot_points(
     Ok(points)
 }
 
-/// Gruppiert die Punkte zu Diagonalen: aufeinanderfolgende Punkte `(i, j)`, `(i+1, j+1)`, … bilden eine Diagonale
-/// `(start_i, start_j, länge)`. Sortiert nach `start_i`, dann `start_j`. Eingabe darf in beliebiger Reihenfolge sein.
+/// Groups the points into diagonals: consecutive points `(i, j)`, `(i+1, j+1)`, … form a diagonal
+/// `(start_i, start_j, length)`. Sorted by `start_i`, then `start_j`. Input may be in any order.
 pub fn diagonals(points: &[(usize, usize)]) -> Vec<(usize, usize, usize)> {
     if points.is_empty() {
         return vec![];

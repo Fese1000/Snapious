@@ -1,9 +1,9 @@
-//! Ähnlichkeitsverlauf entlang eines Alignments (Werte je Spalte und geglättet).
+//! Similarity profile along an alignment (per-column and smoothed values).
 
-/// Mittlere paarweise Identität je Spalte: Für jedes Paar von Zeilen `i < j`, in dem in dieser Spalte beide Zeichen keine Lücke
-/// (`-` oder `.`) sind, wird gezählt, ob sie gleich sind (Groß-/Kleinschreibung egal). Wert = gleiche Paare / gültige Paare;
-/// Spalten ohne gültiges Paar haben `0.0`. Die Länge ist die der ersten Zeile (fehlende Zeichen in kürzeren Zeilen zählen als Lücke);
-/// ohne Zeilen leer. Beispiel: `ACGT`, `ACGA`, `TCGT` → `[1/3, 1, 1, 1/3]`.
+/// Mean pairwise identity per column: for each pair of rows `i < j` in which both characters in this column are not gaps
+/// (`-` or `.`), it is counted whether they are equal (case-insensitive). Value = equal pairs / valid pairs;
+/// columns without a valid pair have `0.0`. The length is that of the first row (missing characters in shorter rows count as gaps);
+/// empty without rows. Example: `ACGT`, `ACGA`, `TCGT` → `[1/3, 1, 1, 1/3]`.
 pub fn column_identity(rows: &[String]) -> Vec<f64> {
     let Some(first) = rows.first() else {
         return Vec::new();
@@ -36,9 +36,9 @@ pub fn column_identity(rows: &[String]) -> Vec<f64> {
         .collect()
 }
 
-/// Glättet Werte mit einem zentrierten Fenster der Breite `window`: Wert `i` ist der Mittelwert von `values[lo..=hi]` mit
-/// `half = window / 2`, `lo = i.saturating_sub(half)` und `hi = min(i + half, len - 1)`. `window` 0 oder 1 lässt die Werte unverändert.
-/// Beispiel: `[1/3, 1, 1, 1/3]` mit Fenster 3 → `[2/3, 7/9, 7/9, 2/3]`. Leere Eingabe → leer.
+/// Smooths values with a centered window of width `window`: value `i` is the mean of `values[lo..=hi]` with
+/// `half = window / 2`, `lo = i.saturating_sub(half)` and `hi = min(i + half, len - 1)`. `window` 0 or 1 leaves the values unchanged.
+/// Example: `[1/3, 1, 1, 1/3]` with window 3 → `[2/3, 7/9, 7/9, 2/3]`. Empty input → empty.
 pub fn window_mean(values: &[f64], window: usize) -> Vec<f64> {
     let half = window / 2;
     (0..values.len())

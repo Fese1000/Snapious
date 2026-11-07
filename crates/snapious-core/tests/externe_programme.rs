@@ -1,5 +1,5 @@
-//! Prüft, dass installierte Bioinformatik-Programme über `ToolRegistry` aufrufbar sind.
-//! Fehlende Programme werden übersprungen.
+//! Checks that installed bioinformatics programs can be called via `ToolRegistry`.
+//! Missing programs are skipped.
 
 use std::time::Duration;
 

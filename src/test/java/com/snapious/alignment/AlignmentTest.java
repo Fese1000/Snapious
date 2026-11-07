@@ -24,7 +24,7 @@ class AlignmentTest {
         assertEquals(8, result.getScore());
 
         var result2 = align.needlemanWunsch("ATCG", "AACG");
-        assertTrue(result2.getScore() < 8);  // Ein Mismatch reduziert Score
+        assertTrue(result2.getScore() < 8);  // one mismatch reduces the score
     }
 
     @Test
@@ -43,7 +43,7 @@ class AlignmentTest {
 
         var result = align.needlemanWunsch("", "ATCG");
 
-        assertEquals(-4, result.getScore());  // 4 Gaps à -1
+        assertEquals(-4, result.getScore());  // 4 gaps of -1
     }
 
     @Test
@@ -70,7 +70,7 @@ class AlignmentTest {
     void testSmithWatermanLocalMatch() {
         Alignment align = new Alignment(2, -1, -1);
 
-        // Nur der Mitte-Teil "TCG" matcht
+        // Only the middle part "TCG" matches
         var result = align.smithWaterman("XXATCGYY", "AATCG");
 
         assertEquals(Alignment.AlignType.LOCAL, result.getType());
@@ -83,7 +83,7 @@ class AlignmentTest {
 
         var result = align.smithWaterman("ZZZZ", "XXXX");
 
-        // Bei komplett unterschiedlichen Sequenzen sollte Score niedrig sein
+        // For completely different sequences the score should be low
         assertTrue(result.getScore() <= 0);
     }
 
@@ -109,7 +109,7 @@ class AlignmentTest {
 
     @Test
     void testCustomScoring() {
-        // Proteine: höherer Match-Score, anderer Mismatch
+        // Proteins: higher match score, different mismatch
         Alignment align = new Alignment(5, -2, -3);
 
         var result = align.needlemanWunsch("AAAA", "AAAA");
@@ -176,19 +176,19 @@ class AlignmentTest {
 
     @Test
     void testDifferentScoringMatrices() {
-        // DNA Default: match=2, mismatch=-1, gap=-1
+        // DNA default: match=2, mismatch=-1, gap=-1
         Alignment dnaAlign = new Alignment();
 
         var dnaResult = dnaAlign.needlemanWunsch("ATCG", "ATCG");
         assertEquals(8, dnaResult.getScore());
 
-        // Proteine: match=5, mismatch=-2, gap=-3
+        // Proteins: match=5, mismatch=-2, gap=-3
         Alignment proteinAlign = new Alignment(5, -2, -3);
 
         var protResult = proteinAlign.needlemanWunsch("AAAA", "AAAA");
         assertEquals(20, protResult.getScore());
 
-        // Unterschiedliche Matrizen sollten unterschiedliche Scores liefern
+        // Different matrices should yield different scores
         var mixedResult = proteinAlign.needlemanWunsch("ATCG", "AATG");
         assertTrue(mixedResult.getScore() > 0);
     }
@@ -224,7 +224,7 @@ class AlignmentTest {
         var result = align.needlemanWunsch(sb1.toString(), sb2.toString());
 
         long elapsed = System.currentTimeMillis() - startTime;
-        assertTrue(elapsed < 5000, "Alignment sollte innerhalb von 5s fertig sein");
+        assertTrue(elapsed < 5000, "Alignment should finish within 5s");
 
         assertEquals(4000, result.getScore());
     }
@@ -233,7 +233,7 @@ class AlignmentTest {
     void testSmithWatermanLongerMatch() {
         Alignment align = new Alignment(2, -1, -1);
 
-        // Die längere Übereinstimmung sollte gefunden werden
+        // The longer match should be found
         var result = align.smithWaterman(
             "AAATTTTTTGGG",
             "TTTGTTTTTCCC");
@@ -246,7 +246,7 @@ class AlignmentTest {
     void testMultipleAlignments() {
         Alignment align = new Alignment(2, -1, -1);
 
-        // Verschiedene Paare testen
+        // Test different pairs
         var pair1 = align.needlemanWunsch("A", "A");
         assertEquals(2, pair1.getScore());
 
@@ -273,7 +273,7 @@ class AlignmentTest {
 
     @Test
     void testEditDistanceMatrixProperty() {
-        // Dreiecksungleichung für Edit-Distanz
+        // Triangle inequality for edit distance
         String a = "AAA";
         String b = "AAB";
         String c = "BBB";
@@ -282,7 +282,7 @@ class AlignmentTest {
         double dBC = Alignment.editDistance(b, c);
         double dAC = Alignment.editDistance(a, c);
 
-        assertTrue(dAC <= dAB + dBC, "Dreiecksungleichung muss gelten");
+        assertTrue(dAC <= dAB + dBC, "Triangle inequality must hold");
     }
 
     @Test
@@ -290,6 +290,6 @@ class AlignmentTest {
         double id1 = Alignment.percentIdentity("ATCG", "AAGG");
         double id2 = Alignment.percentIdentity("AAGG", "ATCG");
 
-        assertEquals(id1, id2);  // Symmetrisch
+        assertEquals(id1, id2);  // symmetric
     }
 }

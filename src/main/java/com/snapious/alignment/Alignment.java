@@ -3,11 +3,11 @@ package com.snapious.alignment;
 import java.util.*;
 
 /**
- * Implementiert Pairwise-Alignment-Algorithmen:
+ * Implements pairwise alignment algorithms:
  * - Needleman-Wunsch (global)
- * - Smith-Waterman (lokal)
+ * - Smith-Waterman (local)
  * 
- * Mit konfigurierbaren Score-Matrizen für DNA, RNA und Proteine.
+ * With configurable scoring matrices for DNA, RNA and proteins.
  */
 public class Alignment {
 
@@ -29,7 +29,7 @@ public class Alignment {
         public double getScore() { return score; }
         public AlignType getType() { return type; }
 
-        /** Formatierter Alignment-Output in Blöcken à 60 Spalten */
+        /** Formatted alignment output in blocks of 60 columns */
         public String format() {
             StringBuilder sb = new StringBuilder();
             sb.append("Score: ").append(String.format(java.util.Locale.ROOT, "%.1f", score)).append("\n\n");
@@ -61,7 +61,7 @@ public class Alignment {
     private final int gapPenalty;
 
     public Alignment() {
-        this(2, -1, -1);  // Default: DNA scores
+        this(2, -1, -1);  // default: DNA scores
     }
 
     public Alignment(int matchScore, int mismatchPenalty, int gapPenalty) {
@@ -76,7 +76,7 @@ public class Alignment {
 
     // ======== NEEDLEMAN-WUNSCH (Global Alignment) ========
 
-    /** Globales Pairwise-Alignment (Needleman-Wunsch), O(n*m) Zeit und Speicher. */
+    /** Global pairwise alignment (Needleman-Wunsch), O(n*m) time and memory. */
     public AlignResult needlemanWunsch(String seq1, String seq2) {
         int n = seq1.length();
         int m = seq2.length();
@@ -100,7 +100,7 @@ public class Alignment {
 
     // ======== SMITH-WATERMAN (Local Alignment) ========
 
-    /** Lokales Pairwise-Alignment (Smith-Waterman). */
+    /** Local pairwise alignment (Smith-Waterman). */
     public AlignResult smithWaterman(String seq1, String seq2) {
         int n = seq1.length();
         int m = seq2.length();
@@ -129,8 +129,8 @@ public class Alignment {
     }
 
     /**
-     * Gemeinsames Backtracking. Global läuft bis (0,0), lokal endet es bei Score 0.
-     * Liefert {alignierte Sequenz 1, alignierte Sequenz 2}.
+     * Shared backtracking. Global runs to (0,0), local ends at score 0.
+     * Returns {aligned sequence 1, aligned sequence 2}.
      */
     private String[] traceback(String seq1, String seq2, int[][] matrix, int endI, int endJ, boolean local) {
         StringBuilder aln1 = new StringBuilder();
@@ -158,7 +158,7 @@ public class Alignment {
 
     // ======== CONSENSUS SEQUENCE ========
 
-    /** Erstellt eine Konsensus-Sequenz aus mehreren alignierten Sequenzen */
+    /** Creates a consensus sequence from several aligned sequences */
     public static String createConsensus(List<String> alignedSeqs) {
         if (alignedSeqs == null || alignedSeqs.isEmpty()) return "";
 
@@ -175,8 +175,8 @@ public class Alignment {
                 }
             }
 
-            // Base mit höchstem Gewicht (Gaps niedrigstes)
-            char bestBase = 'N';  // Default wenn unklar
+            // Base with the highest weight (gaps lowest)
+            char bestBase = 'N';  // default when unclear
             int maxCount = 0;
 
             for (Map.Entry<Character, Integer> entry : counts.entrySet()) {
@@ -197,7 +197,7 @@ public class Alignment {
 
     // ======== PAIRWISE DISTANCE ========
 
-    /** Berechnet Editierdistanz (Levenshtein) zwischen zwei Sequenzen */
+    /** Computes the edit distance (Levenshtein) between two sequences */
     public static double editDistance(String seq1, String seq2) {
         int n = seq1.length();
         int m = seq2.length();
@@ -220,7 +220,7 @@ public class Alignment {
         return dp[n][m];
     }
 
-    /** Berechnet Prozent-Identität zwischen zwei Sequenzen */
+    /** Computes the percent identity between two sequences */
     public static double percentIdentity(String seq1, String seq2) {
         int matches = 0;
         int len = Math.min(seq1.length(), seq2.length());

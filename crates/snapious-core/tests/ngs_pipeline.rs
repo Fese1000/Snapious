@@ -1,4 +1,4 @@
-//! Integrationstest Phase 5: Reads simulieren → QC → Trimming → Variantenerkennung → VCF; dazu FASTA-Index.
+//! Integration test phase 5: simulate reads → QC → trimming → variant calling → VCF; plus FASTA index.
 
 use snapious_core::io::fastq::FastqRecord;
 use snapious_core::io::sam::SamRecord;
@@ -19,7 +19,7 @@ fn reference() -> String {
         .collect()
 }
 
-/// 1000 Reads à 100 bp (mittlere Tiefe 20); jeder zweite Read, der Position 2500 überdeckt, trägt dort eine Substitution.
+/// 1000 reads of 100 bp (mean depth 20); every second read covering position 2500 carries a substitution there.
 fn simulate(reference: &str) -> (Vec<FastqRecord>, Vec<SamRecord>) {
     let mut rng = Rng::new(5);
     let bytes: Vec<char> = reference.chars().collect();
@@ -76,12 +76,12 @@ fn von_den_reads_bis_zur_variante() {
     assert!(qc.mean_quality_per_position.iter().all(|q| *q == 40.0));
     assert_eq!(qc.adapter_percent, 0.0);
 
-    // Trimming ändert gute Reads kaum (zufällige Adapter-Treffer am Readende sind selten)
+    // Trimming barely changes good reads (random adapter hits at the read end are rare)
     let (kept, stats) = trim_all(fq, &TrimOptions::standard());
     assert!(kept.len() >= 990, "{}", kept.len());
     assert!(stats.bases_removed < 500, "{}", stats.bases_removed);
 
-    // Varianten: genau die Substitution an Position 2500
+    // Variants: exactly the substitution at position 2500
     let snvs = call_snvs("ref", &reference, &sam, &CallOptions::standard()).unwrap();
     assert_eq!(snvs.len(), 1, "{:?}", snvs);
     assert_eq!(snvs[0].position, SNV_POS);

@@ -1,4 +1,4 @@
-//! Verzeichnis aller Operationen nach ID.
+//! Directory of all operations by ID.
 
 use std::collections::BTreeMap;
 
@@ -7,7 +7,7 @@ use crate::ops::builtin::{InsertOperation, ReverseComplementOperation};
 use crate::ops::more::all_operations;
 use crate::ops::operation::Operation;
 
-/// Alle bekannten Operationen, nach ID sortiert.
+/// All known operations, sorted by ID.
 #[derive(Default)]
 pub struct OperationRegistry {
     ops: BTreeMap<String, Box<dyn Operation>>,
@@ -18,7 +18,7 @@ impl OperationRegistry {
         Self::default()
     }
 
-    /// Registry mit allen eingebauten Operationen.
+    /// Registry with all built-in operations.
     pub fn with_builtins() -> Self {
         let mut r = Self::new();
         let mut all: Vec<Box<dyn Operation>> = vec![
@@ -27,13 +27,13 @@ impl OperationRegistry {
         ];
         all.extend(all_operations());
         for op in all {
-            // IDs der eingebauten Operationen sind eindeutig (durch Test abgesichert)
+            // IDs of the built-in operations are unique (guaranteed by a test)
             let _ = r.register(op);
         }
         r
     }
 
-    /// Fügt eine Operation hinzu; doppelte ID → `Error::InvalidInput`.
+    /// Adds an operation; duplicate ID → `Error::InvalidInput`.
     pub fn register(&mut self, op: Box<dyn Operation>) -> Result<()> {
         let id = op.id().to_string();
         if self.ops.contains_key(&id) {
@@ -50,7 +50,7 @@ impl OperationRegistry {
         self.ops.get(id).map(|b| b.as_ref())
     }
 
-    /// Alle Operationen nach ID sortiert.
+    /// All operations sorted by ID.
     pub fn all(&self) -> Vec<&dyn Operation> {
         self.ops.values().map(|b| b.as_ref()).collect()
     }

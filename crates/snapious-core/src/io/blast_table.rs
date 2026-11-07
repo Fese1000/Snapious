@@ -1,8 +1,8 @@
-//! BLAST-Ergebnisse im Tabellenformat (`-outfmt 6`) lesen.
+//! Read BLAST results in tabular format (`-outfmt 6`).
 
 use crate::error::{Error, Result};
 
-/// Eine Zeile der Tabelle.
+/// A row of the table.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BlastTableRow {
     pub query: String,
@@ -19,23 +19,23 @@ pub struct BlastTableRow {
     pub bit_score: f64,
 }
 
-/// Liest die zwölf Standardspalten (`qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore`), durch
-/// Tabulator getrennt (weitere Spalten werden ignoriert). Leere Zeilen und Zeilen mit `#` am Anfang werden übersprungen.
-/// Fehler `Error::InvalidInput` (mit Zeilennummer): weniger als 12 Felder oder eine nicht lesbare Zahl.
+/// Reads the twelve standard columns (`qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore`),
+/// tab-separated (further columns are ignored). Empty lines and lines starting with `#` are skipped.
+/// `Error::InvalidInput` (with line number): fewer than 12 fields or an unreadable number.
 pub fn parse_blast_table(text: &str) -> Result<Vec<BlastTableRow>> {
     let mut rows = Vec::new();
 
     for (line_num, line) in text.lines().enumerate() {
         let trimmed = line.trim();
 
-        // Leere Zeilen oder Kommentare überspringen
+        // Skip empty lines or comments
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
 
         let fields: Vec<&str> = trimmed.split('\t').collect();
 
-        // Mindestens 12 Spalten erforderlich
+        // At least 12 columns required
         if fields.len() < 12 {
             return Err(Error::InvalidInput(format!(
                 "Line {}: At least 12 columns expected, found {}",
@@ -44,7 +44,7 @@ pub fn parse_blast_table(text: &str) -> Result<Vec<BlastTableRow>> {
             )));
         }
 
-        // Parsing der Felder
+        // Parse the fields
         let query = fields[0].to_string();
         let subject = fields[1].to_string();
 
@@ -86,7 +86,7 @@ pub fn parse_blast_table(text: &str) -> Result<Vec<BlastTableRow>> {
             Error::InvalidInput(format!("Line {}: Invalid subject_end", line_num + 1))
         })?;
 
-        // E-Value Parsing (kann wissenschaftliche Notation enthalten)
+        // E-value parsing (may contain scientific notation)
         let evalue: f64 = fields[10].parse().map_err(|_| {
             Error::InvalidInput(format!("Line {}: Invalid evalue", line_num + 1))
         })?;

@@ -1,6 +1,6 @@
-//! Projektspeicher: Dokumente und Verlauf in einer SQLite-Datei.
+//! Project store: documents and history in a SQLite file.
 //!
-//! Schema (Version 1): Tabellen `documents` und `history`. Dokumente werden als JSON-Text abgelegt.
+//! Schema (version 1): tables `documents` and `history`. Documents are stored as JSON text.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -17,7 +17,7 @@ use crate::ops::operation::{HistoryEntry, Params};
 
 const SCHEMA_VERSION: i64 = 1;
 
-/// Kurzinfo zu einem gespeicherten Dokument.
+/// Short info about a stored document.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DocumentInfo {
     pub id: String,
@@ -26,18 +26,18 @@ pub struct DocumentInfo {
     pub created: i64,
 }
 
-/// Eine Projektdatei.
+/// A project file.
 pub struct ProjectStore {
     pub(crate) conn: Connection,
 }
 
 impl ProjectStore {
-    /// Öffnet die Datei oder legt sie samt Schema an.
+    /// Opens the file or creates it together with the schema.
     pub fn open(path: &Path) -> Result<Self> {
         Self::init(Connection::open(path)?)
     }
 
-    /// Projekt nur im Arbeitsspeicher (für Tests und temporäre Arbeit).
+    /// Project in memory only (for tests and temporary work).
     pub fn open_in_memory() -> Result<Self> {
         Self::init(Connection::open_in_memory()?)
     }
@@ -81,7 +81,7 @@ impl ProjectStore {
         Ok(Self { conn })
     }
 
-    /// Speichert ein Dokument (Einfügen oder Überschreiben nach ID).
+    /// Saves a document (insert or overwrite by ID).
     pub fn save(&mut self, doc: &Document) -> Result<()> {
         let payload = match doc {
             Document::Sequence(d) => serde_json::to_string(&to_payload(d))?,
@@ -100,7 +100,7 @@ impl ProjectStore {
         Ok(())
     }
 
-    /// Lädt ein Dokument; `None`, wenn es die ID nicht gibt.
+    /// Loads a document; `None` if the ID does not exist.
     pub fn load(&self, id: &str) -> Result<Option<Document>> {
         let row: Option<(String, String, String, i64, String)> = self
             .conn
@@ -131,14 +131,14 @@ impl ProjectStore {
                         created,
                     )?)))
                 }
-                // Stammbäume gibt es nicht mehr; alte Projekte behalten die Zeilen, die Dokumente werden aber nicht angezeigt
+                // Phylogenetic trees no longer exist; old projects keep the rows, but the documents are not shown
                 "tree" => Ok(None),
                 other => Err(Error::Io(format!("Unknown document type: {}", other))),
             },
         }
     }
 
-    /// Alle Dokumente, nach Erstellungszeit und Name sortiert.
+    /// All documents, sorted by creation time and name.
     pub fn list(&self) -> Result<Vec<DocumentInfo>> {
         let mut stmt = self
             .conn
@@ -158,14 +158,14 @@ impl ProjectStore {
         Ok(out)
     }
 
-    /// Löscht ein Dokument (kein Fehler, wenn es fehlt).
+    /// Deletes a document (no error if it is missing).
     pub fn delete(&mut self, id: &str) -> Result<()> {
         self.conn
             .execute("DELETE FROM documents WHERE id = ?1", params![id])?;
         Ok(())
     }
 
-    /// Speichert einen Workflow als JSON-Text (überschreibt gleichen Namen).
+    /// Saves a workflow as JSON text (overwrites the same name).
     pub fn save_workflow(&mut self, name: &str, json: &str) -> Result<()> {
         self.conn.execute(
             "INSERT INTO workflows(name, json) VALUES(?1, ?2) ON CONFLICT(name) DO UPDATE SET json = ?2",
@@ -174,7 +174,7 @@ impl ProjectStore {
         Ok(())
     }
 
-    /// Alle gespeicherten Workflows `(Name, JSON)`, nach Name sortiert.
+    /// All saved workflows `(name, JSON)`, sorted by name.
     pub fn workflows(&self) -> Result<Vec<(String, String)>> {
         let mut stmt = self
             .conn
@@ -187,14 +187,14 @@ impl ProjectStore {
         Ok(out)
     }
 
-    /// Löscht einen Workflow (kein Fehler, wenn es ihn nicht gibt).
+    /// Deletes a workflow (no error if it does not exist).
     pub fn delete_workflow(&mut self, name: &str) -> Result<()> {
         self.conn
             .execute("DELETE FROM workflows WHERE name = ?1", params![name])?;
         Ok(())
     }
 
-    /// Speichert einen Verlaufseintrag.
+    /// Saves a history entry.
     pub fn add_history(&mut self, e: &HistoryEntry) -> Result<()> {
         self.conn.execute(
             "INSERT OR REPLACE INTO history(id, time, operation, parameters, inputs, outputs, summary)
@@ -212,7 +212,7 @@ impl ProjectStore {
         Ok(())
     }
 
-    /// Gesamter Verlauf, nach Zeit aufsteigend (bei gleicher Zeit in Einfügereihenfolge).
+    /// Entire history, ascending by time (for equal times in insertion order).
     pub fn history(&self) -> Result<Vec<HistoryEntry>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, time, operation, parameters, inputs, outputs, summary
@@ -245,7 +245,7 @@ impl ProjectStore {
         Ok(out)
     }
 
-    /// Verlaufseinträge, in denen die Dokument-ID als Ein- oder Ausgabe vorkommt.
+    /// History entries in which the document ID appears as input or output.
     pub fn history_for(&self, document_id: &str) -> Result<Vec<HistoryEntry>> {
         Ok(self
             .history()?
@@ -258,7 +258,7 @@ impl ProjectStore {
     }
 }
 
-// ---------------------------------------------------------------- Nutzlast (JSON)
+// ---------------------------------------------------------------- Payload (JSON)
 
 #[derive(Serialize, Deserialize)]
 struct FeaturePayload {
@@ -438,7 +438,7 @@ mod tests {
         )
         .unwrap();
         store.save(&Document::Alignment(aln.clone())).unwrap();
-        // ein Stammbaum aus einer älteren Version: bleibt in der Datenbank, wird aber nicht mehr angezeigt oder geladen
+        // a phylogenetic tree from an older version: stays in the database, but is no longer shown or loaded
         store
             .conn
             .execute(

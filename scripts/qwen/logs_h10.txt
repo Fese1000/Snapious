@@ -1,3 +1,0 @@
-=== expression.rs Versuch 1
-[26s {'prompt_tokens': 2196, 'completion_tokens': 1187, 'total_tokens': 3383}]
-ERGEBNIS expression.rs: GRÜN (2 Tests) nach 1 Versuch(en)

@@ -1,4 +1,4 @@
-//! Restriktionsklonierung: Fragmente verbinden und mögliche Konstrukte aus Vektor und Insert bilden.
+//! Restriction cloning: join fragments and form possible constructs from vector and insert.
 
 use std::collections::{BTreeMap, HashSet};
 
@@ -9,28 +9,28 @@ use crate::model::document::{SequenceDocument, Topology};
 use crate::model::sequence::{Sequence, SequenceType};
 use crate::util::{new_id, now_secs};
 
-/// Ein mögliches Klonierungsprodukt.
+/// A possible cloning product.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CloningCandidate {
-    /// Das Vektor-Rückgrat (größtes Fragment des Vektorverdaus).
+    /// The vector backbone (largest fragment of the vector digest).
     pub vector: Fragment,
-    /// Das Insert-Fragment in der Orientierung, in der es eingebaut ist.
+    /// The insert fragment in the orientation in which it is inserted.
     pub insert: Fragment,
-    /// `true`, wenn das Insert reverse-komplementiert eingebaut wurde.
+    /// `true` if the insert was inserted reverse-complemented.
     pub insert_reversed: bool,
-    /// `true`, wenn die beiden Vektorenden verschieden sind (dann ist nur eine Orientierung möglich).
+    /// `true` if the two vector ends differ (then only one orientation is possible).
     pub directional: bool,
-    /// Zirkuläres Konstrukt.
+    /// Circular construct.
     pub construct: SequenceDocument,
     pub warnings: Vec<String>,
 }
 
-/// Verbindet Fragmente in der gegebenen Reihenfolge zu einem Oberstrang: Summe der `top`-Texte.
-/// - Leere Liste: `Error::InvalidInput`.
-/// - Für jedes benachbarte Paar muss `fragments[i].can_join(&fragments[i+1])` gelten, sonst `Error::InvalidInput`
-///   (Meldung nennt beide Nummern 1-basiert: `Fragmente {i} und {i+1} passen nicht zusammen`).
-/// - Ist `circular`, muss zusätzlich das letzte Fragment ans erste passen (bei einem einzelnen Fragment an sich selbst),
-///   sonst `Error::InvalidInput`.
+/// Joins fragments in the given order into a top strand: sum of the `top` texts.
+/// - Empty list: `Error::InvalidInput`.
+/// - For every adjacent pair `fragments[i].can_join(&fragments[i+1])` must hold, otherwise `Error::InvalidInput`
+///   (message names both numbers 1-based: `Fragmente {i} und {i+1} passen nicht zusammen`).
+/// - If `circular`, additionally the last fragment must fit the first (for a single fragment, itself),
+///   otherwise `Error::InvalidInput`.
 pub fn join_fragments(fragments: &[Fragment], circular: bool) -> Result<String> {
     if fragments.is_empty() {
         return Err(Error::InvalidInput("Empty fragment list".to_string()));
@@ -73,24 +73,24 @@ pub fn join_fragments(fragments: &[Fragment], circular: bool) -> Result<String> 
     Ok(result)
 }
 
-/// Alle zirkulären Produkte der Restriktionsklonierung.
+/// All circular products of restriction cloning.
 ///
-/// 1. `digest(vector, db, vector_enzymes)` und `digest(insert, db, insert_enzymes)` (Fehler werden weitergegeben).
-/// 2. Wurde der Vektor nicht geschnitten (genau ein Fragment mit `source_start == 0` und `source_end == Länge des Vektors`),
-///    gibt es keine Kandidaten (leere Liste). Rückgrat `V` ist das längste Vektorfragment (bei Gleichstand das erste).
-/// 3. Für jedes Insert-Fragment `I` und beide Orientierungen (`I`, dann `I.reverse_complement()`) entsteht ein Kandidat, wenn
-///    `V.can_join(&I')` und `I'.can_join(&V)` gelten.
+/// 1. `digest(vector, db, vector_enzymes)` and `digest(insert, db, insert_enzymes)` (errors are passed on).
+/// 2. If the vector was not cut (exactly one fragment with `source_start == 0` and `source_end == vector length`),
+///    there are no candidates (empty list). Backbone `V` is the longest vector fragment (on a tie the first).
+/// 3. For each insert fragment `I` and both orientations (`I`, then `I.reverse_complement()`) a candidate arises if
+///    `V.can_join(&I')` and `I'.can_join(&V)` hold.
 /// 4. `directional = V.left != V.right`.
-/// 5. Konstrukt: Oberstrang `V.top + I'.top`; Name `"{Vektorname} + {Insertname}"`; neue ID (`new_id()`), `Topology::Circular`;
-///    Sequenz vom Typ DNA (Id und Name der Sequenz gleich dem Dokumentnamen); Features: die von `V` und die von `I'`,
-///    letztere um `V.length()` nach rechts verschoben (`Location::shifted`, `Feature::with_location`);
-///    Metadaten `source = "clone.restriction"`; Erstellzeit `now_secs()`.
-/// 6. Warnungen (in dieser Reihenfolge):
-///    - `Insert orientation not directed (both orientations possible)`, wenn für dasselbe Insert-Fragment beide
-///      Orientierungen einen Kandidaten ergeben haben (steht an beiden Kandidaten);
-///    - `Vector re-ligation possible`, wenn `V.right.pairs_with(&V.left)`.
-/// 7. Sortierung: gerichtete zuerst, dann weniger Warnungen, dann kürzeres Konstrukt, dann nicht umgekehrt vor umgekehrt,
-///    dann kleinerer `source_start` des Inserts.
+/// 5. Construct: top strand `V.top + I'.top`; name `"{vector name} + {insert name}"`; new ID (`new_id()`), `Topology::Circular`;
+///    sequence of type DNA (id and name of the sequence equal to the document name); features: those of `V` and those of `I'`,
+///    the latter shifted right by `V.length()` (`Location::shifted`, `Feature::with_location`);
+///    metadata `source = "clone.restriction"`; creation time `now_secs()`.
+/// 6. Warnings (in this order):
+///    - `Insert orientation not directed (both orientations possible)` if both orientations
+///      gave a candidate for the same insert fragment (appears on both candidates);
+///    - `Vector re-ligation possible` if `V.right.pairs_with(&V.left)`.
+/// 7. Sorting: directional first, then fewer warnings, then shorter construct, then non-reversed before reversed,
+///    then smaller `source_start` of the insert.
 pub fn restriction_candidates(
     vector: &SequenceDocument,
     vector_enzymes: &[&str],
@@ -101,7 +101,7 @@ pub fn restriction_candidates(
     let vector_frags = digest(vector, db, vector_enzymes)?;
     let insert_frags = digest(insert, db, insert_enzymes)?;
 
-    // Schritt 2: Vektor-Prüfung
+    // Step 2: vector check
     let vec_len = vector.len();
     if vector_frags.len() == 1 {
         let first_frag = vector_frags
@@ -112,7 +112,7 @@ pub fn restriction_candidates(
         }
     }
 
-    // Längstes Vektorfragment finden (bei Gleichstand erstes)
+    // Find the longest vector fragment (on a tie the first)
     let mut v_idx = 0;
     let mut v_len = 0;
     for (i, frag) in vector_frags.iter().enumerate() {
@@ -126,17 +126,17 @@ pub fn restriction_candidates(
         .get(v_idx)
         .ok_or_else(|| Error::InvalidInput("Logic error: no vector fragment".to_string()))?;
 
-    // Schritt 3: Kandidaten generieren
+    // Step 3: generate candidates
     let mut raw_candidates: Vec<(usize, Fragment, bool)> = Vec::new();
 
     for (i_frag, base_i) in insert_frags.iter().enumerate() {
-        // Orientierung 1: normal
+        // Orientation 1: normal
         let i_prime = base_i.clone();
         if v_frag.can_join(&i_prime) && i_prime.can_join(v_frag) {
             raw_candidates.push((i_frag, i_prime.clone(), false));
         }
 
-        // Orientierung 2: reverse-komplementiert
+        // Orientation 2: reverse-complemented
         let i_rev = base_i.reverse_complement()?;
         if v_frag.can_join(&i_rev) && i_rev.can_join(v_frag) {
             raw_candidates.push((i_frag, i_rev.clone(), true));
@@ -147,7 +147,7 @@ pub fn restriction_candidates(
         return Ok(Vec::new());
     }
 
-    // Schritt 6: Warnungen bestimmen
+    // Step 6: determine warnings
     let mut insert_indices_with_both = HashSet::new();
     for (idx, _, reversed) in &raw_candidates {
         let has_other = raw_candidates
@@ -210,15 +210,15 @@ pub fn restriction_candidates(
         });
     }
 
-    // Schritt 7: Sortierung
+    // Step 7: sorting
     candidates.sort_by(|a, b| {
         a.directional
             .cmp(&b.directional)
-            .reverse() // gerichtete zuerst (true > false)
-            .then_with(|| a.warnings.len().cmp(&b.warnings.len())) // weniger Warnungen zuerst
-            .then_with(|| a.construct.len().cmp(&b.construct.len())) // kürzeres Konstrukt zuerst
-            .then_with(|| a.insert_reversed.cmp(&b.insert_reversed)) // nicht umgekehrt zuerst (false < true)
-            .then_with(|| a.insert.source_start.cmp(&b.insert.source_start)) // kleinerer source_start zuerst
+            .reverse() // directional first (true > false)
+            .then_with(|| a.warnings.len().cmp(&b.warnings.len())) // fewer warnings first
+            .then_with(|| a.construct.len().cmp(&b.construct.len())) // shorter construct first
+            .then_with(|| a.insert_reversed.cmp(&b.insert_reversed)) // non-reversed first (false < true)
+            .then_with(|| a.insert.source_start.cmp(&b.insert.source_start)) // smaller source_start first
     });
 
     Ok(candidates)
@@ -269,7 +269,7 @@ mod tests {
         let d = doc("s", "AAGGAATTCGATTAGCTAGC", Topology::Linear);
         let f = digest(&d, &EnzymeDb::standard(), &["EcoRI"]).unwrap();
         assert_eq!(join_fragments(&f, false).unwrap(), "AAGGAATTCGATTAGCTAGC");
-        // f0 an f0: rechtes Ende AATT passt nicht an das stumpfe linke Ende
+        // f0 onto f0: right end AATT does not fit the blunt left end
         let doppelt = vec![f[0].clone(), f[0].clone()];
         let msg = match join_fragments(&doppelt, false) {
             Err(Error::InvalidInput(m)) => m,
@@ -280,12 +280,12 @@ mod tests {
             join_fragments(&[], false),
             Err(Error::InvalidInput(_))
         ));
-        // zirkulär: ein einzelnes Fragment mit Enden AATT/stumpf passt nicht an sich selbst
+        // circular: a single fragment with ends AATT/blunt does not fit itself
         assert!(matches!(
             join_fragments(&f[..1], true),
             Err(Error::InvalidInput(_))
         ));
-        // beide Fragmente zirkulär: Ende (stumpf) passt an Anfang (stumpf)
+        // both fragments circular: end (blunt) fits start (blunt)
         assert_eq!(join_fragments(&f, true).unwrap(), "AAGGAATTCGATTAGCTAGC");
     }
 
@@ -316,7 +316,7 @@ mod tests {
         );
         assert!(circular_contains(&k.construct, "GAATTC"));
         assert!(circular_contains(&k.construct, "GGATCC"));
-        // Features: Vektor 31..35 liegt im Rückgrat (ab 25) → 6..10; Insert 5..9 liegt im Fragment (ab 3) → 2..6, plus 26
+        // Features: vector 31..35 lies in the backbone (from 25) → 6..10; insert 5..9 lies in the fragment (from 3) → 2..6, plus 26
         let mut starts: Vec<usize> = k
             .construct
             .features()
@@ -383,7 +383,7 @@ mod tests {
                 .unwrap()
                 .is_empty()
         );
-        // Vektor ohne Schnittstelle des gewählten Enzyms
+        // Vector without a cut site of the chosen enzyme
         assert!(
             restriction_candidates(&vec, &["BamHI"], &ins, &["BamHI"], &db)
                 .unwrap()

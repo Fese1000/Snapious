@@ -1,21 +1,21 @@
-//! SFF-Dateien (454-Sequenzierung, Standard Flowgram Format) lesen.
+//! Read SFF files (454 sequencing, Standard Flowgram Format).
 
 use crate::error::{Error, Result};
 
-/// Ein Read.
+/// A read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SffRead {
     pub name: String,
     pub bases: String,
     pub qualities: Vec<u8>,
-    /// Qualitäts-Clip links/rechts, 1-basiert wie in der Datei (0 = kein Clip).
+    /// Quality clip left/right, 1-based as in the file (0 = no clip).
     pub clip_left: u16,
     pub clip_right: u16,
-    /// Flowgramm-Werte (je Fluss ein `u16`).
+    /// Flowgram values (one `u16` per flow).
     pub flowgram: Vec<u16>,
 }
 
-/// Inhalt einer SFF-Datei.
+/// Content of an SFF file.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SffFile {
     pub flow_chars: String,
@@ -23,18 +23,18 @@ pub struct SffFile {
     pub reads: Vec<SffRead>,
 }
 
-/// Liest SFF (alle Zahlen Big-Endian). Allgemeiner Kopf: Magic `.sff` (4), Version (4, Bytes `00 00 00 01`), `index_offset` (`u64`),
+/// Reads SFF (all numbers big-endian). General header: magic `.sff` (4), version (4, bytes `00 00 00 01`), `index_offset` (`u64`),
 /// `index_length` (`u32`), `number_of_reads` (`u32`), `header_length` (`u16`), `key_length` (`u16`), `number_of_flows` (`u16`),
-/// `flowgram_format` (`u8`), danach `flow_chars` (`number_of_flows` Zeichen) und `key` (`key_length` Zeichen); der Kopf umfasst
-/// insgesamt `header_length` Bytes (der Rest ist Füllung), der erste Read beginnt dort.
-/// Je Read: Lesekopf mit `read_header_length` (`u16`), `name_length` (`u16`), `number_of_bases` (`u32`), `clip_qual_left` (`u16`),
-/// `clip_qual_right` (`u16`), `clip_adapter_left` (`u16`), `clip_adapter_right` (`u16`), dann der Name (`name_length` Zeichen); der Lesekopf
-/// umfasst `read_header_length` Bytes. Danach die Daten: `flowgram` (`number_of_flows` × `u16`), `flow_index_per_base` (1 Byte je Base,
-/// ignorieren), `bases` (1 Zeichen je Base), `quality_scores` (1 Byte je Base), aufgefüllt auf ein Vielfaches von 8 Bytes (gerechnet ab
-/// Beginn der Daten des Reads, also der Länge `flows*2 + 3*bases` aufgerundet auf Vielfache von 8). Der nächste Read folgt direkt danach.
-/// Fehler `Error::InvalidInput`: falsches Magic, falsche Version, Daten, die über das Dateiende reichen (kein Absturz bei beliebigen
-/// Eingaben; `get` und `checked_add` verwenden), oder weniger Reads als `number_of_reads`.
-/// Kleiner Lesezeiger mit Bereichsprüfung.
+/// `flowgram_format` (`u8`), then `flow_chars` (`number_of_flows` characters) and `key` (`key_length` characters); the header spans
+/// `header_length` bytes in total (the rest is padding), and the first read starts there.
+/// Per read: read header with `read_header_length` (`u16`), `name_length` (`u16`), `number_of_bases` (`u32`), `clip_qual_left` (`u16`),
+/// `clip_qual_right` (`u16`), `clip_adapter_left` (`u16`), `clip_adapter_right` (`u16`), then the name (`name_length` characters); the read header
+/// spans `read_header_length` bytes. Then the data: `flowgram` (`number_of_flows` x `u16`), `flow_index_per_base` (1 byte per base,
+/// ignore), `bases` (1 character per base), `quality_scores` (1 byte per base), padded to a multiple of 8 bytes (counted from
+/// the start of the read's data, i.e. the length `flows*2 + 3*bases` rounded up to a multiple of 8). The next read follows directly after.
+/// `Error::InvalidInput`: wrong magic, wrong version, data extending past the end of the file (no panic on arbitrary
+/// input; use `get` and `checked_add`), or fewer reads than `number_of_reads`.
+/// Small read cursor with bounds checking.
 struct Cursor<'a> {
     data: &'a [u8],
     pos: usize,
@@ -115,7 +115,7 @@ pub fn parse_sff(data: &[u8]) -> Result<SffFile> {
         let qualities = c.take(n_bases)?.to_vec();
         let used = c.pos - data_start;
         let padded = used.div_ceil(8) * 8;
-        // Füllung überspringen; fehlt sie am Dateiende, ist das kein Fehler
+        // Skip padding; if it is missing at the end of the file, that is not an error
         c.pos = (data_start + padded).min(data.len());
         reads.push(SffRead {
             name,
@@ -143,7 +143,7 @@ mod tests {
         }
     }
 
-    /// Eine SFF-Datei mit vier Flüssen `TACG`, Schlüssel `TCAG` und einem Read `r01` mit den Basen `ACG`.
+    /// An SFF file with four flows `TACG`, key `TCAG` and one read `r01` with the bases `ACG`.
     fn beispiel() -> Vec<u8> {
         let mut d = Vec::new();
         d.extend_from_slice(b".sff");
@@ -159,7 +159,7 @@ mod tests {
         d.extend_from_slice(b"TCAG");
         pad8(&mut d);
         assert_eq!(d.len(), 40);
-        // Lesekopf
+        // Read header
         let mut h = Vec::new();
         h.extend_from_slice(&24u16.to_be_bytes());
         h.extend_from_slice(&3u16.to_be_bytes());
@@ -172,7 +172,7 @@ mod tests {
         pad8(&mut h);
         assert_eq!(h.len(), 24);
         d.extend_from_slice(&h);
-        // Daten
+        // Data
         let mut r = Vec::new();
         for f in [100u16, 200, 0, 100] {
             r.extend_from_slice(&f.to_be_bytes());
@@ -213,7 +213,7 @@ mod tests {
         v[7] = 2;
         assert!(parse_sff(&v).is_err());
         let mut zwei = beispiel();
-        zwei[20..24].copy_from_slice(&2u32.to_be_bytes()); // number_of_reads = 2, aber nur ein Read da
+        zwei[20..24].copy_from_slice(&2u32.to_be_bytes()); // number_of_reads = 2, but only one read present
         assert!(parse_sff(&zwei).is_err());
     }
 }

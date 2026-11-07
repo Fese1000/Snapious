@@ -1,6 +1,6 @@
-//! Feature-Tabelle: Zeilen filtern und sortieren.
+//! Feature table: filter and sort rows.
 
-/// Eine Zeile der Tabelle.
+/// A row of the table.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FeatureRow {
     pub feature_type: String,
@@ -9,20 +9,20 @@ pub struct FeatureRow {
     pub end: usize,
 }
 
-/// Spalte, nach der sortiert wird.
+/// Column to sort by.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SortColumn {
     Type,
     Name,
     Start,
     End,
-    /// `end - start` (bei `end < start` 0).
+    /// `end - start` (0 if `end < start`).
     Length,
 }
 
-/// Indizes der Zeilen, die zum Filter passen, in der Reihenfolge von `rows`. `type_filter` leer = jeder Typ, sonst muss der Typ
-/// ohne Beachtung der Groß-/Kleinschreibung gleich sein. `text` leer = jeder Name, sonst muss der Name den Text ohne Beachtung der
-/// Groß-/Kleinschreibung enthalten.
+/// Indices of the rows that match the filter, in the order of `rows`. `type_filter` empty = any type, otherwise the type must be equal
+/// ignoring case. `text` empty = any name, otherwise the name must contain the text
+/// ignoring case.
 pub fn filter_features(rows: &[FeatureRow], type_filter: &str, text: &str) -> Vec<usize> {
     let t = type_filter.to_lowercase();
     let q = text.to_lowercase();
@@ -36,9 +36,9 @@ pub fn filter_features(rows: &[FeatureRow], type_filter: &str, text: &str) -> Ve
         .collect()
 }
 
-/// Sortiert die Indizes `indices` (Zeilen aus `rows`) nach `column`, aufsteigend oder absteigend. Text wird ohne Beachtung der
-/// Groß-/Kleinschreibung verglichen. Gleiche Werte behalten ihre Reihenfolge aus `indices` (stabile Sortierung, auch bei absteigend).
-/// Indizes außerhalb von `rows` werden entfernt.
+/// Sorts the indices `indices` (rows from `rows`) by `column`, ascending or descending. Text is compared ignoring
+/// case. Equal values keep their order from `indices` (stable sort, also when descending).
+/// Indices outside `rows` are removed.
 pub fn sort_features(
     rows: &[FeatureRow],
     indices: &[usize],

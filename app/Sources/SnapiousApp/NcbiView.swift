@@ -1,7 +1,7 @@
 import SnapiousFFI
 import SwiftUI
 
-/// Suche in NCBI Nucleotide und Import als GenBank. Läuft im Hintergrund, damit die Oberfläche nicht einfriert.
+/// Search in NCBI Nucleotide and import as GenBank. Runs in the background so the UI does not freeze.
 struct NcbiView: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -14,36 +14,36 @@ struct NcbiView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker(tr("Datenbank"), selection: $source) {
+            Picker(tr("Database"), selection: $source) {
                 Text("NCBI Nucleotide").tag("ncbi")
-                Text(tr("UniProt (Proteine)")).tag("uniprot")
+                Text(tr("UniProt (proteins)")).tag("uniprot")
             }
             .pickerStyle(.segmented)
             .frame(width: 360)
             .onChange(of: source) { _, _ in result = nil; chosen = nil; message = nil }
             HStack {
-                TextField(source == "ncbi" ? tr("Suchbegriff, z. B. pUC19 oder L09137") : tr("Suchbegriff, z. B. hemoglobin alpha human"), text: $term)
+                TextField(source == "ncbi" ? tr("Search term, e.g. pUC19 or L09137") : tr("Search term, e.g. hemoglobin alpha human"), text: $term)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { search() }
-                Button(tr("Suchen")) { search() }.disabled(term.trimmingCharacters(in: .whitespaces).isEmpty || busy)
+                Button(tr("Search")) { search() }.disabled(term.trimmingCharacters(in: .whitespaces).isEmpty || busy)
                 if busy { ProgressView().controlSize(.small) }
             }
             if let message { Text(message).foregroundStyle(Theme.danger) }
             if let r = result {
-                Text(tr("%@ Treffer, %@ angezeigt", "\(r.total)", "\(r.records.count)")).foregroundStyle(Theme.inkSoft)
+                Text(tr("%@ hits, %@ shown", "\(r.total)", "\(r.records.count)")).foregroundStyle(Theme.inkSoft)
                 Table(r.records, selection: $chosen) {
-                    TableColumn(tr("Zugang")) { x in Text(x.accession) }.width(110)
-                    TableColumn(tr("Titel")) { x in Text(x.title) }
-                    TableColumn(tr("Organismus")) { x in Text(x.organism) }.width(160)
-                    TableColumn(tr("Länge")) { x in Text(x.length > 0 ? "\(x.length) bp" : "–") }.width(90)
+                    TableColumn(tr("Accession")) { x in Text(x.accession) }.width(110)
+                    TableColumn(tr("Title")) { x in Text(x.title) }
+                    TableColumn(tr("Organism")) { x in Text(x.organism) }.width(160)
+                    TableColumn(tr("Length")) { x in Text(x.length > 0 ? "\(x.length) bp" : "–") }.width(90)
                 }
             } else {
                 Spacer()
             }
             HStack {
                 Spacer()
-                Button(tr("Schließen")) { dismiss() }
-                Button(tr("Importieren")) { importChosen() }
+                Button(tr("Close")) { dismiss() }
+                Button(tr("Import")) { importChosen() }
                     .disabled(chosen == nil || busy)
                     .keyboardShortcut(.defaultAction)
             }

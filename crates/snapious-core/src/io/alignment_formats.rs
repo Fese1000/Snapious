@@ -1,11 +1,11 @@
-//! Alignment-Dateiformate: Clustal und PHYLIP lesen und schreiben.
+//! Alignment file formats: read and write Clustal and PHYLIP.
 //!
-//! Ein Alignment ist eine Liste `(Name, Zeile)` mit gleich langen Zeilen; Lücken sind `-`.
+//! An alignment is a list of `(name, row)` with rows of equal length; gaps are `-`.
 
 use crate::error::{Error, Result};
 
-/// Prüft Namen und Längen: mindestens eine Zeile, jeder Name nicht leer und ohne Leerraum, alle Zeilen gleich lang
-/// (in Zeichen). Fehler `Error::InvalidInput`.
+/// Checks names and lengths: at least one row, every name non-empty and without whitespace, all rows of equal length
+/// (in characters). `Error::InvalidInput`.
 pub fn validate_alignment(rows: &[(String, String)]) -> Result<()> {
     if rows.is_empty() {
         return Err(Error::InvalidInput(
@@ -32,14 +32,14 @@ pub fn validate_alignment(rows: &[(String, String)]) -> Result<()> {
     Ok(())
 }
 
-/// Liest ein Clustal-Alignment.
-/// - Die erste nicht leere Zeile muss mit `CLUSTAL` beginnen, sonst `Error::InvalidInput`.
-/// - Danach: leere Zeilen und Konservierungszeilen werden übersprungen. Eine Konservierungszeile beginnt mit einem Leerzeichen
-///   oder besteht nur aus den Zeichen `*`, `:`, `.` und Leerzeichen.
-/// - Jede andere Zeile hat die Form `Name  Sequenz [Zahl]`: erstes Wort = Name, zweites Wort = Sequenzstück, ein drittes Wort
-///   (Restezähler, nur Ziffern) wird ignoriert. Mehr als drei Wörter oder weniger als zwei → `Error::InvalidInput` mit der Zeilennummer.
-/// - Die Stücke je Name werden in der Reihenfolge des ersten Auftretens der Namen aneinandergehängt.
-/// - Am Ende müssen alle Zeilen gleich lang sein (`validate_alignment`). Zeilenenden `\n` und `\r\n` sind erlaubt.
+/// Reads a Clustal alignment.
+/// - The first non-empty line must start with `CLUSTAL`, otherwise `Error::InvalidInput`.
+/// - After that: empty lines and conservation lines are skipped. A conservation line starts with a space
+///   or consists only of the characters `*`, `:`, `.` and spaces.
+/// - Every other line has the form `name  sequence [number]`: first word = name, second word = sequence chunk, a third word
+///   (residue counter, digits only) is ignored. More than three words or fewer than two -> `Error::InvalidInput` with the line number.
+/// - The chunks per name are concatenated in the order in which the names first appear.
+/// - At the end all rows must have the same length (`validate_alignment`). Line endings `\n` and `\r\n` are allowed.
 pub fn parse_clustal(text: &str) -> Result<Vec<(String, String)>> {
     let mut lines = text
         .lines()
@@ -82,13 +82,13 @@ pub fn parse_clustal(text: &str) -> Result<Vec<(String, String)>> {
     Ok(rows)
 }
 
-/// Schreibt ein Clustal-Alignment (nach `validate_alignment`).
-/// - Erste Zeile `CLUSTAL W (1.83) multiple sequence alignment`, danach zwei Zeilenumbrüche (eine Leerzeile).
-/// - Blöcke zu höchstens 60 Spalten. Jede Sequenzzeile: Name, aufgefüllt mit Leerzeichen auf (längster Name + 6) Zeichen, dann das Stück.
-/// - Danach eine Konservierungszeile: so viele Leerzeichen wie die Namensbreite (längster Name + 6), dann je Spalte `*`, wenn alle
-///   Zeilen in der Spalte denselben Buchstaben haben (keine Lücke; Groß-/Kleinschreibung zählt als verschieden), sonst ein Leerzeichen;
-///   Leerzeichen am Zeilenende bleiben stehen. Danach eine Leerzeile.
-/// - Alle Zeilen enden mit `\n`.
+/// Writes a Clustal alignment (after `validate_alignment`).
+/// - First line `CLUSTAL W (1.83) multiple sequence alignment`, followed by two line breaks (one blank line).
+/// - Blocks of at most 60 columns. Each sequence line: name, padded with spaces to (longest name + 6) characters, then the chunk.
+/// - Then a conservation line: as many spaces as the name width (longest name + 6), then per column `*` if all
+///   rows have the same letter in the column (no gap; upper/lower case counts as different), otherwise a space;
+///   trailing spaces at the end of the line are kept. Then a blank line.
+/// - All lines end with `\n`.
 pub fn write_clustal(rows: &[(String, String)]) -> Result<String> {
     validate_alignment(rows)?;
     let name_width = rows
@@ -122,12 +122,12 @@ pub fn write_clustal(rows: &[(String, String)]) -> Result<String> {
     Ok(out)
 }
 
-/// Liest ein PHYLIP-Alignment (relaxiertes Format, Namen ohne Leerraum).
-/// - Erste nicht leere Zeile: zwei ganze Zahlen `ntax nchar`, sonst `Error::InvalidInput`.
-/// - Die nächsten `ntax` nicht leeren Zeilen: erstes Wort = Name, der Rest der Zeile (Leerraum entfernt) = erstes Stück der Zeile.
-/// - Weitere nicht leere Zeilen (interleaved) gehören der Reihe nach zu den Zeilen 1, 2, …, `ntax`, 1, 2, …; Leerraum wird entfernt.
-/// - Am Ende muss es genau `ntax` Zeilen mit je `nchar` Zeichen geben, sonst `Error::InvalidInput`. Mehrzeilige sequentielle
-///   Formate werden nicht unterstützt.
+/// Reads a PHYLIP alignment (relaxed format, names without whitespace).
+/// - First non-empty line: two integers `ntax nchar`, otherwise `Error::InvalidInput`.
+/// - The next `ntax` non-empty lines: first word = name, the rest of the line (whitespace removed) = first chunk of the row.
+/// - Further non-empty lines (interleaved) belong in turn to rows 1, 2, ..., `ntax`, 1, 2, ...; whitespace is removed.
+/// - At the end there must be exactly `ntax` rows with `nchar` characters each, otherwise `Error::InvalidInput`. Multi-line sequential
+///   formats are not supported.
 pub fn parse_phylip(text: &str) -> Result<Vec<(String, String)>> {
     let mut lines = text.lines().map(|l| l.trim()).filter(|l| !l.is_empty());
     let header = lines
@@ -176,8 +176,8 @@ pub fn parse_phylip(text: &str) -> Result<Vec<(String, String)>> {
     Ok(rows)
 }
 
-/// Schreibt ein PHYLIP-Alignment (nach `validate_alignment`): Kopfzeile `{ntax} {nchar}`, dann je Zeile der Name, aufgefüllt
-/// mit Leerzeichen auf (längster Name + 2) Zeichen, und die ganze Sequenz in einer Zeile. Alle Zeilen enden mit `\n`.
+/// Writes a PHYLIP alignment (after `validate_alignment`): header line `{ntax} {nchar}`, then per row the name, padded
+/// with spaces to (longest name + 2) characters, and the whole sequence on one line. All lines end with `\n`.
 pub fn write_phylip(rows: &[(String, String)]) -> Result<String> {
     validate_alignment(rows)?;
     let width = rows
@@ -277,7 +277,7 @@ seq2            GA\n\
         assert_eq!(lines[4], "          ***   ");
         assert_eq!(lines[5], "");
         assert!(t.ends_with('\n'));
-        // Rundreise
+        // Round trip
         assert_eq!(parse_clustal(&t).unwrap(), r);
     }
 
@@ -287,7 +287,7 @@ seq2            GA\n\
         let b = format!("{}C", "A".repeat(129));
         let r = rows(&[("x", &a), ("y", &b)]);
         let t = write_clustal(&r).unwrap();
-        // 3 Blöcke (60, 60, 10): 3 × (2 Zeilen + Konservierung + Leerzeile) + Kopf (2 Zeilen)
+        // 3 blocks (60, 60, 10): 3 x (2 lines + conservation + blank line) + header (2 lines)
         assert_eq!(t.lines().count(), 2 + 3 * 4);
         assert_eq!(parse_clustal(&t).unwrap(), r);
         assert!(write_clustal(&rows(&[("x", "AC"), ("y", "A")])).is_err());

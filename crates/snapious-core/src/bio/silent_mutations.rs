@@ -1,20 +1,20 @@
-//! Stille (synonyme) Einzelbasenänderungen in einer codierenden Sequenz.
+//! Silent (synonymous) single-base changes in a coding sequence.
 
 use crate::bio::genetic_code::code_by_id;
 
-/// Eine mögliche stille Änderung.
+/// One possible silent change.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SilentChange {
-    /// Position der Base in `cds` (0-basiert).
+    /// Position of the base in `cds` (0-based).
     pub position: usize,
     pub from: char,
     pub to: char,
 }
 
-/// Alle Einzelbasenänderungen, die im Leseraster ab Position 0 dieselbe Aminosäure ergeben (Standardcode, `code_by_id(1)`,
-/// Uppercase, `U` wie `T`). Es zählen nur vollständige Codons mit Basen A, C, G, T; ein unvollständiges Schluss-Codon
-/// wird ignoriert. Stopp-Codons zählen als eine Aminosäure (`*`). Sortierung: nach `position`, dann `to` alphabetisch.
-/// Beispiel: `CTGAAA` → (0 C→T), (2 G→A), (2 G→C), (2 G→T), (5 A→G).
+/// All single-base changes that yield the same amino acid in the reading frame from position 0 (standard code, `code_by_id(1)`,
+/// uppercase, `U` as `T`). Only complete codons with bases A, C, G, T count; an incomplete final codon
+/// is ignored. Stop codons count as one amino acid (`*`). Sorting: by `position`, then `to` alphabetically.
+/// Example: `CTGAAA` → (0 C→T), (2 G→A), (2 G→C), (2 G→T), (5 A→G).
 pub fn synonymous_changes(cds: &str) -> Vec<SilentChange> {
     let code = match code_by_id(1) {
         Some(c) => c,
@@ -26,7 +26,7 @@ pub fn synonymous_changes(cds: &str) -> Vec<SilentChange> {
     let mut i = 0;
 
     while i + 3 <= len {
-        // `get` statt Indexierung: bei Mehrbyte-Zeichen liegt die Grenze nicht auf einem Zeichen, das Codon wird dann übersprungen
+        // `get` instead of indexing: with multi-byte characters the boundary does not fall on a character, and the codon is then skipped
         let Some(codon_str) = cds.get(i..i + 3) else {
             i += 3;
             continue;
@@ -78,9 +78,9 @@ pub fn synonymous_changes(cds: &str) -> Vec<SilentChange> {
     changes
 }
 
-/// Die stillen Änderungen aus `synonymous_changes`, nach deren Anwendung `motif` (nur A, C, G, T; Uppercase) an einer
-/// Stelle steht, die die geänderte Base enthält, und die vorher dort nicht stand. Reihenfolge wie `synonymous_changes`.
-/// Beispiel: `cds = GAGTTC`, `motif = GAATTC` → nur (2 G→A).
+/// The silent changes from `synonymous_changes` after which `motif` (only A, C, G, T; uppercase) is present at a
+/// site containing the changed base and was not present there before. Order as in `synonymous_changes`.
+/// Example: `cds = GAGTTC`, `motif = GAATTC` → only (2 G→A).
 pub fn changes_creating_motif(cds: &str, motif: &str) -> Vec<SilentChange> {
     synonymous_changes(cds)
         .into_iter()
@@ -88,9 +88,9 @@ pub fn changes_creating_motif(cds: &str, motif: &str) -> Vec<SilentChange> {
         .collect()
 }
 
-/// Die stillen Änderungen aus `synonymous_changes`, nach denen ein vorher vorhandenes Vorkommen von `motif`, das die
-/// geänderte Base enthält, nicht mehr vorhanden ist (an genau dieser Stelle steht danach etwas anderes). Reihenfolge wie
-/// `synonymous_changes`. Beispiel: `cds = GAATTC`, `motif = GAATTC` → (2 A→G) und (5 C→T).
+/// The silent changes from `synonymous_changes` after which a previously present occurrence of `motif` containing the
+/// changed base is no longer present (something else is located at exactly that site afterwards). Order as in
+/// `synonymous_changes`. Example: `cds = GAATTC`, `motif = GAATTC` → (2 A→G) and (5 C→T).
 pub fn changes_removing_motif(cds: &str, motif: &str) -> Vec<SilentChange> {
     synonymous_changes(cds)
         .into_iter()
@@ -127,7 +127,7 @@ fn motif_overlaps(cds: &str, change: &SilentChange, motif: &str) -> bool {
             continue;
         }
 
-        // Prüfe, ob motif im Original an dieser Stelle vorhanden war
+        // Check whether the motif was present at this site in the original
         let mut orig_ok = true;
         for (k, &m_byte) in norm_motif.iter().enumerate() {
             let b = cds.as_bytes()[start + k];
@@ -140,12 +140,12 @@ fn motif_overlaps(cds: &str, change: &SilentChange, motif: &str) -> bool {
             continue;
         }
 
-        // Prüfe, ob motif nach der Mutation an dieser Stelle entsteht
+        // Check whether the motif arises at this site after the mutation
         let mut mut_ok = true;
         for (k, &m_byte) in norm_motif.iter().enumerate() {
             let idx = start + k;
             if idx == pos {
-                // Nach Mutation steht hier `change.to` (bereits Großbuchstabe)
+                // After the mutation, `change.to` is here (already uppercase)
                 if m_byte != change.to as u8 {
                     mut_ok = false;
                     break;
@@ -183,7 +183,7 @@ fn motif_removed(cds: &str, change: &SilentChange, motif: &str) -> bool {
             continue;
         }
 
-        // Prüfe, ob motif im Original an dieser Stelle vorhanden war
+        // Check whether the motif was present at this site in the original
         let mut orig_matches = true;
         for (k, &m_byte) in norm_motif.iter().enumerate() {
             let b = cds.as_bytes()[start + k];
@@ -196,16 +196,16 @@ fn motif_removed(cds: &str, change: &SilentChange, motif: &str) -> bool {
             continue;
         }
 
-        // Prüfe, ob motif nach der Mutation an dieser Stelle NICHT mehr vorhanden ist
+        // Check whether the motif is NOT present at this site after the mutation
         let mut still_matches = true;
         for (k, &m_byte) in norm_motif.iter().enumerate() {
             let idx = start + k;
             if idx == pos {
-                // Nach Mutation steht hier `change.to`. Wenn es dem Motif-Zeichen entspricht, bleibt es erhalten.
+                // After the mutation, `change.to` is here. If it matches the motif character, it is retained.
                 if m_byte == change.to as u8 {
-                    // bleibt erhalten -> nicht entfernt
+                    // retained -> not removed
                 } else {
-                    still_matches = false; // geänderte Base bricht das Motif -> entfernt!
+                    still_matches = false; // changed base breaks the motif -> removed!
                 }
             } else {
                 let b = cds.as_bytes()[idx];
@@ -243,9 +243,9 @@ mod tests {
                 c(5, 'A', 'G')
             ]
         );
-        assert!(synonymous_changes("ATG").is_empty()); // Met hat nur ein Codon
+        assert!(synonymous_changes("ATG").is_empty()); // Met has only one codon
         assert!(synonymous_changes("AT").is_empty());
-        // Stopp: TAA -> TAG und TGA sind ebenfalls Stopp
+        // Stop: TAA -> TAG and TGA are also stop
         assert_eq!(
             synonymous_changes("TAA"),
             vec![c(1, 'A', 'G'), c(2, 'A', 'G')]

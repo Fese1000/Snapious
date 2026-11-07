@@ -1,29 +1,29 @@
-//! Bekannte Schwachstellen in Proteinsequenzen (z. B. Antikörper): Motive, die chemisch oder durch Glykosylierung Probleme machen.
+//! Known liabilities in protein sequences (e.g. antibodies): motifs that cause problems chemically or through glycosylation.
 
-/// Eine gefundene Schwachstelle.
+/// A liability found.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Liability {
-    /// Beginn (0-basiert) in der Proteinsequenz.
+    /// Start (0-based) in the protein sequence.
     pub position: usize,
-    /// Länge des Motivs (1–3).
+    /// Length of the motif (1–3).
     pub length: usize,
-    /// Art, genau einer der Texte: `N-Glykosylierung`, `Deamidierung`, `Isomerisierung`, `Oxidation`, `Freies Cystein`.
+    /// Kind, exactly one of the strings: `N-Glykosylierung`, `Deamidierung`, `Isomerisierung`, `Oxidation`, `Freies Cystein`.
     pub kind: String,
-    /// Die Aminosäuren des Motivs in Uppercase.
+    /// The amino acids of the motif in uppercase.
     pub motif: String,
 }
 
-/// Sucht alle Schwachstellen (Uppercase erwartet, andere Zeichen werden nur als Platzhalter gezählt; Groß-/Kleinschreibung egal).
-/// Regeln, überlappende Treffer sind erlaubt:
-/// * `N-Glykosylierung`: drei Aminosäuren `N`, dann irgendeine außer `P`, dann `S` oder `T` (Länge 3).
-/// * `Deamidierung`: `NG` oder `NS` (Länge 2).
-/// * `Isomerisierung`: `DG` oder `DS` (Länge 2).
-/// * `Oxidation`: jedes `M` und jedes `W` (Länge 1).
-/// * `Freies Cystein`: jedes `C` (Länge 1).
+/// Finds all liabilities (uppercase expected, other characters are only counted as placeholders; case-insensitive).
+/// Rules, overlapping hits are allowed:
+/// * `N-Glykosylierung`: three amino acids `N`, then any except `P`, then `S` or `T` (length 3).
+/// * `Deamidierung`: `NG` or `NS` (length 2).
+/// * `Isomerisierung`: `DG` or `DS` (length 2).
+/// * `Oxidation`: every `M` and every `W` (length 1).
+/// * `Freies Cystein`: every `C` (length 1).
 ///
-/// Sortierung: nach `position`, bei gleicher Position in der Reihenfolge der obigen Liste (Glykosylierung, Deamidierung,
-/// Isomerisierung, Oxidation, Cystein). Beispiel `ANSTGDSMWC`: Glykosylierung `NST` (1), Deamidierung `NS` (1), Isomerisierung `DS` (5),
-/// Oxidation `M` (7) und `W` (8), Cystein `C` (9).
+/// Sorting: by `position`, for equal position in the order of the list above (glycosylation, deamidation,
+/// isomerization, oxidation, cysteine). Example `ANSTGDSMWC`: glycosylation `NST` (1), deamidation `NS` (1), isomerization `DS` (5),
+/// oxidation `M` (7) and `W` (8), cysteine `C` (9).
 pub fn find_liabilities(protein: &str) -> Vec<Liability> {
     let seq: Vec<u8> = protein.bytes().map(|b| b.to_ascii_uppercase()).collect();
     let mut results: Vec<Liability> = Vec::new();
@@ -31,7 +31,7 @@ pub fn find_liabilities(protein: &str) -> Vec<Liability> {
     for i in 0..seq.len() {
         let c = seq[i];
 
-        // Regel 1: N-Glykosylierung (Länge 3)
+        // Rule 1: N-glycosylation (length 3)
         if c == b'N' && i + 2 < seq.len() {
             let s = seq[i + 1];
             if s != b'P' {
@@ -47,7 +47,7 @@ pub fn find_liabilities(protein: &str) -> Vec<Liability> {
             }
         }
 
-        // Regel 2: Deamidierung (Länge 2)
+        // Rule 2: deamidation (length 2)
         if c == b'N' && i + 1 < seq.len() {
             let next = seq[i + 1];
             if next == b'G' || next == b'S' {
@@ -60,7 +60,7 @@ pub fn find_liabilities(protein: &str) -> Vec<Liability> {
             }
         }
 
-        // Regel 3: Isomerisierung (Länge 2)
+        // Rule 3: isomerization (length 2)
         if c == b'D' && i + 1 < seq.len() {
             let next = seq[i + 1];
             if next == b'G' || next == b'S' {
@@ -73,7 +73,7 @@ pub fn find_liabilities(protein: &str) -> Vec<Liability> {
             }
         }
 
-        // Regel 4: Oxidation (Länge 1)
+        // Rule 4: oxidation (length 1)
         if c == b'M' || c == b'W' {
             results.push(Liability {
                 position: i,
@@ -83,7 +83,7 @@ pub fn find_liabilities(protein: &str) -> Vec<Liability> {
             });
         }
 
-        // Regel 5: Freies Cystein (Länge 1)
+        // Rule 5: free cysteine (length 1)
         if c == b'C' {
             results.push(Liability {
                 position: i,
@@ -137,7 +137,7 @@ mod tests {
                 l(0, 2, "Deamidation", "NG")
             ]
         );
-        // zwei Glykosylierungsstellen überlappen: NNSS
+        // two glycosylation sites overlap: NNSS
         let r = find_liabilities("NNST");
         assert_eq!(r[0], l(0, 3, "N-Glykosylierung", "NNS"));
         assert_eq!(r[1], l(1, 3, "N-Glykosylierung", "NST"));

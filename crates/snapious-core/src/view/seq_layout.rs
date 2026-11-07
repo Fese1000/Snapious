@@ -1,7 +1,7 @@
-//! Zeilenlayout der Sequenzansicht (reine Rechenlogik, ohne Oberfläche).
+//! Line layout of the sequence view (pure computation, no UI).
 use crate::error::{Error, Result};
 
-/// Aufteilung einer Sequenz in Zeilen fester Länge.
+/// Splitting a sequence into lines of fixed length.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SequenceLayout {
     length: usize,
@@ -106,14 +106,14 @@ mod tests {
 
     #[test]
     fn sichtbare_zeilen_bei_scrollposition_250() {
-        let l = SequenceLayout::new(6000, 60).unwrap(); // genau 100 Zeilen
+        let l = SequenceLayout::new(6000, 60).unwrap(); // exactly 100 lines
         assert_eq!(SequenceLayout::first_visible_line(250.0, 20.0), 12);
         assert_eq!(l.last_visible_line(250.0, 100.0, 20.0), 17);
     }
 
     #[test]
     fn letzte_zeile_wird_auf_vorhandene_zeilen_begrenzt() {
-        let l = SequenceLayout::new(125, 60).unwrap(); // 3 Zeilen
+        let l = SequenceLayout::new(125, 60).unwrap(); // 3 lines
         assert_eq!(l.last_visible_line(0.0, 10_000.0, 20.0), 2);
     }
 

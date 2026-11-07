@@ -1,22 +1,22 @@
-//! Grundtypen für Operationen.
+//! Basic types for operations.
 
 use std::collections::BTreeMap;
 
 use crate::error::{Error, Result};
 use crate::model::document::Document;
 
-/// Parameter einer Operation (Name → Textwert).
+/// Parameters of an operation (name → text value).
 pub type Params = BTreeMap<String, String>;
 
-/// Fortschritt und Abbruch für laufende Operationen.
+/// Progress and cancellation for running operations.
 pub trait OperationContext {
-    /// Fortschritt melden (`fraction` von 0.0 bis 1.0).
+    /// Report progress (`fraction` from 0.0 to 1.0).
     fn progress(&mut self, fraction: f64, message: &str);
-    /// Wurde ein Abbruch angefordert?
+    /// Was cancellation requested?
     fn is_cancelled(&self) -> bool;
 }
 
-/// Kontext ohne Anzeige und ohne Abbruch.
+/// Context without display and without cancellation.
 #[derive(Default)]
 pub struct NullContext;
 
@@ -28,20 +28,20 @@ impl OperationContext for NullContext {
     }
 }
 
-/// Ergebnis einer Operation.
+/// Result of an operation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct OperationResult {
     pub outputs: Vec<Document>,
     pub summary: String,
 }
 
-/// Eine ausführbare Operation.
+/// An executable operation.
 pub trait Operation {
-    /// Stabile ID, z. B. `edit.insert`.
+    /// Stable ID, e.g. `edit.insert`.
     fn id(&self) -> &str;
-    /// Anzeigename (deutsch).
+    /// Display name (German).
     fn label(&self) -> &str;
-    /// Ausführen. Fehler sollten verständliche deutsche Meldungen enthalten.
+    /// Execute. Errors should contain understandable German messages.
     fn run(
         &self,
         inputs: &[Document],
@@ -50,7 +50,7 @@ pub trait Operation {
     ) -> Result<OperationResult>;
 }
 
-/// Eintrag im Verlauf einer erfolgreich ausgeführten Operation.
+/// Entry in the history of a successfully executed operation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct HistoryEntry {
     pub id: String,
@@ -62,7 +62,7 @@ pub struct HistoryEntry {
     pub summary: String,
 }
 
-/// Pflichtparameter lesen.
+/// Read a required parameter.
 pub fn required<'a>(params: &'a Params, key: &str) -> Result<&'a str> {
     params
         .get(key)
@@ -70,7 +70,7 @@ pub fn required<'a>(params: &'a Params, key: &str) -> Result<&'a str> {
         .ok_or_else(|| Error::Operation(format!("Parameter '{}' is missing", key)))
 }
 
-/// Pflichtparameter als nicht-negative ganze Zahl lesen.
+/// Read a required parameter as a non-negative integer.
 pub fn required_usize(params: &Params, key: &str) -> Result<usize> {
     let v = required(params, key)?;
     v.trim().parse::<usize>().map_err(|_| {

@@ -1,27 +1,27 @@
-//! Konsens aus mehreren ausgerichteten Sequenzierungen (z. B. Sanger-Reads) mit Qualitätswerten.
+//! Consensus from several aligned sequencing reads (e.g. Sanger reads) with quality values.
 
-/// Konsens und Qualität je Konsensbase.
+/// Consensus and quality per consensus base.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadConsensus {
-    /// Konsenssequenz ohne Lücken (Uppercase).
+    /// Consensus sequence without gaps (uppercase).
     pub bases: String,
-    /// Qualität je Base von `bases` (Phred-ähnlich, 0–93).
+    /// Quality per base of `bases` (Phred-like, 0–93).
     pub qualities: Vec<u8>,
 }
 
-/// Bildet den Konsens aus ausgerichteten Zeilen `rows` (Lücke = `-`, Groß-/Kleinschreibung egal). `quals[i]` enthält je **Nicht-Lücken-Base**
-/// der Zeile `i` einen Qualitätswert, in der Reihenfolge der Basen (Lücken verbrauchen keinen Wert; fehlen Werte, gilt Qualität 0).
+/// Builds the consensus from aligned rows `rows` (gap = `-`, case-insensitive). `quals[i]` holds, for each **non-gap base**
+/// of row `i`, a quality value, in base order (gaps consume no value; if values are missing, quality 0 applies).
 ///
-/// Je Spalte zählt jede Base `A`, `C`, `G`, `T` aus einer Zeile mit ihrer Qualität als Gewicht, sofern die Qualität `>= min_quality` ist
-/// (alle anderen Zeichen und Basen unter der Schwelle zählen nicht). Gewonnen hat die Base mit dem größten Gewicht (bei Gleichstand die in der Reihenfolge
-/// `A`, `C`, `G`, `T` erste). Die Qualität der Konsensbase ist `gewicht(Sieger) - Summe der Gewichte der übrigen Basen`, mindestens 0 und höchstens 93.
-/// Gibt es in der Spalte keine zählende Base, aber mindestens eine Nicht-Lücken-Base (z. B. `N` oder zu niedrige Qualität), ist die Konsensbase `N`
-/// mit Qualität 0. Spalten, in denen alle Zeilen eine Lücke haben, entfallen. Alle Zeilen sollten gleich lang sein (kürzere Zeilen zählen
-/// am Ende als Lücke). Keine Zeilen → leeres Ergebnis.
+/// Per column, each base `A`, `C`, `G`, `T` from a row counts with its quality as weight, provided the quality is `>= min_quality`
+/// (all other characters and bases below the threshold do not count). The base with the largest weight wins (on ties the first in the order
+/// `A`, `C`, `G`, `T`). The quality of the consensus base is `weight(winner) - sum of the weights of the other bases`, at least 0 and at most 93.
+/// If the column has no counting base but at least one non-gap base (e.g. `N` or quality too low), the consensus base is `N`
+/// with quality 0. Columns in which all rows have a gap are dropped. All rows should have the same length (shorter rows count
+/// as gaps at the end). No rows → empty result.
 pub fn quality_consensus(rows: &[String], quals: &[Vec<u8>], min_quality: u8) -> ReadConsensus {
     let width = rows.iter().map(|r| r.len()).max().unwrap_or(0);
     let bytes: Vec<&[u8]> = rows.iter().map(|r| r.as_bytes()).collect();
-    // je Zeile: Zeiger auf den nächsten Qualitätswert (rückt nur bei Nicht-Lücken-Basen vor)
+    // per row: pointer to the next quality value (advances only on non-gap bases)
     let mut next_q = vec![0usize; rows.len()];
     let mut out = ReadConsensus {
         bases: String::new(),
@@ -58,7 +58,7 @@ pub fn quality_consensus(rows: &[String], quals: &[Vec<u8>], min_quality: u8) ->
             out.qualities.push(0);
             continue;
         }
-        // erster Index mit dem größten Gewicht (Reihenfolge A, C, G, T)
+        // first index with the largest weight (order A, C, G, T)
         let mut best = 0;
         for i in 1..4 {
             if weights[i] > weights[best] {
@@ -114,16 +114,16 @@ mod tests {
                 qualities: vec![]
             }
         );
-        // nur Lückenspalte entfällt
+        // only-gap column is dropped
         let c = quality_consensus(&v(&["A-C", "A-C"]), &[vec![10, 10], vec![10, 10]], 0);
         assert_eq!(c.bases, "AC");
-        // Gleichstand: A vor G
+        // tie: A before G
         let c = quality_consensus(&v(&["A", "G"]), &[vec![30], vec![30]], 0);
         assert_eq!((c.bases.as_str(), c.qualities[0]), ("A", 0));
-        // Qualität höchstens 93
+        // quality at most 93
         let c = quality_consensus(&v(&["A", "A", "A"]), &[vec![60], vec![60], vec![60]], 0);
         assert_eq!(c.qualities, vec![93]);
-        // fehlende Werte zählen 0, Base N zählt nicht
+        // missing values count 0, base N does not count
         let c = quality_consensus(&v(&["AN"]), &[vec![40]], 0);
         assert_eq!(c.bases, "AN");
     }

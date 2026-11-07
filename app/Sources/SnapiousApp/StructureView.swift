@@ -2,7 +2,7 @@ import AppKit
 import SnapiousFFI
 import SwiftUI
 
-/// 3D-Ansicht einer PDB-Datei als C-alpha-Spur (ohne Netz und ohne WebView): ziehen dreht, Scrollen zoomt.
+/// 3D view of a PDB file as a C-alpha trace (no network, no WebView): drag rotates, scrolling zooms.
 struct StructureView: View {
     let pdb: PdbDto
     let name: String
@@ -14,7 +14,7 @@ struct StructureView: View {
 
     private let palette: [Color] = [.blue, .orange, .green, .red, .purple, .teal, .pink, .brown]
 
-    /// Mittelpunkt und größter Abstand aller C-alpha-Atome, damit die Spur in die Zeichenfläche passt.
+    /// Center and largest distance of all C-alpha atoms, so the trace fits the canvas.
     private var bounds: (center: [Double], radius: Double) {
         var sum = [0.0, 0.0, 0.0]
         var n = 0.0
@@ -67,7 +67,7 @@ struct StructureView: View {
                     path.addLine(to: pts[b].0)
                     ctx.stroke(path, with: .color(.gray.opacity(0.8)), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                 }
-                // hintere Atome zuerst zeichnen
+                // draw rear atoms first
                 for i in pts.indices.sorted(by: { pts[$0].1 > pts[$1].1 }) {
                     let r: CGFloat = pdb.elements[i] == "H" ? 5 : 9
                     let rect = CGRect(x: pts[i].0.x - r, y: pts[i].0.y - r, width: 2 * r, height: 2 * r)
@@ -85,7 +85,7 @@ struct StructureView: View {
                     var path = Path()
                     path.move(to: pts[i - 1].0)
                     path.addLine(to: pts[i].0)
-                    // nähere Abschnitte kräftiger
+                    // nearer segments bolder
                     let depth = (pts[i].1 + pts[i - 1].1) / 2 / b.radius
                     let alpha = 0.45 + 0.5 * (1 - (depth + 1) / 2)
                     ctx.stroke(path, with: .color(palette[ci % palette.count].opacity(alpha)),
@@ -95,7 +95,7 @@ struct StructureView: View {
         }
     }
 
-    /// Farbe nach Element (CPK-ähnlich).
+    /// Color by element (CPK-like).
     private func elementColor(_ e: String) -> Color {
         switch e {
         case "H": return Color(white: 0.85)
@@ -114,8 +114,8 @@ struct StructureView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(name).font(Theme.heading())
             Text(pdb.atoms.isEmpty
-                 ? tr("%@ Atome, %@ Kette(n): ", "\(pdb.atomCount)", "\(pdb.chains.count)") + pdb.chains.map { tr("%@ (%@ aa)", "\($0.id)", "\($0.sequence.count)") }.joined(separator: ", ")
-                 : tr("Molekül: %@ Atome, %@ Bindungen", "\(pdb.atomCount)", "\(pdb.bonds.count / 2)"))
+                 ? tr("%@ atoms, %@ chain(s): ", "\(pdb.atomCount)", "\(pdb.chains.count)") + pdb.chains.map { tr("%@ (%@ aa)", "\($0.id)", "\($0.sequence.count)") }.joined(separator: ", ")
+                 : tr("Molecule: %@ atoms, %@ bonds", "\(pdb.atomCount)", "\(pdb.bonds.count / 2)"))
                 .font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
             chart
                 .frame(minWidth: 480, minHeight: 360)
@@ -131,7 +131,7 @@ struct StructureView: View {
                 Slider(value: $zoom, in: 0.5...3).frame(width: 160)
                 Text("Zoom").font(Theme.label(11))
                 Spacer()
-                Button(tr("Schließen")) { dismiss() }
+                Button(tr("Close")) { dismiss() }
             }
         }
         .padding(16)

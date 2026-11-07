@@ -8,20 +8,20 @@ import java.util.*;
 import java.util.stream.*;
 
 /**
- * Kompletter File-I/O für alle gängigen Bioinformatik-Formate.
- * Unterstützt: FASTA, FASTQ, GenBank, SAM/VCF, Newick (Baum).
+ * Complete file I/O for all common bioinformatics formats.
+ * Supports: FASTA, FASTQ, GenBank, SAM/VCF, Newick (tree).
  */
 public class FileIO {
 
     // ======== FASTA PARSER ========
 
-    /** Liest eine FASTA-Datei und gibt Liste von Sequenzen zurück */
+    /** Reads a FASTA file and returns a list of sequences */
     public static List<Sequence> readFASTA(Path filePath) throws IOException {
         List<Sequence> sequences = new ArrayList<>();
         String content = Files.readString(filePath);
 
-        // FASTA-Format: >Header gefolgt von Sequenzzeilen
-        String[] blocks = content.split("(?=>)");  // Split auf Header
+        // FASTA format: >header followed by sequence lines
+        String[] blocks = content.split("(?=>)");  // split on header
 
         for (String block : blocks) {
             if (block.trim().isEmpty()) continue;
@@ -39,7 +39,7 @@ public class FileIO {
         return sequences;
     }
 
-    /** Liest FASTA aus String */
+    /** Reads FASTA from a string */
     public static List<Sequence> readFASTAFromString(String fasta) {
         try {
             Path temp = Files.createTempFile("fasta", ".fa");
@@ -48,18 +48,18 @@ public class FileIO {
             Files.delete(temp);
             return seqs;
         } catch (IOException e) {
-            throw new RuntimeException("FASTA Parsing fehlgeschlagen", e);
+            throw new RuntimeException("FASTA parsing failed", e);
         }
     }
 
-    /** Extrahiert ID aus FASTA-Header (erster whitespace-getrennte Teil nach '>') */
+    /** Extracts the ID from a FASTA header (first whitespace-separated part after '>') */
     public static String extractFASTAId(String header) {
         if (header.startsWith(">")) header = header.substring(1);
         String[] parts = header.split("\\s+");
         return parts[0];
     }
 
-    /** Schreibt Sequenzen als FASTA */
+    /** Writes sequences as FASTA */
     public static String writeFASTA(List<Sequence> sequences) {
         StringBuilder sb = new StringBuilder();
         for (Sequence seq : sequences) {
@@ -86,7 +86,7 @@ public class FileIO {
         public String getSequence() { return sequence; }
         public String getQualityString() { return qualityString; }
 
-        /** Konvertiert zu Sequence mit Qualitätsscore-Statistik */
+        /** Converts to Sequence with quality score statistics */
         public List<Sequence> toSequences() {
             if (sequences == null) {
                 sequences = Collections.singletonList(
@@ -96,7 +96,7 @@ public class FileIO {
             return sequences;
         }
 
-        /** Durchschnittlicher Phred-Qualitätsscore */
+        /** Average Phred quality score */
         public double avgQuality() {
             if (qualityString == null || qualityString.isEmpty()) return 0;
 
@@ -108,7 +108,7 @@ public class FileIO {
             return sum / qualityString.length();
         }
 
-        /** Mindest-Qualität */
+        /** Minimum quality */
         public byte minQuality() {
             if (qualityString == null || qualityString.isEmpty()) return 0;
 
@@ -121,7 +121,7 @@ public class FileIO {
         }
     }
 
-    /** Liest FASTQ-Datei (4-Zeilen pro Record) */
+    /** Reads a FASTQ file (4 lines per record) */
     public static List<FastqRecord> readFASTQ(Path filePath) throws IOException {
         List<FastqRecord> records = new ArrayList<>();
         List<String> lines = Files.readAllLines(filePath);
@@ -132,7 +132,7 @@ public class FileIO {
 
             String id = header.substring(1).split("\\s+")[0];
             String sequence = lines.get(i + 1).trim().toUpperCase();
-            // Zeile i+2 ist +Info, überspringen
+            // Line i+2 is the + line, skip it
             String quality = lines.get(i + 3).trim();
 
             records.add(new FastqRecord(id, sequence, quality));
@@ -141,7 +141,7 @@ public class FileIO {
         return records;
     }
 
-    /** Liest FASTQ aus String */
+    /** Reads FASTQ from a string */
     public static List<FastqRecord> readFASTQFromString(String fastq) {
         try {
             Path temp = Files.createTempFile("fastq", ".fq");
@@ -150,11 +150,11 @@ public class FileIO {
             Files.delete(temp);
             return recs;
         } catch (IOException e) {
-            throw new RuntimeException("FASTQ Parsing fehlgeschlagen", e);
+            throw new RuntimeException("FASTQ parsing failed", e);
         }
     }
 
-    /** Schreibt FASTQ zurück */
+    /** Writes FASTQ back out */
     public static String writeFASTQ(List<FastqRecord> records) {
         StringBuilder sb = new StringBuilder();
 
@@ -163,10 +163,10 @@ public class FileIO {
             sb.append(rec.sequence).append("\n");
             sb.append("+").append(rec.id).append("\n");
 
-            // Qualität neu berechnen (einfache Phred-33)
-            String seq = rec.getSequence();  // Nur Basen für Qualität
+            // Recompute quality (simple Phred+33)
+            String seq = rec.getSequence();  // bases only for quality
             for (int i = 0; i < rec.getSequence().length(); i++) {
-                sb.append((char) (33 + 30));  // Hohe Qualität als Default
+                sb.append((char) (33 + 30));  // high quality as default
             }
             sb.append("\n");
         }
@@ -199,23 +199,23 @@ public class FileIO {
         public Map<String, Object> getFeatures() { return features; }
     }
 
-    /** Liest GenBank-Datei (vereinfacht) */
+    /** Reads a GenBank file (simplified) */
     public static List<GenBankRecord> readGenBank(Path filePath) throws IOException {
         List<GenBankRecord> records = new ArrayList<>();
         String content = Files.readString(filePath);
 
-        // ACCESSION und ORGANISM extrahieren
+        // Extract ACCESSION and ORGANISM
         String accession = extractField(content, "ACCESSION");
         String organism = extractField(content, "ORGANISM");
 
-        // Sequenz extrahieren (Zeilen nach "//" vor ORIGIN, bis nächste "//")
+        // Extract sequence (lines after "//" before ORIGIN, up to the next "//")
         String seqBlock = extractSequenceBlock(content);
 
         if (accession != null && seqBlock != null) {
             Sequence seq = new Sequence(accession, organism, seqBlock, Sequence.SequenceType.DNA);
             records.add(new GenBankRecord(accession, organism, seq));
 
-            // Features parsen (vereinfacht)
+            // Parse features (simplified)
             String featuresSection = extractBetween(content, "features", "ORIGIN");
             if (featuresSection != null) {
                 GenBankRecord record = records.get(0);
@@ -242,13 +242,13 @@ public class FileIO {
         int endIdx = seqPart.indexOf("//");
         if (endIdx > 0) seqPart = seqPart.substring(0, endIdx);
 
-        // Nummern und Leerzeichen entfernen
+        // Remove numbers and whitespace
         return seqPart.replaceAll("[\\d\\s]", "").toUpperCase();
     }
 
     private static void parseFeatures(GenBankRecord record, String featuresSection) {
-        // Sehr vereinfachtes Feature-Parsing
-        // In Realität komplexer - hier nur Platzhalter
+        // Very simplified feature parsing
+        // In reality more complex - only a placeholder here
     }
 
     private static String extractBetween(String content, String startKeyword, String endKeyword) {
@@ -261,13 +261,13 @@ public class FileIO {
         return content.substring(start, end);
     }
 
-    // ======== SAM/BAM PARSER (vereinfacht) ========
+    // ======== SAM/BAM PARSER (simplified) ========
 
     public static class SamRecord {
         private String readName;
         int flags;
         private String chromosome;
-        private int position;  // 1-basiert
+        private int position;  // 1-based
         private int mappingQuality;
         private String sequence;
         private String quality;
@@ -289,23 +289,23 @@ public class FileIO {
         public int getPosition() { return position; }
         public String getSequence() { return sequence; }
 
-        /** Ist die Read auf der forward-Strang? */
+        /** Is the read on the forward strand? */
         public boolean isForward() { return (flags & 0x10) == 0; }
 
-        /** Ist die Read alignet? */
+        /** Is the read aligned? */
         public boolean isAligned() { return (flags & 0x4) == 0; }
 
-        /** Ist die Read paart? */
+        /** Is the read paired? */
         public boolean isPaired() { return (flags & 0x1) != 0; }
     }
 
-    /** Liest SAM-Datei (vereinfacht, ohne BAM-Support) */
+    /** Reads a SAM file (simplified, without BAM support) */
     public static List<SamRecord> readSAM(Path filePath) throws IOException {
         List<SamRecord> records = new ArrayList<>();
         List<String> lines = Files.readAllLines(filePath);
 
         for (String line : lines) {
-            if (line.startsWith("@")) continue;  // Header überspringen
+            if (line.startsWith("@")) continue;  // skip header
 
             String[] fields = line.split("\t");
             if (fields.length < 11) continue;
@@ -355,10 +355,10 @@ public class FileIO {
         public double getQuality() { return quality; }
         public String getFilter() { return filter; }
 
-        /** Ist die Variante filtered? */
+        /** Is the variant filtered? */
         public boolean isFiltered() { return "PASS".equals(filter); }
 
-        /** Typ der Variante (SNP, INDEL, etc.) */
+        /** Type of the variant (SNP, INDEL, etc.) */
         public String getType() {
             if (refAllele.length() == 1 && altAllele.length() == 1) return "SNP";
             if (refAllele.length() > altAllele.length()) return "DEL";
@@ -366,7 +366,7 @@ public class FileIO {
         }
     }
 
-    /** Liest VCF-Datei (vereinfacht) */
+    /** Reads a VCF file (simplified) */
     public static List<VariantCall> readVCF(Path filePath) throws IOException {
         List<VariantCall> variants = new ArrayList<>();
         List<String> lines = Files.readAllLines(filePath);
@@ -392,7 +392,7 @@ public class FileIO {
         return variants;
     }
 
-    // ======== NEWICK PARSER (Phylogenetische Bäume) ========
+    // ======== NEWICK PARSER (phylogenetic trees) ========
 
     public static class NewickTree {
         private TreeNode root;
@@ -406,7 +406,7 @@ public class FileIO {
         public TreeNode getRoot() { return root; }
         public String getNewickString() { return newickString; }
 
-        /** TreeNode für Baum-Struktur */
+        /** TreeNode for the tree structure */
         public static class TreeNode {
             private String name;
             private double branchLength;
@@ -423,7 +423,7 @@ public class FileIO {
             public double getBranchLength() { return branchLength; }
             public List<TreeNode> getChildren() { return children; }
 
-            /** Newick-String generieren */
+            /** Generate Newick string */
             public String toNewick() {
                 if (children.isEmpty()) return name + (branchLength > 0 ? ":" + branchLength : "");
 
@@ -442,7 +442,7 @@ public class FileIO {
                 return sb.toString();
             }
 
-            /** Baum als Text-Diagramm */
+            /** Tree as text diagram */
             public String toTextDiagram(int depth) {
                 StringBuilder sb = new StringBuilder();
 
@@ -464,18 +464,18 @@ public class FileIO {
         }
     }
 
-    /** Liest Newick-String (vereinfachter Parser) */
+    /** Reads a Newick string (simplified parser) */
     public static NewickTree parseNewick(String newick) {
-        // Einfacher rekursiver Parser für Newick-Format
+        // Simple recursive parser for the Newick format
         return parseNewickInternal(newick.trim().replaceAll("[\\s]", ""));
     }
 
     private static NewickTree parseNewickInternal(String newick) {
-        // Vereinfachter Parser - entfernt trailing Semikolon
+        // Simplified parser - strips trailing semicolon
         String n = newick.endsWith(";") ? newick.substring(0, newick.length() - 1) : newick;
 
         if (!n.startsWith("(")) {
-            // Blatt-Knoten
+            // Leaf node
             String name = n;
             double branchLength = 0;
 
@@ -492,7 +492,7 @@ public class FileIO {
             return new NewickTree(new NewickTree.TreeNode(name, branchLength), n);
         }
 
-        // Rekursiver Parser für interne Knoten
+        // Recursive parser for internal nodes
         int depth = 0;
         int closeIdx = -1;
 
@@ -511,7 +511,7 @@ public class FileIO {
         String inner = n.substring(1, closeIdx);
         String afterClose = closeIdx < n.length() - 1 ? n.substring(closeIdx + 1) : "";
 
-        // Aufteilen an Kommas (aber nicht in Klammern)
+        // Split at commas (but not inside parentheses)
         List<String> childrenStrs = splitNewick(inner);
 
         NewickTree.TreeNode root = new NewickTree.TreeNode("", 0);
@@ -520,7 +520,7 @@ public class FileIO {
             root.addChild(childTree.getRoot());
         }
 
-        // Branch-Length vom Root extrahieren
+        // Extract branch length from the root
         double branchLength = 0;
         if (afterClose.startsWith(":")) {
             try {
@@ -558,9 +558,9 @@ public class FileIO {
         return parts;
     }
 
-    // ======== FORMAT-ERKENNUNG ========
+    // ======== FORMAT DETECTION ========
 
-    /** Erkennt Dateiformat anhand Dateiendung oder Inhalt */
+    /** Detects the file format from the file extension or content */
     public static String detectFormat(Path filePath) throws IOException {
         String ext = filePath.toString().toLowerCase();
 
@@ -571,7 +571,7 @@ public class FileIO {
         if (ext.endsWith(".vcf")) return "VCF";
         if (ext.endsWith(".newick") || ext.endsWith(".nex")) return "Newick";
 
-        // Inhalt prüfen (erste 100 Zeichen)
+        // Check content (first 100 characters)
         String header = Files.readString(filePath).substring(0, Math.min(100, (int) filePath.toFile().length()));
 
         if (header.startsWith(">")) return "FASTA";
@@ -580,19 +580,19 @@ public class FileIO {
         return "UNKNOWN";
     }
 
-    // ======== HILFSFUNKTIONEN ========
+    // ======== HELPER FUNCTIONS ========
 
-    /** Schreibt Liste von Sequenzen als FASTA */
+    /** Writes a list of sequences as FASTA */
     public static void writeFASTA(List<Sequence> sequences, Path filePath) throws IOException {
         Files.writeString(filePath, writeFASTA(sequences));
     }
 
-    /** Schreibt FASTQ-Records */
+    /** Writes FASTQ records */
     public static void writeFASTQ(List<FastqRecord> records, Path filePath) throws IOException {
         Files.writeString(filePath, writeFASTQ(records));
     }
 
-    /** Lädt Sequenzen aus beliebiger Datei (Format-Erkennung) */
+    /** Loads sequences from any file (format detection) */
     public static List<Sequence> loadSequences(Path filePath) throws IOException {
         String format = detectFormat(filePath);
 
@@ -604,15 +604,15 @@ public class FileIO {
             case "GenBank" -> readGenBank(filePath).stream()
                     .map(GenBankRecord::getSequence)
                     .collect(Collectors.toList());
-            default -> throw new IOException("Nicht unterstütztes Format: " + format);
+            default -> throw new IOException("Unsupported format: " + format);
         };
     }
 
-    /** Kombiniert alle Sequenzen einer Liste zu einem Konsensus */
+    /** Combines all sequences of a list into a consensus */
     public static Sequence createConsensusSequence(List<Sequence> sequences) {
         if (sequences == null || sequences.isEmpty()) return null;
 
-        // Finde maximale Länge
+        // Find maximum length
         int maxLen = sequences.stream().mapToInt(Sequence::length).max().orElse(0);
 
         StringBuilder consensus = new StringBuilder(maxLen);
@@ -626,7 +626,7 @@ public class FileIO {
                 }
             }
 
-            // Häufigste Base (ohne N)
+            // Most frequent base (excluding N)
             char best = 'N';
             int maxCount = 0;
 
@@ -638,13 +638,13 @@ public class FileIO {
                     maxCount = count;
                     best = base;
                 } else if (base == 'N' && maxCount == 0) {
-                    best = 'N';  // Fallback auf N wenn keine Info
+                    best = 'N';  // fallback to N if no information
                 }
             }
 
             consensus.append(best);
         }
 
-        return new Sequence("consensus", "Konsensus-Sequenz", consensus.toString(), sequences.get(0).getType());
+        return new Sequence("consensus", "Consensus sequence", consensus.toString(), sequences.get(0).getType());
     }
 }

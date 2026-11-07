@@ -1,26 +1,26 @@
-//! RNA-Faltung mit ViennaRNA (`RNAfold`): Ausgabe lesen und Basenpaare aus der Punkt-Klammer-Schreibweise bestimmen.
+//! RNA folding with ViennaRNA (`RNAfold`): read output and determine base pairs from dot-bracket notation.
 
 use std::time::Duration;
 
 use crate::error::{Error, Result};
 use crate::tools::ToolRegistry;
 
-/// Ergebnis einer Faltung.
+/// Result of a folding.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Folding {
-    /// Sequenz (Uppercase, `T` als `U`).
+    /// Sequence (uppercase, `T` as `U`).
     pub sequence: String,
-    /// Struktur in Punkt-Klammer-Schreibweise, gleich lang wie die Sequenz.
+    /// Structure in dot-bracket notation, same length as the sequence.
     pub structure: String,
-    /// Freie Energie in kcal/mol.
+    /// Free energy in kcal/mol.
     pub energy: f64,
 }
 
-/// Liest die Ausgabe von `RNAfold --noPS`: erste Zeile die Sequenz, zweite Zeile `STRUKTUR (ENERGIE)`, z. B. `(((...))) ( -3.20)`.
-/// Die Energie steht in Klammern am Zeilenende und darf Leerzeichen nach der öffnenden Klammer haben (`( -3.20)`) sowie ein Minuszeichen
-/// oder ein Pluszeichen tragen. Leere Zeilen werden übersprungen; ein Kopfzeile mit `>` wird ebenfalls übersprungen. Fehler `Error::InvalidInput`,
-/// wenn weniger als zwei Zeilen übrig bleiben, die Struktur nicht nur aus `.`, `(` und `)` besteht, die Energie keine Zahl ist oder
-/// Sequenz und Struktur verschieden lang sind. Weitere Zeilen (z. B. Ensemble-Angaben) werden ignoriert.
+/// Reads the output of `RNAfold --noPS`: first line the sequence, second line `STRUCTURE (ENERGY)`, e.g. `(((...))) ( -3.20)`.
+/// The energy is in parentheses at the end of the line and may have spaces after the opening parenthesis (`( -3.20)`) and may carry a minus sign
+/// or a plus sign. Empty lines are skipped; a header line with `>` is skipped as well. Error `Error::InvalidInput`
+/// if fewer than two lines remain, the structure does not consist solely of `.`, `(` and `)`, the energy is not a number, or
+/// sequence and structure differ in length. Further lines (e.g. ensemble information) are ignored.
 pub fn parse_rnafold(text: &str) -> Result<Folding> {
     let lines: Vec<&str> = text.split('\n').collect();
     let mut valid_lines: Vec<&str> = Vec::new();
@@ -74,9 +74,9 @@ pub fn parse_rnafold(text: &str) -> Result<Folding> {
     })
 }
 
-/// Basenpaare `(i, j)` mit `i < j` (0-basiert) aus der Punkt-Klammer-Schreibweise, aufsteigend nach `i` sortiert.
-/// Fehler `Error::InvalidInput`, wenn eine Bracket not closed oder ohne Partner geschlossen wird oder ein anderes Zeichen als `.`,
-/// `(` und `)` vorkommt.
+/// Base pairs `(i, j)` with `i < j` (0-based) from the dot-bracket notation, sorted ascending by `i`.
+/// Error `Error::InvalidInput` if a bracket is not closed or is closed without a partner, or a character other than `.`,
+/// `(` and `)` occurs.
 pub fn pairs_from_dot_bracket(structure: &str) -> Result<Vec<(usize, usize)>> {
     let mut stack: Vec<usize> = Vec::new();
     let mut pairs: Vec<(usize, usize)> = Vec::new();
@@ -107,8 +107,8 @@ pub fn pairs_from_dot_bracket(structure: &str) -> Result<Vec<(usize, usize)>> {
     Ok(pairs)
 }
 
-/// Faltet eine RNA- oder DNA-Sequenz (`T` wird zu `U`) mit dem Programm `RNAfold --noPS` (Eingabe über stdin, höchstens 120 Sekunden).
-/// Fehler `Error::InvalidInput` bei leerer Sequenz oder Zeichen außer A, C, G, U/T, N; `Error::Io`, wenn das Programm fehlt oder scheitert.
+/// Folds an RNA or DNA sequence (`T` becomes `U`) with the program `RNAfold --noPS` (input via stdin, at most 120 seconds).
+/// Error `Error::InvalidInput` for an empty sequence or characters other than A, C, G, U/T, N; `Error::Io` if the program is missing or fails.
 pub fn fold_rna(sequence: &str) -> Result<Folding> {
     let seq: String = sequence.trim().to_ascii_uppercase().replace('T', "U");
     if seq.is_empty()
@@ -229,7 +229,7 @@ mod tests {
         assert!(f.energy <= 0.0);
         let p = pairs_from_dot_bracket(&f.structure).unwrap();
         assert!(!p.is_empty());
-        // DNA wird als RNA gelesen
+        // DNA is read as RNA
         assert_eq!(
             fold_rna("ggggaaaacccc").unwrap().sequence,
             "GGGGAAAACCCC".to_string()

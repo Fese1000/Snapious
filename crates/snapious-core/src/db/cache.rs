@@ -1,4 +1,4 @@
-//! Zwischenspeicher für Abrufe auf der Platte und eine Anfragenbremse (Rate-Limit), beide ohne eigenes Warten und mit austauschbarer Uhr.
+//! On-disk cache for fetches and a request throttle (rate limit), both without waiting themselves and with a replaceable clock.
 
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -6,13 +6,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::db::ncbi::HttpGet;
 use crate::error::Result;
 
-/// Uhr in Sekunden (für den Zwischenspeicher) bzw. Millisekunden (für die Bremse); in Tests ersetzbar.
+/// Clock in seconds (for the cache) or milliseconds (for the throttle); replaceable in tests.
 pub trait Clock {
     fn now_secs(&self) -> u64;
     fn now_millis(&self) -> u64;
 }
 
-/// Systemuhr (Zeit seit 1970).
+/// System clock (time since 1970).
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SystemClock;
 
@@ -32,8 +32,8 @@ impl Clock for SystemClock {
     }
 }
 
-/// Dateiname für eine Adresse: 64-Bit-FNV-1a-Hash der UTF-8-Bytes der Adresse (Startwert `0xcbf29ce484222325`, Primzahl
-/// `0x100000001b3`, je Byte erst XOR, dann Multiplikation mit Überlauf), als 16 Hexziffern in Kleinbuchstaben.
+/// File name for an address: 64-bit FNV-1a hash of the UTF-8 bytes of the address (offset basis `0xcbf29ce484222325`, prime
+/// `0x100000001b3`, per byte first XOR, then multiplication with overflow), as 16 lowercase hex digits.
 pub fn cache_key(url: &str) -> String {
     let mut hash: u64 = 0xcbf29ce484222325;
     for byte in url.bytes() {
@@ -43,8 +43,8 @@ pub fn cache_key(url: &str) -> String {
     format!("{:016x}", hash)
 }
 
-/// Ein Abruf mit Zwischenspeicher: gespeichert wird je Adresse eine Datei `<dir>/<cache_key>.txt`, deren erste Zeile die Abrufzeit
-/// (Sekunden, `Clock::now_secs`) ist und deren Rest die Antwort.
+/// A fetch with a cache: per address a file `<dir>/<cache_key>.txt` is stored whose first line is the fetch time
+/// (seconds, `Clock::now_secs`) and whose remainder is the response.
 pub struct CachingHttp<H: HttpGet, C: Clock> {
     inner: H,
     dir: PathBuf,
@@ -53,7 +53,7 @@ pub struct CachingHttp<H: HttpGet, C: Clock> {
 }
 
 impl<H: HttpGet, C: Clock> CachingHttp<H, C> {
-    /// Neuer Zwischenspeicher. Das Verzeichnis wird beim ersten Schreiben angelegt (`create_dir_all`).
+    /// New cache. The directory is created on first write (`create_dir_all`).
     pub fn new(inner: H, dir: PathBuf, ttl_secs: u64, clock: C) -> Self {
         let _ = std::fs::create_dir_all(&dir);
         CachingHttp {
@@ -66,10 +66,10 @@ impl<H: HttpGet, C: Clock> CachingHttp<H, C> {
 }
 
 impl<H: HttpGet, C: Clock> HttpGet for CachingHttp<H, C> {
-    /// Liegt eine lesbare Datei vor und ist `jetzt − Abrufzeit <= ttl_secs`, wird die gespeicherte Antwort (ohne die erste Zeile,
-    /// sonst unverändert) zurückgegeben, ohne `inner` aufzurufen. Sonst wird `inner.get` aufgerufen; bei `Ok(text)` wird die Datei
-    /// geschrieben (Schreibfehler werden ignoriert) und `text` zurückgegeben; Fehler von `inner` werden weitergegeben und nicht gespeichert.
-    /// Eine beschädigte Datei (erste Zeile keine Zahl) gilt als nicht vorhanden.
+    /// If a readable file exists and `now − fetch time <= ttl_secs`, the stored response (without the first line,
+    /// otherwise unchanged) is returned without calling `inner`. Otherwise `inner.get` is called; on `Ok(text)` the file is
+    /// written (write errors are ignored) and `text` is returned; errors from `inner` are propagated and not stored.
+    /// A corrupted file (first line not a number) counts as absent.
     fn get(&self, url: &str) -> Result<String> {
         let key = cache_key(url);
         let path = self.dir.join(format!("{}.txt", key));
@@ -83,7 +83,7 @@ impl<H: HttpGet, C: Clock> HttpGet for CachingHttp<H, C> {
                     }
                 }
             } else if content.trim().parse::<u64>().is_ok() {
-                // Nur Zeitstempel, keine Antwort -> ungültig
+                // Only a timestamp, no response -> invalid
             }
         }
 
@@ -96,8 +96,8 @@ impl<H: HttpGet, C: Clock> HttpGet for CachingHttp<H, C> {
     }
 }
 
-/// Anfragenbremse: höchstens `max_requests` Anfragen je `period_ms` Millisekunden. Ein Zeitpunkt `t` zählt nicht mehr
-/// mit, sobald `t + period_ms <= jetzt` gilt. Die Bremse wartet nicht selbst, sie sagt nur, wie lange gewartet werden müsste.
+/// Request throttle: at most `max_requests` requests per `period_ms` milliseconds. A time `t` no longer counts
+/// once `t + period_ms <= now` holds. The throttle does not wait itself; it only says how long one would have to wait.
 #[derive(Clone, Debug)]
 pub struct RateLimiter {
     max_requests: usize,
@@ -114,8 +114,8 @@ impl RateLimiter {
         }
     }
 
-    /// Wartezeit in Millisekunden bis zur nächsten erlaubten Anfrage zum Zeitpunkt `now_ms`: 0, wenn weniger als `max_requests`
-    /// Zeitpunkte noch zählen; sonst (Zeitpunkt, der als Nächsten ausläuft) `+ period_ms − now_ms`. Bei `max_requests == 0` immer `period_ms`.
+    /// Wait time in milliseconds until the next permitted request at time `now_ms`: 0 if fewer than `max_requests`
+    /// times still count; otherwise (time that expires next) `+ period_ms − now_ms`. With `max_requests == 0` always `period_ms`.
     pub fn wait_ms(&self, now_ms: u64) -> u64 {
         if self.max_requests == 0 {
             return self.period_ms;
@@ -136,7 +136,7 @@ impl RateLimiter {
         }
     }
 
-    /// Merkt eine Anfrage zum Zeitpunkt `now_ms` und vergisst Zeitpunkte, die nicht mehr zählen.
+    /// Records a request at time `now_ms` and forgets times that no longer count.
     pub fn record(&mut self, now_ms: u64) {
         self.times.retain(|&t| t + self.period_ms > now_ms);
         self.times.push(now_ms);
@@ -186,9 +186,9 @@ mod tests {
 
     #[test]
     fn schluessel() {
-        // FNV-1a 64 von "" ist der Startwert
+        // FNV-1a 64 of "" is the offset basis
         assert_eq!(cache_key(""), "cbf29ce484222325");
-        // bekannter Wert: FNV-1a 64 von "a"
+        // known value: FNV-1a 64 of "a"
         assert_eq!(cache_key("a"), "af63dc4c8601ec8c");
         assert_eq!(cache_key("http://x").len(), 16);
         assert_ne!(cache_key("http://x"), cache_key("http://y"));
@@ -236,7 +236,7 @@ mod tests {
         assert!(c.get("http://x/b").is_err());
         assert_eq!(c.get("http://x/b").unwrap(), "gut");
         assert_eq!(http.calls.get(), 2);
-        // beschädigte Datei wird ignoriert
+        // corrupted file is ignored
         let file = dir.join(format!("{}.txt", cache_key("http://x/b")));
         std::fs::write(&file, "keine zahl\nrest").unwrap();
         let http2 = FakeHttp {
@@ -258,10 +258,10 @@ mod tests {
         r.record(200);
         assert_eq!(r.wait_ms(300), 700);
         assert_eq!(r.wait_ms(999), 1);
-        // t = 0 läuft bei 1000 aus
+        // t = 0 expires at 1000
         assert_eq!(r.wait_ms(1000), 0);
         r.record(1000);
-        // jetzt zählen 100, 200, 1000
+        // now 100, 200, 1000 count
         assert_eq!(r.wait_ms(1001), 99);
         assert_eq!(RateLimiter::new(0, 500).wait_ms(10), 500);
     }

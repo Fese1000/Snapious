@@ -1,20 +1,20 @@
-//! Kennzahlen und Textformen für die aktuelle Auswahl (Statusleiste, Kopieren).
+//! Metrics and text forms for the current selection (status bar, copy).
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::primer::tm::{gc_fraction, marmur_doty, wallace};
 
-/// Kennzahlen einer Auswahl.
+/// Metrics of a selection.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SelectionStats {
     pub length: usize,
-    /// GC-Anteil in Prozent (0 bis 100).
+    /// GC fraction in percent (0 to 100).
     pub gc_percent: f64,
-    /// Schmelztemperatur in °C: bis einschließlich 13 Basen nach Wallace, darüber nach Marmur/Doty.
+    /// Melting temperature in °C: up to and including 13 bases by Wallace, above that by Marmur/Doty.
     pub tm_celsius: f64,
 }
 
-/// Berechnet die Kennzahlen. Leerer Text ergibt `length 0`, `gc_percent 0.0`, `tm_celsius 0.0`.
-/// Verwende `gc_fraction`, `wallace` und `marmur_doty` aus `crate::primer::tm`.
+/// Computes the metrics. Empty text yields `length 0`, `gc_percent 0.0`, `tm_celsius 0.0`.
+/// Use `gc_fraction`, `wallace` and `marmur_doty` from `crate::primer::tm`.
 pub fn selection_stats(bases: &str) -> SelectionStats {
     let len = bases.len();
     if len == 0 {
@@ -39,8 +39,8 @@ pub fn selection_stats(bases: &str) -> SelectionStats {
     }
 }
 
-/// FASTA-Text: Kopfzeile `>name`, danach die Basen in Zeilen zu 60 Zeichen; jede Zeile endet mit `\n`.
-/// Bei leeren Basen steht nur die Kopfzeile mit `\n` da.
+/// FASTA text: header line `>name`, then the bases in lines of 60 characters; every line ends with `\n`.
+/// For empty bases only the header line with `\n` is present.
 pub fn as_fasta(name: &str, bases: &str) -> String {
     let mut result = format!(">{}\n", name);
     for chunk in bases.as_bytes().chunks(60) {
@@ -51,8 +51,8 @@ pub fn as_fasta(name: &str, bases: &str) -> String {
     result
 }
 
-/// Reverse-Komplement als Text (Uppercase), z. B. `ATGC` → `GCAT`.
-/// Verwende `iupac_reverse_complement`.
+/// Reverse complement as text (uppercase), e.g. `ATGC` → `GCAT`.
+/// Use `iupac_reverse_complement`.
 pub fn as_reverse_complement(bases: &str) -> String {
     iupac_reverse_complement(bases).to_ascii_uppercase()
 }
@@ -112,7 +112,7 @@ mod tests {
         assert!(text.ends_with('\n'));
         assert_eq!(as_fasta("leer", ""), ">leer\n");
         assert_eq!(as_fasta("k", "ACGT"), ">k\nACGT\n");
-        // genau 60 Zeichen: eine Zeile, kein Leerzeilenrest
+        // exactly 60 characters: one line, no empty-line remainder
         assert_eq!(as_fasta("g", &"C".repeat(60)).lines().count(), 2);
     }
 

@@ -1,7 +1,7 @@
-//! Externe Programme für Alignment (MAFFT, MUSCLE, Clustal Omega) mit einheitlicher Schnittstelle.
+//! External programs for alignment (MAFFT, MUSCLE, Clustal Omega) with a uniform interface.
 //!
-//! Die Sequenznamen werden vor dem Aufruf durch `s0`, `s1`, … ersetzt und danach wieder zurückgesetzt, damit Leer- und Sonderzeichen
-//! in Namen keine Probleme machen.
+//! Sequence names are replaced by `s0`, `s1`, … before the call and restored afterwards, so that spaces and special characters
+//! in names do not cause problems.
 
 use std::time::Duration;
 
@@ -10,10 +10,10 @@ use crate::error::{Error, Result};
 use crate::model::sequence::Sequence;
 use crate::tools::ToolRegistry;
 
-/// Wahl des Alignment-Verfahrens.
+/// Choice of alignment method.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlignBackend {
-    /// Eingebautes progressives Alignment.
+    /// Built-in progressive alignment.
     Builtin,
     Mafft,
     Muscle,
@@ -21,7 +21,7 @@ pub enum AlignBackend {
 }
 
 impl AlignBackend {
-    /// Name aus der Oberfläche: `builtin`, `mafft`, `muscle`, `clustalo`.
+    /// Name from the UI: `builtin`, `mafft`, `muscle`, `clustalo`.
     pub fn from_name(name: &str) -> Option<AlignBackend> {
         match name {
             "builtin" => Some(AlignBackend::Builtin),
@@ -33,7 +33,7 @@ impl AlignBackend {
     }
 }
 
-/// Liest FASTA-Text mit mehrzeiligen Sequenzen in `(Kopfzeile bis zum ersten Leerzeichen, Sequenz in Uppercase)`.
+/// Reads FASTA text with multi-line sequences into `(header up to the first space, sequence in uppercase)`.
 pub fn parse_fasta_rows(text: &str) -> Vec<(String, String)> {
     let mut rows: Vec<(String, String)> = Vec::new();
     for line in text.lines() {
@@ -55,7 +55,7 @@ fn fasta_for(seqs: &[Sequence]) -> String {
         .collect()
 }
 
-/// Ordnet die Ausgabezeilen (`s0`, `s1`, …) den Eingabesequenzen zu und gibt `(Originalname, Zeile)` in Eingabereihenfolge zurück.
+/// Maps the output rows (`s0`, `s1`, …) to the input sequences and returns `(original name, row)` in input order.
 fn map_back(seqs: &[Sequence], rows: Vec<(String, String)>) -> Result<Vec<(String, String)>> {
     let mut out = Vec::with_capacity(seqs.len());
     for (i, s) in seqs.iter().enumerate() {
@@ -102,8 +102,8 @@ fn run_checked(
     Ok(r.stdout)
 }
 
-/// Richtet Sequenzen aus; Rückgabe `(Name, ausgerichtete Zeile)` in Eingabereihenfolge. At least two sequences required
-/// (`Error::InvalidInput`). Nicht installierte Programme ergeben `Error::Io`.
+/// Aligns sequences; returns `(name, aligned row)` in input order. At least two sequences required
+/// (`Error::InvalidInput`). Programs that are not installed give `Error::Io`.
 pub fn align_with(backend: AlignBackend, seqs: &[Sequence]) -> Result<Vec<(String, String)>> {
     if seqs.len() < 2 {
         return Err(Error::InvalidInput(

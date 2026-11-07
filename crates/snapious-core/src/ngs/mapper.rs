@@ -1,11 +1,11 @@
-//! Aufruf von Mapping-Programmen (minimap2, BWA): Kommandozeilen bauen und mit Umleitung der Ausgabe in eine Datei ausführen.
+//! Calling mapping programs (minimap2, BWA): build command lines and run them with the output redirected to a file.
 
 use std::path::Path;
 
 use crate::error::{Error, Result};
 
-/// Argumente für `minimap2`: `-ax <preset> -t <threads> <reference> <reads…>` (Voreinstellungen `sr`, `map-ont`, `map-pb`).
-/// `threads` wird mindestens 1. Die Programmnamen selbst gehören nicht in die Liste.
+/// Arguments for `minimap2`: `-ax <preset> -t <threads> <reference> <reads…>` (presets `sr`, `map-ont`, `map-pb`).
+/// `threads` becomes at least 1. The program names themselves do not belong in the list.
 pub fn minimap2_args(
     preset: &str,
     threads: usize,
@@ -23,12 +23,12 @@ pub fn minimap2_args(
     v
 }
 
-/// Argumente für `bwa index <reference>`.
+/// Arguments for `bwa index <reference>`.
 pub fn bwa_index_args(reference: &str) -> Vec<String> {
     vec!["index".to_string(), reference.to_string()]
 }
 
-/// Argumente für `bwa mem -t <threads> <reference> <reads…>` (`threads` mindestens 1).
+/// Arguments for `bwa mem -t <threads> <reference> <reads…>` (`threads` at least 1).
 pub fn bwa_mem_args(threads: usize, reference: &str, reads: &[String]) -> Vec<String> {
     let mut v = vec![
         "mem".to_string(),
@@ -40,14 +40,14 @@ pub fn bwa_mem_args(threads: usize, reference: &str, reads: &[String]) -> Vec<St
     v
 }
 
-/// Ob die BWA-Indexdateien vorliegen: es muss für `reference` die Datei `<reference>.bwt` existieren.
+/// Whether the BWA index files exist: the file `<reference>.bwt` must exist for `reference`.
 pub fn bwa_index_exists(reference: &str) -> bool {
     Path::new(&format!("{}.bwt", reference)).exists()
 }
 
-/// Führt `program args…` aus und schreibt die Standardausgabe in die Datei `out` (angelegt oder überschrieben).
-/// Fehler `Error::Io`: Programm startet nicht (Text mit Programmname), Datei nicht anlegbar, Exitcode ≠ 0 (Meldung mit den letzten höchstens
-/// 20 Zeilen der Fehlerausgabe).
+/// Runs `program args…` and writes the standard output to the file `out` (created or overwritten).
+/// Error `Error::Io`: program does not start (text with program name), file cannot be created, exit code ≠ 0 (message with the last at most
+/// 20 lines of the error output).
 pub fn run_to_file(program: &str, args: &[String], out: &Path) -> Result<()> {
     let file =
         std::fs::File::create(out).map_err(|e| Error::Io(format!("{}: {}", out.display(), e)))?;
@@ -124,11 +124,11 @@ mod tests {
         let text = std::fs::read_to_string(&out).unwrap();
         assert!(text.starts_with("@HD"));
         assert!(text.contains("zeile"));
-        // Exitcode und Fehlertext
+        // exit code and error text
         let e = run_to_file("/bin/sh", &s(&["-c", "echo kaputt 1>&2; exit 3"]), &out).unwrap_err();
         assert!(matches!(e, Error::Io(_)));
         assert!(e.to_string().contains("kaputt"));
-        // Programm fehlt
+        // program missing
         let e = run_to_file("/nicht/vorhanden/programm", &[], &out).unwrap_err();
         assert!(e.to_string().contains("programm"));
         let _ = std::fs::remove_dir_all(dir);

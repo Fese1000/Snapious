@@ -202,17 +202,17 @@ language model like Qwen can implement the tasks one after another without follo
 
 | File | Content |
 |---|---|
-| [docs/plan/00-ARBEITSANWEISUNG.md](docs/plan/00-ARBEITSANWEISUNG.md) | Rules, technical framework, existing code, progress list |
-| [docs/plan/01-PHASE-0-FUNDAMENT.md](docs/plan/01-PHASE-0-FUNDAMENT.md) | Document model, GenBank with features, operations/history, SQLite, external tools, JavaFX skeleton |
-| [docs/plan/02-PHASE-1-ANSICHTEN.md](docs/plan/02-PHASE-1-ANSICHTEN.md) | Sequence view, annotations, map, enzymes, editing/undo, feature detection, further formats |
-| [docs/plan/03-PHASE-2-KLONIERUNG.md](docs/plan/03-PHASE-2-KLONIERUNG.md) | Virtual digest, restriction/Gibson/Golden Gate/Gateway/TOPO, gel, PCR, primers, codons, CRISPR, sequencing comparison |
-| [docs/plan/04-PHASE-3-ALIGNMENT-PHYLOGENIE.md](docs/plan/04-PHASE-3-ALIGNMENT-PHYLOGENIE.md) | Alignment document, MAFFT/MUSCLE/Clustal, consensus/logo, trees, bootstrap, tree view |
-| [docs/plan/05-PHASE-4-DATENBANKEN-PROTEIN.md](docs/plan/05-PHASE-4-DATENBANKEN-PROTEIN.md) | NCBI, BLAST, UniProt, protein properties, RNA folding, 3D |
+| [docs/plan/00-WORKING-INSTRUCTIONS.md](docs/plan/00-WORKING-INSTRUCTIONS.md) | Rules, technical framework, existing code, progress list |
+| [docs/plan/01-PHASE-0-FOUNDATION.md](docs/plan/01-PHASE-0-FOUNDATION.md) | Document model, GenBank with features, operations/history, SQLite, external tools, JavaFX skeleton |
+| [docs/plan/02-PHASE-1-VIEWS.md](docs/plan/02-PHASE-1-VIEWS.md) | Sequence view, annotations, map, enzymes, editing/undo, feature detection, further formats |
+| [docs/plan/03-PHASE-2-CLONING.md](docs/plan/03-PHASE-2-CLONING.md) | Virtual digest, restriction/Gibson/Golden Gate/Gateway/TOPO, gel, PCR, primers, codons, CRISPR, sequencing comparison |
+| [docs/plan/04-PHASE-3-ALIGNMENT-PHYLOGENY.md](docs/plan/04-PHASE-3-ALIGNMENT-PHYLOGENY.md) | Alignment document, MAFFT/MUSCLE/Clustal, consensus/logo, trees, bootstrap, tree view |
+| [docs/plan/05-PHASE-4-DATABASES-PROTEIN.md](docs/plan/05-PHASE-4-DATABASES-PROTEIN.md) | NCBI, BLAST, UniProt, protein properties, RNA folding, 3D |
 | [docs/plan/06-PHASE-5-NGS.md](docs/plan/06-PHASE-5-NGS.md) | FASTQ/BAM, QC, trimming, mapping, coverage, variants, assembly |
-| [docs/plan/07-PHASE-6-WORKFLOWS-POLITUR.md](docs/plan/07-PHASE-6-WORKFLOWS-POLITUR.md) | Workflows, plugins, document management, versions, settings, export, packaging |
-| [docs/plan/08-RUST-KERN-SWIFT-APP.md](docs/plan/08-RUST-KERN-SWIFT-APP.md) | **Architecture:** Rust core (all logic) + native Swift app for macOS; mapping Java→Rust, FFI (UniFFI), Swift tasks S.0–S.9, later second UI for Windows/Linux |
-| [docs/plan/09-QWEN-ARBEITSWEISE.md](docs/plan/09-QWEN-ARBEITSWEISE.md) | **Working with Qwen3.6-35B-A3B:** task cards, test-first, decomposition rules, Rust error cheat sheet, checklist, verified example card 1.1 |
-| [docs/plan/OFFENE_FRAGEN.md](docs/plan/OFFENE_FRAGEN.md) | Collected questions and assumptions made |
+| [docs/plan/07-PHASE-6-WORKFLOWS-POLISH.md](docs/plan/07-PHASE-6-WORKFLOWS-POLISH.md) | Workflows, plugins, document management, versions, settings, export, packaging |
+| [docs/plan/08-RUST-CORE-SWIFT-APP.md](docs/plan/08-RUST-CORE-SWIFT-APP.md) | **Architecture:** Rust core (all logic) + native Swift app for macOS; mapping Java→Rust, FFI (UniFFI), Swift tasks S.0–S.9, later second UI for Windows/Linux |
+| [docs/plan/09-QWEN-WORKFLOW.md](docs/plan/09-QWEN-WORKFLOW.md) | **Working with Qwen3.6-35B-A3B:** task cards, test-first, decomposition rules, Rust error cheat sheet, checklist, verified example card 1.1 |
+| [docs/plan/OPEN-QUESTIONS.md](docs/plan/OPEN-QUESTIONS.md) | Collected questions and assumptions made |
 
 ## Deliberately Left Out
 

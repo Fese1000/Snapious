@@ -1,25 +1,25 @@
-//! Paired-End-Reads anhand der Namen zusammenführen.
+//! Merge paired-end reads by name.
 
 use std::collections::BTreeMap;
 
-/// Ergebnis der Paarbildung (Indizes in der Namensliste).
+/// Result of pairing (indices into the name list).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PairResult {
-    /// `(Vorwärtsread, Rückwärtsread)`, aufsteigend nach dem Index des Vorwärtsreads.
+    /// `(forward read, reverse read)`, ascending by the index of the forward read.
     pub pairs: Vec<(usize, usize)>,
-    /// Reads ohne Partner oder ohne erkennbare Paarinformation, aufsteigend.
+    /// Reads without a mate or without recognizable pair information, ascending.
     pub unpaired: Vec<usize>,
 }
 
-/// Erkennt Paare: Ein Name endet mit `/1` oder `/2` (Schlüssel = Name ohne diese zwei Zeichen), oder er enthält ein Leerzeichen und
-/// der Teil danach beginnt mit `1:` oder `2:` (Schlüssel = Teil vor dem ersten Leerzeichen). Reads mit gleichem Schlüssel und den
-/// Nummern 1 und 2 bilden ein Paar (kommt eine Nummer mehrfach vor, zählt das erste Vorkommen, die weiteren sind ungepaart).
-/// Alle anderen Reads sind ungepaart.
+/// Detects pairs: a name ends with `/1` or `/2` (key = name without these two characters), or it contains a space and
+/// the part after it starts with `1:` or `2:` (key = part before the first space). Reads with the same key and the
+/// numbers 1 and 2 form a pair (if a number occurs more than once, the first occurrence counts, the others are unpaired).
+/// All other reads are unpaired.
 pub fn pair_reads(names: &[String]) -> PairResult {
-    // Map für gefundene Paare: Schlüssel -> (Index_von_1, Index_von_2)
-    // Wir nutzen BTreeMap, um deterministisch zu sein.
+    // Map for found pairs: key -> (index_of_1, index_of_2)
+    // We use a BTreeMap to be deterministic.
     let mut pairs_map: BTreeMap<String, (Option<usize>, Option<usize>)> = BTreeMap::new();
-    // Liste der ungepaarten Reads (Indizes)
+    // List of unpaired reads (indices)
     let mut unpaired_indices: Vec<usize> = Vec::new();
 
     for (idx, name) in names.iter().enumerate() {
@@ -31,44 +31,44 @@ pub fn pair_reads(names: &[String]) -> PairResult {
             }
         };
 
-        // Hole oder erstelle Entry für den Schlüssel
+        // Get or create the entry for the key
         let entry = pairs_map.entry(key).or_insert((None, None));
 
         match num {
             1 => {
                 if entry.0.is_none() {
-                    // Erster /1 für diesen Schlüssel gefunden
+                    // First /1 found for this key
                     entry.0 = Some(idx);
                 } else {
-                    // Duplikat von /1 -> ungepaart
+                    // Duplicate of /1 -> unpaired
                     unpaired_indices.push(idx);
                 }
             }
             2 => {
                 if entry.1.is_none() {
-                    // Erster /2 für diesen Schlüssel gefunden
+                    // First /2 found for this key
                     entry.1 = Some(idx);
                 } else {
-                    // Duplikat von /2 -> ungepaart
+                    // Duplicate of /2 -> unpaired
                     unpaired_indices.push(idx);
                 }
             }
-            _ => {} // Sollte nicht passieren durch parse_pair_info
+            _ => {} // Should not happen thanks to parse_pair_info
         }
     }
 
-    // Paare extrahieren
+    // Extract pairs
     let mut pairs: Vec<(usize, usize)> = Vec::new();
 
     for (_, (first_opt, second_opt)) in pairs_map {
         if let (Some(first), Some(second)) = (first_opt, second_opt) {
             pairs.push((first, second));
         } else {
-            // Wenn nur einer vorhanden ist (z.B. nur /1 aber kein /2), sind beide ungepaart?
-            // Die Aufgabenstellung sagt: "Reads mit gleichem Schlüssel und den Nummern 1 und 2 bilden ein Paar".
-            // "Alle anderen Reads sind ungepaart."
-            // Wenn wir also einen /1 haben, aber kein passendes /2 (weil der Schlüssel anders ist oder fehlt),
-            // dann ist dieser /1 ungepaart. Gleiches für /2 ohne /1.
+            // If only one is present (e.g. only /1 but no /2), are both unpaired?
+            // The task statement says: "Reads with the same key and the numbers 1 and 2 form a pair".
+            // "All other reads are unpaired."
+            // So if we have a /1 but no matching /2 (because the key differs or is missing),
+            // this /1 is unpaired. The same for /2 without /1.
             if let Some(first) = first_opt {
                 unpaired_indices.push(first);
             }
@@ -78,10 +78,10 @@ pub fn pair_reads(names: &[String]) -> PairResult {
         }
     }
 
-    // Sortiere Paare nach dem Index des Vorwärtsreads (erster Wert im Tuple)
+    // Sort pairs by the index of the forward read (first value in the tuple)
     pairs.sort_by_key(|&(f, _)| f);
 
-    // Unpaired-Liste sortieren (aufsteigend nach Index)
+    // Sort the unpaired list (ascending by index)
     unpaired_indices.sort();
 
     PairResult {
@@ -90,10 +90,10 @@ pub fn pair_reads(names: &[String]) -> PairResult {
     }
 }
 
-/// Parst einen Read-Namen auf Paar-Information.
-/// Gibt `(Schlüssel, Nummer)` zurück, wobei Nummer 1 oder 2 ist.
+/// Parses a read name for pair information.
+/// Returns `(key, number)`, where number is 1 or 2.
 fn parse_pair_info(name: &str) -> Option<(String, u8)> {
-    // Regel 1: Endet mit `/1` oder `/2`
+    // Rule 1: ends with `/1` or `/2`
     if let Some(stripped) = name.strip_suffix("/1") {
         return Some((stripped.to_string(), 1));
     }
@@ -101,11 +101,11 @@ fn parse_pair_info(name: &str) -> Option<(String, u8)> {
         return Some((stripped.to_string(), 2));
     }
 
-    // Regel 2: Enthält Leerzeichen, Teil danach beginnt mit `1:` oder `2:`
+    // Rule 2: contains a space, the part after it starts with `1:` or `2:`
     if let Some(space_pos) = name.find(' ') {
         let suffix = &name[space_pos + 1..];
         if suffix.starts_with("1:") {
-            // Schlüssel ist Teil vor dem ersten Leerzeichen
+            // Key is the part before the first space
             return Some((name[..space_pos].to_string(), 1));
         }
         if suffix.starts_with("2:") {

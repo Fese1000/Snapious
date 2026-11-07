@@ -45,7 +45,7 @@ class CloningMethodTest {
 
         assertNotNull(plan);
         assertEquals(CloningMethod.CloningType.GIBSON_ASSEMBLY, plan.getMethod());
-        assertTrue(plan.getFragmentsOrOverlaps().size() >= 2);  // Mindestens 2 Overlaps
+        assertTrue(plan.getFragmentsOrOverlaps().size() >= 2);  // at least 2 overlaps
     }
 
     @Test
@@ -191,7 +191,7 @@ class CloningMethodTest {
 
         String protocol = plan.generateProtocol();
         assertNotNull(protocol);
-        assertTrue(protocol.contains("Restriktionsligase"));
+        assertTrue(protocol.contains("Restriction ligase"));
     }
 
     @Test
@@ -214,14 +214,14 @@ class CloningMethodTest {
 
         var summary = CloningMethod.getCloningSummary(insert, vector);
 
-        assertTrue(summary.size() > 0);  // Sollte alle Klonierungstypen enthalten
+        assertTrue(summary.size() > 0);  // should contain all cloning types
     }
 
     @Test
     void testAllCloningTypesExist() {
         CloningMethod.CloningType[] types = CloningMethod.CloningType.values();
 
-        assertEquals(12, types.length);  // Alle 12 Typen vorhanden
+        assertEquals(12, types.length);  // all 12 types present
     }
 
     @Test
@@ -240,7 +240,7 @@ class CloningMethodTest {
         Sequence insert = makeSeq("short", "ATCG");
         Sequence vector = makeSeq("vector", "GGATCCGCGGCCGCCTCGAG");
 
-        // Alle Klonierungstypen sollten mit kurzen Inserts funktionieren
+        // All cloning types should work with short inserts
         for (CloningMethod.CloningType type : CloningMethod.CloningType.values()) {
             var plan = CloningMethod.createCloningPlan(insert, vector, type);
             assertNotNull(plan, "Failed for type: " + type);
@@ -252,7 +252,7 @@ class CloningMethodTest {
         Sequence insert = makeSeq("empty", "");
         Sequence vector = makeSeq("vector", "GGATCCGCGGCCGCCTCGAG");
 
-        // Leeres Insert sollte keine Exceptions werfen
+        // Empty insert should not throw exceptions
         for (CloningMethod.CloningType type : CloningMethod.CloningType.values()) {
             var plan = CloningMethod.createCloningPlan(insert, vector, type);
             assertNotNull(plan, "Failed for type: " + type);
@@ -274,7 +274,7 @@ class CloningMethodTest {
             CloningMethod.CloningType.GIBSON_ASSEMBLY);
         long elapsed = System.currentTimeMillis() - startTime;
 
-        assertTrue(elapsed < 5000, "Sollte innerhalb von 5s.finishen");
+        assertTrue(elapsed < 5000, "Should finish within 5s");
         assertNotNull(plan);
     }
 
@@ -322,7 +322,7 @@ class CloningMethodTest {
         var plan = CloningMethod.createCloningPlan(insert, vector,
             CloningMethod.CloningType.RESTRICTION_LIGASE);
 
-        // Fragments sollten populated sein wenn Enzyme schneiden
+        // Fragments should be populated if enzymes cut
         assertNotNull(plan.getFragmentsOrOverlaps());
     }
 
@@ -334,7 +334,7 @@ class CloningMethodTest {
         var plan = CloningMethod.createCloningPlan(insert, vector,
             CloningMethod.CloningType.RESTRICTION_LIGASE);
 
-        // Vector sollte mehr Schnittstellen haben als Insert
+        // Vector should have more cut sites than insert
         assertTrue(plan.getVectorCutSites().size() >= plan.getInsertCutSites().size());
     }
 
@@ -346,7 +346,7 @@ class CloningMethodTest {
         var plan = CloningMethod.createCloningPlan(insert, vector,
             CloningMethod.CloningType.GOLDEN_GATE);
 
-        // Golden Gate sollte Type IIS Enzyme finden
+        // Golden Gate should find type IIS enzymes
         assertNotNull(plan);
     }
 
@@ -358,7 +358,7 @@ class CloningMethodTest {
         var plan = CloningMethod.createCloningPlan(insert, vector,
             CloningMethod.CloningType.GATEWAY);
 
-        // Gateway benötigt keine Restriktionsstellen
+        // Gateway needs no restriction sites
         assertTrue(plan.getInsertCutSites().isEmpty());
         assertTrue(plan.getVectorCutSites().isEmpty());
     }
@@ -371,7 +371,7 @@ class CloningMethodTest {
         var plan = CloningMethod.createCloningPlan(insert, vector,
             CloningMethod.CloningType.TOPO_TOPOLOGICAL);
 
-        // TOPO benötigt CCCTT Sequenz
+        // TOPO needs a CCCTT sequence
         assertNotNull(plan);
     }
 
@@ -459,7 +459,7 @@ class CloningMethodTest {
 
         var summary = CloningMethod.getCloningSummary(insert, vector);
 
-        assertEquals(12, summary.size());  // Alle 12 Klonierungstypen
+        assertEquals(12, summary.size());  // all 12 cloning types
     }
 
     @Test
@@ -467,7 +467,7 @@ class CloningMethodTest {
         Sequence insert = makeSeq("insert", "AAGGAATTCGATTAGCTAGC");
         Sequence vector = makeSeq("empty", "");
 
-        // Leerer Vektor sollte keine Exceptions werfen
+        // Empty vector should not throw exceptions
         for (CloningMethod.CloningType type : CloningMethod.CloningType.values()) {
             var plan = CloningMethod.createCloningPlan(insert, vector, type);
             assertNotNull(plan, "Failed for type: " + type);
@@ -479,7 +479,7 @@ class CloningMethodTest {
         Sequence insert = makeSeq("empty", "");
         Sequence vector = makeSeq("empty", "");
 
-        // Beide leer sollten keine Exceptions werfen
+        // Both empty should not throw exceptions
         for (CloningMethod.CloningType type : CloningMethod.CloningType.values()) {
             var plan = CloningMethod.createCloningPlan(insert, vector, type);
             assertNotNull(plan, "Failed for type: " + type);
@@ -501,7 +501,7 @@ class CloningMethodTest {
             CloningMethod.CloningType.RESTRICTION_LIGASE);
         long elapsed = System.currentTimeMillis() - startTime;
 
-        assertTrue(elapsed < 10000, "Sollte innerhalb von 10s.finishen");
+        assertTrue(elapsed < 10000, "Should finish within 10s");
         assertNotNull(plan);
     }
 
@@ -515,7 +515,7 @@ class CloningMethodTest {
 
         String protocol = plan.getProtocol();
         assertTrue(protocol.contains("Gibson"));
-        assertTrue(protocol.contains("Overlap"));
+        assertTrue(protocol.toLowerCase().contains("overlap"));
     }
 
     @Test
@@ -527,7 +527,7 @@ class CloningMethodTest {
             CloningMethod.CloningType.RESTRICTION_LIGASE);
 
         String protocol = plan.generateProtocol();
-        assertTrue(protocol.contains("Schnittstellen"));
+        assertTrue(protocol.contains("cut sites"));
     }
 
     @Test
@@ -563,7 +563,7 @@ class CloningMethodTest {
 
         Sequence vector = makeSeq("vector", "GGATCCGCGGCCGCCTCGAG");
 
-        // DNA und RNA sollten beide funktionieren
+        // DNA and RNA should both work
         var dnaPlan = CloningMethod.createCloningPlan(dnaInsert, vector,
             CloningMethod.CloningType.RESTRICTION_LIGASE);
 

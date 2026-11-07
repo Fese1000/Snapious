@@ -1,7 +1,7 @@
 import SnapiousFFI
 import SwiftUI
 
-/// Identitäts-Heatmap: paarweise Identität aller Zeilen in Prozent, mit Zahlen.
+/// Identity heatmap: pairwise identity of all rows in percent, with numbers.
 struct IdentityHeatmapView: View {
     let matrix: IdentityMatrixDto
 
@@ -9,7 +9,7 @@ struct IdentityHeatmapView: View {
     private let labelWidth: CGFloat = 110
 
     private func color(_ percent: Double) -> Color {
-        // 0 % blau-kühl, 100 % warm; unterhalb von 50 % kaum Sättigung
+        // 0 % cool blue, 100 % warm; hardly any saturation below 50 %
         let t = max(0, min(1, (percent - 50) / 50))
         return Color(hue: 0.62 - 0.62 * t, saturation: 0.15 + 0.7 * t, brightness: 0.85)
     }
@@ -18,7 +18,7 @@ struct IdentityHeatmapView: View {
         ScrollView([.horizontal, .vertical]) { grid }
     }
 
-    /// Ohne Scrollbereich (für Bildschirmfotos ohne Fenster).
+    /// Without a scroll area (for screenshots without a window).
     var grid: some View {
         let n = matrix.names.count
         return Group {
@@ -50,7 +50,7 @@ struct IdentityHeatmapView: View {
     }
 }
 
-/// Sequenzlogo: Symbolhöhe = Informationsgehalt in Bit, je Spalte gestapelt (niedrigstes unten).
+/// Sequence logo: symbol height = information content in bits, stacked per column (lowest at the bottom).
 struct SequenceLogoView: View {
     let columns: [LogoColumnDto]
     let protein: Bool
@@ -72,7 +72,7 @@ struct SequenceLogoView: View {
         ScrollView(.horizontal) { chart }
     }
 
-    /// Ohne Scrollbereich (für Bildschirmfotos ohne Fenster).
+    /// Without a scroll area (for screenshots without a window).
     var chart: some View {
         let maxBits = protein ? log2(20.0) : 2.0
         return Group {
@@ -85,7 +85,7 @@ struct SequenceLogoView: View {
                         if h < 1 { continue }
                         let text = Text(symbol).font(.system(size: 100, weight: .bold, design: .monospaced))
                             .foregroundStyle(color(symbol))
-                        // Symbol auf die Höhe `h` strecken
+                        // Stretch the symbol to height `h`
                         var c = ctx
                         c.translateBy(x: CGFloat(i) * colWidth, y: y - h)
                         c.scaleBy(x: colWidth / 60, y: h / 100)

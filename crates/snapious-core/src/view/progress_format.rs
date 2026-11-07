@@ -1,7 +1,7 @@
-//! Texte für Fortschrittsanzeigen: Dauer, Größe, Restzeit.
+//! Texts for progress displays: duration, size, remaining time.
 
-/// Dauer in Sekunden als Text: unter 60 → `"{s} s"`; unter 3600 → `"{m} min {s} s"` (ohne Sekunden, wenn 0: `"{m} min"`);
-/// sonst `"{h} h {m} min"` (ohne Minuten, wenn 0: `"{h} h"`; Sekunden entfallen). Beispiele: 0 → `"0 s"`, 125 → `"2 min 5 s"`,
+/// Duration in seconds as text: under 60 → `"{s} s"`; under 3600 → `"{m} min {s} s"` (without seconds if 0: `"{m} min"`);
+/// otherwise `"{h} h {m} min"` (without minutes if 0: `"{h} h"`; seconds are dropped). Examples: 0 → `"0 s"`, 125 → `"2 min 5 s"`,
 /// 3600 → `"1 h"`, 3725 → `"1 h 2 min"`.
 pub fn format_duration(secs: u64) -> String {
     let hours = secs / 3600;
@@ -26,8 +26,8 @@ pub fn format_duration(secs: u64) -> String {
     }
 }
 
-/// Größe in Byte: unter 1024 → `"{n} B"`; sonst durch 1024 teilen in KB, MB, GB (größer wird weiter in GB angegeben)
-/// mit einer Nachkommastelle, z. B. 1536 → `"1.5 KB"`, 1048576 → `"1.0 MB"`.
+/// Size in bytes: under 1024 → `"{n} B"`; otherwise divide by 1024 into KB, MB, GB (anything larger is still given in GB)
+/// with one decimal place, e.g. 1536 → `"1.5 KB"`, 1048576 → `"1.0 MB"`.
 pub fn format_bytes(bytes: u64) -> String {
     if bytes < 1024 {
         format!("{} B", bytes)
@@ -40,8 +40,8 @@ pub fn format_bytes(bytes: u64) -> String {
     }
 }
 
-/// Geschätzte Restzeit in ganzen Sekunden (gerundet) aus bisher erledigter Menge `done` von `total` nach `elapsed_secs`:
-/// `elapsed * (total - done) / done`. `None`, wenn `done == 0`, `done > total` oder `elapsed_secs <= 0.0`.
+/// Estimated remaining time in whole seconds (rounded) from the amount `done` of `total` completed so far after `elapsed_secs`:
+/// `elapsed * (total - done) / done`. `None` if `done == 0`, `done > total` or `elapsed_secs <= 0.0`.
 pub fn eta_secs(done: u64, total: u64, elapsed_secs: f64) -> Option<u64> {
     if done == 0 || done > total || elapsed_secs <= 0.0 {
         return None;

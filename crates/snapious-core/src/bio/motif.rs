@@ -1,9 +1,9 @@
-//! Motivsuche mit IUPAC-Codes auf beiden Strängen (auch über den Nullpunkt zirkulärer Sequenzen).
+//! Motif search with IUPAC codes on both strands (also across the origin of circular sequences).
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::error::{Error, Result};
 
-/// Ein Fundort `[start, end)` auf dem Oberstrang; `reverse` bedeutet, dass das Reverse-Komplement des Motivs dort steht.
+/// A hit `[start, end)` on the top strand; `reverse` means the reverse complement of the motif is located there.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MotifHit {
     pub start: usize,
@@ -11,7 +11,7 @@ pub struct MotifHit {
     pub reverse: bool,
 }
 
-/// Menge der Basen (A, C, G, T als Bits 1, 2, 4, 8) für einen IUPAC-Buchstaben; `None` für unbekannte Zeichen.
+/// Set of bases (A, C, G, T as bits 1, 2, 4, 8) for an IUPAC letter; `None` for unknown characters.
 fn mask(c: u8) -> Option<u8> {
     Some(match c.to_ascii_uppercase() {
         b'A' => 1,
@@ -33,12 +33,12 @@ fn mask(c: u8) -> Option<u8> {
     })
 }
 
-/// Sucht `motif` (IUPAC, Schreibweise egal) in `bases`. Eine Position passt, wenn sich für jedes Zeichenpaar die Basenmengen schneiden
-/// (so passt `N` im Motiv zu allem und `R` im Motiv zu `A`, `G` und `R` in der Sequenz). Mit `both_strands` wird zusätzlich das
-/// Reverse-Komplement des Motivs gesucht (ist es mit dem Motiv identisch, wird jeder Ort nur einmal als Vorwärtstreffer gemeldet).
-/// Bei `circular` zählen auch Treffer über den Nullpunkt: `start` liegt dann in `0..Länge` und `end` kann größer als die Länge sein.
-/// Ergebnis sortiert nach `start`, dann `end`, dann Vorwärts vor Rückwärts. Fehler `Error::InvalidInput` bei leerem Motiv oder Zeichen,
-/// die kein IUPAC-Code sind. Ist das Motiv länger als die Sequenz, ist das Ergebnis leer.
+/// Searches `motif` (IUPAC, case-insensitive) in `bases`. A position matches if the base sets intersect for every character pair
+/// (so `N` in the motif matches everything and `R` in the motif matches `A`, `G` and `R` in the sequence). With `both_strands`, the
+/// reverse complement of the motif is searched as well (if it is identical to the motif, each site is reported only once as a forward hit).
+/// With `circular`, hits across the origin count too: `start` is then in `0..length` and `end` may exceed the length.
+/// Result sorted by `start`, then `end`, then forward before reverse. Error `Error::InvalidInput` for an empty motif or characters
+/// that are not IUPAC codes. If the motif is longer than the sequence, the result is empty.
 pub fn find_motif(
     bases: &str,
     motif: &str,
@@ -114,7 +114,7 @@ mod tests {
         assert_eq!(starts(&h), vec![(2, false), (10, false)]);
         let n = find_motif("ACGTA", "ANG", false, false).unwrap();
         assert_eq!(starts(&n), vec![(0, false)]);
-        // Mehrdeutigkeit in der Sequenz schneidet sich mit dem Motiv
+        // ambiguity in the sequence intersects with the motif
         let r = find_motif("ARGT", "AGGT", false, false).unwrap();
         assert_eq!(starts(&r), vec![(0, false)]);
         assert_eq!(find_motif("ACGU", "ACGT", false, false).unwrap().len(), 1);
@@ -122,10 +122,10 @@ mod tests {
 
     #[test]
     fn beide_straenge() {
-        // GGATCC ist ein Palindrom: nur ein Treffer; AAGCTT ebenfalls
+        // GGATCC is a palindrome: only one hit; so is AAGCTT
         let p = find_motif("TTGGATCCTT", "GGATCC", true, false).unwrap();
         assert_eq!(starts(&p), vec![(2, false)]);
-        // GGTCTC (BsaI) steht rückwärts als GAGACC
+        // GGTCTC (BsaI) appears in reverse as GAGACC
         let h = find_motif("TTGAGACCTT", "GGTCTC", true, false).unwrap();
         assert_eq!(starts(&h), vec![(2, true)]);
         let k = find_motif("GGTCTCAAGAGACC", "GGTCTC", true, false).unwrap();
@@ -143,7 +143,7 @@ mod tests {
         assert!(find_motif("TTCAAGAA", "GAATTC", false, false)
             .unwrap()
             .is_empty());
-        // Motiv genau so lang wie die Sequenz, an jeder Drehung
+        // motif exactly as long as the sequence, at every rotation
         assert_eq!(find_motif("ACG", "CGA", false, true).unwrap().len(), 1);
     }
 

@@ -1,21 +1,21 @@
-//! Kurze Referenz-Features (z. B. Promotoren, Primerstellen) in einer Sequenz mit Fehlpaarungen wiederfinden.
+//! Find short reference features (e.g. promoters, primer sites) in a sequence, allowing mismatches.
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 
-/// Ein Treffer.
+/// A hit.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FeatureMatch {
-    /// Beginn (0-basiert) in `seq`.
+    /// Start (0-based) in `seq`.
     pub start: usize,
-    /// `true`, wenn das Reverskomplement der Referenz passt.
+    /// `true` if the reverse complement of the reference matches.
     pub reverse: bool,
     pub mismatches: usize,
 }
 
-/// Sucht `reference` ohne Lücken an allen Positionen von `seq`, vorwärts und als Reverskomplement (`iupac_reverse_complement`),
-/// und liefert alle Treffer mit höchstens `max_mismatch` Unterschieden (Groß-/Kleinschreibung egal, es zählt Byte-Gleichheit).
-/// Sortiert nach `start`, bei gleichem Beginn vorwärts vor rückwärts. Leere Referenz oder Referenz länger als `seq` → leer.
-/// Beispiel: `seq = AACCTTGGTTAACC`, `reference = AACC`, 0 Unterschiede → (0, vorwärts), (6, rückwärts), (10, vorwärts).
+/// Searches the gap-free `reference` at all positions of `seq`, forward and as reverse complement (`iupac_reverse_complement`),
+/// and returns all hits with at most `max_mismatch` differences (case-insensitive, byte equality counts).
+/// Sorted by `start`, with equal start forward before reverse. Empty reference or reference longer than `seq` → empty.
+/// Example: `seq = AACCTTGGTTAACC`, `reference = AACC`, 0 differences → (0, forward), (6, reverse), (10, forward).
 pub fn find_feature_matches(seq: &str, reference: &str, max_mismatch: usize) -> Vec<FeatureMatch> {
     let seq_up = seq.to_ascii_uppercase();
     let fwd = reference.to_ascii_uppercase();

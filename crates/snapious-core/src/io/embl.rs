@@ -1,22 +1,22 @@
-//! EMBL-Format lesen und schreiben (Sequenzdatensätze mit Features).
+//! Read and write EMBL format (sequence records with features).
 //!
-//! Aufbau eines Datensatzes (Kennung in den ersten zwei Spalten):
-//! `ID   name; SV 1; circular; genomic DNA; STD; SYN; 60 BP.`, `AC   TEST0001;`, `DE   Beschreibung.`,
-//! `OS   Organismus`, Features als `FT   gene            5..20` mit Qualifiern `FT                   /gene="abc"`,
-//! dann `SQ   Sequence 60 BP; ...` gefolgt von Sequenzzeilen (5 Leerzeichen, Basen in 6 Zehnergruppen, Positionszähler am Zeilenende)
-//! und `//` als Ende. Zeilen `XX` und `FH` sind Platzhalter und werden beim Lesen ignoriert.
-//! Die Feature-Positionen verwenden dieselbe Schreibweise wie GenBank (`complement(30..50)`, `join(...)`).
-//! Tipp: Der Leser darf den Text in GenBank-Schreibweise umsetzen und `crate::io::genbank::parse` aufrufen; der Schreiber
-//! darf `crate::io::genbank::format` nutzen und dessen Zeilen umsetzen. Metadaten-Schlüssel wie bei GenBank:
-//! `definition` (aus `DE`), `accession` (aus `AC`, ohne das abschließende Semikolon), `organism` (aus `OS`).
+//! Layout of a record (identifier in the first two columns):
+//! `ID   name; SV 1; circular; genomic DNA; STD; SYN; 60 BP.`, `AC   TEST0001;`, `DE   description.`,
+//! `OS   organism`, features as `FT   gene            5..20` with qualifiers `FT                   /gene="abc"`,
+//! then `SQ   Sequence 60 BP; ...` followed by sequence lines (5 spaces, bases in 6 groups of ten, position counter at the end of the line)
+//! and `//` as the end. Lines `XX` and `FH` are placeholders and are ignored when reading.
+//! Feature positions use the same notation as GenBank (`complement(30..50)`, `join(...)`).
+//! Hint: the reader may convert the text to GenBank notation and call `crate::io::genbank::parse`; the writer
+//! may use `crate::io::genbank::format` and convert its lines. Metadata keys as in GenBank:
+//! `definition` (from `DE`), `accession` (from `AC`, without the trailing semicolon), `organism` (from `OS`).
 
 use crate::error::Result;
 use crate::io::genbank;
 use crate::model::document::SequenceDocument;
 
-/// Liest alle Datensätze aus EMBL-Text. Datensätze ohne `ID`-Zeile werden übersprungen.
-/// Der Name ist das erste Wort der `ID`-Zeile (vor dem Semikolon); die Topologie ist zirkulär, wenn das Wort `circular` vorkommt,
-/// sonst linear. Fehler wie bei `genbank::parse` (z. B. invalid positionen), mit `Error::InvalidInput`.
+/// Reads all records from EMBL text. Records without an `ID` line are skipped.
+/// The name is the first word of the `ID` line (before the semicolon); the topology is circular if the word `circular` occurs,
+/// otherwise linear. Errors as in `genbank::parse` (e.g. invalid positions), with `Error::InvalidInput`.
 pub fn parse(text: &str) -> Result<Vec<SequenceDocument>> {
     let mut docs = Vec::new();
     let mut record: Vec<&str> = Vec::new();
@@ -32,7 +32,7 @@ pub fn parse(text: &str) -> Result<Vec<SequenceDocument>> {
     Ok(docs)
 }
 
-/// Wandelt einen Datensatz (ohne `//`) um und hängt das Dokument an; Datensätze ohne `ID`-Zeile entfallen.
+/// Converts a record (without `//`) and appends the document; records without an `ID` line are dropped.
 fn push_record(lines: &[&str], docs: &mut Vec<SequenceDocument>) -> Result<()> {
     if !lines.iter().any(|l| l.starts_with("ID   ")) {
         return Ok(());
@@ -42,13 +42,13 @@ fn push_record(lines: &[&str], docs: &mut Vec<SequenceDocument>) -> Result<()> {
     Ok(())
 }
 
-/// Schreibt ein Dokument als EMBL-Text (endet mit `//\n`). Das Ergebnis lässt sich mit `parse` wieder einlesen und liefert
-/// Name, Basen, Topologie, Features (Typ, Name, Position, Qualifier) und Metadaten (`definition`, `accession`, `organism`) unverändert.
+/// Writes a document as EMBL text (ends with `//\n`). The result can be read back with `parse` and yields
+/// name, bases, topology, features (type, name, position, qualifier) and metadata (`definition`, `accession`, `organism`) unchanged.
 pub fn format(doc: &SequenceDocument) -> String {
     genbank_to_embl(&genbank::format(doc))
 }
 
-/// Setzt die Zeilen eines EMBL-Datensatzes in GenBank-Schreibweise um.
+/// Converts the lines of an EMBL record into GenBank notation.
 fn embl_to_genbank(lines: &[&str]) -> String {
     let mut out: Vec<String> = Vec::new();
     let mut in_features = false;
@@ -101,7 +101,7 @@ fn embl_to_genbank(lines: &[&str]) -> String {
     out.join("\n") + "\n"
 }
 
-/// Setzt GenBank-Text (wie `genbank::format` ihn erzeugt) in EMBL-Schreibweise um.
+/// Converts GenBank text (as produced by `genbank::format`) into EMBL notation.
 fn genbank_to_embl(gb: &str) -> String {
     let mut out: Vec<String> = Vec::new();
     let mut bases = String::new();

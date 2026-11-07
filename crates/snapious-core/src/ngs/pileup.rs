@@ -1,10 +1,10 @@
-//! Einfache Variantenerkennung (SNVs) aus Alignments: Basen je Referenzposition zählen und Abweichungen melden.
+//! Simple variant detection (SNVs) from alignments: count bases per reference position and report deviations.
 
 use crate::error::{Error, Result};
 use crate::io::sam::SamRecord;
 use crate::io::vcf::VariantCall;
 
-/// Einstellungen. Standard: Tiefe 10, Anteil 0,2, Basenqualität 20, MAPQ 20.
+/// Settings. Default: depth 10, fraction 0.2, base quality 20, MAPQ 20.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CallOptions {
     pub min_depth: usize,
@@ -24,24 +24,24 @@ impl CallOptions {
     }
 }
 
-/// Eine erkannte Einzelbasenvariante.
+/// A detected single-base variant.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Snv {
-    /// 0-basiert.
+    /// 0-based.
     pub position: usize,
     pub ref_base: char,
     pub alt_base: char,
     pub depth: usize,
     pub alt_count: usize,
     pub alt_fraction: f64,
-    /// Phred-artige Güte `−10·log10(P)` mit `P` aus `binomial_tail`.
+    /// Phred-like quality `−10·log10(P)` with `P` from `binomial_tail`.
     pub quality: f64,
 }
 
-/// `P(X >= k)` für `X ~ Binomial(n, p)`; Ergebnis als `-10 * log10(P)`. Exakt als Summe der Einzelwahrscheinlichkeiten
-/// (Logarithmen der Fakultäten als Summe von `ln(i)`; `P` nicht kleiner als `1e-300`). Ist `n > 1000`, werden stattdessen
-/// `n = 1000` und `k = round(k * 1000 / n_alt)` verwendet (`n_alt` = ursprüngliches `n`). Ist `k == 0`, ist `P = 1` und das Ergebnis 0.
-/// `k > n` ergibt 3000.0 (`P = 1e-300`).
+/// `P(X >= k)` for `X ~ Binomial(n, p)`; result as `-10 * log10(P)`. Exact as a sum of the individual probabilities
+/// (logarithms of factorials as a sum of `ln(i)`; `P` not smaller than `1e-300`). If `n > 1000`, instead
+/// `n = 1000` and `k = round(k * 1000 / n_old)` are used (`n_old` = original `n`). If `k == 0`, `P = 1` and the result is 0.
+/// `k > n` yields 3000.0 (`P = 1e-300`).
 pub fn binomial_phred(n: usize, k: usize, p: f64) -> f64 {
     if k == 0 {
         return 0.0;
@@ -71,17 +71,17 @@ pub fn binomial_phred(n: usize, k: usize, p: f64) -> f64 {
     -10.0 * sum.clamp(1e-300, 1.0).log10()
 }
 
-/// Zählt Basen je Position und meldet SNVs für die Referenz `reference_name` mit den Basen `reference` (Uppercase).
-/// * Berücksichtigt werden Datensätze mit `reference == reference_name`, ausgerichtet (nicht `is_unmapped`), nicht `is_secondary`, nicht
-///   `is_duplicate`, mit `mapq >= min_mapq`, `position >= 1` und lesbarem CIGAR (`cigar_ops`; sonst `Error::InvalidInput` weitergeben).
-/// * CIGAR-Lauf: `M`, `=`, `X` verbrauchen Read und Referenz (Basen werden gezählt), `I` und `S` nur den Read, `D` und `N` nur die Referenz,
-///   `H` und `P` nichts. Referenzposition beginnt bei `position − 1`. Positionen hinter dem Ende von `reference` werden ignoriert.
-/// * Eine Base zählt nur mit Qualitätszeichen: Phred = Zeichen − 33 `>= min_base_quality`; fehlt die Qualität (`*`), gilt Phred 0.
-///   Basen werden in Uppercase gezählt; nur A, C, G, T zählen (N usw. nicht).
-/// * An jeder Position: `depth` = Zahl gezählter Basen. Alt-Base = die häufigste Base, die nicht der Referenzbase entspricht
-///   (bei Gleichstand die in der Reihenfolge A, C, G, T erste). Variante, wenn `depth >= min_depth` und `alt_count / depth >= min_alt_fraction`
-///   (und `alt_count > 0`). Referenzbasen außer A, C, G, T werden übersprungen. `quality = binomial_phred(depth, alt_count, 0.01)`.
-/// * Ergebnis aufsteigend nach `position`.
+/// Counts bases per position and reports SNVs for the reference `reference_name` with the bases `reference` (uppercase).
+/// * Records are considered with `reference == reference_name`, aligned (not `is_unmapped`), not `is_secondary`, not
+///   `is_duplicate`, with `mapq >= min_mapq`, `position >= 1` and a parsable CIGAR (`cigar_ops`; otherwise pass on `Error::InvalidInput`).
+/// * CIGAR run: `M`, `=`, `X` consume read and reference (bases are counted), `I` and `S` only the read, `D` and `N` only the reference,
+///   `H` and `P` nothing. The reference position starts at `position − 1`. Positions beyond the end of `reference` are ignored.
+/// * A base only counts with a quality character: Phred = character − 33 `>= min_base_quality`; if the quality is missing (`*`), Phred 0 applies.
+///   Bases are counted in uppercase; only A, C, G, T count (not N etc.).
+/// * At each position: `depth` = number of counted bases. Alt base = the most frequent base that does not equal the reference base
+///   (on a tie the first in the order A, C, G, T). It is a variant if `depth >= min_depth` and `alt_count / depth >= min_alt_fraction`
+///   (and `alt_count > 0`). Reference bases other than A, C, G, T are skipped. `quality = binomial_phred(depth, alt_count, 0.01)`.
+/// * Result ascending by `position`.
 pub fn call_snvs(
     reference_name: &str,
     reference: &str,
@@ -176,7 +176,7 @@ pub fn call_snvs(
     Ok(out)
 }
 
-/// Wandelt in VCF-Zeilen um: `chromosome = reference_name`, `position + 1`, `id = "."`, `ref_allele`/`alt_allele` je eine Base, `quality = Some(q)`,
+/// Converts to VCF lines: `chromosome = reference_name`, `position + 1`, `id = "."`, `ref_allele`/`alt_allele` one base each, `quality = Some(q)`,
 /// `filter = "PASS"`, `info = "DP={depth};AF={alt_fraction:.3}"`.
 pub fn to_vcf(reference_name: &str, snvs: &[Snv]) -> Vec<VariantCall> {
     snvs.iter()
@@ -255,15 +255,15 @@ mod tests {
     #[test]
     fn schwellen() {
         let o = CallOptions::standard();
-        // 2 von 20 = 0,1 < 0,2
+        // 2 of 20 = 0.1 < 0.2
         assert!(call_snvs("ref", REF, &reads_with_g(2, 20, 'I'), &o)
             .unwrap()
             .is_empty());
-        // Basenqualität 10 ('+') zählt nicht: die 10 G-Basen fallen weg, Tiefe 10
+        // Base quality 10 ('+') does not count: the 10 G bases drop out, depth 10
         assert!(call_snvs("ref", REF, &reads_with_g(10, 20, '+'), &o)
             .unwrap()
             .is_empty());
-        // Tiefe 5 < 10
+        // Depth 5 < 10
         assert!(call_snvs("ref", REF, &reads_with_g(3, 5, 'I'), &o)
             .unwrap()
             .is_empty());
@@ -283,7 +283,7 @@ mod tests {
             r.mapq = 10;
         }
         assert!(call_snvs("ref", REF, &reads, &o).unwrap().is_empty());
-        // andere Referenz, Duplikate, unmapped
+        // other reference, duplicates, unmapped
         let mut other = reads_with_g(10, 20, 'I');
         for r in other.iter_mut() {
             r.reference = "x".to_string();
@@ -298,11 +298,11 @@ mod tests {
 
     #[test]
     fn cigar_lauf() {
-        // 2S3M1D2M ab Position 3 (1-basiert): M bei Ref 2,3,4; D bei 5; M bei 6,7
+        // 2S3M1D2M from position 3 (1-based): M at ref 2,3,4; D at 5; M at 6,7
         let reference = "ACGTACGTAC";
         let mut reads = Vec::new();
         for _ in 0..10 {
-            // Soft-Clip "TT", dann M: Read-Basen G,T,T gegen Ref[2..5]="GTA" -> T statt A an Ref 4; dann 2M gegen Ref[6..8]="GT" -> C,C
+            // Soft clip "TT", then M: read bases G,T,T against Ref[2..5]="GTA" -> T instead of A at ref 4; then 2M against Ref[6..8]="GT" -> C,C
             reads.push(rec("r", 3, "2S3M1D2M", "TTGTTCC", "IIIIIII"));
         }
         let o = CallOptions {
@@ -332,7 +332,7 @@ mod tests {
         assert!((binomial_phred(20, 2, 0.01) - 17.731594918009645).abs() < 1e-6);
         assert!((binomial_phred(10, 3, 0.01) - 39.43670329916089).abs() < 1e-6);
         assert!((binomial_phred(1000, 50, 0.01) - 190.80588652478133).abs() < 1e-6);
-        // n > 1000: auf 1000 und k = 50 umgerechnet
+        // n > 1000: converted to 1000 and k = 50
         assert!((binomial_phred(2000, 100, 0.01) - 190.80588652478133).abs() < 1e-6);
         assert_eq!(binomial_phred(10, 0, 0.01), 0.0);
         assert_eq!(binomial_phred(10, 11, 0.01), 3000.0);

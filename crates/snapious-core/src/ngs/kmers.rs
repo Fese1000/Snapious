@@ -1,9 +1,9 @@
-//! k-mer-Häufigkeiten (z. B. zum Erkennen von Adaptern oder Verunreinigungen).
+//! k-mer frequencies (e.g. for detecting adapters or contaminants).
 
 use std::collections::BTreeMap;
 
-/// Zählt alle k-mer der Länge `k` in allen Sequenzen (Uppercase; Groß-/Kleinschreibung egal). k-mer, die ein anderes Zeichen
-/// als A, C, G, T enthalten, werden nicht gezählt. `k == 0` oder Sequenzen kürzer als `k` tragen nichts bei.
+/// Counts all k-mers of length `k` in all sequences (uppercase; case-insensitive). k-mers containing a character
+/// other than A, C, G, T are not counted. `k == 0` or sequences shorter than `k` contribute nothing.
 pub fn count_kmers(seqs: &[String], k: usize) -> BTreeMap<String, usize> {
     let mut out: BTreeMap<String, usize> = BTreeMap::new();
     if k == 0 {
@@ -21,7 +21,7 @@ pub fn count_kmers(seqs: &[String], k: usize) -> BTreeMap<String, usize> {
     out
 }
 
-/// Die `n` häufigsten k-mer als `(k-mer, Anzahl)`, absteigend nach Anzahl, bei Gleichstand alphabetisch aufsteigend.
+/// The `n` most frequent k-mers as `(k-mer, count)`, descending by count, ties alphabetically ascending.
 pub fn top_kmers(counts: &BTreeMap<String, usize>, n: usize) -> Vec<(String, usize)> {
     let mut v: Vec<(String, usize)> = counts.iter().map(|(k, c)| (k.clone(), *c)).collect();
     v.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));

@@ -1,20 +1,20 @@
-//! TA- und TOPO-Klonierung: Insert direkt in einen linearen Vektor setzen.
+//! TA and TOPO cloning: insert directly into a linear vector.
 
 use crate::error::{Error, Result};
 use crate::model::document::{SequenceDocument, Topology};
 use crate::model::sequence::{Sequence, SequenceType};
 use std::collections::BTreeMap;
 
-/// TA-Klonierung: Das PCR-Produkt (mit 3'-A-Überhängen aus der PCR) wird in den linearen T-Vektor gesetzt; beide Orientierungen sind möglich.
+/// TA cloning: the PCR product (with 3' A overhangs from the PCR) is inserted into the linear T vector; both orientations are possible.
 ///
-/// - Fehler `Error::InvalidInput`, wenn `t_vector` oder `pcr_product` nicht linear ist.
-/// - Rückgabe: genau zwei zirkuläre Dokumente, zuerst Orientierung `+`, dann `−`.
-/// - Oberstrang `+`: `t_vector.bases() + pcr_product.bases()`; `−`: `t_vector.bases() + Reverse-Komplement des PCR-Produkts`
-///   (nimm dafür `pcr_product.reverse_complement()`, damit die Features des Inserts gespiegelt werden).
-/// - Namen: `"{Vektor} + {Produkt} (orientation +)"` bzw. `"… (orientation −)"`.
-/// - Features: die des Vektors, danach die des (ggf. gespiegelten) Inserts, um die Vektorlänge nach rechts verschoben
+/// - Error `Error::InvalidInput` if `t_vector` or `pcr_product` is not linear.
+/// - Returns: exactly two circular documents, first orientation `+`, then `−`.
+/// - Top strand `+`: `t_vector.bases() + pcr_product.bases()`; `−`: `t_vector.bases() + reverse complement of the PCR product`
+///   (use `pcr_product.reverse_complement()` for this so that the features of the insert are mirrored).
+/// - Names: `"{vector} + {product} (orientation +)"` or `"… (orientation −)"`.
+/// - Features: those of the vector, then those of the (possibly mirrored) insert, shifted right by the vector length
 ///   (`Location::shifted`, `Feature::with_location`).
-/// - Metadaten `source = "clone.ta"`. Neue ID (`new_id()`), Sequenztyp DNA (Id und Name der Sequenz gleich dem Dokumentnamen), Erstellzeit `now_secs()`.
+/// - Metadata `source = "clone.ta"`. New ID (`new_id()`), sequence type DNA (id and name of the sequence equal to the document name), creation time `now_secs()`.
 pub fn ta_cloning(
     t_vector: &SequenceDocument,
     pcr_product: &SequenceDocument,
@@ -29,7 +29,7 @@ pub fn ta_cloning(
     let t_bases = t_vector.bases();
     let p_bases = pcr_product.bases();
 
-    // Orientierung +
+    // Orientation +
     let bases_plus = format!("{}{}", t_bases, p_bases);
     let seq_plus = Sequence::new(
         t_vector.name(),
@@ -60,7 +60,7 @@ pub fn ta_cloning(
             "clone.ta".to_string(),
         )]));
 
-    // Orientierung −
+    // Orientation −
     let rc_product = pcr_product.reverse_complement()?;
     let bases_minus = format!("{}{}", t_bases, rc_product.bases());
     let seq_minus = Sequence::new(
@@ -95,10 +95,10 @@ pub fn ta_cloning(
     Ok(vec![doc_plus, doc_minus])
 }
 
-/// Gerichtetes TOPO-Klonieren: Das Insert muss mit `CACC` beginnen (Groß-/Kleinschreibung egal), sonst `Error::InvalidInput`.
-/// Es gibt nur eine Orientierung: Oberstrang `topo_vector.bases() + insert.bases()` (nichts wird entfernt).
-/// Beide Dokumente müssen linear sein (sonst `Error::InvalidInput`). Name `"{Vektor} + {Insert}"`, Metadaten `source = "clone.topo"`;
-/// Features wie bei `ta_cloning`; zirkuläres Ergebnis.
+/// Directional TOPO cloning: the insert must begin with `CACC` (case-insensitive), otherwise `Error::InvalidInput`.
+/// There is only one orientation: top strand `topo_vector.bases() + insert.bases()` (nothing is removed).
+/// Both documents must be linear (otherwise `Error::InvalidInput`). Name `"{vector} + {insert}"`, metadata `source = "clone.topo"`;
+/// features as in `ta_cloning`; circular result.
 pub fn directional_topo(
     topo_vector: &SequenceDocument,
     insert: &SequenceDocument,
@@ -176,7 +176,7 @@ mod tests {
             r[0].metadata().get("source").map(String::as_str),
             Some("clone.ta")
         );
-        // Features: Vektor 0..3; Insert 0..2 vorwärts bei 8..10; gespiegelt bei 8 + (8 − 2)..8 + 8 = 14..16
+        // Features: vector 0..3; insert 0..2 forward at 8..10; mirrored at 8 + (8 − 2)..8 + 8 = 14..16
         let mut a: Vec<(usize, usize)> = r[0]
             .features()
             .iter()
@@ -228,7 +228,7 @@ mod tests {
         );
         assert_eq!(r.features().len(), 1);
         assert_eq!(r.features()[0].location().start(), 12);
-        // Kleinbuchstaben
+        // Lowercase letters
         let k = doc("ins2", "caccatg", Topology::Linear);
         assert!(directional_topo(&v, &k).is_ok());
     }

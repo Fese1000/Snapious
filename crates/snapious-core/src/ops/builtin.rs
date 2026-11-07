@@ -1,4 +1,4 @@
-//! Einfache eingebaute Operationen (Reverse-Komplement, Einfügen).
+//! Simple built-in operations (reverse complement, insert).
 
 use crate::error::{Error, Result};
 use crate::model::document::{Document, SequenceDocument};
@@ -18,7 +18,7 @@ fn first_sequence(inputs: &[Document]) -> Result<&SequenceDocument> {
     }
 }
 
-/// Reverse-Komplement eines Sequenzdokuments (ID `edit.reverseComplement`).
+/// Reverse complement of a sequence document (ID `edit.reverseComplement`).
 pub struct ReverseComplementOperation;
 
 impl Operation for ReverseComplementOperation {
@@ -48,7 +48,7 @@ impl Operation for ReverseComplementOperation {
     }
 }
 
-/// Einfügen von Basen (ID `edit.insert`, Parameter `position` und `bases`).
+/// Insert bases (ID `edit.insert`, parameters `position` and `bases`).
 pub struct InsertOperation;
 
 impl Operation for InsertOperation {

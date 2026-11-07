@@ -1,4 +1,4 @@
-//! Zufallstest: Die Dateileser dürfen bei beliebigem oder beschädigtem Inhalt Fehler melden, aber nie abstürzen.
+//! Random test: the file readers may report errors on arbitrary or corrupted content, but must never crash.
 
 use std::panic::catch_unwind;
 
@@ -12,7 +12,7 @@ use snapious_core::ngs::fai::{build_fai, parse_fai};
 use snapious_core::ngs::fastq_stream::FastqReader;
 use snapious_core::util::Rng;
 
-/// Beispieltexte, die der Reihe nach beschädigt werden.
+/// Sample texts that are corrupted one after another.
 fn seeds() -> Vec<String> {
     let gb = std::fs::read_to_string("testdata/mini.gb").unwrap();
     let puc = std::fs::read_to_string("testdata/puc19.gb").unwrap();
@@ -142,7 +142,7 @@ fn beschaedigte_dateien_stuerzen_nicht_ab() {
             failures.push((name.to_string(), text.chars().take(120).collect()));
         }
     }
-    // reiner Zufall als Bytes
+    // pure random bytes
     for _ in 0..2000 {
         let len = rng.below(300);
         let bytes: Vec<u8> = (0..len).map(|_| rng.below(256) as u8).collect();

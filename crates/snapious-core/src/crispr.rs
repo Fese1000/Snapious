@@ -1,8 +1,8 @@
-//! CRISPR-gRNA-Suche: Protospacer neben einer PAM finden, einfach bewerten und Nebentreffer zählen.
+//! CRISPR gRNA search: find protospacers next to a PAM, score them simply and count off-target hits.
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 
-/// Prüft, ob `seq` (konkrete Basen) dem IUPAC-Muster `pattern` entspricht.
+/// Checks whether `seq` (concrete bases) matches the IUPAC pattern `pattern`.
 fn matches_iupac(pattern: &str, seq: &str) -> bool {
     pattern.chars().zip(seq.chars()).all(|(p, s)| {
         let p = p.to_ascii_uppercase();
@@ -28,21 +28,21 @@ fn matches_iupac(pattern: &str, seq: &str) -> bool {
     })
 }
 
-/// Beschreibung einer Cas-Nuklease.
+/// Description of a Cas nuclease.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PamSpec {
     pub name: String,
-    /// PAM-Muster mit IUPAC-Codes (`N` alle, `R` A/G, `Y` C/T, `S` C/G, `W` A/T, `K` G/T, `M` A/C,
+    /// PAM pattern with IUPAC codes (`N` all, `R` A/G, `Y` C/T, `S` C/G, `W` A/T, `K` G/T, `M` A/C,
     /// `B` C/G/T, `D` A/G/T, `H` A/C/T, `V` A/C/G).
     pub pattern: String,
-    /// Länge des Protospacers in Basen.
+    /// Length of the protospacer in bases.
     pub guide_length: usize,
-    /// `true`: PAM liegt direkt hinter (3') dem Protospacer, sonst direkt davor (5').
+    /// `true`: the PAM lies directly after (3') the protospacer, otherwise directly before (5').
     pub pam_three_prime: bool,
 }
 
 impl PamSpec {
-    /// SpCas9: `NGG`, 20 Basen, PAM am 3'-Ende.
+    /// SpCas9: `NGG`, 20 bases, PAM at the 3' end.
     pub fn sp_cas9() -> PamSpec {
         PamSpec {
             name: "SpCas9".into(),
@@ -52,7 +52,7 @@ impl PamSpec {
         }
     }
 
-    /// SaCas9: `NNGRRT`, 21 Basen, PAM am 3'-Ende.
+    /// SaCas9: `NNGRRT`, 21 bases, PAM at the 3' end.
     pub fn sa_cas9() -> PamSpec {
         PamSpec {
             name: "SaCas9".into(),
@@ -62,7 +62,7 @@ impl PamSpec {
         }
     }
 
-    /// Cas12a: `TTTV`, 23 Basen, PAM am 5'-Ende.
+    /// Cas12a: `TTTV`, 23 bases, PAM at the 5' end.
     pub fn cas12a() -> PamSpec {
         PamSpec {
             name: "Cas12a".into(),
@@ -73,33 +73,33 @@ impl PamSpec {
     }
 }
 
-/// Eine gefundene Guide-Stelle.
+/// A guide site that was found.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Guide {
-    /// Protospacer so, wie er auf seinem Strang gelesen wird (bei `forward == false` also reverse-komplementiert).
+    /// Protospacer as read on its own strand (so reverse-complemented when `forward == false`).
     pub protospacer: String,
-    /// PAM-Sequenz auf demselben Strang gelesen.
+    /// PAM sequence read on the same strand.
     pub pam: String,
-    /// Beginn und Ende (exklusiv) von Protospacer plus PAM in Koordinaten des Oberstrangs.
-    /// Läuft die Stelle bei einer zirkulären Sequenz über den Nullpunkt, ist `end < start`.
+    /// Start and end (exclusive) of protospacer plus PAM in top-strand coordinates.
+    /// If the site of a circular sequence wraps around the origin, `end < start`.
     pub start: usize,
     pub end: usize,
     pub forward: bool,
-    /// GC-Anteil des Protospacers in Prozent (0 bis 100).
+    /// GC fraction of the protospacer in percent (0 to 100).
     pub gc_percent: f64,
-    /// Bewertung 0 bis 100, siehe `score_protospacer`.
+    /// Score 0 to 100, see `score_protospacer`.
     pub score: f64,
     pub warnings: Vec<String>,
 }
 
-/// Bewertet einen Protospacer (bewusst einfach, kein Vorhersagemodell). Start 100 Punkte:
-/// - GC-Anteil unter 40 % oder über 70 %: −20, Warnung `GC fraction outside 40–70 %`
-/// - enthält `TTTT`: −30, Warnung `TTTT in the protospacer (termination signal of U6 polymerase)`
-/// - fünf oder mehr gleiche Buchstaben hintereinander (unabhängig von der TTTT-Regel): −10,
-///   Warnung `Homopolymer run of at least 5 bases`
+/// Scores a protospacer (deliberately simple, not a prediction model). Starts at 100 points:
+/// - GC fraction below 40 % or above 70 %: −20, warning `GC fraction outside 40–70 %`
+/// - contains `TTTT`: −30, warning `TTTT in the protospacer (termination signal of U6 polymerase)`
+/// - five or more identical letters in a row (independent of the TTTT rule): −10,
+///   warning `Homopolymer run of at least 5 bases`
 ///
-/// Rückgabe: (GC-Anteil in Prozent, Punkte, Warnungen in der Reihenfolge der Regeln oben).
-/// Groß-/Kleinschreibung egal. Leerer Text: GC 0, 100 Punkte abzüglich der GC-Regel.
+/// Returns: (GC fraction in percent, points, warnings in the order of the rules above).
+/// Case-insensitive. Empty text: GC 0, 100 points minus the GC rule.
 pub fn score_protospacer(protospacer: &str) -> (f64, f64, Vec<String>) {
     let s = protospacer.to_ascii_uppercase();
     let len = s.len() as f64;
@@ -150,21 +150,21 @@ pub fn score_protospacer(protospacer: &str) -> (f64, f64, Vec<String>) {
     (gc_percent, score, warnings)
 }
 
-/// Findet Guides auf beiden Strängen.
-/// - `bases` wird in Uppercase mit `T` statt `U` gelesen. `to` wird auf die Länge begrenzt.
-/// - Vorwärtsstrang: Für jede Startposition `st` mit Platz für Protospacer plus PAM (`guide_length + pattern.len()`)
-///   wird die PAM passend zum Muster geprüft (IUPAC). Bei `pam_three_prime` steht der Protospacer vor der PAM, sonst dahinter.
+/// Finds guides on both strands.
+/// - `bases` is read in uppercase with `T` instead of `U`. `to` is capped at the length.
+/// - Forward strand: for each start position `st` with room for protospacer plus PAM (`guide_length + pattern.len()`)
+///   the PAM is checked against the pattern (IUPAC). With `pam_three_prime` the protospacer precedes the PAM, otherwise it follows it.
 ///   `start = st`, `end = st + guide_length + pattern.len()`.
-/// - Gegenstrang: dasselbe auf dem Reverse-Komplement (`iupac_reverse_complement`); Koordinaten werden zurückgerechnet:
+/// - Reverse strand: the same on the reverse complement (`iupac_reverse_complement`); coordinates are converted back:
 ///   `start = len − end'`, `end = len − start'`. `forward = false`.
-/// - Nicht zirkulär: nur Stellen mit `from <= start` und `end <= to` zählen.
-/// - Zirkulär: `from`/`to` werden ignoriert, die ganze Sequenz wird über den Nullpunkt hinweg durchsucht
-///   (Startpositionen `0..len`, Sequenz hinten um `guide_length + pattern.len() − 1` Basen vom Anfang verlängert).
-///   Auf dem Vorwärtsstrang ist `end = start + gesamtlänge`, wird `end > len`, dann `end −= len`. Auf dem Gegenstrang:
-///   `start = (len − end') mod len` (mit `rem_euclid`, `end'` = Ende auf dem Reverse-Komplement vor dem Kürzen), danach
-///   `end = start + gesamtlänge`, bei `end > len` ebenfalls `end −= len`.
-/// - Bewertung mit `score_protospacer`.
-/// - Sortierung: `start`, dann `end`, dann Vorwärts vor Gegenstrang.
+/// - Non-circular: only sites with `from <= start` and `end <= to` count.
+/// - Circular: `from`/`to` are ignored, the whole sequence is searched across the origin
+///   (start positions `0..len`, sequence extended at the end by `guide_length + pattern.len() − 1` bases from the start).
+///   On the forward strand `end = start + total length`; if `end > len`, then `end −= len`. On the reverse strand:
+///   `start = (len − end') mod len` (with `rem_euclid`, `end'` = end on the reverse complement before trimming), then
+///   `end = start + total length`, and likewise `end −= len` if `end > len`.
+/// - Scoring with `score_protospacer`.
+/// - Sorting: `start`, then `end`, then forward before reverse strand.
 pub fn find_guides(
     spec: &PamSpec,
     bases: &str,
@@ -184,7 +184,7 @@ pub fn find_guides(
     let len = bases.len();
     let mut guides: Vec<Guide> = Vec::new();
 
-    // Vorwärtsstrang
+    // forward strand
     {
         let limit = if circular { len } else { len - total };
         let ext = if circular {
@@ -229,7 +229,7 @@ pub fn find_guides(
         }
     }
 
-    // Gegenstrang
+    // reverse strand
     {
         let rc = iupac_reverse_complement(&bases);
         let rc_len = rc.len();
@@ -308,9 +308,9 @@ pub fn find_guides(
     guides
 }
 
-/// Zählt alle Stellen in `reference` (beide Strängen, nicht zirkulär), an denen eine passende PAM (laut `spec`) steht und der
-/// danebenliegende Protospacer höchstens `max_mismatches` Abweichungen zu `guide.protospacer` hat. Die exakte Stelle
-/// des Guides selbst zählt mit. Bei `pam_three_prime == false` liegt der Protospacer hinter der PAM.
+/// Counts all sites in `reference` (both strands, non-circular) where a matching PAM (per `spec`) is present and the
+/// adjacent protospacer has at most `max_mismatches` differences from `guide.protospacer`. The exact site
+/// of the guide itself counts. With `pam_three_prime == false` the protospacer follows the PAM.
 pub fn count_sites(reference: &str, guide: &Guide, spec: &PamSpec, max_mismatches: usize) -> usize {
     let ref_upper = reference.to_ascii_uppercase().replace('U', "T");
     let g_len = spec.guide_length;
@@ -324,7 +324,7 @@ pub fn count_sites(reference: &str, guide: &Guide, spec: &PamSpec, max_mismatche
     let len = ref_upper.len();
     let mut count: usize = 0;
 
-    // Vorwärtsstrang (nicht zirkulär)
+    // forward strand (non-circular)
     for st in 0..=len - total {
         let pam_slice = if spec.pam_three_prime {
             ref_upper.get(st + g_len..st + total)
@@ -352,7 +352,7 @@ pub fn count_sites(reference: &str, guide: &Guide, spec: &PamSpec, max_mismatche
         }
     }
 
-    // Gegenstrang (nicht zirkulär)
+    // reverse strand (non-circular)
     let rc = iupac_reverse_complement(&ref_upper);
     for st in 0..=rc.len() - total {
         let pam_slice = if spec.pam_three_prime {
@@ -433,7 +433,7 @@ mod tests {
         let (_, s, w) = score_protospacer("gcgcaaaaagcgctagctag");
         assert!((s - 90.0).abs() < 1e-9);
         assert!(w[0].contains("Homopolymer"));
-        // Lauf von 5 T: beide Regeln greifen (−30 und −10)
+        // run of 5 T: both rules apply (−30 and −10)
         let (_, s, w) = score_protospacer("GCATGCTTTTTGATCGTAGC");
         assert!((s - 60.0).abs() < 1e-9);
         assert_eq!(w.len(), 2);
@@ -525,7 +525,7 @@ mod tests {
         assert_eq!(count_sites(&reference, &guide, &spec, 1), 1);
         assert_eq!(count_sites(&reference, &guide, &spec, 0), 1);
         assert_eq!(count_sites("", &guide, &spec, 3), 0);
-        // Gegenstrang zählt mit
+        // reverse strand counts too
         assert_eq!(count_sites(&rc(&reference), &guide, &spec, 3), 2);
     }
 }

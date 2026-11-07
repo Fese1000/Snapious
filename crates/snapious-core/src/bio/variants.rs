@@ -1,42 +1,42 @@
-//! Varianten aus einem Alignment: Unterschiede jeder Zeile gegenüber einer Referenzzeile.
+//! Variants from an alignment: differences of each row relative to a reference row.
 
 use crate::error::{Error, Result};
 
-/// Art einer Variante.
+/// Kind of variant.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VariantKind {
-    /// Andere Base an derselben Stelle (SNP).
+    /// Different base at the same position (SNP).
     Substitution,
-    /// Die Zeile hat eine Base, wo die Referenz eine Lücke hat.
+    /// The row has a base where the reference has a gap.
     Insertion,
-    /// Die Zeile hat eine Lücke, wo die Referenz eine Base hat.
+    /// The row has a gap where the reference has a base.
     Deletion,
 }
 
-/// Eine Abweichung einer Zeile von der Referenz.
+/// A deviation of a row from the reference.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Variant {
-    /// Alignment-Spalte (0-basiert).
+    /// Alignment column (0-based).
     pub column: usize,
-    /// Anzahl der Referenzbasen (ohne Lücken) vor dieser Spalte: bei Substitution und Deletion die 0-basierte
-    /// Position der Referenzbase, bei Insertion die Position der nächsten Referenzbase.
+    /// Number of reference bases (excluding gaps) before this column: for substitution and deletion the 0-based
+    /// position of the reference base, for insertion the position of the next reference base.
     pub reference_position: usize,
-    /// Index der abweichenden Zeile.
+    /// Index of the deviating row.
     pub row: usize,
-    /// Base der Referenz in Uppercase, `'-'` bei Insertion.
+    /// Base of the reference in uppercase, `'-'` for insertion.
     pub reference_base: char,
-    /// Base der Zeile in Uppercase, `'-'` bei Deletion.
+    /// Base of the row in uppercase, `'-'` for deletion.
     pub alt_base: char,
     pub kind: VariantKind,
 }
 
-/// Vergleicht alle Zeilen außer `reference` Spalte für Spalte mit der Referenzzeile (Groß-/Kleinschreibung egal).
-/// * Beide Zeichen `'-'`: keine Variante.
-/// * Referenz `'-'`, Zeile Base: `Insertion`; Referenz Base, Zeile `'-'`: `Deletion`.
-/// * Beide Basen und verschieden: `Substitution`. Ist eines der beiden Zeichen `'N'` (oder `'n'`), gibt es keine Variante.
+/// Compares all rows except `reference` column by column with the reference row (case-insensitive).
+/// * Both characters `'-'`: no variant.
+/// * Reference `'-'`, row base: `Insertion`; reference base, row `'-'`: `Deletion`.
+/// * Both bases and different: `Substitution`. If either character is `'N'` (or `'n'`), there is no variant.
 ///
-/// Sortierung: nach `column`, dann nach `row`.
-/// Fehler `Error::InvalidInput`, wenn `rows` leer ist, die Zeilen verschieden lang sind oder `reference >= rows.len()`.
+/// Sorting: by `column`, then by `row`.
+/// Error `Error::InvalidInput` if `rows` is empty, the rows differ in length, or `reference >= rows.len()`.
 pub fn find_variants(rows: &[String], reference: usize) -> Result<Vec<Variant>> {
     if rows.is_empty() {
         return Err(Error::InvalidInput("Empty sequence".into()));
@@ -54,12 +54,12 @@ pub fn find_variants(rows: &[String], reference: usize) -> Result<Vec<Variant>> 
         }
     }
 
-    // Jede Zeile einmal in Vec<char> umwandeln für schnellen Indexzugriff
+    // Convert each row to a Vec<char> once for fast indexed access
     let char_rows: Vec<Vec<char>> = rows.iter().map(|s| s.chars().collect()).collect();
     let ref_chars = &char_rows[reference];
 
     let mut variants = Vec::new();
-    // Verfolge die Anzahl der Nicht-Lücken-Basen in der Referenz bis zur aktuellen Spalte
+    // Track the number of non-gap bases in the reference up to the current column
     let mut ref_pos = 0;
 
     for (c, &ref_ch) in ref_chars.iter().enumerate() {
@@ -70,7 +70,7 @@ pub fn find_variants(rows: &[String], reference: usize) -> Result<Vec<Variant>> 
                 continue;
             }
 
-            // Sicheres Abrufen des Zeichens an Position c (Länge wurde geprüft)
+            // Safe retrieval of the character at position c (length was checked)
             let alt_ch = row_chars.get(c).copied().unwrap_or('-');
             let alt_upper = alt_ch.to_ascii_uppercase();
 
@@ -78,16 +78,16 @@ pub fn find_variants(rows: &[String], reference: usize) -> Result<Vec<Variant>> 
                 continue;
             }
 
-            // Ein N (auch kleines n) bei Referenz oder Zeile ist nie eine Variante, auch nicht bei Insertion oder Deletion.
+            // An N (also lowercase n) in the reference or row is never a variant, not even for insertion or deletion.
             if ref_upper == 'N' || alt_upper == 'N' {
                 continue;
             }
 
             let (kind, reference_base, alt_base) = if ref_ch == '-' {
-                // Insertion: Referenz ist Lücke, Zeile hat Base
+                // Insertion: reference is a gap, row has a base
                 (VariantKind::Insertion, '-', alt_upper)
             } else if alt_ch == '-' {
-                // Deletion: Referenz hat Base, Zeile ist Lücke
+                // Deletion: reference has a base, row is a gap
                 (VariantKind::Deletion, ref_upper, '-')
             } else if ref_upper == alt_upper {
                 continue;
@@ -105,18 +105,18 @@ pub fn find_variants(rows: &[String], reference: usize) -> Result<Vec<Variant>> 
             });
         }
 
-        // Aktualisiere die Referenzposition für die NÄCHSTE Spalte, falls aktuelle keine Lücke ist
+        // Update the reference position for the NEXT column if the current one is not a gap
         if ref_ch != '-' {
             ref_pos += 1;
         }
     }
 
-    // Explizite Sortierung gemäß Spezifikation (Iteration erzeugt bereits sortierte Reihenfolge)
+    // Explicit sorting per the specification (iteration already produces sorted order)
     variants.sort_by_key(|v| (v.column, v.row));
     Ok(variants)
 }
 
-/// Zählt Varianten je Zeile: Ergebnis hat `rows`-Länge (Anzahl Zeilen), der Eintrag der Referenzzeile ist 0.
+/// Counts variants per row: the result has length `rows` (number of rows), the entry of the reference row is 0.
 pub fn count_by_row(variants: &[Variant], rows: usize) -> Vec<usize> {
     let mut counts = vec![0usize; rows];
     for v in variants {
@@ -175,7 +175,7 @@ mod tests {
     fn andere_referenz_und_kleinbuchstaben() {
         let r = rows(&["acgt", "ACGT", "ANGA"]);
         let v = find_variants(&r, 1).unwrap();
-        // Zeile 0 ist gleich (Kleinbuchstaben), Zeile 2: N wird ignoriert, T->A in Spalte 3
+        // Row 0 is equal (lowercase), row 2: N is ignored, T->A in column 3
         assert_eq!(v.len(), 1);
         assert_eq!(v[0].column, 3);
         assert_eq!(v[0].row, 2);
@@ -185,7 +185,7 @@ mod tests {
 
     #[test]
     fn lueckenpositionen_zaehlen_nicht() {
-        // Referenz "A--CG": Spalte 3 ist Referenzposition 1, Spalte 4 Position 2
+        // Reference "A--CG": column 3 is reference position 1, column 4 position 2
         let r = rows(&["A--CG", "A--TG", "AGGCC"]);
         let v = find_variants(&r, 0).unwrap();
         assert_eq!(v.len(), 4);

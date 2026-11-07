@@ -1,32 +1,32 @@
-//! Einfacher Zusammenbau von Reads zu Contigs (gieriger Überlappungsansatz, genaue Überlappungen).
+//! Simple assembly of reads into contigs (greedy overlap approach, exact overlaps).
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 
-/// Platzierung eines Reads in einem Contig.
+/// Placement of a read in a contig.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ReadPlacement {
-    /// Beginn (0-basiert) des Reads im Contig.
+    /// Start (0-based) of the read in the contig.
     pub offset: usize,
-    /// `true`, wenn das Reverskomplement des Reads im Contig steht.
+    /// `true` if the reverse complement of the read lies in the contig.
     pub reverse: bool,
 }
 
-/// Setzt Reads (Uppercase, nur A, C, G, T) zu Contigs zusammen.
+/// Assembles reads (uppercase, only A, C, G, T) into contigs.
 ///
-/// 1. Entferne jede Sequenz, die als Teilstring (vorwärts oder reverskomplementär) in einer anderen Sequenz steckt.
-///    Bei gleicher Länge (identisch oder reverskomplementär gleich) bleibt nur die Sequenz mit dem kleineren Index.
-/// 2. Wiederhole: Suche unter allen geordneten Paaren `(i, j)` mit `i != j` und beiden Ausrichtungen von `j`
-///    (`o = 0` vorwärts, `o = 1` reverskomplementär) die längste Überlappung `L >= min_overlap`, bei der das Ende von `contigs[i]`
-///    gleich dem Anfang von `j'` (das ausgerichtete `contigs[j]`) ist, und `L` kleiner als beide Längen ist. Bei gleicher Länge gewinnt
-///    das Paar mit kleinerem `i`, dann kleinerem `j`, dann `o = 0`. Ersetze beide durch `contigs[i] + &j'[L..]` (neues Element ans Ende)
-///    und wende danach Schritt 1 erneut an. Ohne passendes Paar: Ende.
-/// 3. Sortiere das Ergebnis nach Länge absteigend, bei gleicher Länge nach dem Text aufsteigend.
+/// 1. Remove every sequence that is a substring (forward or reverse-complement) of another sequence.
+///    For equal length (identical or equal as reverse complement) only the sequence with the smaller index stays.
+/// 2. Repeat: among all ordered pairs `(i, j)` with `i != j` and both orientations of `j`
+///    (`o = 0` forward, `o = 1` reverse complement), find the longest overlap `L >= min_overlap` where the end of `contigs[i]`
+///    equals the start of `j'` (the oriented `contigs[j]`) and `L` is smaller than both lengths. On equal length the
+///    pair with the smaller `i` wins, then the smaller `j`, then `o = 0`. Replace both by `contigs[i] + &j'[L..]` (new element at the end)
+///    and then apply step 1 again. With no matching pair: done.
+/// 3. Sort the result by length descending, for equal length by text ascending.
 ///
-/// Leere Eingabe ergibt eine leere Liste. `min_overlap == 0` wird wie 1 behandelt.
+/// Empty input gives an empty list. `min_overlap == 0` is treated as 1.
 pub fn assemble_contigs(reads: &[String], min_overlap: usize) -> Vec<String> {
     let min_ov = min_overlap.max(1);
     let mut contigs = drop_contained(reads.to_vec());
-    // (Überlappung, i, j, Ausrichtung)
+    // (overlap, i, j, orientation)
     while let Some((len, i, j, rev)) = best_overlap(&contigs, min_ov) {
         let other = if rev {
             iupac_reverse_complement(&contigs[j])
@@ -47,7 +47,7 @@ pub fn assemble_contigs(reads: &[String], min_overlap: usize) -> Vec<String> {
     contigs
 }
 
-/// Entfernt Sequenzen, die in einer anderen (vorwärts oder reverskomplementär) enthalten sind; bei gleicher Länge bleibt der kleinere Index.
+/// Removes sequences contained in another (forward or reverse-complement); for equal length the smaller index stays.
 fn drop_contained(items: Vec<String>) -> Vec<String> {
     let mut keep = Vec::new();
     for (i, c) in items.iter().enumerate() {
@@ -64,7 +64,7 @@ fn drop_contained(items: Vec<String>) -> Vec<String> {
     keep
 }
 
-/// Längste Überlappung über alle Paare; bei Gleichstand kleinstes `i`, dann `j`, dann vorwärts.
+/// Longest overlap over all pairs; on ties the smallest `i`, then `j`, then forward.
 fn best_overlap(contigs: &[String], min_ov: usize) -> Option<(usize, usize, usize, bool)> {
     let mut best: Option<(usize, usize, usize, bool)> = None;
     for (i, a) in contigs.iter().enumerate() {
@@ -87,8 +87,8 @@ fn best_overlap(contigs: &[String], min_ov: usize) -> Option<(usize, usize, usiz
     best
 }
 
-/// Sucht jeden Read im Contig: zuerst vorwärts (erstes Vorkommen), sonst als Reverskomplement (erstes Vorkommen).
-/// `None`, wenn der Read nicht vorkommt. Die Liste hat die Länge von `reads`.
+/// Looks for each read in the contig: first forward (first occurrence), otherwise as reverse complement (first occurrence).
+/// `None` if the read does not occur. The list has the length of `reads`.
 pub fn place_reads(contig: &str, reads: &[String]) -> Vec<Option<ReadPlacement>> {
     reads
         .iter()
@@ -200,7 +200,7 @@ mod tests {
                 reverse: false
             })
         );
-        // TTAC = Reverskomplement von GTAA: steht ab Position 6
+        // TTAC = reverse complement of GTAA: located from position 6
         assert_eq!(
             p[1],
             Some(ReadPlacement {

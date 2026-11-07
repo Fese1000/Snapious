@@ -1,11 +1,11 @@
-//! Rückübersetzung: Protein → DNA (bevorzugte Codons oder Mehrdeutigkeitscodes).
+//! Back-translation: protein → DNA (preferred codons or ambiguity codes).
 
 use crate::error::{Error, Result};
 
-/// Rückübersetzung mit je einem festen Codon pro Aminosäure (häufigstes Codon von E. coli):
+/// Back-translation with one fixed codon per amino acid (most frequent codon of E. coli):
 /// A GCG, R CGT, N AAC, D GAT, C TGC, Q CAG, E GAA, G GGC, H CAT, I ATT, L CTG, K AAA, M ATG, F TTT, P CCG, S AGC, T ACC,
-/// W TGG, Y TAT, V GTG, Stopp `*` TAA. Groß-/Kleinschreibung egal. Leere Eingabe → "".
-/// Fehler `Error::InvalidInput` bei jedem anderen Zeichen.
+/// W TGG, Y TAT, V GTG, stop `*` TAA. Case-insensitive. Empty input → "".
+/// Error `Error::InvalidInput` for any other character.
 pub fn back_translate_preferred(protein: &str) -> Result<String> {
     let mut dna = String::with_capacity(protein.len() * 3);
     for c in protein.chars().map(|ch| ch.to_ascii_uppercase()) {
@@ -38,9 +38,9 @@ pub fn back_translate_preferred(protein: &str) -> Result<String> {
     Ok(dna)
 }
 
-/// Rückübersetzung mit IUPAC-Mehrdeutigkeitscodes (wie EMBOSS backtranseq), Standardcode:
+/// Back-translation with IUPAC ambiguity codes (like EMBOSS backtranseq), standard code:
 /// A GCN, R MGN, N AAY, D GAY, C TGY, Q CAR, E GAR, G GGN, H CAY, I ATH, L YTN, K AAR, M ATG, F TTY, P CCN, S WSN, T ACN,
-/// W TGG, Y TAY, V GTN, Stopp `*` TRR. Sonst wie `back_translate_preferred` (gleiche Fehler und Eingaberegeln).
+/// W TGG, Y TAY, V GTN, stop `*` TRR. Otherwise as `back_translate_preferred` (same errors and input rules).
 pub fn back_translate_degenerate(protein: &str) -> Result<String> {
     let mut dna = String::with_capacity(protein.len() * 3);
     for c in protein.chars().map(|ch| ch.to_ascii_uppercase()) {

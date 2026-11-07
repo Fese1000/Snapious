@@ -1,13 +1,13 @@
-//! Biologische Sequenz (DNA, RNA, Protein) mit Grundoperationen.
+//! Biological sequence (DNA, RNA, protein) with basic operations.
 //!
-//! Port von `com.snapious.core.Sequence` (Java-Referenz) mit den dort behobenen Fehlern:
-//! vollständige Codon-Tabelle, korrekte ORF-Suche, Typerkennung beim FASTA-Import.
+//! Port of `com.snapious.core.Sequence` (Java reference) with the bugs fixed there:
+//! complete codon table, correct ORF search, type detection on FASTA import.
 
 use std::collections::BTreeMap;
 
 use crate::error::{Error, Result};
 
-/// Art der Sequenz.
+/// Kind of sequence.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum SequenceType {
     Dna,
@@ -16,7 +16,7 @@ pub enum SequenceType {
 }
 
 impl SequenceType {
-    /// Erlaubte Zeichen (Uppercase). Nukleotide: A, C, G, T/U und IUPAC-Mehrdeutigkeitscodes.
+    /// Allowed characters (uppercase). Nucleotides: A, C, G, T/U and IUPAC ambiguity codes.
     pub fn allowed(&self) -> &'static [u8] {
         match self {
             SequenceType::Dna => b"ACGTRYKMSWBDHVN",
@@ -25,13 +25,13 @@ impl SequenceType {
         }
     }
 
-    /// Ist die Sequenz ein Nukleotid (DNA oder RNA)?
+    /// Is the sequence a nucleotide (DNA or RNA)?
     pub fn is_nucleotide(&self) -> bool {
         !matches!(self, SequenceType::Protein)
     }
 }
 
-/// Eine biologische Sequenz. Die Basen werden immer als ASCII-Uppercase gehalten.
+/// A biological sequence. The bases are always kept as ASCII uppercase.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sequence {
     id: String,
@@ -41,7 +41,7 @@ pub struct Sequence {
     bases: String,
 }
 
-/// Aminosäure (ein Buchstabe) für ein Codon im DNA-Alphabet (T statt U). Stopp = `*`, Unbekanntes = `X`.
+/// Amino acid (one letter) for a codon in the DNA alphabet (T instead of U). Stop = `*`, unknown = `X`.
 pub fn amino_acid_for(codon: &[u8]) -> u8 {
     match codon {
         b"TTT" | b"TTC" => b'F',
@@ -69,7 +69,7 @@ pub fn amino_acid_for(codon: &[u8]) -> u8 {
     }
 }
 
-/// Komplement einer einzelnen Base (IUPAC); `rna` bestimmt, ob A zu U wird.
+/// Complement of a single base (IUPAC); `rna` decides whether A becomes U.
 fn complement_base(b: u8, rna: bool) -> u8 {
     match b {
         b'A' => {
@@ -97,7 +97,7 @@ fn complement_base(b: u8, rna: bool) -> u8 {
 }
 
 impl Sequence {
-    /// Neue Sequenz. Leerzeichen und (bei Nukleotiden) Ziffern werden entfernt, Buchstaben groß geschrieben.
+    /// New sequence. Spaces and (for nucleotides) digits are removed, letters are uppercased.
     pub fn new(id: &str, name: &str, bases: &str, seq_type: SequenceType) -> Result<Self> {
         let cleaned = Self::validate(bases, seq_type)?;
         Ok(Self {
@@ -148,12 +148,12 @@ impl Sequence {
         self.seq_type
     }
 
-    /// Basen als Text (ASCII-Uppercase).
+    /// Bases as text (ASCII uppercase).
     pub fn bases(&self) -> &str {
         &self.bases
     }
 
-    /// Basen als Bytes.
+    /// Bases as bytes.
     pub fn as_bytes(&self) -> &[u8] {
         self.bases.as_bytes()
     }
@@ -178,20 +178,20 @@ impl Sequence {
         self.description = description.to_string();
     }
 
-    /// Ersetzt die Basen (mit Prüfung). Bei Fehler bleibt die Sequenz unverändert.
+    /// Replaces the bases (with validation). On error the sequence stays unchanged.
     pub fn set_bases(&mut self, bases: &str) -> Result<()> {
         self.bases = Self::validate(bases, self.seq_type)?;
         Ok(())
     }
 
-    /// Kopie mit neuen Basen (Id, Name, Beschreibung und Typ bleiben). Prüft die Basen.
+    /// Copy with new bases (id, name, description and type stay). Validates the bases.
     pub fn with_bases(&self, bases: &str) -> Result<Sequence> {
         let mut copy = self.clone();
         copy.set_bases(bases)?;
         Ok(copy)
     }
 
-    /// Basis an Position (0-basiert).
+    /// Base at position (0-based).
     pub fn base_at(&self, index: usize) -> Result<char> {
         self.bases
             .as_bytes()
@@ -202,7 +202,7 @@ impl Sequence {
             })
     }
 
-    /// Teilsequenz `[start, end)`. Außerhalb → `OutOfRange`, `start > end` → `InvalidInput`.
+    /// Subsequence `[start, end)`. Out of range → `OutOfRange`, `start > end` → `InvalidInput`.
     pub fn subsequence(&self, start: usize, end: usize) -> Result<Sequence> {
         if end > self.bases.len() {
             return Err(Error::OutOfRange(format!(
@@ -247,7 +247,7 @@ impl Sequence {
         }
     }
 
-    /// Komplementäre Sequenz (gleiche Leserichtung).
+    /// Complementary sequence (same reading direction).
     pub fn complement(&self) -> Result<Sequence> {
         self.require_nucleotide()?;
         let rna = self.seq_type == SequenceType::Rna;
@@ -259,7 +259,7 @@ impl Sequence {
         Ok(self.derived("(complement)", bases, self.seq_type))
     }
 
-    /// Reverse-Komplement.
+    /// Reverse complement.
     pub fn reverse_complement(&self) -> Result<Sequence> {
         self.require_nucleotide()?;
         let rna = self.seq_type == SequenceType::Rna;
@@ -272,7 +272,7 @@ impl Sequence {
         Ok(self.derived("(rev-kom)", bases, self.seq_type))
     }
 
-    /// Transkription DNA → RNA (T wird zu U).
+    /// Transcription DNA → RNA (T becomes U).
     pub fn transcribe(&self) -> Result<Sequence> {
         if self.seq_type != SequenceType::Dna {
             return Err(Error::InvalidState("Only DNA can be transcribed".to_string()));
@@ -284,7 +284,7 @@ impl Sequence {
         ))
     }
 
-    /// Rücktranskription RNA → DNA (U wird zu T).
+    /// Reverse transcription RNA → DNA (U becomes T).
     pub fn to_dna(&self) -> Result<Sequence> {
         if self.seq_type != SequenceType::Rna {
             return Err(Error::InvalidState(
@@ -294,7 +294,7 @@ impl Sequence {
         Ok(self.derived("(cDNA)", self.bases.replace('U', "T"), SequenceType::Dna))
     }
 
-    /// Translation im ersten Leserahmen. Stopcodons als `*`, unvollständiges Schlusscodon wird ignoriert.
+    /// Translation in the first reading frame. Stop codons as `*`, an incomplete final codon is ignored.
     pub fn translate(&self) -> Result<Sequence> {
         self.require_nucleotide()?;
         let dna = self.bases.replace('U', "T");
@@ -303,9 +303,9 @@ impl Sequence {
         Ok(self.derived("(translatiert)", protein, SequenceType::Protein))
     }
 
-    /// Offene Leserahmen (ATG bis Stopcodon oder Sequenzende) in den drei Vorwärts-Rahmen.
-    /// Verschachtelte Startcodons innerhalb eines ORFs werden nicht separat gemeldet.
-    /// `min_codons` = Mindestlänge in Codons (ohne Stopcodon).
+    /// Open reading frames (ATG to stop codon or sequence end) in the three forward frames.
+    /// Nested start codons within an ORF are not reported separately.
+    /// `min_codons` = minimum length in codons (excluding the stop codon).
     pub fn find_orfs(&self, min_codons: usize) -> Result<Vec<Sequence>> {
         self.require_nucleotide()?;
         let dna = self.bases.replace('U', "T");
@@ -342,7 +342,7 @@ impl Sequence {
         Ok(orfs)
     }
 
-    /// Alle Startpositionen eines exakten Motivs (Groß-/Kleinschreibung egal), auch überlappend.
+    /// All start positions of an exact motif (case-insensitive), including overlapping ones.
     pub fn find_motif(&self, motif: &str) -> Vec<usize> {
         let m = motif.to_ascii_uppercase();
         if m.is_empty() {
@@ -360,7 +360,7 @@ impl Sequence {
         out
     }
 
-    /// GC-Anteil (0.0 bis 1.0); 0.0 bei leerer Sequenz.
+    /// GC fraction (0.0 to 1.0); 0.0 for an empty sequence.
     pub fn gc_content(&self) -> f64 {
         if self.bases.is_empty() {
             return 0.0;
@@ -373,7 +373,7 @@ impl Sequence {
         gc as f64 / self.bases.len() as f64
     }
 
-    /// AT-/AU-Anteil (0.0 bis 1.0).
+    /// AT/AU fraction (0.0 to 1.0).
     pub fn at_content(&self) -> f64 {
         if self.bases.is_empty() {
             return 0.0;
@@ -386,7 +386,7 @@ impl Sequence {
         at as f64 / self.bases.len() as f64
     }
 
-    /// Relative Häufigkeit der Zeichen A, C, G, T, U, N.
+    /// Relative frequency of the characters A, C, G, T, U, N.
     pub fn base_frequencies(&self) -> BTreeMap<char, f64> {
         let mut out = BTreeMap::new();
         for c in "ATCGUN".chars() {
@@ -401,9 +401,9 @@ impl Sequence {
         out
     }
 
-    /// FASTA-Text: Kopfzeile `>id name [beschreibung]`, danach 60 Zeichen pro Zeile.
+    /// FASTA text: header line `>id name [description]`, then 60 characters per line.
     pub fn to_fasta(&self) -> String {
-        // Kopfzeile: Name, falls er schon mit der ID beginnt (FASTA-Import), sonst "ID Name"
+        // Header line: name if it already starts with the ID (FASTA import), otherwise "ID Name"
         let header = if self.name == self.id || self.name.starts_with(&format!("{} ", self.id)) {
             self.name.clone()
         } else {
@@ -425,7 +425,7 @@ impl Sequence {
         s
     }
 
-    /// Sequenz aus FASTA-Zeilen. Typ: nur ACGTN → DNA, nur ACGUN → RNA, sonst Protein.
+    /// Sequence from FASTA lines. Type: only ACGTN → DNA, only ACGUN → RNA, otherwise protein.
     pub fn from_fasta(id: &str, header: &str, sequence_lines: &str) -> Result<Sequence> {
         let bases: String = sequence_lines
             .lines()
@@ -553,7 +553,7 @@ mod tests {
 
     #[test]
     fn orf_suche() {
-        // ATG CCG TAG im Rahmen 3
+        // ATG CCG TAG in frame 3
         let s = dna("AAATGCCGTAGCTAA");
         let orfs = s.find_orfs(2).unwrap();
         assert_eq!(orfs.len(), 1);

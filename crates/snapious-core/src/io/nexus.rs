@@ -1,26 +1,26 @@
-//! NEXUS-Alignmentformat (DATA- oder CHARACTERS-Block) lesen und schreiben.
+//! Read and write the NEXUS alignment format (DATA or CHARACTERS block).
 //!
-//! Ein Alignment ist eine Liste `(Name, Zeile)` mit gleich langen Zeilen; Lücken sind `-`.
+//! An alignment is a list of `(name, row)` with rows of equal length; gaps are `-`.
 
 use crate::error::{Error, Result};
 use crate::io::alignment_formats::validate_alignment;
 
-/// Liest ein NEXUS-Alignment.
-/// * Die erste nicht leere Zeile muss mit `#NEXUS` beginnen (Groß-/Kleinschreibung egal), sonst `Error::InvalidInput`.
-/// * Kommentare in eckigen Klammern `[ ... ]` werden überall entfernt (auch mitten in einer Zeile).
-/// * Gesucht wird ein Block `BEGIN DATA;` oder `BEGIN CHARACTERS;` (Schlüsselwörter ohne Rücksicht auf Groß-/Kleinschreibung);
-///   darin der Abschnitt `MATRIX` bis zum nächsten Semikolon. Jede Zeile dazwischen ist `Name Zeile` (durch Leerraum getrennt);
-///   Leerraum innerhalb der Sequenz wird entfernt. Kommt ein Name in mehreren Zeilen vor (interleaved), werden die Teile in
-///   der Reihenfolge des Auftretens angehängt. Die Reihenfolge der Namen ist die des ersten Auftretens.
-/// * Fehlt der Block oder die Matrix, oder ist die Matrix leer: `Error::InvalidInput`.
-/// * Das Ergebnis wird mit `validate_alignment` geprüft (dessen Fehler werden weitergegeben).
+/// Reads a NEXUS alignment.
+/// * The first non-empty line must start with `#NEXUS` (case-insensitive), otherwise `Error::InvalidInput`.
+/// * Comments in square brackets `[ ... ]` are removed everywhere (also in the middle of a line).
+/// * Looks for a block `BEGIN DATA;` or `BEGIN CHARACTERS;` (keywords case-insensitive);
+///   inside it the `MATRIX` section up to the next semicolon. Each line in between is `name row` (whitespace-separated);
+///   whitespace within the sequence is removed. If a name occurs on several lines (interleaved), the parts are appended in
+///   order of appearance. The order of names is that of first appearance.
+/// * If the block or the matrix is missing, or the matrix is empty: `Error::InvalidInput`.
+/// * The result is checked with `validate_alignment` (its errors are passed on).
 pub fn parse_nexus(text: &str) -> Result<Vec<(String, String)>> {
     let bad = |m: &str| Error::InvalidInput(m.to_string());
     let first = text.lines().find(|l| !l.trim().is_empty()).unwrap_or("");
     if !first.trim().to_ascii_lowercase().starts_with("#nexus") {
         return Err(bad("Not a NEXUS file (#NEXUS missing)"));
     }
-    // Kommentare entfernen
+    // Remove comments
     let mut clean = String::with_capacity(text.len());
     let mut depth = 0usize;
     for c in text.chars() {
@@ -70,7 +70,7 @@ pub fn parse_nexus(text: &str) -> Result<Vec<(String, String)>> {
     Ok(rows)
 }
 
-/// Schreibt ein Alignment als NEXUS-Text. Zuerst `validate_alignment`.
+/// Writes an alignment as NEXUS text. `validate_alignment` first.
 pub fn write_nexus(rows: &[(String, String)]) -> Result<String> {
     validate_alignment(rows)?;
     let width = rows.first().map_or(0, |(_, r)| r.chars().count());

@@ -1,10 +1,10 @@
-//! Alignment-Werkzeuge auf Zeilenlisten: Profile verbinden, Translations-Alignment, Teilbereich neu ausrichten.
-//! Lücken sind `-`; alle Zeilen eines Alignments sind gleich lang.
+//! Alignment tools on row lists: joining profiles, translation alignment, realigning a sub-region.
+//! Gaps are `-`; all rows of an alignment have the same length.
 
 use crate::error::{Error, Result};
 use crate::model::sequence::amino_acid_for;
 
-/// Spaltenbewertung zweier Zeichen: beide `-` → 0, genau eines `-` → −1, gleiche Zeichen (Groß-/Kleinschreibung egal) → 2, sonst −1.
+/// Column score of two characters: both `-` → 0, exactly one `-` → −1, equal characters (case-insensitive) → 2, otherwise −1.
 fn pair_score(x: char, y: char) -> f64 {
     match (x == '-', y == '-') {
         (true, true) => 0.0,
@@ -30,16 +30,16 @@ fn check_group(rows: &[String], what: &str) -> Result<usize> {
     Ok(n)
 }
 
-/// Verbindet zwei Alignments `a` und `b` zu einem, ohne die Lückenstruktur innerhalb von `a` und `b` zu ändern
-/// (es werden nur reine Lückenspalten in der jeweils anderen Gruppe eingefügt). Die Zeilen von `a` stehen zuerst, dann die von `b`.
-/// Verfahren: globales Alignment der Spaltenfolgen (Needleman-Wunsch):
-/// * Wert zweier Spalten (eine aus `a`, eine aus `b`) = Mittelwert von `pair_score` über alle Paare (Zeichen aus `a`, Zeichen aus `b`).
-/// * Eine eingefügte Lückenspalte kostet −2.0.
-/// * Matrix `S[i][j]`: `S[i][0] = i * −2.0`, `S[0][j] = j * −2.0`, sonst Maximum aus Diagonale `S[i−1][j−1] + Spaltenwert`,
-///   `S[i−1][j] − 2.0` (Spalte von `a` bekommt Lückenspalte in `b`) und `S[i][j−1] − 2.0` (umgekehrt).
-/// * Rückverfolgung ab `(n, m)` bei Gleichstand in der Reihenfolge Diagonale, dann „oben“ (Lücke in `b`), dann „links“ (Lücke in `a`).
+/// Joins two alignments `a` and `b` into one without changing the gap structure within `a` and `b`
+/// (only pure gap columns are inserted into the respective other group). The rows of `a` come first, then those of `b`.
+/// Method: global alignment of the column sequences (Needleman-Wunsch):
+/// * Score of two columns (one from `a`, one from `b`) = mean of `pair_score` over all pairs (character from `a`, character from `b`).
+/// * An inserted gap column costs −2.0.
+/// * Matrix `S[i][j]`: `S[i][0] = i * −2.0`, `S[0][j] = j * −2.0`, otherwise the maximum of the diagonal `S[i−1][j−1] + column score`,
+///   `S[i−1][j] − 2.0` (column of `a` gets a gap column in `b`) and `S[i][j−1] − 2.0` (vice versa).
+/// * Traceback from `(n, m)`; on ties in the order diagonal, then "up" (gap in `b`), then "left" (gap in `a`).
 ///
-/// Fehler `Error::InvalidInput`, wenn `a` oder `b` leer ist oder die Zeilen innerhalb einer Gruppe verschieden lang sind.
+/// Error `Error::InvalidInput` if `a` or `b` is empty or the rows within a group differ in length.
 pub fn align_profiles(a: &[String], b: &[String]) -> Result<Vec<String>> {
     let n = check_group(a, "Profile A")?;
     let m = check_group(b, "Profile B")?;
@@ -55,7 +55,7 @@ pub fn align_profiles(a: &[String], b: &[String]) -> Result<Vec<String>> {
         sum / (ca.len() * cb.len()) as f64
     };
     let mut s = vec![vec![0.0f64; m + 1]; n + 1];
-    // 0 = Diagonale, 1 = oben, 2 = links
+    // 0 = diagonal, 1 = up, 2 = left
     let mut t = vec![vec![0u8; m + 1]; n + 1];
     for i in 1..=n {
         s[i][0] = i as f64 * GAP_COST;
@@ -115,16 +115,16 @@ pub fn align_profiles(a: &[String], b: &[String]) -> Result<Vec<String>> {
     Ok(out)
 }
 
-/// Aligner für benannte Proteinzeilen.
+/// Aligner for named protein rows.
 pub type ProteinAligner = dyn Fn(&[(String, String)]) -> Result<Vec<(String, String)>>;
 
-/// Translations-Alignment: Nukleotidzeilen `(Name, Basen)` werden im Leseraster 1 in Codons zerlegt und mit
-/// `amino_acid_for(&[u8])` (liefert das Aminosäurezeichen als Byte, Stopp `*`) übersetzt. Die Proteine `(Name, Protein)` gehen an
-/// `aligner`, das ausgerichtete Proteine `(Name, Zeile)` zurückgibt (beliebige Reihenfolge, Zuordnung über den Namen).
-/// Rückübersetzung: jede Aminosäure der ausgerichteten Zeile wird durch das Original-Codon ersetzt (der Reihe nach), jedes `-` durch `---`.
-/// Das Ergebnis hat die Zeilen in der Reihenfolge der Eingabe. Basen in Uppercase.
-/// Fehler `Error::InvalidInput`: leere Eingabe; Länge einer Zeile kein Vielfaches von 3 (Meldung enthält den Namen);
-/// `aligner` liefert eine Zeile nicht zurück oder mit einer Zahl Aminosäuren (ohne `-`), die nicht zum Protein passt. Fehler des `aligner` werden weitergegeben.
+/// Translation alignment: nucleotide rows `(name, bases)` are split into codons in reading frame 1 and translated with
+/// `amino_acid_for(&[u8])` (returns the amino acid character as a byte, stop `*`). The proteins `(name, protein)` go to
+/// `aligner`, which returns aligned proteins `(name, row)` (any order, matched by name).
+/// Back-translation: each amino acid of the aligned row is replaced by the original codon (in order), each `-` by `---`.
+/// The result has the rows in input order. Bases uppercase.
+/// Error `Error::InvalidInput`: empty input; row length not a multiple of 3 (message contains the name);
+/// `aligner` does not return a row or returns it with a number of amino acids (excluding `-`) that does not match the protein. Errors from `aligner` are propagated.
 pub fn translation_align(
     rows: &[(String, String)],
     aligner: &ProteinAligner,
@@ -190,15 +190,15 @@ pub fn translation_align(
     Ok(out)
 }
 
-/// Richtet den Spaltenbereich `[from, to)` für die Zeilen `selected` (Indizes) neu aus.
-/// * Für jede gewählte Zeile wird das Stück `rows[i][from..to]` ohne `-` genommen und die Liste (in der Reihenfolge von `selected`)
-///   an `aligner` gegeben, der gleich lange ausgerichtete Zeilen (Breite `w`) in derselben Reihenfolge liefert.
-/// * Neue Breite des Bereichs `W = max(w, to − from)`. Gewählte Zeilen bekommen ihr ausgerichtetes Stück rechts mit `-` auf `W` aufgefüllt;
-///   nicht gewählte Zeilen behalten ihr Stück `rows[i][from..to]` und werden rechts mit `-` auf `W` aufgefüllt.
-/// * Ergebnis je Zeile: `rows[i][..from] + Stück + rows[i][to..]`.
+/// Realigns the column range `[from, to)` for the rows `selected` (indices).
+/// * For each selected row, the piece `rows[i][from..to]` without `-` is taken and the list (in the order of `selected`)
+///   is passed to `aligner`, which returns equal-length aligned rows (width `w`) in the same order.
+/// * New width of the range `W = max(w, to − from)`. Selected rows get their aligned piece padded on the right with `-` to `W`;
+///   unselected rows keep their piece `rows[i][from..to]` and are padded on the right with `-` to `W`.
+/// * Result per row: `rows[i][..from] + piece + rows[i][to..]`.
 ///
-/// Fehler `Error::InvalidInput`: `rows` leer, Zeilen verschieden lang, `selected` leer, ein Index ungültig oder doppelt;
-/// `Error::OutOfRange`: `from >= to` oder `to` größer als die Spaltenzahl. `aligner` muss gleich viele Zeilen zurückgeben, sonst `Error::InvalidInput`.
+/// Error `Error::InvalidInput`: `rows` empty, rows of different length, `selected` empty, an index invalid or duplicated;
+/// `Error::OutOfRange`: `from >= to` or `to` greater than the column count. `aligner` must return the same number of rows, otherwise `Error::InvalidInput`.
 pub fn realign_region(
     rows: &[String],
     from: usize,

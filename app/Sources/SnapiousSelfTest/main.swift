@@ -1,10 +1,10 @@
 import Foundation
 import SnapiousFFI
 
-// Selbsttest der Verbindung Swift ↔ Rust (ohne Fenster).
-// Aufruf:  SnapiousSelfTest [Pfad/zu/mini.gb]
+// Self-test of the Swift ↔ Rust connection (without a window).
+// Usage:  SnapiousSelfTest [path/to/mini.gb]
 if CommandLine.arguments.count >= 4, CommandLine.arguments[1] == "--make-demo" {
-    // SnapiousSelfTest --make-demo <Projektdatei> <Beispieldateien…>: legt ein Demo-Projekt an (zum Ansehen der Oberfläche)
+    // SnapiousSelfTest --make-demo <project file> <sample files…>: creates a demo project (for viewing the UI)
     do {
         let project = try Project.open(path: CommandLine.arguments[2])
         var ids: [String] = []

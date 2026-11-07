@@ -19,4 +19,4 @@ Open an issue with the matching template. For bugs, please include your macOS ve
 5. Coordinates in the core are 0-based with exclusive ends.
 
 ## Style
-User-facing strings are written in German in the code and translated to English in `app/Sources/SnapiousApp/Translations.swift` (wrap new strings in `tr("…")` and add the English text there). Keep the standard macOS look; do not invent a custom design system.
+User-facing strings are written in English in the code (wrap them in `tr("…")`); the German translations live in `app/Sources/SnapiousApp/Translations.swift`. Keep the standard macOS look; do not invent a custom design system.

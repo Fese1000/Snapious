@@ -1,4 +1,4 @@
-//! Einstellungen in einer JSON-Datei (z. B. `~/.snapious/settings.json`).
+//! Settings in a JSON file (e.g. `~/.snapious/settings.json`).
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -6,22 +6,22 @@ use std::path::Path;
 use crate::error::{Error, Result};
 use serde::{Deserialize, Serialize};
 
-/// Programmeinstellungen.
+/// Program settings.
 #[derive(Clone, PartialEq)]
 pub struct Settings {
-    /// Pfade externer Programme (Name → Pfad).
+    /// Paths of external programs (name → path).
     pub tool_paths: BTreeMap<String, String>,
     pub ncbi_email: String,
-    /// NCBI-API-Schlüssel; wird nie in `Debug`-Ausgaben gezeigt.
+    /// NCBI API key; never shown in `Debug` output.
     pub ncbi_api_key: String,
     pub default_organism: String,
     pub dark_mode: bool,
-    /// Höchstzahl der Rückgängig-Schritte.
+    /// Maximum number of undo steps.
     pub undo_limit: usize,
 }
 
 impl Settings {
-    /// Standard: leere Pfade, E-Mail, Schlüssel und Organismus leer, kein Dunkelmodus, `undo_limit = 100`.
+    /// Default: empty paths, e-mail, key and organism empty, no dark mode, `undo_limit = 100`.
     pub fn defaults() -> Settings {
         Settings {
             tool_paths: BTreeMap::new(),
@@ -35,7 +35,7 @@ impl Settings {
 }
 
 impl std::fmt::Debug for Settings {
-    /// Wie ein abgeleitetes `Debug` (Feldnamen und Werte), aber `ncbi_api_key` erscheint nur als `"***"` (oder `""`, wenn leer).
+    /// Like a derived `Debug` (field names and values), but `ncbi_api_key` appears only as `"***"` (or `""` if empty).
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Settings")
             .field("tool_paths", &self.tool_paths)
@@ -55,10 +55,10 @@ impl std::fmt::Debug for Settings {
     }
 }
 
-/// Liest die Einstellungen. Fehlt die Datei, sind es die Standardwerte. Lässt sie sich nicht als JSON lesen (kein Objekt, Syntaxfehler),
-/// wird sie nach `<pfad>.bak` umbenannt (eine vorhandene `.bak` wird überschrieben) und es gelten die Standardwerte.
-/// Fehlende Felder im JSON bekommen ihren Standardwert; falsch getypte Felder gelten als beschädigte Datei. Schlüssel (JSON, camelCase):
-/// `toolPaths` (Objekt Text→Text), `ncbiEmail`, `ncbiApiKey`, `defaultOrganism`, `darkMode`, `undoLimit`.
+/// Reads the settings. If the file is missing, the defaults apply. If it cannot be read as JSON (not an object, syntax error),
+/// it is renamed to `<path>.bak` (an existing `.bak` is overwritten) and the defaults apply.
+/// Missing fields in the JSON get their default value; fields of the wrong type count as a corrupt file. Keys (JSON, camelCase):
+/// `toolPaths` (object text→text), `ncbiEmail`, `ncbiApiKey`, `defaultOrganism`, `darkMode`, `undoLimit`.
 pub fn load_settings(path: &Path) -> Settings {
     let content = match std::fs::read_to_string(path) {
         Ok(c) => c,
@@ -107,8 +107,8 @@ pub fn load_settings(path: &Path) -> Settings {
     }
 }
 
-/// Schreibt die Einstellungen als eingerückten JSON-Text (Schlüssel wie bei `load_settings`); fehlende Ordner werden angelegt.
-/// Unter Unix wird die Datei nur für den Besitzer lesbar und schreibbar gemacht (Modus 0600). Fehler als `Error::Io`.
+/// Writes the settings as indented JSON text (keys as in `load_settings`); missing folders are created.
+/// On Unix the file is made readable and writable by the owner only (mode 0600). Errors as `Error::Io`.
 pub fn save_settings(path: &Path, s: &Settings) -> Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(Error::from)?;
@@ -203,11 +203,11 @@ mod tests {
             std::fs::read_to_string(d.join("settings.json.bak")).unwrap(),
             "{ das ist kein json"
         );
-        // falscher Typ
+        // wrong type
         std::fs::write(&p, r#"{"darkMode": "ja"}"#).unwrap();
         assert_eq!(load_settings(&p), Settings::defaults());
         assert!(d.join("settings.json.bak").exists());
-        // teilweise Angaben
+        // partial values
         std::fs::write(&p, r#"{"undoLimit": 5}"#).unwrap();
         let s = load_settings(&p);
         assert_eq!(s.undo_limit, 5);

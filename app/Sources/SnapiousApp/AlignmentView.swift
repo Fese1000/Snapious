@@ -1,7 +1,7 @@
 import SnapiousFFI
 import SwiftUI
 
-/// Alignment-Ansicht: Namen links, Zeilen mit Farben, darüber Identität und Konsens.
+/// Alignment view: names on the left, rows with colors, identity and consensus above.
 struct AlignmentView: View {
     @ObservedObject var model: AppModel
 
@@ -26,20 +26,20 @@ struct AlignmentView: View {
             VStack(spacing: 0) {
                 HStack {
                     Text(a.name).font(Theme.heading())
-                    Text(tr("%@ Zeilen, %@ Spalten", "\(a.rowNames.count)", "\(a.rows.first?.count ?? 0)")).foregroundStyle(Theme.inkSoft)
+                    Text(tr("%@ rows, %@ columns", "\(a.rowNames.count)", "\(a.rows.first?.count ?? 0)")).foregroundStyle(Theme.inkSoft)
                     Spacer()
-                    Menu(tr("Bearbeiten")) {
-                        Button(tr("Reine Lückenspalten entfernen")) { model.stripSelectedAlignment(threshold: 1.0) }
-                        Button(tr("Spalten mit ≥ 50 % Lücken entfernen")) { model.stripSelectedAlignment(threshold: 0.5) }
-                        Button(tr("Alle Spalten mit Lücken entfernen")) { model.stripSelectedAlignment(threshold: 0.0001) }
-                        Button(tr("Weitere Spalten entfernen …")) { showStrip = true }
+                    Menu(tr("Edit")) {
+                        Button(tr("Remove pure gap columns")) { model.stripSelectedAlignment(threshold: 1.0) }
+                        Button(tr("Remove columns with ≥ 50 % gaps")) { model.stripSelectedAlignment(threshold: 0.5) }
+                        Button(tr("Remove all columns with gaps")) { model.stripSelectedAlignment(threshold: 0.0001) }
+                        Button(tr("Remove more columns …")) { showStrip = true }
                         Divider()
-                        Button(tr("Varianten gegen erste Zeile …")) { loadVariants() }
-                        Button(tr("Identitäts-Heatmap …")) { matrix = try? model.project?.alignmentIdentityMatrix(id: a.id) }
-                        Button(tr("Sequenzlogo …")) { loadLogo() }
-                        Button(tr("Konsens als Sequenz speichern")) { model.consensusOfSelectedAlignment() }
-                        Button(tr("Sequenz mit Varianten anlegen …")) { showApply = true }
-                        Button(tr("Ähnlichkeitsverlauf …")) { showSimilarity = true }
+                        Button(tr("Variants against first row …")) { loadVariants() }
+                        Button(tr("Identity heatmap …")) { matrix = try? model.project?.alignmentIdentityMatrix(id: a.id) }
+                        Button(tr("Sequence logo …")) { loadLogo() }
+                        Button(tr("Save consensus as sequence")) { model.consensusOfSelectedAlignment() }
+                        Button(tr("Create sequence with variants …")) { showApply = true }
+                        Button(tr("Similarity profile …")) { showSimilarity = true }
                     }
                 }
                 .padding(8)
@@ -53,34 +53,34 @@ struct AlignmentView: View {
             .sheet(isPresented: $showApply) { ApplyVariantsSheet(model: model, rowNames: a.rowNames) }
             .sheet(isPresented: Binding(get: { matrix != nil }, set: { if !$0 { matrix = nil } })) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(tr("Paarweise Identität (%)")).font(Theme.heading())
+                    Text(tr("Pairwise identity (%)")).font(Theme.heading())
                     if let matrix { IdentityHeatmapView(matrix: matrix) }
-                    HStack { Spacer(); Button(tr("Schließen")) { matrix = nil } }
+                    HStack { Spacer(); Button(tr("Close")) { matrix = nil } }
                 }
                 .padding(16)
                 .frame(minWidth: 560, minHeight: 380)
             }
             .sheet(isPresented: $showLogo) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(tr("Sequenzlogo (Bit)")).font(Theme.heading())
+                    Text(tr("Sequence logo (bits)")).font(Theme.heading())
                     SequenceLogoView(columns: logo, protein: a.seqType == "PROTEIN")
-                    HStack { Spacer(); Button(tr("Schließen")) { showLogo = false } }
+                    HStack { Spacer(); Button(tr("Close")) { showLogo = false } }
                 }
                 .padding(16)
                 .frame(minWidth: 560, minHeight: 280)
             }
             .sheet(isPresented: $showVariants) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(tr("Varianten gegen %@: %@", "\(a.rowNames.first ?? "Referenz")", "\(variants.count)")).font(Theme.heading())
+                    Text(tr("Variants against %@: %@", "\(a.rowNames.first ?? "Referenz")", "\(variants.count)")).font(Theme.heading())
                     Table(Array(variants.enumerated()).map { VariantRow(id: $0.offset, dto: $0.element) }) {
-                        TableColumn(tr("Zeile")) { v in Text(v.dto.rowName) }
-                        TableColumn(tr("Spalte")) { v in Text("\(v.dto.column + 1)") }.width(70)
-                        TableColumn(tr("Ref-Pos.")) { v in Text("\(v.dto.referencePosition + 1)") }.width(70)
+                        TableColumn(tr("Row")) { v in Text(v.dto.rowName) }
+                        TableColumn(tr("Column")) { v in Text("\(v.dto.column + 1)") }.width(70)
+                        TableColumn(tr("Ref. pos.")) { v in Text("\(v.dto.referencePosition + 1)") }.width(70)
                         TableColumn("Ref") { v in Text(v.dto.referenceBase) }.width(40)
                         TableColumn("Alt") { v in Text(v.dto.altBase) }.width(40)
-                        TableColumn(tr("Art")) { v in Text(v.dto.kind) }.width(100)
+                        TableColumn(tr("Kind")) { v in Text(v.dto.kind) }.width(100)
                     }
-                    HStack { Spacer(); Button(tr("Schließen")) { showVariants = false } }
+                    HStack { Spacer(); Button(tr("Close")) { showVariants = false } }
                 }
                 .padding(16)
                 .frame(minWidth: 560, minHeight: 360)
@@ -100,7 +100,7 @@ struct AlignmentView: View {
         showVariants = true
     }
 
-    /// Für Bildschirmfotos ohne Fenster.
+    /// For screenshots without a window.
     func snapshotCanvas() -> some View {
         Group { if let a = model.alignment { canvas(a) } }
     }
@@ -113,21 +113,21 @@ struct AlignmentView: View {
         let height = CGFloat(a.rows.count + 3) * rowHeight + 16
         return Canvas { ctx, _ in
             let cw = charWidth
-            // Identität als Balken
+            // Identity as bars
             for (i, v) in a.identity.enumerated() {
                 let h = CGFloat(v) * (rowHeight - 2)
                 ctx.fill(Path(CGRect(x: nameX + CGFloat(i) * cw, y: rowHeight - h, width: cw - 1, height: h)),
                          with: .color(.green.opacity(0.7)))
             }
-            ctx.draw(Text(tr("Identität")).font(.system(size: 10)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: 4, y: rowHeight / 2), anchor: .leading)
-            // Konsens
+            ctx.draw(Text(tr("Identity")).font(.system(size: 10)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: 4, y: rowHeight / 2), anchor: .leading)
+            // Consensus
             let cy = rowHeight * 1.5
-            ctx.draw(Text(tr("Konsens")).font(.system(size: 10)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: 4, y: cy), anchor: .leading)
+            ctx.draw(Text(tr("Consensus")).font(.system(size: 10)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: 4, y: cy), anchor: .leading)
             for (i, ch) in a.consensus.enumerated() {
                 ctx.draw(Text(String(ch)).font(.system(size: 12, design: .monospaced)),
                          at: CGPoint(x: nameX + CGFloat(i) * cw, y: cy), anchor: .leading)
             }
-            // Zeilen
+            // Rows
             for (r, row) in a.rows.enumerated() {
                 let y = rowHeight * CGFloat(r + 3)
                 ctx.draw(Text(a.rowNames[r]).font(.system(size: 11)), at: CGPoint(x: 4, y: y + rowHeight / 2), anchor: .leading)

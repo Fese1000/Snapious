@@ -1,7 +1,7 @@
-//! QUAL-Dateien schreiben (Qualitätswerte zu FASTA-Sequenzen).
+//! Write QUAL files (quality values for FASTA sequences).
 
-/// Schreibt Einträge `(Name, Qualitätswerte)`: je Eintrag die Zeile `>Name`, danach die Werte als Dezimalzahlen mit einem
-/// Leerzeichen getrennt, 17 Werte je Zeile; jede Zeile endet mit `\n`. Ohne Werte steht nur die Kopfzeile.
+/// Writes entries `(name, quality values)`: per entry the line `>name`, then the values as decimal numbers separated by a
+/// space, 17 values per line; every line ends with `\n`. Without values only the header line is written.
 pub fn write_qual(records: &[(String, Vec<u8>)]) -> String {
     let mut out = String::new();
 

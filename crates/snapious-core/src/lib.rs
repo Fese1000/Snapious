@@ -1,4 +1,4 @@
-//! Snapious-Kern: alle Logik ohne Oberfläche und ohne Betriebssystem-Abhängigkeiten.
+//! Snapious core: all logic without UI and without operating-system dependencies.
 
 pub mod bio;
 pub mod cloning;

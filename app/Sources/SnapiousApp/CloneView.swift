@@ -1,7 +1,7 @@
 import SnapiousFFI
 import SwiftUI
 
-/// Restriktionsklonierung: das gewählte Dokument ist der Vektor, das Insert kommt aus der Dokumentliste.
+/// Restriction cloning: the selected document is the vector, the insert comes from the document list.
 struct RestrictionCloneView: View {
     @ObservedObject var model: AppModel
     @State private var insertID: String = ""
@@ -22,50 +22,50 @@ struct RestrictionCloneView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(tr("Vektor: %@", "\(model.summary?.name ?? "–")")).font(Theme.heading())
+            Text(tr("Vector: %@", "\(model.summary?.name ?? "–")")).font(Theme.heading())
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
                 GridRow {
                     Text(tr("Insert"))
                     Picker("", selection: $insertID) {
-                        Text(tr("Bitte wählen")).tag("")
+                        Text(tr("Please choose")).tag("")
                         ForEach(others, id: \.id) { Text($0.name).tag($0.id) }
                     }.labelsHidden().frame(width: 260)
                 }
                 GridRow {
-                    Text(tr("Enzyme Vektor"))
+                    Text(tr("Vector enzymes"))
                     HStack {
-                        TextField(tr("z. B. EcoRI, BamHI"), text: $vectorEnzymes).textFieldStyle(.roundedBorder).frame(width: 260)
+                        TextField(tr("e.g. EcoRI, BamHI"), text: $vectorEnzymes).textFieldStyle(.roundedBorder).frame(width: 260)
                         enzymeMenu($vectorEnzymes)
                         EnzymeSetMenu(current: names(vectorEnzymes)) { vectorEnzymes = $0.joined(separator: ", ") }
                     }
                 }
                 GridRow {
-                    Text(tr("Enzyme Insert"))
+                    Text(tr("Insert enzymes"))
                     HStack {
-                        TextField(tr("z. B. EcoRI, BamHI"), text: $insertEnzymes).textFieldStyle(.roundedBorder).frame(width: 260)
+                        TextField(tr("e.g. EcoRI, BamHI"), text: $insertEnzymes).textFieldStyle(.roundedBorder).frame(width: 260)
                         enzymeMenu($insertEnzymes)
                         EnzymeSetMenu(current: names(insertEnzymes)) { insertEnzymes = $0.joined(separator: ", ") }
                     }
                 }
             }
             HStack {
-                Button(tr("Produkte berechnen")) { compute() }
+                Button(tr("Calculate products")) { compute() }
                     .disabled(insertID.isEmpty || model.selection == nil)
                 if let message { Text(message).foregroundStyle(Theme.danger) }
             }
             if candidates.isEmpty {
-                Text(tr("Keine Produkte berechnet.")).foregroundStyle(Theme.inkSoft)
+                Text(tr("No products calculated.")).foregroundStyle(Theme.inkSoft)
             } else {
                 Table(candidates, selection: $chosen) {
-                    TableColumn(tr("Nr.")) { c in Text("\(c.index + 1)") }.width(40)
-                    TableColumn(tr("Länge")) { c in Text("\(c.dto.constructLength) bp") }.width(90)
-                    TableColumn(tr("Gerichtet")) { c in Text(c.dto.directional ? "ja" : "nein") }.width(80)
-                    TableColumn(tr("Insert")) { c in Text(c.dto.insertReversed ? "umgekehrt" : tr("vorwärts")) }.width(90)
-                    TableColumn(tr("Hinweise")) { c in Text(c.dto.warnings.joined(separator: "; ")).foregroundStyle(Theme.inkSoft) }
+                    TableColumn(tr("No.")) { c in Text("\(c.index + 1)") }.width(40)
+                    TableColumn(tr("Length")) { c in Text("\(c.dto.constructLength) bp") }.width(90)
+                    TableColumn(tr("Directional")) { c in Text(c.dto.directional ? "ja" : "nein") }.width(80)
+                    TableColumn(tr("Insert")) { c in Text(c.dto.insertReversed ? "umgekehrt" : tr("forward")) }.width(90)
+                    TableColumn(tr("Notes")) { c in Text(c.dto.warnings.joined(separator: "; ")).foregroundStyle(Theme.inkSoft) }
                 }
                 HStack {
-                    TextField(tr("Name des Konstrukts (optional)"), text: $newName).textFieldStyle(.roundedBorder).frame(width: 300)
-                    Button(tr("Als Dokument speichern")) { save() }.disabled(chosen == nil)
+                    TextField(tr("Construct name (optional)"), text: $newName).textFieldStyle(.roundedBorder).frame(width: 300)
+                    Button(tr("Save as document")) { save() }.disabled(chosen == nil)
                 }
             }
             Spacer()
@@ -81,9 +81,9 @@ struct RestrictionCloneView: View {
 
     private static let commonEnzymes = ["EcoRI", "BamHI", "HindIII", "XbaI", "SpeI", "PstI", "NotI", "XhoI", "NcoI", "NdeI", "SalI", "KpnI", "SacI", "SmaI", "EcoRV", "BglII", "NheI", "AgeI", "ApaI", "SphI"]
 
-    /// Menü zum Anhängen eines häufigen Enzyms an das Textfeld.
+    /// Menu for appending a common enzyme to the text field.
     private func enzymeMenu(_ text: Binding<String>) -> some View {
-        Menu(tr("+ Enzym")) {
+        Menu(tr("+ Enzyme")) {
             ForEach(Self.commonEnzymes, id: \.self) { e in
                 Button(e) { text.wrappedValue = names(text.wrappedValue).contains(e) ? text.wrappedValue : (names(text.wrappedValue) + [e]).joined(separator: ", ") }
             }
@@ -99,7 +99,7 @@ struct RestrictionCloneView: View {
                 vectorId: id, vectorEnzymes: names(vectorEnzymes), insertId: insertID, insertEnzymes: names(insertEnzymes))
             candidates = list.enumerated().map { CandidateRow(index: $0.offset, dto: $0.element) }
             chosen = nil
-            if list.isEmpty { message = tr("Keine passenden Enden gefunden.") }
+            if list.isEmpty { message = tr("No matching ends found.") }
         } catch {
             candidates = []
             message = error.localizedDescription
@@ -128,13 +128,13 @@ struct CandidateRow: Identifiable, Hashable {
 }
 
 
-/// Klonierung: Methode wählen (Restriktion, Gibson, In-Fusion, SLIC, Golden Gate) und die passende Eingabe zeigen.
+/// Cloning: choose a method (restriction, Gibson, In-Fusion, SLIC, Golden Gate) and show the matching input.
 struct CloneView: View {
     @ObservedObject var model: AppModel
     @State private var method = "restriction"
 
     private static let methods: [(String, String)] = [
-        ("restriction", tr("Restriktion + Ligation")),
+        ("restriction", tr("Restriction + ligation")),
         ("gibson", "Gibson"),
         ("infusion", "In-Fusion"),
         ("slic", "SLIC"),
@@ -146,7 +146,7 @@ struct CloneView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text(tr("Methode")).font(.headline)
+                Text(tr("Method")).font(.headline)
                 Picker("", selection: $method) {
                     ForEach(Self.methods, id: \.0) { Text($0.1).tag($0.0) }
                 }
@@ -169,7 +169,7 @@ struct CloneView: View {
     }
 }
 
-/// Zusammenbau mehrerer Fragmente in gewählter Reihenfolge (Gibson, In-Fusion, SLIC, Golden Gate).
+/// Assembly of several fragments in a chosen order (Gibson, In-Fusion, SLIC, Golden Gate).
 struct AssemblyCloneView: View {
     @ObservedObject var model: AppModel
     let method: String
@@ -187,10 +187,10 @@ struct AssemblyCloneView: View {
 
     private var help: String {
         switch method {
-        case "gibson": return tr("Gibson: Benachbarte Fragmente brauchen am Ende/Anfang eine gleiche Überlappung von 15–40 bp. Die Exonuklease legt die Enden frei, sie lagern sich an, Polymerase und Ligase füllen und verschließen.")
-        case "infusion": return tr("In-Fusion: Wie Gibson, aber mit 15–20 bp Überlappung an den Enden; die Fragmente werden direkt zusammengefügt (Enzym-Mix mit 3′→5′-Exonuklease-Aktivität).")
-        case "slic": return tr("SLIC: Überlappende Enden (25–80 bp) werden durch T4-Polymerase freigelegt und lagern sich an; die Lücken schließt die Zelle.")
-        default: return tr("Golden Gate: Typ-IIS-Enzym (z. B. BsaI) schneidet außerhalb der Erkennungsstelle und erzeugt 4-nt-Überhänge. Die Überhänge benachbarter Fragmente müssen passen, die Enzymstellen verschwinden im Produkt. Das Enzym darf nicht zusätzlich in den Fragmenten schneiden.")
+        case "gibson": return tr("Gibson: adjacent fragments need an identical 15–40 bp overlap at their ends. The exonuclease exposes the ends, they anneal, and polymerase and ligase fill and seal.")
+        case "infusion": return tr("In-Fusion: like Gibson, but with 15–20 bp overlaps; fragments are joined directly (enzyme mix with 3′→5′ exonuclease activity).")
+        case "slic": return tr("SLIC: overlapping ends (25–80 bp) are exposed by T4 polymerase and anneal; the cell closes the gaps.")
+        default: return tr("Golden Gate: a type IIS enzyme (e.g. BsaI) cuts outside its recognition site and creates 4-nt overhangs. The overhangs of adjacent fragments must match, and the enzyme sites disappear in the product. The enzyme must not cut inside the fragments.")
         }
     }
 
@@ -198,10 +198,10 @@ struct AssemblyCloneView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 Text(help).font(.callout).foregroundStyle(.secondary)
-                GroupBox(tr("Fragmente in dieser Reihenfolge")) {
+                GroupBox(tr("Fragments in this order")) {
                     VStack(alignment: .leading, spacing: 6) {
                         if ids.isEmpty {
-                            Text(tr("Noch keine Fragmente gewählt.")).foregroundStyle(.secondary)
+                            Text(tr("No fragments chosen yet.")).foregroundStyle(.secondary)
                         }
                         ForEach(Array(ids.enumerated()), id: \.offset) { i, id in
                             HStack {
@@ -211,13 +211,13 @@ struct AssemblyCloneView: View {
                                     Text("\(d.length) bp\(d.circular ? " · zirkulär" : "")").foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                Button { move(i, -1) } label: { Image(systemName: "chevron.up") }.accessibilityLabel(tr("Fragment nach oben")).disabled(i == 0)
-                                Button { move(i, 1) } label: { Image(systemName: "chevron.down") }.accessibilityLabel(tr("Fragment nach unten")).disabled(i == ids.count - 1)
-                                Button { ids.remove(at: i); done = false } label: { Image(systemName: "minus.circle") }.accessibilityLabel(tr("Fragment entfernen"))
+                                Button { move(i, -1) } label: { Image(systemName: "chevron.up") }.accessibilityLabel(tr("Move fragment up")).disabled(i == 0)
+                                Button { move(i, 1) } label: { Image(systemName: "chevron.down") }.accessibilityLabel(tr("Move fragment down")).disabled(i == ids.count - 1)
+                                Button { ids.remove(at: i); done = false } label: { Image(systemName: "minus.circle") }.accessibilityLabel(tr("Remove fragment"))
                             }
                             .buttonStyle(.borderless)
                         }
-                        Menu(tr("Fragment hinzufügen")) {
+                        Menu(tr("Add fragment")) {
                             ForEach(sequences.filter { !ids.contains($0.id) }, id: \.id) { d in
                                 Button(d.name) { ids.append(d.id); loadInfo(d.id); done = false }
                             }
@@ -226,26 +226,26 @@ struct AssemblyCloneView: View {
                         .disabled(sequences.count == ids.count)
                     }
                 }
-                GroupBox(tr("Einstellungen")) {
+                GroupBox(tr("Settings")) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Toggle(tr("Ergebnis zirkulär (Plasmid)"), isOn: $circular)
+                        Toggle(tr("Circular result (plasmid)"), isOn: $circular)
                         if method == "goldengate" {
-                            Picker(tr("Enzym"), selection: $enzyme) {
+                            Picker(tr("Enzyme"), selection: $enzyme) {
                                 ForEach(["BsaI", "BsmBI", "Esp3I", "BbsI", "SapI"], id: \.self) { Text($0).tag($0) }
                             }.frame(width: 220)
                         }
-                        TextField(tr("Name des Konstrukts (optional)"), text: $name).textFieldStyle(.roundedBorder).frame(width: 320)
+                        TextField(tr("Construct name (optional)"), text: $name).textFieldStyle(.roundedBorder).frame(width: 320)
                     }
                 }
                 HStack {
-                    Button(tr("Zusammenbauen")) { run() }
+                    Button(tr("Assemble")) { run() }
                         .buttonStyle(.borderedProminent)
                         .disabled(ids.count < 2)
-                    if ids.count == 1 { Text(tr("Mindestens zwei Fragmente nötig.")).foregroundStyle(.secondary) }
-                    if done && warnings.isEmpty { Text(tr("Fertig – das Konstrukt ist als neues Dokument angelegt.")).foregroundStyle(.green) }
+                    if ids.count == 1 { Text(tr("At least two fragments needed.")).foregroundStyle(.secondary) }
+                    if done && warnings.isEmpty { Text(tr("Done – the construct was created as a new document.")).foregroundStyle(.green) }
                 }
                 if !warnings.isEmpty {
-                    GroupBox(tr("Hinweise")) {
+                    GroupBox(tr("Notes")) {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(Array(warnings.enumerated()), id: \.offset) { _, w in
                                 Label(w, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
@@ -258,7 +258,7 @@ struct AssemblyCloneView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onAppear {
-            // Start: die in der Liste gewählten Sequenzen, sonst das angezeigte Dokument
+            // Start: the sequences selected in the list, otherwise the displayed document
             let chosen = model.documents.filter { model.multiSelection.contains($0.id) && $0.docType == "sequence" }.map { $0.id }
             ids = chosen.count >= 2 ? chosen : (model.selection.map { [$0] } ?? [])
             ids.forEach(loadInfo)

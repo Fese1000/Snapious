@@ -48,7 +48,7 @@ class SequenceEditorTest {
 
         var result = SequenceEditor.performDeletion(seq, 2, 6);
 
-        assertEquals("ATAC", result.getEditedSequence());  // Basen 2..5 (GCGT) entfernt
+        assertEquals("ATAC", result.getEditedSequence());  // bases 2..5 (GCGT) removed
     }
 
     @Test
@@ -108,7 +108,7 @@ class SequenceEditorTest {
         String report = SequenceEditor.generateEditReport(seq, results);
 
         assertNotNull(report);
-        assertTrue(report.contains("Editier-Bericht"));
+        assertTrue(report.contains("Editing Report"));
     }
 
     @Test

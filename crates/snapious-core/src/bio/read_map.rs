@@ -1,22 +1,22 @@
-//! Reads auf eine Referenz abbilden (ohne Lücken) und Konsens aus der Abdeckung bilden.
+//! Map reads onto a gap-free reference and build a consensus from the coverage.
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 
-/// Ort eines abgebildeten Reads.
+/// Location of a mapped read.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Mapping {
-    /// Beginn (0-basiert) in der Referenz.
+    /// Start (0-based) in the reference.
     pub position: usize,
-    /// `true`, wenn das Reverskomplement des Reads passt.
+    /// `true` if the reverse complement of the read matches.
     pub reverse: bool,
-    /// Zahl der Fehlpaarungen.
+    /// Number of mismatches.
     pub mismatches: usize,
 }
 
-/// Bildet `read` lückenlos auf `reference` ab (Uppercase, A/C/G/T; Groß-/Kleinschreibung egal).
-/// Geprüft werden alle Positionen für den Read vorwärts und für sein Reverskomplement (`iupac_reverse_complement`).
-/// Gewinner ist die Position mit den wenigsten Fehlpaarungen, `<= max_mismatches`; bei Gleichstand zählt: vorwärts vor
-/// rückwärts, dann die kleinere Position. `None`, wenn nichts passt, der Read leer oder länger als die Referenz ist.
+/// Maps `read` gaplessly onto `reference` (uppercase, A/C/G/T; case-insensitive).
+/// All positions are checked for the read forward and for its reverse complement (`iupac_reverse_complement`).
+/// The winner is the position with the fewest mismatches, `<= max_mismatches`; on ties: forward before
+/// reverse, then the smaller position. `None` if nothing matches, or the read is empty or longer than the reference.
 pub fn map_read(reference: &str, read: &str, max_mismatches: usize) -> Option<Mapping> {
     if read.is_empty() || read.len() > reference.len() {
         return None;
@@ -63,7 +63,7 @@ pub fn map_read(reference: &str, read: &str, max_mismatches: usize) -> Option<Ma
     })
 }
 
-/// Bildet alle Reads ab (Ergebnis hat die Länge von `reads`).
+/// Maps all reads (the result has the length of `reads`).
 pub fn map_reads(reference: &str, reads: &[String], max_mismatches: usize) -> Vec<Option<Mapping>> {
     reads
         .iter()
@@ -71,11 +71,11 @@ pub fn map_reads(reference: &str, reads: &[String], max_mismatches: usize) -> Ve
         .collect()
 }
 
-/// Konsens und Tiefe: Für jede Referenzposition werden die Basen aller abgebildeten Reads gezählt (bei `reverse`
-/// ist es das Reverskomplement des Reads; Basen außer A, C, G, T zählen nicht). Konsensbase = häufigste Base;
-/// bei Gleichstand die Referenzbase, falls sie unter den Gleichständen ist, sonst die in der Reihenfolge A, C, G, T erste.
-/// Ohne Abdeckung gilt die Referenzbase. Rückgabe: (Konsens in Uppercase, Tiefe je Position = Zahl der gezählten Basen).
-/// `reads` und `mappings` sind gleich lang; Einträge `None` werden übersprungen.
+/// Consensus and depth: for each reference position, the bases of all mapped reads are counted (with `reverse`
+/// it is the reverse complement of the read; bases other than A, C, G, T do not count). Consensus base = most frequent base;
+/// on ties the reference base if it is among the tied ones, otherwise the first in the order A, C, G, T.
+/// Without coverage the reference base applies. Returns: (consensus in uppercase, depth per position = number of counted bases).
+/// `reads` and `mappings` have the same length; `None` entries are skipped.
 pub fn pileup_consensus(
     reference: &str,
     reads: &[String],
@@ -187,11 +187,11 @@ mod tests {
     #[test]
     fn konsens_und_tiefe() {
         let a = "GGCTTAACCGG";
-        let b = "GGCTAAACCGG"; // an Index 4 ein A statt T (Referenzposition 13)
+        let b = "GGCTAAACCGG"; // an A instead of T at index 4 (reference position 13)
         let reads = v(&[a, b]);
         let maps = map_reads(REF, &reads, 1);
         let (cons, depth) = pileup_consensus(REF, &reads, &maps);
-        assert_eq!(cons, REF); // Gleichstand T/A: Referenzbase T
+        assert_eq!(cons, REF); // Tie T/A: reference base T
         assert_eq!(depth[8], 0);
         assert_eq!(depth[9], 2);
         assert_eq!(depth[19], 2);

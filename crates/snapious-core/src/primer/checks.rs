@@ -1,9 +1,9 @@
-//! Qualitätsprüfungen für Primer: Wiederholungen, GC-Klammer, Haarnadel, Dimer.
+//! Quality checks for primers: repeats, GC clamp, hairpin, dimer.
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::primer::tm;
 
-/// Länge des längsten Laufs gleicher Basen (z. B. `AAAAGC` → 4).
+/// Length of the longest run of identical bases (e.g. `AAAAGC` -> 4).
 pub fn max_homopolymer_run(seq: &str) -> usize {
     let mut best = 0;
     let mut run = 0;
@@ -21,7 +21,7 @@ pub fn max_homopolymer_run(seq: &str) -> usize {
     best
 }
 
-/// GC-Klammer: mindestens eine der letzten 2 Basen ist G/C und höchstens 3 G/C unter den letzten 5.
+/// GC clamp: at least one of the last 2 bases is G/C and at most 3 G/C among the last 5.
 pub fn has_gc_clamp(seq: &str) -> bool {
     let b: Vec<u8> = seq.bytes().map(|c| c.to_ascii_uppercase()).collect();
     if b.len() < 2 {
@@ -36,8 +36,8 @@ pub fn has_gc_clamp(seq: &str) -> bool {
     last2 && last5 <= 3
 }
 
-/// Länge des längsten Stammes einer möglichen Haarnadel (mindestens 4 Basen, Schleife mindestens 3),
-/// sonst 0. Beispiel: `GGATCCAAAAGGATCC` → 6.
+/// Length of the longest stem of a possible hairpin (at least 4 bases, loop at least 3),
+/// otherwise 0. Example: `GGATCCAAAAGGATCC` -> 6.
 pub fn hairpin_score(seq: &str) -> usize {
     let s = seq.to_ascii_uppercase();
     let b = s.as_bytes();
@@ -60,9 +60,9 @@ pub fn hairpin_score(seq: &str) -> usize {
     best
 }
 
-/// Dimer-Wert zweier Sequenzen: längster komplementärer Abschnitt zwischen `a` und dem Reverse-Komplement
-/// von `b` (mindestens 3 Basen). Reicht der Abschnitt bis zum 3'-Ende von `a`, zählt er doppelt, weil
-/// 3'-Dimere vom Enzym verlängert werden. Kein Abschnitt ≥ 3 → 0.
+/// Dimer score of two sequences: longest complementary stretch between `a` and the reverse complement
+/// of `b` (at least 3 bases). If the stretch reaches the 3' end of `a`, it counts double because
+/// 3' dimers are extended by the enzyme. No stretch >= 3 -> 0.
 pub fn dimer_score(a: &str, b: &str) -> usize {
     let a = a.to_ascii_uppercase();
     let rc = iupac_reverse_complement(b);
@@ -83,7 +83,7 @@ pub fn dimer_score(a: &str, b: &str) -> usize {
     best
 }
 
-/// Gesamtbewertung eines Primers.
+/// Overall assessment of a primer.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrimerQuality {
     pub length: usize,
@@ -93,11 +93,11 @@ pub struct PrimerQuality {
     pub gc_clamp: bool,
     pub hairpin: usize,
     pub self_dimer: usize,
-    /// Strafe: kleiner ist besser (siehe [`penalty`]).
+    /// Penalty: smaller is better (see [`penalty`]).
     pub penalty: f64,
 }
 
-/// Strafe: `|Tm − Soll| + 5·|GC − 0,5| + 2·Haarnadel/10 + 2·Dimer/10`.
+/// Penalty: `|Tm - target| + 5*|GC - 0.5| + 2*hairpin/10 + 2*dimer/10`.
 pub fn penalty(tm: f64, opt_tm: f64, gc: f64, hairpin: usize, self_dimer: usize) -> f64 {
     (tm - opt_tm).abs()
         + 5.0 * (gc - 0.5).abs()
@@ -105,7 +105,7 @@ pub fn penalty(tm: f64, opt_tm: f64, gc: f64, hairpin: usize, self_dimer: usize)
         + 2.0 * self_dimer as f64 / 10.0
 }
 
-/// Bewertet einen Primer (Tm nach Nearest-Neighbor mit 250 nM Oligo und 50 mM Na⁺; Solltemperatur 60 °C).
+/// Assesses a primer (Tm by nearest neighbor with 250 nM oligo and 50 mM Na⁺; target temperature 60 °C).
 pub fn evaluate_primer(seq: &str) -> crate::error::Result<PrimerQuality> {
     let s = seq.to_ascii_uppercase();
     let t = tm::nearest_neighbor(&s, 250.0, 50.0)?;
@@ -140,7 +140,7 @@ mod tests {
     fn gc_klammer() {
         assert!(has_gc_clamp("ATATATGC"));
         assert!(!has_gc_clamp("ATATATAT"));
-        assert!(!has_gc_clamp("ATGCGCGC")); // 4 G/C in den letzten 5
+        assert!(!has_gc_clamp("ATGCGCGC")); // 4 G/C in the last 5
         assert!(!has_gc_clamp("A"));
         assert!(has_gc_clamp("ATATATAG"));
     }
@@ -150,9 +150,9 @@ mod tests {
         assert!(hairpin_score("GGATCCAAAAGGATCC") >= 6);
         assert_eq!(hairpin_score("AAAAAAAAAAAA"), 0);
         assert_eq!(hairpin_score("ACGT"), 0);
-        // Stamm GCGC (4), Schleife AAA, Gegenstück GCGC
+        // Stem GCGC (4), loop AAA, counterpart GCGC
         assert_eq!(hairpin_score("GCGCAAAGCGC"), 4);
-        // Schleife zu kurz (2): kein Stamm
+        // Loop too short (2): no stem
         assert_eq!(hairpin_score("GCGCAAGCGC"), 0);
     }
 
@@ -160,11 +160,11 @@ mod tests {
     fn dimer() {
         assert!(dimer_score("GGATCC", "GGATCC") >= 6);
         assert_eq!(dimer_score("AAAAAA", "AAAAAA"), 0);
-        // 3'-Ende von a (…CCGG) ist komplementär zu b (CCGG…): Abschnitt am 3'-Ende zählt doppelt
+        // 3' end of a (...CCGG) is complementary to b (CCGG...): stretch at the 3' end counts double
         assert_eq!(dimer_score("AAAACCGG", "CCGGAAAA"), 8);
-        // gleicher Abschnitt (CCGG) mitten in a zählt einfach; TTT am Ende ist nur 3 lang und nicht am 3'-Ende
+        // same stretch (CCGG) in the middle of a counts once; TTT at the end is only 3 long and not at the 3' end
         assert_eq!(dimer_score("CCGGTTTA", "CCGGAAAA"), 4);
-        // ganze Sequenz komplementär bis zum 3'-Ende: 2 * 8
+        // whole sequence complementary up to the 3' end: 2 * 8
         assert_eq!(dimer_score("TTTTCCGG", "CCGGAAAA"), 16);
         assert_eq!(dimer_score("", "ACGT"), 0);
     }

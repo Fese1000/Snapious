@@ -1,20 +1,20 @@
 #!/bin/sh
-# Baut die Rust-Bibliothek und erzeugt daraus die Swift-Bindings (UniFFI).
-# Aufruf aus dem Projektordner:  scripts/build-ffi.sh
+# Builds the Rust library and generates the Swift bindings from it (UniFFI).
+# Run from the project folder:  scripts/build-ffi.sh
 set -eu
 cd "$(dirname "$0")/.."
 
-# Gleiche Mindestversion wie das Swift-Paket (macOS 14), damit der Linker nicht meckert
+# Same minimum version as the Swift package (macOS 14), so the linker does not complain
 export MACOSX_DEPLOYMENT_TARGET=14.0
 cargo build --release -p snapious-ffi
 LIB=target/release/libsnapious_ffi.dylib
 
-# Swift-Quelldatei
+# Swift source file
 cargo run -q --release -p snapious-ffi --bin uniffi-bindgen-swift -- \
   --swift-sources "$LIB" app/Sources/SnapiousFFI
-# C-Header und Modulbeschreibung für den C-Zieltyp im Swift-Paket
+# C header and module map for the C target in the Swift package
 cargo run -q --release -p snapious-ffi --bin uniffi-bindgen-swift -- \
   --headers --modulemap --module-name snapious_ffiFFI --modulemap-filename module.modulemap \
   "$LIB" app/Sources/CSnapiousFFI/include
 
-echo "Fertig: Bindings in app/Sources/SnapiousFFI und app/Sources/CSnapiousFFI/include"
+echo "Done: bindings in app/Sources/SnapiousFFI and app/Sources/CSnapiousFFI/include"

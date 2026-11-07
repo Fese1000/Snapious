@@ -1,21 +1,21 @@
-//! Kennzahlen zu Alignments: Konsens, Konservierung, Entropie, Identitätsmatrix, Sequenzlogo, Spalten entfernen.
+//! Alignment metrics: consensus, conservation, entropy, identity matrix, sequence logo, column removal.
 //!
-//! Ein Alignment ist hier eine Liste gleich langer Zeilen (`&[String]`); `-` und `.` sind Lücken (Gaps).
-//! Groß-/Kleinschreibung wird nicht unterschieden (intern Uppercase, `U` wird nicht verändert).
+//! An alignment here is a list of equal-length rows (`&[String]`); `-` and `.` are gaps.
+//! Case is ignored (uppercased internally, `U` is left unchanged).
 
 use crate::error::{Error, Result};
 use std::collections::BTreeMap;
 
-/// Eine Spalte eines Sequenzlogos.
+/// One column of a sequence logo.
 #[derive(Clone, Debug, PartialEq)]
 pub struct LogoColumn {
-    /// Symbole mit ihren Höhen in Bit, aufsteigend nach Höhe, bei Gleichstand alphabetisch.
-    /// Nur Symbole, die in der Spalte vorkommen.
+    /// Symbols with their heights in bits, ascending by height, alphabetical on ties.
+    /// Only symbols that occur in the column.
     pub symbols: Vec<(char, f64)>,
 }
 
-/// Prüft, dass alle Zeilen gleich lang sind (Länge in Zeichen); Fehler `Error::InvalidInput`.
-/// Gibt die Spaltenzahl zurück (0 bei keiner Zeile).
+/// Checks that all rows have the same length (in characters); error `Error::InvalidInput`.
+/// Returns the number of columns (0 if there are no rows).
 pub fn column_count(rows: &[String]) -> Result<usize> {
     if rows.is_empty() {
         return Ok(0);
@@ -32,9 +32,9 @@ pub fn column_count(rows: &[String]) -> Result<usize> {
     Ok(len)
 }
 
-/// IUPAC-Code für eine Menge von Basen (Reihenfolge und Wiederholungen egal, Groß-/Kleinschreibung egal):
-/// einzeln → die Base selbst; {A,G}→R, {C,T}→Y, {G,T}→K, {A,C}→M, {C,G}→S, {A,T}→W, {C,G,T}→B, {A,G,T}→D, {A,C,T}→H,
-/// {A,C,G}→V, alle vier → N. Enthält die Menge ein anderes Zeichen als A, C, G, T → `X`. Leere Menge → `-`.
+/// IUPAC code for a set of bases (order, repeats and case do not matter):
+/// single → the base itself; {A,G}→R, {C,T}→Y, {G,T}→K, {A,C}→M, {C,G}→S, {A,T}→W, {C,G,T}→B, {A,G,T}→D, {A,C,T}→H,
+/// {A,C,G}→V, all four → N. If the set contains a character other than A, C, G, T → `X`. Empty set → `-`.
 pub fn iupac_code(bases: &[char]) -> char {
     if bases.is_empty() {
         return '-';
@@ -73,11 +73,11 @@ pub fn iupac_code(bases: &[char]) -> char {
     }
 }
 
-/// Konsenssequenz, ein Zeichen je Spalte.
-/// - Gezählt werden die Nicht-Gap-Symbole der Spalte. Reine Gap-Spalte → `-`.
-/// - Nenner des Anteils: Zahl der Nicht-Gap-Zeilen, wenn `ignore_gaps`, sonst die Zahl aller Zeilen.
-/// - Das häufigste Symbol (bei Gleichstand das alphabetisch kleinste) wird genommen, wenn sein Anteil `>= threshold` ist.
-///   Sonst `iupac_code` der in der Spalte vorkommenden Symbole (bei Proteinen, also wenn ein Symbol außerhalb von ACGT vorkommt, ergibt das `X`).
+/// Consensus sequence, one character per column.
+/// - The non-gap symbols of the column are counted. A pure gap column → `-`.
+/// - Denominator of the fraction: the number of non-gap rows if `ignore_gaps`, otherwise the number of all rows.
+/// - The most frequent symbol (alphabetically smallest on ties) is taken if its fraction is `>= threshold`.
+///   Otherwise the `iupac_code` of the symbols present in the column (for proteins, i.e. if a symbol outside ACGT occurs, this gives `X`).
 pub fn consensus(rows: &[String], threshold: f64, ignore_gaps: bool) -> Result<String> {
     let len = column_count(rows)?;
     if len == 0 {
@@ -129,8 +129,8 @@ pub fn consensus(rows: &[String], threshold: f64, ignore_gaps: bool) -> Result<S
     Ok(result)
 }
 
-/// Identität je Spalte: Anteil der Nicht-Gap-Zeilen, die das häufigste Nicht-Gap-Symbol tragen (0 bis 1);
-/// reine Gap-Spalte → 0.0.
+/// Identity per column: fraction of non-gap rows carrying the most frequent non-gap symbol (0 to 1);
+/// pure gap column → 0.0.
 pub fn column_identity(rows: &[String]) -> Result<Vec<f64>> {
     let len = column_count(rows)?;
     if len == 0 {
@@ -168,7 +168,7 @@ pub fn column_identity(rows: &[String]) -> Result<Vec<f64>> {
     Ok(identities)
 }
 
-/// Shannon-Entropie je Spalte in Bit über die Nicht-Gap-Symbole (`−Σ p·log2 p`); reine Gap-Spalte → 0.0.
+/// Shannon entropy per column in bits over the non-gap symbols (`−Σ p·log2 p`); pure gap column → 0.0.
 pub fn column_entropy_bits(rows: &[String]) -> Result<Vec<f64>> {
     let len = column_count(rows)?;
     if len == 0 {
@@ -209,8 +209,8 @@ pub fn column_entropy_bits(rows: &[String]) -> Result<Vec<f64>> {
     Ok(entropies)
 }
 
-/// Paarweise Identität in Prozent: Zahl der Spalten, in denen beide Zeilen kein Gap haben und gleich sind, geteilt durch die
-/// Zahl der Spalten, in denen beide kein Gap haben, mal 100. Gibt es keine solche Spalte, 0.0. Die Diagonale ist immer 100.0.
+/// Pairwise identity in percent: number of columns where neither row has a gap and both are equal, divided by the
+/// number of columns where neither has a gap, times 100. If there is no such column, 0.0. The diagonal is always 100.0.
 pub fn identity_matrix_percent(rows: &[String]) -> Result<Vec<Vec<f64>>> {
     let len = column_count(rows)?;
     if len == 0 || rows.is_empty() {
@@ -255,9 +255,9 @@ pub fn identity_matrix_percent(rows: &[String]) -> Result<Vec<Vec<f64>>> {
     Ok(matrix)
 }
 
-/// Sequenzlogo nach Schneider & Stephens (1990). `s` = 4 (DNA) oder 20 (`protein == true`), `n` = Zahl der Nicht-Gap-Symbole der Spalte,
-/// `H` = Entropie in Bit, `e = (s − 1) / (2 · ln 2 · n)` wenn `small_sample_correction` und `n > 0`, sonst 0.
-/// Informationsgehalt `R = max(0, log2(s) − (H + e))`; Höhe eines Symbols = Häufigkeit · `R`. Reine Gap-Spalte → `symbols` leer.
+/// Sequence logo after Schneider & Stephens (1990). `s` = 4 (DNA) or 20 (`protein == true`), `n` = number of non-gap symbols in the column,
+/// `H` = entropy in bits, `e = (s − 1) / (2 · ln 2 · n)` if `small_sample_correction` and `n > 0`, otherwise 0.
+/// Information content `R = max(0, log2(s) − (H + e))`; height of a symbol = frequency · `R`. Pure gap column → `symbols` empty.
 pub fn sequence_logo(
     rows: &[String],
     protein: bool,
@@ -329,8 +329,8 @@ pub fn sequence_logo(
     Ok(logo)
 }
 
-/// Entfernt Spalten, die mindestens eine Lücke enthalten und deren Lückenanteil (Lücken / Zeilenzahl) `>= gap_fraction_threshold` ist.
-/// Schwelle 1.0 entfernt nur reine Gap-Spalten; Spalten ohne Lücke bleiben immer. Gibt die neuen Zeilen zurück.
+/// Removes columns that contain at least one gap and whose gap fraction (gaps / row count) is `>= gap_fraction_threshold`.
+/// A threshold of 1.0 removes only pure gap columns; gap-free columns always stay. Returns the new rows.
 pub fn strip_columns(rows: &[String], gap_fraction_threshold: f64) -> Result<Vec<String>> {
     let len = column_count(rows)?;
     if len == 0 || rows.is_empty() {
@@ -427,10 +427,10 @@ mod tests {
     fn konsens_mit_luecken() {
         let r = rows(&["A-", "A-", "C-"]);
         assert_eq!(consensus(&r, 0.6, true).unwrap(), "A-");
-        // ohne Lückenbehandlung: Anteil 2/3 bleibt (Spalte 1 hat keine Lücken)
+        // without gap handling: fraction 2/3 stays (column 1 has no gaps)
         assert_eq!(consensus(&r, 0.6, false).unwrap(), "A-");
         let g = rows(&["AC", "A-", "A-", "A-"]);
-        // Spalte 2: ein C unter vier Zeilen → ignorieren: Anteil 1/1 → C; sonst 1/4 < 0.5 → Mehrdeutigkeitscode des einen Symbols → C
+        // Column 2: one C among four rows → ignoring: fraction 1/1 → C; otherwise 1/4 < 0.5 → ambiguity code of the single symbol → C
         assert_eq!(consensus(&g, 0.5, true).unwrap(), "AC");
         let p = rows(&["AL", "AK"]);
         assert_eq!(consensus(&p, 0.9, true).unwrap(), "AX");
@@ -461,7 +461,7 @@ mod tests {
         assert!(close(m[0][1], 75.0, 1e-9));
         assert!(close(m[1][0], 75.0, 1e-9));
         assert!(close(m[0][2], 100.0, 1e-9));
-        // keine gemeinsame Nicht-Gap-Spalte
+        // no common non-gap column
         let n = identity_matrix_percent(&rows(&["A-", "-C"])).unwrap();
         assert!(close(n[0][1], 0.0, 1e-9));
         assert!(close(n[0][0], 100.0, 1e-9));
@@ -488,7 +488,7 @@ mod tests {
 
     #[test]
     fn logo_sortierung() {
-        // 3 mal A, 1 mal C: H = 0.8113, R = 1.1887; Höhen 0.8915 (A) und 0.2972 (C), aufsteigend
+        // 3 times A, 1 time C: H = 0.8113, R = 1.1887; heights 0.8915 (A) and 0.2972 (C), ascending
         let l = sequence_logo(&rows(&["A", "A", "A", "C"]), false, false).unwrap();
         assert_eq!(l[0].symbols[0].0, 'C');
         assert_eq!(l[0].symbols[1].0, 'A');
@@ -502,7 +502,7 @@ mod tests {
     #[test]
     fn spalten_entfernen() {
         let r = rows(&["A-CT", "A-CT", "A-CT", "A-C-"]);
-        // Spalte 1: nur Lücken (Anteil 1.0), Spalte 3: eine Lücke von vier (0.25)
+        // Column 1: only gaps (fraction 1.0), column 3: one gap out of four (0.25)
         assert_eq!(
             strip_columns(&r, 1.0).unwrap(),
             rows(&["ACT", "ACT", "ACT", "AC-"])

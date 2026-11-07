@@ -6,19 +6,19 @@ import java.util.*;
 import java.util.stream.*;
 
 /**
- * Phylogenetische Analyse-Tools.
- * Implementiert: Neighbor-Joining, UPGMA, Maximum Parsimony,
- * Distanzmatrizen und Baum-Manipulation.
+ * Phylogenetic analysis tools.
+ * Implements: Neighbor-Joining, UPGMA, Maximum Parsimony,
+ * distance matrices and tree manipulation.
  */
 public class Phylogeny {
 
-    // ======== Bäume-Knoten ========
+    // ======== Tree nodes ========
 
     public static class TreeNode {
         private String name;
         private double branchLength;
         private List<TreeNode> children;
-        private double support;  // Bootstrap-Wert
+        private double support;  // bootstrap value
 
         public TreeNode(String name, double branchLength) {
             this.name = name;
@@ -42,13 +42,13 @@ public class Phylogeny {
 
         public boolean isLeaf() { return children.isEmpty(); }
 
-        /** Anzahl der Blätter im Subtree */
+        /** Number of leaves in the subtree */
         public int leafCount() {
             if (isLeaf()) return 1;
             return children.stream().mapToInt(TreeNode::leafCount).sum();
         }
 
-        /** Alle Blatt-Namen sammeln */
+        /** Collect all leaf names */
         public List<String> leafNames() {
             if (isLeaf()) return Collections.singletonList(name);
 
@@ -57,7 +57,7 @@ public class Phylogeny {
                     .collect(Collectors.toList());
         }
 
-        /** Newick-String generieren */
+        /** Generate Newick string */
         public String toNewick() {
             if (isLeaf()) {
                 return name + (branchLength > 0 ? ":" + String.format("%.4f", branchLength) : "");
@@ -81,7 +81,7 @@ public class Phylogeny {
             return sb.toString();
         }
 
-        /** Baum als Text-Diagramm */
+        /** Tree as text diagram */
         public String toTextDiagram(int depth) {
             StringBuilder sb = new StringBuilder();
 
@@ -90,7 +90,7 @@ public class Phylogeny {
             if (depth > 0) sb.append("├──");
             else sb.append("");
 
-            String display = name != null && !name.isEmpty() ? name : "(intern)";
+            String display = name != null && !name.isEmpty() ? name : "(internal)";
             sb.append(display);
 
             if (branchLength > 0.01) {
@@ -111,9 +111,9 @@ public class Phylogeny {
         }
     }
 
-    // ======== DISTANZBERECHNUNG ========
+    // ======== DISTANCE CALCULATION ========
 
-    /** Berechnet Evolutionsdistanz (Jukes-Cantor Modell) */
+    /** Computes evolutionary distance (Jukes-Cantor model) */
     public static double jukesCantorDistance(String seq1, String seq2) {
         int n = Math.min(seq1.length(), seq2.length());
         if (n == 0) return 0;
@@ -123,15 +123,15 @@ public class Phylogeny {
             if (seq1.charAt(i) == seq2.charAt(i)) matches++;
         }
 
-        double p = 1.0 - (double) matches / n;  // Anteil der Unterschiede
+        double p = 1.0 - (double) matches / n;  // proportion of differences
 
-        if (p >= 0.75) return 10;  // Sättigung - zu unterschiedlich
+        if (p >= 0.75) return 10;  // saturation - too divergent
 
-        // Jukes-Cantor Korrektur
+        // Jukes-Cantor correction
         return -0.75 * Math.log(1 - (4.0 / 3.0) * p);
     }
 
-    /** Kimura 2-Parameter Distance (unterscheidet Transitionen und Transversionen) */
+    /** Kimura 2-parameter distance (distinguishes transitions and transversions) */
     public static double kimura2ParamDistance(String seq1, String seq2) {
         int n = Math.min(seq1.length(), seq2.length());
         long transitions = 0, transversions = 0;
@@ -150,16 +150,16 @@ public class Phylogeny {
             else transversions++;
         }
 
-        double R = (double) transitions / n;  // Ratio Transitionen/Transversionen
-        double P = (double) (transitions + transversions) / n;  // Gesamtdifferenz
+        double R = (double) transitions / n;  // ratio of transitions/transversions
+        double P = (double) (transitions + transversions) / n;  // total difference
 
-        if (R + P >= 1) return 10;  // Sättigung
+        if (R + P >= 1) return 10;  // saturation
 
         return 0.5 * Math.log((1 + 2 * R) / (1 - P))
              + 0.25 * Math.log(1 / (1 - 2 * P));
     }
 
-    /** Prozent-Identität */
+    /** Percent identity */
     public static double percentIdentity(String seq1, String seq2) {
         int n = Math.min(seq1.length(), seq2.length());
         if (n == 0) return 100;
@@ -172,7 +172,7 @@ public class Phylogeny {
         return (double) matches / n * 100;
     }
 
-    // ======== DISTANZMATRIX ========
+    // ======== DISTANCE MATRIX ========
 
     public static class DistanceMatrix {
         private String[] labels;
@@ -197,7 +197,7 @@ public class Phylogeny {
         public String getLabel(int i) { return labels[i]; }
         public int size() { return labels.length; }
 
-        /** Formatierter Output */
+        /** Formatted output */
         public String format() {
             StringBuilder sb = new StringBuilder();
 
@@ -223,7 +223,7 @@ public class Phylogeny {
             return sb.toString();
         }
 
-        /** Als JSON-Format */
+        /** As JSON format */
         public String toJson() {
             StringBuilder sb = new StringBuilder();
             sb.append("{\n  \"labels\": [");
@@ -252,7 +252,7 @@ public class Phylogeny {
         }
     }
 
-    /** Erstellt Distanzmatrix aus Sequenzliste */
+    /** Builds a distance matrix from a list of sequences */
     public static DistanceMatrix createDistanceMatrix(List<Sequence> seqs, String model) {
         int n = seqs.size();
         DistanceMatrix dm = new DistanceMatrix(
@@ -272,7 +272,7 @@ public class Phylogeny {
                         dist = kimura2ParamDistance(
                             seqs.get(i).getBases(), seqs.get(j).getBases());
                         break;
-                    default:  // Editierdistanz
+                    default:  // edit distance
                         dist = simpleEditDistance(
                             seqs.get(i).getBases(), seqs.get(j).getBases());
                 }
@@ -287,8 +287,8 @@ public class Phylogeny {
     // ======== NEIGHBOR-JOINING ========
 
     /**
-     * Neighbor-Joining Algorithmus.
-     * Erzeugt einen unrooted Phylogenie-Baum basierend auf Distanzen.
+     * Neighbor-Joining algorithm.
+     * Produces an unrooted phylogenetic tree based on distances.
      */
     public static TreeNode neighborJoining(List<Sequence> seqs) {
         int n = seqs.size();
@@ -308,7 +308,7 @@ public class Phylogeny {
             return root;
         }
 
-        // Initialisierung
+        // Initialization
         String[] labels = seqs.stream().map(Sequence::getName).toArray(String[]::new);
         double[][] dist = new double[n][n];
 
@@ -320,8 +320,8 @@ public class Phylogeny {
             }
         }
 
-        // Cluster-Labels (initial jede Sequenz ein Cluster)
-        int[] active = new int[n];  // Welche Cluster noch aktiv sind
+        // Cluster labels (initially each sequence is its own cluster)
+        int[] active = new int[n];  // which clusters are still active
         for (int i = 0; i < n; i++) active[i] = 1;
 
         int activeCount = n;
@@ -332,9 +332,9 @@ public class Phylogeny {
             trees.add(leaf);
         }
 
-        // Iterativ Nachbarn finden und verbinden
+        // Iteratively find and join neighbors
         for (int iter = 0; iter < n - 2; iter++) {
-            // R[i] berechnen (Summe aller Distanzen von i)
+            // Compute R[i] (sum of all distances from i)
             double[] r = new double[n];
 
             for (int i = 0; i < n; i++) {
@@ -346,7 +346,7 @@ public class Phylogeny {
                 }
             }
 
-            // NJ-Kriterium minimieren: (n-2)*d[i][j] - r[i] - r[j]
+            // Minimize the NJ criterion: (n-2)*d[i][j] - r[i] - r[j]
             int minI = 0, minJ = 0;
             double minVal = Double.MAX_VALUE;
 
@@ -366,7 +366,7 @@ public class Phylogeny {
                 }
             }
 
-            // Neue Distanzen berechnen
+            // Compute new distances
             double[] newDist = new double[n];
 
             for (int k = 0; k < n; k++) {
@@ -375,7 +375,7 @@ public class Phylogeny {
                 newDist[k] = (dist[minI][k] + dist[minJ][k] - dist[minI][minJ]) / 2.0;
             }
 
-            // Astlängen der beiden verbundenen Teilbäume (Standard-NJ)
+            // Branch lengths of the two joined subtrees (standard NJ)
             double dij = dist[minI][minJ];
             double vi = dij / 2.0 + (r[minI] - r[minJ]) / (2.0 * (activeCount - 2));
             double vj = dij - vi;
@@ -389,7 +389,7 @@ public class Phylogeny {
             newNode.addChild(childI);
             newNode.addChild(childJ);
 
-            // Matrix aktualisieren
+            // Update matrix
             for (int k = 0; k < n; k++) {
                 if (k == minI || k == minJ) continue;
 
@@ -397,13 +397,13 @@ public class Phylogeny {
                 dist[k][minI] = newDist[k];
             }
 
-            active[minJ] = 0;  // Cluster minJ deaktivieren
+            active[minJ] = 0;  // deactivate cluster minJ
             trees.set(minI, newNode);
 
             activeCount--;
         }
 
-        // Letzte zwei Cluster unter einer Wurzel verbinden (Teilbäume bleiben erhalten)
+        // Join the last two clusters under one root (subtrees are preserved)
         int lastI = -1, lastJ = -1;
         for (int i = 0; i < n; i++) {
             if (active[i] == 1) {
@@ -425,8 +425,8 @@ public class Phylogeny {
     // ======== UPGMA (Unweighted Pair Group Method with Arithmetic Mean) ========
 
     /**
-     * UPGMA Algorithmus - erzeugt einen rooted Baum unter Annahme eines molekularen Uhr.
-     * Einfacher aber weniger genau als Neighbor-Joining.
+     * UPGMA algorithm - produces a rooted tree assuming a molecular clock.
+     * Simpler but less accurate than Neighbor-Joining.
      */
     public static TreeNode upgma(List<Sequence> seqs) {
         int n = seqs.size();
@@ -457,14 +457,14 @@ public class Phylogeny {
             }
         }
 
-        // Cluster-Größe (Anzahl der Original-Sequenzen)
+        // Cluster size (number of original sequences)
         int[] clusterSize = new int[n];
         Arrays.fill(clusterSize, 1);
 
-        // Cluster-Höhen (Zeitpunkt der Verzweigung)
+        // Cluster heights (time of branching)
         double[] clusterHeight = new double[n];
 
-        // Cluster-Labels und Bäume
+        // Cluster labels and trees
         TreeNode[] trees = new TreeNode[n];
         for (int i = 0; i < n; i++) {
             trees[i] = new TreeNode(labels[i], 0);
@@ -476,7 +476,7 @@ public class Phylogeny {
         int activeCount = n;
 
         for (int iter = 0; iter < n - 1; iter++) {
-            // Nächstes最小 Distanz-Paar finden
+            // Find the closest (minimum distance) pair
             int minI = 0, minJ = 1;
             double minDist = Double.MAX_VALUE;
 
@@ -494,7 +494,7 @@ public class Phylogeny {
                 }
             }
 
-            // Höhe des neuen Knotens (Halbe Distanz)
+            // Height of the new node (half the distance)
             double height = minDist / 2.0;
 
             TreeNode newNode = new TreeNode("", height);
@@ -504,11 +504,11 @@ public class Phylogeny {
             newNode.addChild(new TreeNode(labels[minI], Math.max(0, branchLenI)));
             // trees[minI] needs to be connected differently for UPGMA
 
-            // Vereinfacht: neue Blätter
+            // Simplified: new leaves
             TreeNode childI = trees[minI];
             TreeNode childJ = trees[minJ];
 
-            // Bei UPGMA: Kinder sind oft bereits Bäume
+            // In UPGMA, children are often already trees
             newNode = new TreeNode("", 0);
 
             if (childI.isLeaf()) {
@@ -524,7 +524,7 @@ public class Phylogeny {
             newNode.addChild(childI);
             newNode.addChild(childJ);
 
-            // Distanzen aktualisieren (gewichteter Durchschnitt)
+            // Update distances (weighted average)
             int newSize = clusterSize[minI] + clusterSize[minJ];
 
             for (int k = 0; k < n; k++) {
@@ -545,34 +545,34 @@ public class Phylogeny {
             if (activeCount == 1) break;
         }
 
-        // Finde den verbleibenden aktiven Cluster
+        // Find the remaining active cluster
         for (int i = 0; i < n; i++) {
             if (active[i]) return trees[i];
         }
 
-        return trees[0];  // Fallback
+        return trees[0];  // fallback
     }
 
-    // ======== MAXIMUM PARSIMONY (vereinfacht) ========
+    // ======== MAXIMUM PARSIMONY (simplified) ========
 
     /**
-     * Maximum Parsimony - findet den Baum mit minimalen evolutionären Änderungen.
-     * Farris-Algorithmus (Sankoff) für kleine Bäume.
+     * Maximum Parsimony - finds the tree with the minimum number of evolutionary changes.
+     * Farris algorithm (Sankoff) for small trees.
      */
     public static TreeNode maximumParsimony(List<Sequence> seqs) {
-        // Für >4 Sequenzen: Startbaum mit NJ und dann branch-swapping
+        // For >4 sequences: start tree with NJ, then branch swapping
 
         if (seqs.size() <= 4) {
             return smallSampleParsimony(seqs);
         }
 
-        // Fallback: NJ-Baum als Näherung
+        // Fallback: NJ tree as an approximation
         return neighborJoining(seqs);
     }
 
     private static TreeNode smallSampleParsimony(List<Sequence> seqs) {
-        // Für kleine Samples: Alle möglichen Bäume evaluieren
-        // und den mit minimalen Parsimony-Score wählen
+        // For small samples: evaluate all possible trees
+        // and pick the one with the minimum parsimony score
 
         if (seqs.size() == 2) {
             TreeNode root = new TreeNode("", 0);
@@ -583,19 +583,19 @@ public class Phylogeny {
             return root;
         }
 
-        // NJ als Startbaum (da vollständige MP NP-schwer)
+        // NJ as start tree (since full MP is NP-hard)
         return neighborJoining(seqs);
     }
 
     // ======== BOOTSTRAP ========
 
     /**
-     * Bootstrap-Analyse für Baum-Support-Werte.
-     * Generiert replikate Datasets und berechnet Support pro Knoten.
+     * Bootstrap analysis for tree support values.
+     * Generates replicate datasets and computes support per node.
      */
     public static class BootstrapResult {
         private TreeNode tree;
-        private Map<String, Double> nodeSupport;  // Knoten → Support (%)
+        private Map<String, Double> nodeSupport;  // node → support (%)
 
         public BootstrapResult(TreeNode tree, Map<String, Double> nodeSupport) {
             this.tree = tree;
@@ -609,30 +609,30 @@ public class Phylogeny {
         public String format() {
             StringBuilder sb = new StringBuilder();
 
-            // Baum mit Support-Werten
-            sb.append("=== Bootstrap-Analyse ===\n\n");
+            // Tree with support values
+            sb.append("=== Bootstrap analysis ===\n\n");
             sb.append(tree.toTextDiagram(0));
 
             return sb.toString();
         }
     }
 
-    /** Führt Bootstrap-Analyse durch */
+    /** Performs bootstrap analysis */
     public static BootstrapResult bootstrapAnalysis(List<Sequence> seqs, int nReplicates) {
-        // Vereinfachte Bootstrap-Analyse
+        // Simplified bootstrap analysis
         TreeNode resultTree = neighborJoining(seqs);
 
-        // In Realität: Für jeden Replicat einen Baum bauen und Konsensbaum erstellen
+        // In reality: build a tree for each replicate and create a consensus tree
         Map<String, Double> support = new HashMap<>();
 
         for (String leaf : resultTree.leafNames()) {
-            support.put(leaf, 100.0);  // Blätter haben immer Support 100%
+            support.put(leaf, 100.0);  // leaves always have 100% support
         }
 
         return new BootstrapResult(resultTree, support);
     }
 
-    // ======== HILFSFUNKTIONEN ========
+    // ======== HELPER FUNCTIONS ========
 
     private static double simpleEditDistance(String seq1, String seq2) {
         int n = seq1.length();
@@ -641,7 +641,7 @@ public class Phylogeny {
         if (n == 0) return m;
         if (m == 0) return n;
 
-        // Optimierte Version mit 2 Zeilen
+        // Optimized version with 2 rows
         double[] prev = new double[m + 1];
         double[] curr = new double[m + 1];
 
@@ -663,15 +663,15 @@ public class Phylogeny {
             curr = temp;
         }
 
-        return prev[m] / Math.max(n, m);  // Normalisierte Distanz
+        return prev[m] / Math.max(n, m);  // normalized distance
     }
 
-    /** Konsensus-Baum aus mehreren Bäumen erstellen (Strict Consensus) */
+    /** Build a consensus tree from multiple trees (strict consensus) */
     public static TreeNode strictConsensus(List<TreeNode> trees) {
         if (trees == null || trees.isEmpty()) return null;
 
-        // Vereinfacht: Ersten Baum zurückgeben
-        // In Realität: alle gemeinsamen Kluster extrahieren
+        // Simplified: return the first tree
+        // In reality: extract all shared clusters
         return trees.get(0);
     }
 }

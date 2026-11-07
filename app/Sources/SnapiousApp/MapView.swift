@@ -2,8 +2,8 @@ import AppKit
 import SnapiousFFI
 import SwiftUI
 
-/// Eine Ansicht für Karte und Sequenz: ganz herausgezoomt Plasmidring oder lineare Karte, hineingezoomt ein
-/// Ausschnitt, ab etwa neun Pixeln je Base die Sequenz mit Buchstaben. Schnittstellen nach Filter, Bearbeiten überall.
+/// One view for map and sequence: fully zoomed out a plasmid ring or linear map, zoomed in a
+/// section, from about nine pixels per base the sequence with letters. Cut sites per filter, editing everywhere.
 struct MapView: View {
     @ObservedObject var model: AppModel
     @State private var showEnzymes = false
@@ -18,7 +18,7 @@ struct MapView: View {
 
     @State private var pinchBase: Double?
 
-    /// Trackpad: zwei Finger spreizen/zusammenziehen zoomt in allen Darstellungen.
+    /// Trackpad: spreading/pinching two fingers zooms in all views.
     private var pinch: some Gesture {
         MagnifyGesture()
             .onChanged { v in
@@ -61,52 +61,52 @@ struct MapView: View {
                     Text(tr("Linear")).tag("linear")
                 }
                 .pickerStyle(.segmented).labelsHidden().frame(width: 150)
-                .help(tr("Darstellung: Plasmidring oder lineare Sequenz (bearbeitbar in beiden)"))
+                .help(tr("View: plasmid ring or linear sequence (editable in both)"))
             }
             if ring && s.seqType != "PROTEIN" {
                 HStack(spacing: 4) {
                     Button { model.setZoom(model.zoom / 1.6) } label: { Image(systemName: "minus.magnifyingglass") }
-                        .accessibilityLabel(tr("Herauszoomen")).disabled(model.zoom <= 1.001)
+                        .accessibilityLabel(tr("Zoom out")).disabled(model.zoom <= 1.001)
                     Slider(value: Binding(get: { zoomPosition }, set: { model.setZoom(zoom(from: $0)) }), in: 0...1)
                         .frame(width: 140)
                     Button { model.setZoom(model.zoom * 1.6) } label: { Image(systemName: "plus.magnifyingglass") }
                         .disabled(model.zoom >= model.maxZoom - 0.001)
-                        .accessibilityLabel(tr("Hineinzoomen"))
-                    Text(model.zoom <= 1.001 ? tr("Ganz") : String(format: "%.0f×", model.zoom)).font(Theme.label(11)).foregroundStyle(Theme.inkSoft).frame(width: 40, alignment: .leading)
+                        .accessibilityLabel(tr("Zoom in"))
+                    Text(model.zoom <= 1.001 ? tr("Full") : String(format: "%.0f×", model.zoom)).font(Theme.label(11)).foregroundStyle(Theme.inkSoft).frame(width: 40, alignment: .leading)
                 }
             } else {
                 HStack(spacing: 4) {
                     Button { model.textScale = max(0.15, model.textScale / 1.25) } label: { Image(systemName: "minus.magnifyingglass") }
-                        .accessibilityLabel(tr("Herauszoomen")).disabled(model.textScale <= 0.151)
+                        .accessibilityLabel(tr("Zoom out")).disabled(model.textScale <= 0.151)
                     Slider(value: Binding(get: { log(model.textScale / 0.15) / log(4 / 0.15) },
                                           set: { model.textScale = 0.15 * exp($0 * log(4 / 0.15)) }), in: 0...1)
                         .frame(width: 140)
                     Button { model.textScale = min(4, model.textScale * 1.25) } label: { Image(systemName: "plus.magnifyingglass") }
-                        .accessibilityLabel(tr("Hineinzoomen")).disabled(model.textScale >= 3.99)
+                        .accessibilityLabel(tr("Zoom in")).disabled(model.textScale >= 3.99)
                     Text("\(Int(model.textScale * 100)) %").font(Theme.label(11)).foregroundStyle(Theme.inkSoft).frame(width: 44, alignment: .leading)
                 }
             }
             Spacer()
             if s.seqType != "PROTEIN" {
                 Menu {
-                    Picker(tr("Schnittstellen"), selection: $model.siteFilter) {
-                        Text(tr("Einzelschneider")).tag("unique")
-                        Text(tr("Zweifachschneider")).tag("double")
+                    Picker(tr("Restriction sites"), selection: $model.siteFilter) {
+                        Text(tr("Single cutters")).tag("unique")
+                        Text(tr("Double cutters")).tag("double")
                         ForEach(enzymeSets(), id: \.name) { Text($0.name).tag("set:\($0.name)") }
-                        Text(tr("Alle bekannten Enzyme")).tag("all")
-                        Text(tr("Eigene Auswahl")).tag("custom")
+                        Text(tr("All known enzymes")).tag("all")
+                        Text(tr("Custom selection")).tag("custom")
                     }
                     .pickerStyle(.inline)
                     Divider()
-                    Button(tr("Enzyme einzeln wählen …")) { model.siteFilter = "custom"; showEnzymes = true }
+                    Button(tr("Pick enzymes individually …")) { model.siteFilter = "custom"; showEnzymes = true }
                 } label: {
-                    Label(tr("Schnittstellen: %@ (%@)", "\(filterTitle)", "\(model.visibleSites.count)"), systemImage: "scissors")
+                    Label(tr("Sites: %@ (%@)", "\(filterTitle)", "\(model.visibleSites.count)"), systemImage: "scissors")
                 }
                 .menuStyle(.borderlessButton).fixedSize()
                 .popover(isPresented: $showEnzymes) { EnzymePicker(model: model) }
             }
-            Button { model.showAnnotations.toggle() } label: { Label(tr("Annotationen"), systemImage: "tag") }
-                .help(tr("Annotationsliste ein-/ausblenden"))
+            Button { model.showAnnotations.toggle() } label: { Label(tr("Annotations"), systemImage: "tag") }
+                .help(tr("Show/hide annotation list"))
         }
         .font(Theme.label(13))
         .padding(.horizontal, 12).padding(.vertical, 6)
@@ -116,15 +116,15 @@ struct MapView: View {
 
     private var filterTitle: String {
         switch model.siteFilter {
-        case "unique": return tr("Einzelschneider")
-        case "double": return tr("Zweifachschneider")
+        case "unique": return tr("Single cutters")
+        case "double": return tr("Double cutters")
         case "all": return "alle"
-        case "custom": return tr("Auswahl")
+        case "custom": return tr("Selection")
         default: return String(model.siteFilter.dropFirst(4))
         }
     }
 
-    // Zoom auf einer logarithmischen Skala
+    // Zoom on a logarithmic scale
     private var maxZoom: Double { max(1.01, model.maxZoom) }
     private var zoomPosition: Double { log(model.zoom) / log(maxZoom) }
     private func zoom(from v: Double) -> Double { exp(v * log(maxZoom)) }
@@ -143,7 +143,7 @@ struct MapView: View {
     }
 }
 
-/// Auswahl der Enzyme einzeln: Suchfeld, Häkchen, Zahl der Schnittstellen in dieser Sequenz.
+/// Selection of enzymes one by one: search field, checkmarks, number of cut sites in this sequence.
 struct EnzymePicker: View {
     @ObservedObject var model: AppModel
     @State private var query = ""
@@ -153,12 +153,12 @@ struct EnzymePicker: View {
         let list = model.enzymes.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
             .sorted { (counts[$0.name] ?? 0) > 0 && (counts[$1.name] ?? 0) == 0 || $0.name < $1.name && ((counts[$0.name] ?? 0) > 0) == ((counts[$1.name] ?? 0) > 0) }
         VStack(alignment: .leading, spacing: 8) {
-            TextField(tr("Enzym suchen"), text: $query).textFieldStyle(.roundedBorder)
+            TextField(tr("Find enzyme"), text: $query).textFieldStyle(.roundedBorder)
             HStack {
-                Button(tr("Alle schneidenden")) { model.customEnzymes = Set(counts.keys) }
-                Button(tr("Keine")) { model.customEnzymes = [] }
+                Button(tr("All cutting")) { model.customEnzymes = Set(counts.keys) }
+                Button(tr("None")) { model.customEnzymes = [] }
                 Spacer()
-                Text(tr("%@ gewählt", "\(model.customEnzymes.count)")).foregroundStyle(Theme.inkSoft)
+                Text(tr("%@ selected", "\(model.customEnzymes.count)")).foregroundStyle(Theme.inkSoft)
             }
             .font(Theme.label(12))
             List(list, id: \.name) { e in
@@ -178,7 +178,7 @@ struct EnzymePicker: View {
     }
 }
 
-/// Bearbeiten in der Kartenansicht: Auswahl (oder Cursor), Text einfügen/ersetzen, löschen, rückgängig.
+/// Editing in the map view: selection (or cursor), insert/replace text, delete, undo.
 struct MapEditBar: View {
     @ObservedObject var model: AppModel
     @State private var text = ""
@@ -187,24 +187,24 @@ struct MapEditBar: View {
         HStack(spacing: 10) {
             if let a = model.selStart, let b = model.selEnd {
                 let lo = min(a, b), hi = max(a, b)
-                Text(lo == hi ? tr("Cursor bei %@", "\(lo + 1)") : tr("Auswahl %@–%@ (%@ bp)", "\(lo + 1)", "\(hi)", "\(hi - lo)")).lineLimit(1).fixedSize()
-                TextField(lo == hi ? tr("Basen einfügen") : tr("Ersetzen durch …"), text: $text)
+                Text(lo == hi ? tr("Cursor at %@", "\(lo + 1)") : tr("Selection %@–%@ (%@ bp)", "\(lo + 1)", "\(hi)", "\(hi - lo)")).lineLimit(1).fixedSize()
+                TextField(lo == hi ? tr("Insert bases") : tr("Replace with …"), text: $text)
                     .textFieldStyle(.roundedBorder).frame(maxWidth: 260)
                     .font(.system(size: 12, design: .monospaced))
                     .onSubmit { apply() }
-                Button(lo == hi ? tr("Einfügen") : tr("Ersetzen")) { apply() }.disabled(text.isEmpty)
-                Button(tr("Löschen")) { model.replaceSelection(with: "") }.disabled(lo == hi)
-                Button(tr("Kopieren")) { model.copySelection(format: "bases") }.disabled(lo == hi)
-                Button(tr("Aufheben")) { model.clearSelection() }
+                Button(lo == hi ? tr("Insert") : tr("Replace")) { apply() }.disabled(text.isEmpty)
+                Button(tr("Delete")) { model.replaceSelection(with: "") }.disabled(lo == hi)
+                Button(tr("Copy")) { model.copySelection(format: "bases") }.disabled(lo == hi)
+                Button(tr("Deselect")) { model.clearSelection() }
             } else {
-                Text(tr("Auf die Karte klicken oder ziehen, um eine Stelle oder einen Bereich zu wählen – dann bearbeiten."))
+                Text(tr("Click or drag on the map to choose a position or range – then edit."))
                     .foregroundStyle(Theme.inkSoft)
             }
             Spacer()
             AminoMenu(model: model)
-            Button { model.undo() } label: { Image(systemName: "arrow.uturn.backward") }.accessibilityLabel(tr("Rückgängig"))
+            Button { model.undo() } label: { Image(systemName: "arrow.uturn.backward") }.accessibilityLabel(tr("Undo"))
                 .disabled(model.undoState.undo == 0)
-            Button { model.redo() } label: { Image(systemName: "arrow.uturn.forward") }.accessibilityLabel(tr("Wiederholen"))
+            Button { model.redo() } label: { Image(systemName: "arrow.uturn.forward") }.accessibilityLabel(tr("Redo"))
                 .disabled(!model.undoState.redo)
         }
         .font(Theme.label(13))
@@ -237,10 +237,10 @@ struct CircularMap: View {
     let name: String
 
     private var zoomed: Bool { model.zoom > 1.001 }
-    /// Position, die oben in der Mitte steht (bei Vergrößerung die Mitte des Ausschnitts).
+    /// Position at the top center (when zoomed, the center of the section).
     private var centreBP: Double { zoomed ? model.viewStart + model.viewSpan / 2 : model.ringRotation }
 
-    /// Bei Vergrößerung wächst der Ring um den Faktor `zoom`; sein oberer Rand bleibt im Bild.
+    /// When zoomed, the ring grows by the factor `zoom`; its top edge stays in view.
     private func geometry(_ size: CGSize) -> (c: CGPoint, r: CGFloat) {
         let r0 = max(40, min(size.width, size.height) / 2 - 95)
         if !zoomed { return (CGPoint(x: size.width / 2, y: size.height / 2), r0) }
@@ -248,7 +248,7 @@ struct CircularMap: View {
         return (CGPoint(x: size.width / 2, y: 130 + r), r)
     }
 
-    /// Position (zwischen den Basen) unter einem Klickpunkt auf dem Ring.
+    /// Position (between bases) under a click point on the ring.
     private func position(at p: CGPoint, size: CGSize) -> Int {
         let c = geometry(size).c
         let a = atan2(Double(p.x - c.x), Double(c.y - p.y))
@@ -289,7 +289,7 @@ struct CircularMap: View {
     @State private var pinchAnchor = 0.0
     @FocusState private var focused: Bool
 
-    /// Ob die Basen am Ring stehen und wie weit Skala und Features dafür nach innen rücken.
+    /// Whether the bases sit on the ring and how far scale and features move inward for that.
     private func innerLayout(_ size: CGSize) -> CGFloat {
         let r = geometry(size).r
         guard zoomed, 2 * Double.pi * Double(r) / Double(length) >= 8, model.summary?.seqType != "PROTEIN" else { return 0 }
@@ -297,7 +297,7 @@ struct CircularMap: View {
         return 20 + CGFloat(rows) * 17
     }
 
-    /// Index der Annotation unter einem Klick auf die Spuren im Ring, sonst `nil`.
+    /// Index of the annotation under a click on the tracks in the ring, otherwise `nil`.
     private func featureHit(_ p: CGPoint, size: CGSize) -> Int? {
         let (c, r) = geometry(size)
         let dist = hypot(Double(p.x - c.x), Double(p.y - c.y))
@@ -314,7 +314,7 @@ struct CircularMap: View {
         return nil
     }
 
-    /// Zwei Finger waagerecht auf dem Trackpad drehen den Ring (der Ring folgt den Fingern).
+    /// Two fingers moving horizontally on the trackpad rotate the ring (the ring follows the fingers).
     private func rotate(by dx: CGFloat, size: CGSize) {
         let r = geometry(size).r
         let bp = -Double(dx) * Double(length) / (2 * .pi * Double(r))
@@ -327,14 +327,14 @@ struct CircularMap: View {
         }
     }
 
-    /// Position (Basen), die unter einem Punkt der Ansicht liegt (nicht gerundet).
+    /// Position (bases) under a point of the view (not rounded).
     private func anchorBP(at p: CGPoint, size: CGSize) -> Double {
         let c = geometry(size).c
         let a = atan2(Double(p.x - c.x), Double(c.y - p.y))
         return centreBP + a / (2 * .pi) * Double(length)
     }
 
-    /// Zoomt so, dass die Base `anchor` unter dem Mauszeiger/den Fingern `p` bleibt.
+    /// Zooms so that base `anchor` stays under the mouse pointer/fingers `p`.
     private func zoom(to z: Double, anchor: Double, at p: CGPoint, size: CGSize) {
         let maxZ = model.maxZoom
         let nz = min(max(1, z), maxZ)
@@ -360,7 +360,7 @@ struct CircularMap: View {
             func point(_ p: Double, _ rad: CGFloat) -> CGPoint {
                 CGPoint(x: c.x + rad * CGFloat(sin(angle(p))), y: c.y - rad * CGFloat(cos(angle(p))))
             }
-            // Auswahl
+            // Selection
             if let a = model.selStart, let b = model.selEnd {
                 let lo = Double(min(a, b)), hi = Double(max(a, b))
                 var sel = Path()
@@ -372,7 +372,7 @@ struct CircularMap: View {
                     ctx.stroke(sel, with: .color(Theme.accent.opacity(0.5)), lineWidth: 16)
                 }
             }
-            // Rückgrat
+            // Backbone
             let arcPerBase = 2 * Double.pi * Double(r) / Double(length)
             let showBases = zoomed && arcPerBase >= 8 && model.summary?.seqType != "PROTEIN"
             if zoomed {
@@ -387,7 +387,7 @@ struct CircularMap: View {
             let codons = showBases ? model.allCodons : []
             let aaRows = codons.isEmpty ? 0 : (codons.map { $0.row }.max() ?? 0) + 1
             let inner: CGFloat = showBases ? 20 + CGFloat(aaRows) * 17 : 0
-            // Aminosäuren: ein Bogenblock über die drei Basen des Codons, der Buchstabe in der Mitte
+            // Amino acids: an arc block over the three bases of the codon, the letter in the middle
             for m in codons where inView(Double(m.lo)) || inView(Double(m.hi)) {
                 let rad = r - 34 - CGFloat(m.row) * 17
                 let a0 = angle(Double(m.lo)) - .pi / 2, a1 = angle(Double(m.hi + 1)) - .pi / 2
@@ -400,7 +400,7 @@ struct CircularMap: View {
                 g.rotate(by: .radians(am))
                 g.draw(Text(m.letter).font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(.primary), at: .zero, anchor: .center)
             }
-            // Basen entlang des Rings (obere Reihe: Sequenz, untere: Gegenstrang)
+            // Bases along the ring (upper row: sequence, lower: reverse strand)
             if showBases {
                 let bytes = model.fullBytes
                 let lo = Int(model.viewStart) - 1, hi = Int(model.viewStart + model.viewSpan) + 2
@@ -420,7 +420,7 @@ struct CircularMap: View {
                     }
                 }
             }
-            // Skala
+            // Scale
             let step = niceStep(length: zoomed ? Int(model.viewSpan) : length, maxTicks: 12)
             var t = zoomed ? (Int(model.viewStart) / step) * step : 0
             while zoomed ? Double(t) <= model.viewStart + model.viewSpan : t < length {
@@ -434,7 +434,7 @@ struct CircularMap: View {
                 ctx.draw(Text(verbatim: "\(pos)").font(.system(size: 9)).foregroundStyle(Theme.inkSoft),
                          at: point(Double(t), r - 16 - inner), anchor: .center)
             }
-            // Features (Spuren nach innen)
+            // Features (tracks inward)
             for f in model.visibleLanes where f.featureType.lowercased() != "source" {
                 let rad = r - 26 - inner - CGFloat(f.lane) * 14
                 guard rad > 20 else { continue }
@@ -449,9 +449,9 @@ struct CircularMap: View {
                     ctx.draw(Text(f.name).font(.system(size: 9)).foregroundStyle(.white), at: point(mid, rad), anchor: .center)
                 }
             }
-            // Enzymmarken außen, Beschriftungen auseinandergeschoben (nur Vorwärtsdurchgang)
+            // Enzyme marks outside, labels pushed apart (forward pass only)
             let sites = model.visibleSites
-            var lastAngle = -10.0 // vor dem ersten Eintrag
+            var lastAngle = -10.0 // before the first entry
             for s in sites where inView(Double(s.position)) {
                 var a = angle(Double(s.position))
                 let gap = 0.09 / (zoomed ? min(model.zoom, 12) : 1)
@@ -465,14 +465,14 @@ struct CircularMap: View {
                 let anchor: UnitPoint = sin(a) >= 0 ? .leading : .trailing
                 ctx.draw(Text(verbatim: "\(s.enzyme) (\(s.position + 1))").font(.system(size: 10)), at: lp, anchor: anchor)
             }
-            // Mitte
+            // Center
             ctx.draw(Text(name).font(Theme.heading()), at: CGPoint(x: c.x, y: c.y - 8), anchor: .center)
             ctx.draw(Text(verbatim: "\(length) bp").font(.subheadline).foregroundStyle(Theme.inkSoft),
                      at: CGPoint(x: c.x, y: c.y + 12), anchor: .center)
     }
 }
 
-/// Fängt waagerechtes Zwei-Finger-Wischen über der Ansicht ab (SwiftUI hat dafür keine eigene Geste).
+/// Catches horizontal two-finger swiping over the view (SwiftUI has no gesture for it).
 struct ScrollMonitor: NSViewRepresentable {
     var onScroll: (CGFloat) -> Void
 

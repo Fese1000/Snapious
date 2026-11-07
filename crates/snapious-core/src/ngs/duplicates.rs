@@ -1,27 +1,27 @@
-//! PCR-Duplikate nach Position markieren.
+//! Mark PCR duplicates by position.
 
 use std::collections::BTreeMap;
 
-/// Ein Read für die Duplikatsuche.
+/// A read for duplicate detection.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadKey {
     pub reference: String,
-    /// Startposition.
+    /// Start position.
     pub position: usize,
     pub reverse: bool,
-    /// Summe der Qualitätswerte (höher = besser).
+    /// Sum of the quality values (higher = better).
     pub quality: u64,
 }
 
-/// Markiert Duplikate: Reads mit gleicher Referenz, Position und Richtung sind eine Gruppe. In jeder Gruppe bleibt der Read mit der
-/// höchsten `quality` unmarkiert (bei Gleichstand der mit dem kleinsten Index), alle anderen sind Duplikate. Ergebnis: je Read `true`, wenn er ein
-/// Duplikat ist (gleiche Länge und Reihenfolge wie `reads`).
+/// Marks duplicates: reads with the same reference, position and direction form a group. In each group the read with the
+/// highest `quality` stays unmarked (on a tie the one with the smallest index), all others are duplicates. Result: per read `true` if it is a
+/// duplicate (same length and order as `reads`).
 pub fn mark_duplicates(reads: &[ReadKey]) -> Vec<bool> {
     if reads.is_empty() {
         return vec![];
     }
 
-    // Gruppieren der Indizes nach (reference, position, reverse)
+    // Group the indices by (reference, position, reverse)
     let mut groups: BTreeMap<(String, usize, bool), Vec<usize>> = BTreeMap::new();
 
     for (i, read) in reads.iter().enumerate() {
@@ -29,12 +29,12 @@ pub fn mark_duplicates(reads: &[ReadKey]) -> Vec<bool> {
         groups.entry(key).or_default().push(i);
     }
 
-    // Ergebnis-Array initialisieren (alle false)
+    // Initialize the result array (all false)
     let mut result = vec![false; reads.len()];
 
-    // Durch jede Gruppe gehen und das beste Read markieren (false), Rest true
+    // Go through each group and mark the best read (false), the rest true
     for indices in groups.values() {
-        // Finde den Index des besten Reads in dieser Gruppe
+        // Find the index of the best read in this group
         let mut best_idx = indices[0];
 
         for &idx in indices.iter().skip(1) {
@@ -42,17 +42,17 @@ pub fn mark_duplicates(reads: &[ReadKey]) -> Vec<bool> {
             let best_quality = reads[best_idx].quality;
 
             if current_quality > best_quality {
-                // Höhere Qualität -> neues Bestes
+                // Higher quality -> new best
                 best_idx = idx;
             } else if current_quality == best_quality {
-                // Gleiche Qualität -> kleinerer Index gewinnt (bereits im Ergebnis als false markiert)
-                // Da wir die Indizes in aufsteigender Reihenfolge durchgehen (0, 1, 2...),
-                // bleibt der erste gefundene Index (kleinster Index) der Gewinner.
-                // Wir müssen also nichts tun, wenn current_quality <= best_quality.
+                // Equal quality -> smaller index wins (already marked false in the result)
+                // Since we go through the indices in ascending order (0, 1, 2...),
+                // the first index found (smallest index) remains the winner.
+                // So we need to do nothing if current_quality <= best_quality.
             }
         }
 
-        // Alle Indizes in der Gruppe sind Duplikate, außer dem besten
+        // All indices in the group are duplicates except the best one
         for &idx in indices.iter() {
             if idx != best_idx {
                 result[idx] = true;

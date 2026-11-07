@@ -1,8 +1,8 @@
-//! MOL-Dateien (MDL V2000) lesen: Atome und Bindungen.
+//! Read MOL files (MDL V2000): atoms and bonds.
 
 use crate::error::{Error, Result};
 
-/// Ein Atom.
+/// An atom.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MolAtom {
     pub element: String,
@@ -11,7 +11,7 @@ pub struct MolAtom {
     pub z: f64,
 }
 
-/// Eine Bindung zwischen zwei Atomen (0-basierte Indizes) mit Ordnung (1 einfach, 2 doppelt, 3 dreifach …).
+/// A bond between two atoms (0-based indices) with order (1 single, 2 double, 3 triple ...).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MolBond {
     pub from: usize,
@@ -19,16 +19,16 @@ pub struct MolBond {
     pub order: u8,
 }
 
-/// Liest eine MOL-Datei (V2000). Die ersten drei Zeilen sind Kopf (Name, Programm, Kommentar). Zeile 4 ist die Zählzeile: die
-/// ersten drei Zeichen (getrimmt) sind die Atomzahl, die nächsten drei die Bindungszahl. Danach folgen die Atomzeilen: `x` in den
-/// Zeichen 0–10, `y` in 10–20, `z` in 20–30 (jeweils getrimmt), das Elementsymbol in 31–34 (getrimmt). Danach die Bindungszeilen:
-/// Atom 1 in den Zeichen 0–3, Atom 2 in 3–6 (1-basiert in der Datei), Ordnung in 6–9. Spaltenzugriffe mit `str::get`, damit
-/// Sonderzeichen nicht abstürzen. Fehler `Error::InvalidInput` bei zu kurzer Datei, unlesbaren Zahlen oder Bindungsindizes
-/// außerhalb der Atomzahl.
+/// Reads a MOL file (V2000). The first three lines are the header (name, program, comment). Line 4 is the counts line: the
+/// first three characters (trimmed) are the atom count, the next three the bond count. The atom lines follow: `x` in
+/// characters 0-10, `y` in 10-20, `z` in 20-30 (each trimmed), the element symbol in 31-34 (trimmed). Then the bond lines:
+/// atom 1 in characters 0-3, atom 2 in 3-6 (1-based in the file), order in 6-9. Column access uses `str::get` so that
+/// special characters do not panic. `Error::InvalidInput` for a file that is too short, unreadable numbers or bond indices
+/// outside the atom count.
 pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
     let mut lines = text.lines();
 
-    // Zeilen 0, 1, 2 überspringen (Name, Programm, Kommentar)
+    // Skip lines 0, 1, 2 (name, program, comment)
     if lines.next().is_none() {
         return Err(Error::InvalidInput("Too few lines".into()));
     }
@@ -39,12 +39,12 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
         return Err(Error::InvalidInput("Too few lines".into()));
     }
 
-    // Zeile 3: Zählzeile
+    // Line 3: counts line
     let count_line = lines
         .next()
         .ok_or_else(|| Error::InvalidInput("Too few lines".into()))?;
 
-    // Atomzahl (Zeichen 0-3) und Bindungszahl (Zeichen 3-6) parsen
+    // Parse atom count (characters 0-3) and bond count (characters 3-6)
     let atom_count_str = count_line.get(0..3).unwrap_or("").trim();
     let bond_count_str = count_line.get(3..6).unwrap_or("").trim();
 
@@ -57,7 +57,7 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
 
     let mut atoms = Vec::with_capacity(atom_count);
 
-    // Atomzeilen parsen (nächste atom_count Zeilen)
+    // Parse atom lines (next atom_count lines)
     for _ in 0..atom_count {
         let line = lines
             .next()
@@ -86,10 +86,10 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
 
     let mut bonds = Vec::new();
 
-    // Bindungszeilen parsen (bis zum Ende oder bis M  END)
-    // genau so viele Zeilen, wie die Zählzeile angibt (danach folgen Eigenschaftszeilen wie `M  CHG` und `M  END`)
+    // Parse bond lines (to the end or until M  END)
+    // exactly as many lines as the counts line states (property lines such as `M  CHG` and `M  END` follow)
     for line in lines.take(_bond_count) {
-        // Atom 1: 0-3, Atom 2: 3-6, Ordnung: 6-9
+        // Atom 1: 0-3, atom 2: 3-6, order: 6-9
         let atom1_str = line.get(0..3).unwrap_or("").trim();
         let atom2_str = line.get(3..6).unwrap_or("").trim();
         let order_str = line.get(6..9).unwrap_or("").trim();
@@ -117,7 +117,7 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
             Err(_) => return Err(Error::InvalidInput("Invalid bond order".into())),
         };
 
-        // 1-basiert in Datei -> 0-basiert im Vektor
+        // 1-based in file -> 0-based in the vector
         let from = atom1
             .checked_sub(1)
             .ok_or_else(|| Error::InvalidInput("Atom index too small".into()))?;
@@ -134,7 +134,7 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
         bonds.push(MolBond { from, to, order });
     }
 
-    // Wenn weniger Bindungen gefunden wurden als in der Zählzeile angegeben, ist die Datei ungültig.
+    // If fewer bonds were found than stated in the counts line, the file is invalid.
     if bonds.len() != _bond_count {
         return Err(Error::InvalidInput(
             "Number of bonds does not match the counts line".into(),

@@ -1,4 +1,4 @@
-//! Aufruf von SPAdes (De-novo-Assembly): Kommandozeile bauen und das Ergebnis `contigs.fasta` in Dokumente umsetzen.
+//! Calling SPAdes (de novo assembly): build the command line and convert the result `contigs.fasta` into documents.
 
 use std::collections::BTreeMap;
 
@@ -6,8 +6,8 @@ use crate::error::{Error, Result};
 use crate::io::fasta;
 use crate::model::document::SequenceDocument;
 
-/// Argumente für `spades.py`: mit zwei Dateien `-1 <reads1> -2 <reads2> -o <work_dir> -t <threads>`, mit einer Datei
-/// `-s <reads1> -o <work_dir> -t <threads>` (ungepaart). `threads` wird mindestens 1. Programmname nicht enthalten.
+/// Arguments for `spades.py`: with two files `-1 <reads1> -2 <reads2> -o <work_dir> -t <threads>`, with one file
+/// `-s <reads1> -o <work_dir> -t <threads>` (unpaired). `threads` becomes at least 1. Program name not included.
 pub fn spades_args(
     reads1: &str,
     reads2: Option<&str>,
@@ -37,8 +37,8 @@ pub fn spades_args(
     }
 }
 
-/// Liest Länge und Abdeckung aus einem SPAdes-Contignamen `NODE_<n>_length_<länge>_cov_<abdeckung>` (Abdeckung als Dezimalzahl, ein
-/// Rest wie `_1` hinter der Zahl wird nicht erwartet). `None`, wenn das Muster nicht passt.
+/// Reads length and coverage from a SPAdes contig name `NODE_<n>_length_<length>_cov_<coverage>` (coverage as a decimal number, a
+/// remainder such as `_1` after the number is not expected). `None` if the pattern does not match.
 pub fn parse_node_name(name: &str) -> Option<(u64, f64)> {
     let parts: Vec<&str> = name.split('_').collect();
     if parts.len() != 6 {
@@ -52,9 +52,9 @@ pub fn parse_node_name(name: &str) -> Option<(u64, f64)> {
     Some((length, coverage))
 }
 
-/// Setzt den Text von `contigs.fasta` in Dokumente um: je Eintrag ein DNA-Dokument mit dem Namen des FASTA-Eintrags (erstes Wort der Kopfzeile)
-/// und Metadaten `length` (Zahl der Basen als Text), und, wenn `parse_node_name` passt, `coverage` (Abdeckung als Text mit `to_string` der Zahl, z. B. `5.5`)
-/// sowie `source = "spades"`. Ein Text ohne Einträge ergibt `Error::InvalidInput("SPAdes returned no contigs")`; FASTA-Fehler werden weitergegeben.
+/// Converts the text of `contigs.fasta` into documents: one DNA document per entry with the name of the FASTA entry (first word of the header line)
+/// and metadata `length` (number of bases as text) and, if `parse_node_name` matches, `coverage` (coverage as text via `to_string` of the number, e.g. `5.5`)
+/// as well as `source = "spades"`. A text without entries yields `Error::InvalidInput("SPAdes returned no contigs")`; FASTA errors are passed on.
 pub fn contigs_to_documents(fasta_text: &str) -> Result<Vec<SequenceDocument>> {
     let sequences = fasta::parse(fasta_text)?;
     if sequences.is_empty() {

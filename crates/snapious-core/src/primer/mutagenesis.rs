@@ -1,38 +1,38 @@
-//! Primer für gezielte Mutagenese (Austausch, Einfügung, Deletion), Art QuikChange: zwei vollständig
-//! komplementäre Primer, die die Änderung in der Mitte tragen.
+//! Primers for site-directed mutagenesis (substitution, insertion, deletion), QuikChange style: two fully
+//! complementary primers that carry the change in the middle.
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::error::{Error, Result};
 use crate::primer::tm::nearest_neighbor;
 
-/// Ergebnis der Mutagenese-Primer-Planung.
+/// Result of mutagenesis primer planning.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MutagenesisPrimers {
-    /// Vorwärtsprimer 5'→3': linke Flanke + Ersatz + rechte Flanke (Uppercase).
+    /// Forward primer 5'->3': left flank + replacement + right flank (uppercase).
     pub forward: String,
-    /// Rückwärtsprimer 5'→3': Reverskomplement von `forward`.
+    /// Reverse primer 5'->3': reverse complement of `forward`.
     pub reverse: String,
-    /// Länge der linken Flanke in Basen.
+    /// Length of the left flank in bases.
     pub left_flank: usize,
-    /// Länge der rechten Flanke in Basen.
+    /// Length of the right flank in bases.
     pub right_flank: usize,
-    /// Nearest-Neighbor-Tm von `forward` (250 nM Oligo, 50 mM Na⁺) in °C.
+    /// Nearest-neighbor Tm of `forward` (250 nM oligo, 50 mM Na⁺) in °C.
     pub tm: f64,
 }
 
-/// Plant Primer, die in `seq` den Bereich `[start, end)` durch `replacement` ersetzen
-/// (`start == end`: Einfügung; leeres `replacement`: Deletion).
+/// Plans primers that replace the range `[start, end)` in `seq` with `replacement`
+/// (`start == end`: insertion; empty `replacement`: deletion).
 ///
-/// * `seq` und `replacement` werden in Uppercase umgewandelt; `replacement` darf nur A, C, G, T enthalten (leer ist erlaubt).
-/// * Beide Flanken beginnen mit `min_flank` Basen, begrenzt auf das Vorhandene (`start` links, `seq.len() - end` rechts).
-/// * Solange der Tm von `forward` kleiner als `target_tm` ist und mindestens eine Flanke noch wachsen darf
-///   (Grenze: `max_flank` und das Vorhandene), wird jede Flanke, die noch wachsen darf, um 1 Base verlängert.
-/// * `forward = seq[start - left .. start] + replacement + seq[end .. end + right]`; `reverse` ist sein Reverskomplement
+/// * `seq` and `replacement` are converted to uppercase; `replacement` may contain only A, C, G, T (empty is allowed).
+/// * Both flanks start with `min_flank` bases, limited to what is available (`start` on the left, `seq.len() - end` on the right).
+/// * As long as the Tm of `forward` is below `target_tm` and at least one flank may still grow
+///   (limit: `max_flank` and what is available), every flank that may still grow is extended by 1 base.
+/// * `forward = seq[start - left .. start] + replacement + seq[end .. end + right]`; `reverse` is its reverse complement
 ///   (`iupac_reverse_complement`); `tm = nearest_neighbor(forward, 250.0, 50.0)`.
 ///
-/// Fehler: `Error::OutOfRange`, wenn `start > end` oder `end > seq.len()`; `Error::InvalidInput`, wenn `min_flank == 0`,
-/// `max_flank < min_flank`, `replacement` andere Zeichen enthält, oder wenn weder links noch rechts eine Base
-/// vorhanden ist (`start == 0 && end == seq.len()`); Fehler von `nearest_neighbor` werden weitergegeben.
+/// Errors: `Error::OutOfRange` if `start > end` or `end > seq.len()`; `Error::InvalidInput` if `min_flank == 0`,
+/// `max_flank < min_flank`, `replacement` contains other characters, or if there is no base available on either the left or the right
+/// (`start == 0 && end == seq.len()`); errors from `nearest_neighbor` are passed on.
 pub fn design_mutagenesis(
     seq: &str,
     start: usize,
@@ -169,19 +169,19 @@ mod tests {
             &SEQ[16..16 + p.right_flank]
         );
         assert_eq!(p.forward, expected);
-        // unerreichbares Ziel: Flanken enden bei max_flank
+        // unreachable target: flanks end at max_flank
         let q = design_mutagenesis(SEQ, 15, 16, "A", 5, 8, 1000.0).unwrap();
         assert_eq!((q.left_flank, q.right_flank), (8, 8));
     }
 
     #[test]
     fn rand_begrenzt_flanke() {
-        // links nur 3 Basen vorhanden
+        // only 3 bases available on the left
         let p = design_mutagenesis(SEQ, 3, 4, "A", 5, 8, 1000.0).unwrap();
         assert_eq!(p.left_flank, 3);
         assert_eq!(p.right_flank, 8);
         assert_eq!(p.forward, "ATGAGTACCTGA");
-        // rechts nur 7 Basen vorhanden
+        // only 7 bases available on the right
         let q = design_mutagenesis(SEQ, 30, 31, "T", 5, 8, 1000.0).unwrap();
         assert_eq!((q.left_flank, q.right_flank), (8, 7));
         assert_eq!(q.forward, "GCTAGGCTTACGATCG");

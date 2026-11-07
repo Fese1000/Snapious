@@ -1,44 +1,44 @@
-//! Qualitätsbericht für FASTQ-Reads (FastQC-artig), ohne die Reads zu speichern.
+//! Quality report for FASTQ reads (FastQC-like), without storing the reads.
 
 use std::collections::BTreeMap;
 
 use crate::io::fastq::FastqRecord;
 
-/// Ergebnis der Analyse. Qualitäten sind Phred+33.
+/// Result of the analysis. Qualities are Phred+33.
 #[derive(Clone, Debug, PartialEq)]
 pub struct QcReport {
     pub reads: u64,
     pub min_length: usize,
     pub max_length: usize,
     pub mean_length: f64,
-    /// Anteil von G und C an allen Basen in Prozent.
+    /// Fraction of G and C among all bases in percent.
     pub gc_percent: f64,
-    /// Je Position (0 bis `max_length − 1`) über alle Reads, die diese Position haben: Mittelwert, unteres Quartil, Median, oberes Quartil.
+    /// Per position (0 to `max_length − 1`) over all reads that have this position: mean, lower quartile, median, upper quartile.
     pub mean_quality_per_position: Vec<f64>,
     pub q25_per_position: Vec<f64>,
     pub median_per_position: Vec<f64>,
     pub q75_per_position: Vec<f64>,
-    /// Länge → Zahl der Reads.
+    /// Length → number of reads.
     pub length_distribution: BTreeMap<usize, u64>,
-    /// `100 · (1 − eindeutige / gesamt)` über die betrachteten Reads.
+    /// `100 · (1 − unique / total)` over the reads considered.
     pub duplication_percent: f64,
-    /// Anteil der Reads (alle Reads) in Prozent, die die ersten 12 Basen des Adapters irgendwo enthalten.
+    /// Fraction of reads (all reads) in percent that contain the first 12 bases of the adapter anywhere.
     pub adapter_percent: f64,
-    /// Häufige Sequenzen (erste 50 Basen) mit Anzahl: Anteil an den betrachteten Reads über 0,1 %, höchstens 10, absteigend nach Anzahl,
-    /// bei Gleichstand aufsteigend nach Sequenz.
+    /// Frequent sequences (first 50 bases) with count: fraction of the reads considered above 0.1 %, at most 10, descending by count,
+    /// ties ascending by sequence.
     pub overrepresented: Vec<(String, u64)>,
 }
 
-/// Wertet die Reads aus.
-/// * Quartilsregel („unterer Wert“): für die sortierten Qualitäten `v` einer Position (n Werte) ist das Quantil `q` (0.25, 0.5, 0.75) der
-///   Wert mit Index `(n − 1) · q` abgerundet; mit Ganzzahlen `(n − 1) · 25 / 100`, `/ 2`, `(n − 1) · 75 / 100`. Der Median von `[0, 0, 40, 40]` ist also 0.
-///   Es sollen nicht alle Werte gespeichert werden: je Position ein Zählfeld für die Phred-Werte 0 bis 93 genügt.
-/// * Qualitätszeichen `c` ergibt Phred `c − 33` (auf 0 bis 93 begrenzt).
-/// * Duplikation und überrepräsentierte Sequenzen: Schlüssel = die ersten 50 Basen (oder der ganze Read, wenn kürzer) der ersten
-///   `max_dup_reads` Reads; `unique` = Zahl der verschiedenen Schlüssel, `total` = Zahl dieser Reads; ohne Reads 0.
-/// * Adapter: die ersten 12 Zeichen von `adapter` (oder alle, wenn kürzer); ein Read zählt, wenn seine Basen (Uppercase) dieses Wort
-///   enthalten. Ist `adapter` leer, ist der Anteil 0.
-/// * Ohne Reads: alles 0, leere Listen und Verteilungen, `min_length = max_length = 0`; keine Division durch 0.
+/// Evaluates the reads.
+/// * Quartile rule ("lower value"): for the sorted qualities `v` of a position (n values) the quantile `q` (0.25, 0.5, 0.75) is the
+///   value at index `(n − 1) · q` rounded down; with integers `(n − 1) · 25 / 100`, `/ 2`, `(n − 1) · 75 / 100`. The median of `[0, 0, 40, 40]` is therefore 0.
+///   Not all values should be stored: one count array per position for the Phred values 0 to 93 is enough.
+/// * Quality character `c` gives Phred `c − 33` (clamped to 0 to 93).
+/// * Duplication and overrepresented sequences: key = the first 50 bases (or the whole read if shorter) of the first
+///   `max_dup_reads` reads; `unique` = number of distinct keys, `total` = number of these reads; 0 without reads.
+/// * Adapter: the first 12 characters of `adapter` (or all if shorter); a read counts if its bases (uppercase) contain this word.
+///   If `adapter` is empty, the fraction is 0.
+/// * Without reads: everything 0, empty lists and distributions, `min_length = max_length = 0`; no division by 0.
 pub fn analyze_reads<I: IntoIterator<Item = FastqRecord>>(
     reads: I,
     adapter: &str,
@@ -207,7 +207,7 @@ mod tests {
         assert_eq!(r.length_distribution.get(&4), Some(&3));
         assert_eq!(r.length_distribution.get(&5), Some(&1));
         assert_eq!(r.mean_quality_per_position.len(), 5);
-        // Position 4 hat nur einen Wert: '5' = 20
+        // position 4 has only one value: '5' = 20
         assert_eq!(r.mean_quality_per_position[4], 20.0);
         assert_eq!(r.q25_per_position[4], 20.0);
     }
@@ -218,13 +218,13 @@ mod tests {
         let r = analyze_reads(reads, AD, 100);
         assert!((r.duplication_percent - 90.0).abs() < 1e-9);
         assert_eq!(r.overrepresented, vec![("ACGTACGT".to_string(), 10)]);
-        // nur die ersten 3 Reads zählen
+        // only the first 3 reads count
         let mut mixed = vec![rec("AAAA", "IIII"); 2];
         mixed.push(rec("CCCC", "IIII"));
         mixed.push(rec("GGGG", "IIII"));
         let r2 = analyze_reads(mixed, AD, 3);
         assert!((r2.duplication_percent - 100.0 * (1.0 - 2.0 / 3.0)).abs() < 1e-9);
-        // bei vielen verschiedenen Reads gibt es keine überrepräsentierte Sequenz
+        // with many different reads there is no overrepresented sequence
         let many: Vec<FastqRecord> = (0..2000)
             .map(|i| {
                 let s: String = (0..12)

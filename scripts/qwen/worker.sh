@@ -1,6 +1,6 @@
 #!/bin/bash
-# Arbeitet queue.txt Zeile für Zeile ab. Zeilenformat: LOGDATEI|run_card-Argumente (Hinweis mit --note "..." am Ende).
-# Erledigte Zeilen wandern nach queue_done.txt. Das Skript läuft, bis STOP existiert.
+# Works through queue.txt line by line. Line format: LOGFILE|run_card arguments (hint with --note "..." at the end).
+# Finished lines move to queue_done.txt. The script runs until STOP exists.
 cd "$(dirname "$0")"
 touch queue.txt queue_done.txt
 while [ ! -f STOP ]; do

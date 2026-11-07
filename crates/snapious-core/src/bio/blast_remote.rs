@@ -1,25 +1,25 @@
-//! BLAST über die NCBI-URL-API: Anfrage absenden, Status abfragen, Ergebnis lesen. Netzwerk und Wartezeiten sind austauschbar.
+//! BLAST via the NCBI URL API: submit request, poll status, read result. Network and waiting are replaceable.
 
 use crate::bio::blast::{parse_tabular, BlastHit};
 use crate::db::ncbi::percent_encode;
 use crate::error::{Error, Result};
 
-/// Basisadresse der NCBI-BLASTAPI.
+/// Base address of the NCBI BLAST API.
 pub const BLAST_URL: &str = "https://blast.ncbi.nlm.nih.gov/Blast.cgi";
 
-/// Abruf und Absenden (in Tests ersetzbar).
+/// Fetch and submit (replaceable in tests).
 pub trait BlastTransport {
     fn get(&self, url: &str) -> Result<String>;
-    /// Sendet einen Formularkörper (`application/x-www-form-urlencoded`) an `url` und liefert den Antworttext.
+    /// Sends a form body (`application/x-www-form-urlencoded`) to `url` and returns the response text.
     fn post(&self, url: &str, body: &str) -> Result<String>;
 }
 
-/// Wartet die angegebene Zeit (in Tests ersetzbar).
+/// Waits the given time (replaceable in tests).
 pub trait Sleeper {
     fn sleep_secs(&self, secs: u64);
 }
 
-/// Zustand einer Anfrage.
+/// State of a request.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BlastStatus {
     Waiting,
@@ -28,8 +28,8 @@ pub enum BlastStatus {
     Unknown,
 }
 
-/// Formularkörper zum Absenden: `CMD=Put&PROGRAM=<program>&DATABASE=<database>&QUERY=<query>`; `query` wird mit
-/// `percent_encode` kodiert, `program` und `database` bleiben unverändert.
+/// Form body for submission: `CMD=Put&PROGRAM=<program>&DATABASE=<database>&QUERY=<query>`; `query` is encoded with
+/// `percent_encode`, `program` and `database` stay unchanged.
 pub fn submit_body(program: &str, database: &str, query: &str) -> String {
     format!(
         "CMD=Put&PROGRAM={}&DATABASE={}&QUERY={}",
@@ -39,20 +39,20 @@ pub fn submit_body(program: &str, database: &str, query: &str) -> String {
     )
 }
 
-/// Adresse der Statusabfrage: `{BLAST_URL}?CMD=Get&FORMAT_OBJECT=SearchInfo&RID=<rid>`.
+/// Address of the status query: `{BLAST_URL}?CMD=Get&FORMAT_OBJECT=SearchInfo&RID=<rid>`.
 pub fn status_url(rid: &str) -> String {
     format!("{}?CMD=Get&FORMAT_OBJECT=SearchInfo&RID={}", BLAST_URL, rid)
 }
 
-/// Adresse des Ergebnisses: `{BLAST_URL}?CMD=Get&FORMAT_TYPE=Tabular&RID=<rid>`.
+/// Address of the result: `{BLAST_URL}?CMD=Get&FORMAT_TYPE=Tabular&RID=<rid>`.
 pub fn results_url(rid: &str) -> String {
     format!("{}?CMD=Get&FORMAT_TYPE=Tabular&RID={}", BLAST_URL, rid)
 }
 
-/// Liest `(RID, RTOE)` aus der Antwort auf das Absenden: Zeilen der Form `    RID = ABC123` und `    RTOE = 17`
-/// (Leerraum um Zeilenanfang und `=` beliebig; die Zeilen dürfen in Text oder HTML stehen, es zählt jede Zeile, die nach dem Kürzen
-/// mit `RID` bzw. `RTOE` beginnt, gefolgt von optionalem Leerraum und `=`). Fehlt die RID oder ist sie leer → `Error::Operation`;
-/// fehlt RTOE oder ist keine ganze Zahl, ist sie 0.
+/// Reads `(RID, RTOE)` from the submission response: lines of the form `    RID = ABC123` and `    RTOE = 17`
+/// (whitespace around line start and `=` is arbitrary; the lines may be in text or HTML, any line that after trimming
+/// starts with `RID` or `RTOE`, followed by optional whitespace and `=`, counts). If the RID is missing or empty → `Error::Operation`;
+/// if RTOE is missing or not an integer, it is 0.
 pub fn parse_submit(text: &str) -> Result<(String, u64)> {
     let mut rid = None;
     let mut rtoe: Option<u64> = None;
@@ -88,8 +88,8 @@ pub fn parse_submit(text: &str) -> Result<(String, u64)> {
     Ok((rid, rtoe.unwrap_or(0)))
 }
 
-/// Liest den Status aus `Status=WAITING|READY|FAILED|UNKNOWN` (irgendwo im Text, Groß-/Kleinschreibung der Werte egal);
-/// ohne `Status=` → `BlastStatus::Unknown`.
+/// Reads the status from `Status=WAITING|READY|FAILED|UNKNOWN` (anywhere in the text, values case-insensitive);
+/// without `Status=` → `BlastStatus::Unknown`.
 pub fn parse_status(text: &str) -> BlastStatus {
     if let Some(pos) = text.find("Status=") {
         let after = &text[pos + 7..];
@@ -109,12 +109,12 @@ pub fn parse_status(text: &str) -> BlastStatus {
     }
 }
 
-/// Führt eine Anfrage aus.
+/// Executes a request.
 /// 1. `post(BLAST_URL, submit_body(..))` → `parse_submit` (RID, RTOE).
 /// 2. `sleeper.sleep_secs(max(RTOE, 10))`.
-/// 3. Wiederhole höchstens 60-mal: `get(status_url)` → `parse_status`: `Ready` → `get(results_url)`, mit `parse_tabular` lesen und
-///    zurückgeben; `Waiting` → `sleeper.sleep_secs(60)` und weiter; `Failed` oder `Unknown` → `Error::Operation` mit Text und RID.
-/// 4. Nach 60 Versuchen: `Error::Operation("BLAST: Zeitüberschreitung (RID …)")`.
+/// 3. Repeat at most 60 times: `get(status_url)` → `parse_status`: `Ready` → `get(results_url)`, read with `parse_tabular` and
+///    return; `Waiting` → `sleeper.sleep_secs(60)` and continue; `Failed` or `Unknown` → `Error::Operation` with text and RID.
+/// 4. After 60 attempts: `Error::Operation("BLAST: Zeitüberschreitung (RID …)")`.
 pub fn run_remote(
     transport: &dyn BlastTransport,
     sleeper: &dyn Sleeper,

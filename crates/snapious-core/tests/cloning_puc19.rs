@@ -1,4 +1,4 @@
-//! Klonierungs-Integrationstest mit dem echten pUC19-Eintrag (NCBI L09137): Verdau, Ligation, Gel, PCR, Primer und Alignment-Abgleich.
+//! Cloning integration test with the real pUC19 entry (NCBI L09137): digest, ligation, gel, PCR, primers and alignment check.
 
 use snapious_core::cloning::enzymes::EnzymeDb;
 use snapious_core::cloning::fragment::digest;
@@ -27,7 +27,7 @@ fn einzelschnitt_und_zwei_schnitte_im_mcs() {
     assert_eq!(both.len(), 2);
     let mut lengths: Vec<usize> = both.iter().map(|f| f.length()).collect();
     lengths.sort();
-    // EcoRI und HindIII liegen im MCS 51 Basen auseinander
+    // EcoRI and HindIII lie 51 bases apart in the MCS
     assert_eq!(lengths, vec![51, 2635]);
     assert_eq!(lengths.iter().sum::<usize>(), 2686);
 }
@@ -46,7 +46,7 @@ fn gel_der_fragmente() {
 
 #[test]
 fn umklonieren_des_mcs_in_den_eigenen_vektor() {
-    // Das 51-bp-MCS-Fragment (EcoRI-HindIII) in sich selbst gesetzt ergibt wieder ein Plasmid derselben Länge.
+    // The 51 bp MCS fragment (EcoRI-HindIII) inserted into itself gives a plasmid of the same length again.
     let db = EnzymeDb::standard();
     let d = puc19();
     let c =

@@ -1,23 +1,23 @@
-//! PIR/NBRF-Sequenzdateien lesen.
+//! Read PIR/NBRF sequence files.
 
 use crate::error::{Error, Result};
 
-/// Ein PIR-Eintrag.
+/// A PIR record.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PirRecord {
-    /// Zweibuchstabencode vor dem Semikolon, z. B. `P1` (Protein) oder `DL` (DNA linear).
+    /// Two-letter code before the semicolon, e.g. `P1` (protein) or `DL` (DNA linear).
     pub kind: String,
     pub id: String,
-    /// Die Zeile nach der Kopfzeile (getrimmt, kann leer sein).
+    /// The line after the header line (trimmed, may be empty).
     pub description: String,
-    /// Sequenz ohne Leerraum, Ziffern und `*`.
+    /// Sequence without whitespace, digits and `*`.
     pub sequence: String,
 }
 
-/// Liest alle Einträge. Eine Kopfzeile beginnt mit `>`, enthält ein Semikolon: `kind` steht zwischen `>` und `;`, `id` danach
-/// (beide getrimmt). Die nächste Zeile ist die Beschreibung (auch wenn leer). Alle weiteren Zeilen bis zur nächsten Kopfzeile sind
-/// Sequenz: Leerraum, Ziffern und `*` werden entfernt, die übrigen Zeichen bleiben. Zeilen vor der ersten Kopfzeile werden
-/// ignoriert. Fehler `Error::InvalidInput`: eine Header line without semicolon oder keine Einträge.
+/// Reads all records. A header line starts with `>` and contains a semicolon: `kind` is between `>` and `;`, `id` after it
+/// (both trimmed). The next line is the description (even if empty). All further lines up to the next header line are
+/// sequence: whitespace, digits and `*` are removed, the remaining characters stay. Lines before the first header line are
+/// ignored. `Error::InvalidInput`: a header line without semicolon or no records.
 pub fn parse_pir(text: &str) -> Result<Vec<PirRecord>> {
     let lines: Vec<&str> = text.lines().collect();
     let mut records = Vec::new();
@@ -27,7 +27,7 @@ pub fn parse_pir(text: &str) -> Result<Vec<PirRecord>> {
         let line = lines[i];
 
         if line.starts_with('>') {
-            // Header Zeile i
+            // Header line i
             let semi_pos = match line.find(';') {
                 Some(pos) => pos,
                 None => return Err(Error::InvalidInput("Header line without semicolon".into())),
@@ -40,25 +40,25 @@ pub fn parse_pir(text: &str) -> Result<Vec<PirRecord>> {
                 return Err(Error::InvalidInput("Invalid header line".into()));
             }
 
-            // Nächste Zeile (i+1) ist die Beschreibung, falls vorhanden
+            // Next line (i+1) is the description, if present
             let description = if i + 1 < lines.len() {
                 lines[i + 1].trim().to_string()
             } else {
                 String::new()
             };
 
-            // Alle Zeilen ab i+2 bis zum nächsten Header sind Sequence
+            // All lines from i+2 up to the next header are sequence
             let mut seq_builder = String::new();
             let mut j = i + 2;
 
             while j < lines.len() {
                 let next_line = lines[j];
-                // Prüfen, ob nächste Zeile ein neuer Header ist
+                // Check whether the next line is a new header
                 if next_line.starts_with('>') {
                     break;
                 }
 
-                // Sequence-Zeile verarbeiten: Leerraum, Ziffern und * entfernen
+                // Process sequence line: remove whitespace, digits and *
                 for c in next_line.chars() {
                     if !c.is_whitespace() && !c.is_ascii_digit() && c != '*' {
                         seq_builder.push(c);
@@ -74,10 +74,10 @@ pub fn parse_pir(text: &str) -> Result<Vec<PirRecord>> {
                 sequence: seq_builder,
             });
 
-            // Springe zum nächsten Header oder Ende
+            // Jump to the next header or the end
             i = j;
         } else {
-            // Zeile vor dem ersten Header ignorieren
+            // Ignore line before the first header
             i += 1;
         }
     }

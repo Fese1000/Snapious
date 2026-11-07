@@ -1,18 +1,18 @@
-//! Pfade verknüpfter Dateien so speichern, dass sie beim Verschieben des Projekts mit dem Ordner `<Projekt>.dateien` mitwandern.
+//! Store paths of linked files so that they move along with the `<project>.dateien` folder when the project is moved.
 
 use std::path::{Path, PathBuf};
 
-/// Kennzeichen für Pfade im Ordner `<Projekt>.dateien`.
+/// Marker for paths in the `<project>.dateien` folder.
 pub const PORTABLE_PREFIX: &str = "@dateien/";
 
-/// Ordner `<Projektname>.dateien` neben der Projektdatei (die Endung der Projektdatei wird durch `dateien` ersetzt, `Path::with_extension`).
+/// Folder `<projectname>.dateien` next to the project file (the extension of the project file is replaced by `dateien`, `Path::with_extension`).
 pub fn files_dir(project_path: &Path) -> PathBuf {
     project_path.with_extension("dateien")
 }
 
-/// Wandelt einen Dateipfad in die gespeicherte Form: Liegt `file` im Ordner `files_dir(project_path)` (direkt oder in Unterordnern, Vergleich
-/// der Pfadbestandteile mit `strip_prefix`), ist das Ergebnis `"@dateien/"` plus der Pfad relativ zu diesem Ordner (Trenner `/`); sonst der
-/// Pfad unverändert als Text.
+/// Converts a file path into the stored form: if `file` lies in the folder `files_dir(project_path)` (directly or in subfolders, comparing
+/// the path components with `strip_prefix`), the result is `"@dateien/"` plus the path relative to that folder (separator `/`); otherwise the
+/// path unchanged as text.
 pub fn to_portable(project_path: &Path, file: &Path) -> String {
     let dir = files_dir(project_path);
 
@@ -27,10 +27,10 @@ pub fn to_portable(project_path: &Path, file: &Path) -> String {
     }
 }
 
-/// Findet die Datei zu einem gespeicherten Pfad. `exists` sagt, ob ein Pfad vorhanden ist.
-/// * Beginnt `stored` mit `"@dateien/"`: `files_dir(project_path)` plus der Rest; ist das vorhanden → `Some`, sonst `None`.
-/// * Sonst: ist `stored` selbst vorhanden → `Some(stored)`; sonst wird im Ordner `files_dir(project_path)` nach dem Dateinamen (letzter
-///   Bestandteil von `stored`) gesucht; vorhanden → `Some`, sonst `None`.
+/// Finds the file for a stored path. `exists` says whether a path exists.
+/// * If `stored` starts with `"@dateien/"`: `files_dir(project_path)` plus the rest; if that exists -> `Some`, otherwise `None`.
+/// * Otherwise: if `stored` itself exists -> `Some(stored)`; otherwise the folder `files_dir(project_path)` is searched for the file name (last
+///   component of `stored`); if found -> `Some`, otherwise `None`.
 pub fn resolve_portable(
     project_path: &Path,
     stored: &str,
@@ -46,7 +46,7 @@ pub fn resolve_portable(
             return Some(PathBuf::from(stored));
         }
 
-        // Fallback: Suche im dateien-Ordner nach dem Dateinamen
+        // Fallback: search the dateien folder for the file name
         let file_name = Path::new(stored).file_name().and_then(|n| n.to_str());
         if let Some(name) = file_name {
             let candidate = files_dir(project_path).join(name);
@@ -100,7 +100,7 @@ mod tests {
             resolve_portable(p, "/absolut/da.ab1", &vorhanden),
             Some(PathBuf::from("/absolut/da.ab1"))
         );
-        // altes absolutes Verzeichnis ist weg, die Datei liegt aber im Ordner neben dem Projekt
+        // old absolute directory is gone, but the file lies in the folder next to the project
         assert_eq!(
             resolve_portable(p, "/alt/ort/read1.ab1", &vorhanden),
             Some(PathBuf::from("/neu/mein.dateien/read1.ab1"))

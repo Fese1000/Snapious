@@ -1,6 +1,6 @@
-//! Coverage-Analyse: Lesetiefe (Depth) je Position, Histogramm, abgedeckte Regionen und Lücken.
+//! Coverage analysis: read depth per position, histogram, covered regions and gaps.
 //!
-//! Positionen sind 0-basiert, Enden exklusiv.
+//! Positions are 0-based, ends exclusive.
 
 use std::collections::BTreeMap;
 
@@ -9,15 +9,15 @@ use crate::io::quality::{self, EncodingType};
 use crate::io::sam::SamRecord;
 use crate::util::Rng;
 
-/// Standard-Schwelle für „abgedeckt“ (mindestens 10×).
+/// Default threshold for "covered" (at least 10×).
 pub const DEFAULT_THRESHOLD: u32 = 10;
 
-/// Ein Read mit Position auf der Referenz.
+/// A read with a position on the reference.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Read {
     pub name: String,
     pub bases: String,
-    /// Startposition auf der Referenz (0-basiert).
+    /// Start position on the reference (0-based).
     pub position: usize,
     pub quality: Option<String>,
     pub encoding: EncodingType,
@@ -44,12 +44,12 @@ impl Read {
         self.bases.len()
     }
 
-    /// Ende auf der Referenz (exklusiv).
+    /// End on the reference (exclusive).
     pub fn end_position(&self) -> usize {
         self.position + self.bases.len()
     }
 
-    /// Alle Basen mindestens `min_q`? Ohne Qualitätsangabe gilt der Read als gültig.
+    /// All bases at least `min_q`? Without quality values the read counts as valid.
     pub fn has_valid_quality(&self, min_q: i32) -> bool {
         match &self.quality {
             Some(q) if !q.is_empty() => quality::to_phred_scores(q, self.encoding)
@@ -59,7 +59,7 @@ impl Read {
         }
     }
 
-    /// Mittlere Qualität; 30 ohne Angabe.
+    /// Mean quality; 30 if not given.
     pub fn avg_quality(&self) -> f64 {
         match &self.quality {
             Some(q) if !q.is_empty() => {
@@ -71,7 +71,7 @@ impl Read {
     }
 }
 
-/// Referenz (Chromosom, Länge).
+/// Reference (chromosome, length).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Reference {
     pub id: String,
@@ -87,7 +87,7 @@ impl Reference {
     }
 }
 
-/// Zusammenhängender Bereich mit Tiefe über der Schwelle.
+/// Contiguous region with depth above the threshold.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CoverageRegion {
     pub seq_id: String,
@@ -102,7 +102,7 @@ impl CoverageRegion {
         self.end - self.start
     }
 
-    /// BED-Zeile: `Chromosom, Start, Ende, Name, Score (0–1000), Strang`.
+    /// BED line: `chromosome, start, end, name, score (0–1000), strand`.
     pub fn to_bed(&self) -> String {
         let score = self.mean_depth.round().min(1000.0) as i64;
         format!(
@@ -119,7 +119,7 @@ impl CoverageRegion {
     }
 }
 
-/// Bereich ohne jede Abdeckung.
+/// Region without any coverage.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GapRegion {
     pub seq_id: String,
@@ -146,23 +146,23 @@ impl std::fmt::Display for GapRegion {
     }
 }
 
-/// Ergebnis der Analyse.
+/// Result of the analysis.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CoverageResult {
     pub seq_id: String,
     pub region_length: usize,
-    /// Tiefe je Position.
+    /// Depth per position.
     pub depth: Vec<u32>,
-    /// Tiefe → Anzahl Positionen.
+    /// Depth → number of positions.
     pub histogram: BTreeMap<u32, usize>,
     pub covered_regions: Vec<CoverageRegion>,
     pub gap_regions: Vec<GapRegion>,
-    /// Anteil der Positionen mit Tiefe ≥ Schwelle (Prozent).
+    /// Fraction of positions with depth ≥ threshold (percent).
     pub percent_covered: f64,
-    /// Anteil der Positionen mit mindestens einem Read (Prozent).
+    /// Fraction of positions with at least one read (percent).
     pub percent_with_reads: f64,
     pub mean_depth: f64,
-    /// Unterer Median.
+    /// Lower median.
     pub median_depth: u32,
     pub threshold: u32,
 }
@@ -180,7 +180,7 @@ impl CoverageResult {
         }
     }
 
-    /// Textbericht.
+    /// Text report.
     pub fn report(&self) -> String {
         let mut s = format!(
             "=== Coverage analysis: {} ===\n\nReference length: {} bp\nAverage depth: {:.1}x\nMedian depth: {}x\nCoverage rating: {}\nCovered region (≥{}x): {:.0}%\n",
@@ -227,7 +227,7 @@ impl CoverageResult {
         s
     }
 
-    /// BED-Datei der abgedeckten Regionen (mit `track`-Kopfzeile).
+    /// BED file of the covered regions (with `track` header line).
     pub fn to_bed(&self) -> String {
         let mut s = format!(
             "track type=coverage name=\"{}\" visibility=all\n",
@@ -240,7 +240,7 @@ impl CoverageResult {
         s
     }
 
-    /// Mittlere Tiefe je Bin (`Chromosom, Start, Ende, Mittelwert`, tabgetrennt).
+    /// Mean depth per bin (`chromosome, start, end, mean`, tab-separated).
     pub fn binned_coverage(&self, bin_size: usize) -> Result<String> {
         if bin_size == 0 {
             return Err(Error::InvalidInput(
@@ -262,7 +262,7 @@ impl CoverageResult {
     }
 }
 
-/// Baut das Ergebnis aus einer fertigen Tiefenliste (z. B. aus SAM/BAM).
+/// Builds the result from a finished depth list (e.g. from SAM/BAM).
 pub fn from_depth(seq_id: &str, depth: Vec<u32>, threshold: u32) -> CoverageResult {
     let len = depth.len();
     let mut histogram = BTreeMap::new();
@@ -346,9 +346,9 @@ fn region(seq_id: &str, start: usize, end: usize, depths: &[u32]) -> CoverageReg
     }
 }
 
-/// Tiefe aus Reads (jede Base des Reads zählt; Teile hinter der Referenz werden abgeschnitten).
+/// Depth from reads (every base of the read counts; parts beyond the reference are cut off).
 pub fn depth_from_reads(reference: &Reference, reads: &[Read]) -> Vec<u32> {
-    // Differenzfeld: O(Reads + Länge) statt O(Reads · Readlänge)
+    // difference array: O(reads + length) instead of O(reads · read length)
     let mut diff = vec![0i64; reference.length + 1];
     for r in reads {
         if r.position >= reference.length || r.bases.is_empty() {
@@ -366,7 +366,7 @@ pub fn depth_from_reads(reference: &Reference, reads: &[Read]) -> Vec<u32> {
     depth
 }
 
-/// Analysiert die Abdeckung (Schwelle 10×).
+/// Analyzes the coverage (threshold 10×).
 pub fn analyze(reference: &Reference, reads: &[Read]) -> CoverageResult {
     analyze_with_threshold(reference, reads, DEFAULT_THRESHOLD)
 }
@@ -379,7 +379,7 @@ pub fn analyze_with_threshold(
     from_depth(&reference.id, depth_from_reads(reference, reads), threshold)
 }
 
-/// Nur Reads mit durchgehend mindestens Q20 zählen.
+/// Only reads with at least Q20 throughout count.
 pub fn analyze_with_quality_filter(reference: &Reference, reads: &[Read]) -> CoverageResult {
     let valid: Vec<Read> = reads
         .iter()
@@ -389,7 +389,7 @@ pub fn analyze_with_quality_filter(reference: &Reference, reads: &[Read]) -> Cov
     analyze(reference, &valid)
 }
 
-/// Zahl der Reads mit durchgehend mindestens `min_q` (nur Reads mit Qualitätsangabe).
+/// Number of reads with at least `min_q` throughout (only reads with quality values).
 pub fn count_reads_above_quality(reads: &[Read], min_q: i32) -> usize {
     reads
         .iter()
@@ -398,9 +398,9 @@ pub fn count_reads_above_quality(reads: &[Read], min_q: i32) -> usize {
         .count()
 }
 
-/// Tiefe aus SAM-Einträgen (CIGAR-bewusst). `M`, `=` und `X` zählen, `D` nur mit `count_deletions`;
-/// `I`, `S`, `H`, `P`, `N` verbrauchen keine Tiefe. Nicht ausgerichtete und sekundäre Einträge,
-/// (je nach Parameter) Duplikate und Einträge mit zu geringer MAPQ werden übersprungen.
+/// Depth from SAM records (CIGAR-aware). `M`, `=` and `X` count, `D` only with `count_deletions`;
+/// `I`, `S`, `H`, `P`, `N` consume no depth. Unaligned and secondary records,
+/// (depending on the parameters) duplicates and records with too low MAPQ are skipped.
 pub fn depth_from_sam(
     records: &[SamRecord],
     reference_name: &str,
@@ -456,7 +456,7 @@ fn add_range(diff: &mut [i64], start: usize, end: usize, len: usize) {
     diff[end.min(len)] -= 1;
 }
 
-/// Vergleich zweier Proben als Text.
+/// Comparison of two samples as text.
 pub fn compare(reference: &Reference, reads1: &[Read], reads2: &[Read]) -> String {
     let (a, b) = (analyze(reference, reads1), analyze(reference, reads2));
     let diff = (a.mean_depth - b.mean_depth).abs();
@@ -479,7 +479,7 @@ pub fn compare(reference: &Reference, reads1: &[Read], reads2: &[Read]) -> Strin
     s
 }
 
-/// Zufällige Test-Reads (Länge höchstens 100) mit etwa der gewünschten mittleren Tiefe; mit festem Startwert reproduzierbar.
+/// Random test reads (length at most 100) with roughly the desired mean depth; reproducible with a fixed seed.
 pub fn generate_synthetic_reads(reference: &Reference, avg_depth: u32, seed: u64) -> Vec<Read> {
     let read_len = reference.length.min(100);
     if read_len == 0 {
@@ -513,7 +513,7 @@ mod tests {
     #[test]
     fn tiefe_und_statistik() {
         let r = Reference::new("chr1", 20);
-        // zwei Reads: [0,10) und [5,15)
+        // two reads: [0,10) and [5,15)
         let res = analyze_with_threshold(&r, &reads(&[(0, 10), (5, 10)]), 1);
         assert_eq!(
             res.depth,
@@ -544,7 +544,7 @@ mod tests {
             (0, 48)
         );
         assert_eq!(res.covered_regions[0].mean_depth, 1.0);
-        // volle Abdeckung → keine Lücke
+        // full coverage → no gap
         assert!(analyze_with_threshold(&r, &reads(&[(0, 100)]), 1)
             .gap_regions
             .is_empty());
@@ -553,7 +553,7 @@ mod tests {
     #[test]
     fn schwelle_trennt_regionen() {
         let r = Reference::new("c", 30);
-        // Tiefe 2 auf [0,10), 1 auf [10,20), 2 auf [20,30)
+        // depth 2 on [0,10), 1 on [10,20), 2 on [20,30)
         let res = analyze_with_threshold(
             &r,
             &reads(&[(0, 10), (0, 10), (10, 10), (20, 10), (20, 10)]),
@@ -649,7 +649,7 @@ F\t0\tother\t1\t60\t4M\t*\t0\t0\tAAAA\tIIII\n\
 G\t0\tref\t1\t60\t2S2M2I\t*\t0\t0\tAAAAAA\tIIIIII\n";
         let f = sam::parse(text).unwrap();
         let alle = depth_from_sam(&f.records, "ref", 6, false, 0, false).unwrap();
-        // A, B, C zählen je 4; G zählt 2 (Soft-Clip und Insertion nicht)
+        // A, B, C count 4 each; G counts 2 (soft clip and insertion do not)
         assert_eq!(alle, vec![4, 4, 3, 3, 0, 0]);
         let ohne_dup = depth_from_sam(&f.records, "ref", 6, true, 0, false).unwrap();
         assert_eq!(ohne_dup[0], 3);

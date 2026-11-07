@@ -1,25 +1,25 @@
-//! VCF (Variant Call Format) lesen und schreiben.
+//! Read and write VCF (Variant Call Format).
 
 use std::path::Path;
 
 use crate::error::{Error, Result};
 
-/// Art der Variante.
+/// Kind of variant.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VariantType {
     Snp,
-    /// Mehrere aufeinanderfolgende Basen ausgetauscht.
+    /// Several consecutive bases substituted.
     Mnp,
     Insertion,
     Deletion,
     Other,
 }
 
-/// Eine Variante (erste 8 Spalten).
+/// A variant (first 8 columns).
 #[derive(Clone, Debug, PartialEq)]
 pub struct VariantCall {
     pub chromosome: String,
-    /// 1-basiert wie in der Datei.
+    /// 1-based as in the file.
     pub position: usize,
     pub id: String,
     pub ref_allele: String,
@@ -50,7 +50,7 @@ impl VariantCall {
     }
 }
 
-/// Liest VCF-Text. Kommentarzeilen (`#`) und leere Zeilen werden übersprungen.
+/// Reads VCF text. Comment lines (`#`) and empty lines are skipped.
 pub fn parse(text: &str) -> Result<Vec<VariantCall>> {
     let mut out = Vec::new();
     for (i, raw) in text.lines().enumerate() {
@@ -102,7 +102,7 @@ pub fn read(path: &Path) -> Result<Vec<VariantCall>> {
     parse(&std::fs::read_to_string(path)?)
 }
 
-/// VCF-Text (Version 4.2) mit Kopfzeilen.
+/// VCF text (version 4.2) with header lines.
 pub fn format(variants: &[VariantCall]) -> String {
     let mut out =
         String::from("##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n");

@@ -1,4 +1,4 @@
-//! Dateiformate: FASTA, FASTQ, GenBank, SAM, VCF.
+//! File formats: FASTA, FASTQ, GenBank, SAM, VCF.
 
 pub mod abif;
 pub mod ace;
@@ -41,7 +41,7 @@ use crate::model::alignment::AlignmentDocument;
 use crate::model::document::{Document, SequenceDocument};
 use crate::model::sequence::{Sequence, SequenceType};
 
-/// Erkennbare Dateiformate.
+/// Recognizable file formats.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Format {
     Fasta,
@@ -53,7 +53,7 @@ pub enum Format {
     Newick,
 }
 
-/// Erkennt das Format am Inhalt (erste nicht leere Zeile). `None`, wenn nichts passt.
+/// Detects the format from the content (first non-empty line). `None` if nothing matches.
 pub fn detect_format(text: &str) -> Option<Format> {
     let first = text.lines().map(str::trim).find(|l| !l.is_empty())?;
     if first.starts_with(">") {
@@ -71,7 +71,7 @@ pub fn detect_format(text: &str) -> Option<Format> {
     {
         Some(Format::Sam)
     } else if first.starts_with('@') {
-        // FASTQ-Kopfzeilen haben keine Tabulatoren
+        // FASTQ header lines contain no tabs
         if first.contains('\t') && first.split('\t').count() >= 11 {
             Some(Format::Sam)
         } else {
@@ -84,7 +84,7 @@ pub fn detect_format(text: &str) -> Option<Format> {
     }
 }
 
-/// Liest Sequenzdokumente aus einer FASTA-, FASTQ-, GenBank-, EMBL- oder SnapGene-Datei (Format wird am Inhalt erkannt).
+/// Reads sequence documents from a FASTA, FASTQ, GenBank, EMBL or SnapGene file (format is detected from the content).
 pub fn read_sequence_documents(path: &Path) -> Result<Vec<SequenceDocument>> {
     let bytes = std::fs::read(path)?;
     if snapgene::is_snapgene(&bytes) {
@@ -121,7 +121,7 @@ pub fn read_sequence_documents(path: &Path) -> Result<Vec<SequenceDocument>> {
     }
 }
 
-/// Weitere Formate, die nur beim Import erkannt werden (Alignments und Sequenzen).
+/// Further formats that are only detected on import (alignments and sequences).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ImportFormat {
     Mega,
@@ -134,7 +134,7 @@ pub enum ImportFormat {
     Ace,
 }
 
-/// `true`, wenn die Zeile wie eine SOLiD-Farbfolge aussieht: erste Base A, C, G oder T, danach mindestens eine Farbe `0`–`3` oder `.`.
+/// `true` if the line looks like a SOLiD color sequence: first base A, C, G or T, followed by at least one color `0`-`3` or `.`.
 fn is_color_line(line: &str) -> bool {
     let mut chars = line.trim().chars();
     matches!(
@@ -144,9 +144,9 @@ fn is_color_line(line: &str) -> bool {
         && chars.all(|c| matches!(c, '0'..='3' | '.'))
 }
 
-/// Erkennt MEGA (`#mega`), NEXUS (`#NEXUS`), Clustal (`CLUSTAL`), PHYLIP (erste Zeile zwei ganze Zahlen), PIR (`>XX;`) und GCG
-/// (innerhalb der ersten 30 Zeilen eine Zeile, die mit `..` endet), SOLiD csfasta (`>Name`, danach eine Farbfolge wie `T0123`, vorher
-/// dürfen `#`-Kommentare stehen) und ACE (erste Zeile `AS <Zahl> <Zahl>`) am Inhalt. `None`, wenn nichts passt.
+/// Detects from the content MEGA (`#mega`), NEXUS (`#NEXUS`), Clustal (`CLUSTAL`), PHYLIP (first line two integers), PIR (`>XX;`) and GCG
+/// (within the first 30 lines a line ending with `..`), SOLiD csfasta (`>name`, then a color sequence like `T0123`; `#` comments
+/// may precede it) and ACE (first line `AS <number> <number>`). `None` if nothing matches.
 pub fn detect_import_format(text: &str) -> Option<ImportFormat> {
     let mut content = text
         .lines()
@@ -231,7 +231,7 @@ fn sequence_of(name: &str, residues: &str, protein: bool) -> Result<Document> {
     Ok(Document::Sequence(SequenceDocument::of(name, seq)))
 }
 
-/// Basen ohne Zeichen, die für DNA nicht erlaubt sind (diese werden `N`).
+/// Bases without characters that are not allowed for DNA (these become `N`).
 fn dna_clean(text: &str) -> String {
     let allowed = SequenceType::Dna.allowed();
     text.chars()
@@ -252,12 +252,12 @@ fn dna_document(name: &str, bases: &str) -> Result<Document> {
     Ok(Document::Sequence(SequenceDocument::of(name, seq)))
 }
 
-/// Position in einem Konsens mit Lücken (`*`) → Position ohne Lücken.
+/// Position in a consensus with gaps (`*`) -> position without gaps.
 fn unpadded(consensus: &str, padded: usize) -> usize {
     consensus.chars().take(padded).filter(|c| *c != '*').count()
 }
 
-/// ACE-Contigs als Sequenzen (Konsens ohne `*`) mit je einem Feature `read` je Read (Strang nach `AF`).
+/// ACE contigs as sequences (consensus without `*`) with one `read` feature per read (strand from `AF`).
 fn ace_documents(text: &str) -> Result<Vec<Document>> {
     use crate::model::feature::{Feature, Location, Strand};
     let mut out = Vec::new();
@@ -305,7 +305,7 @@ fn scf_documents(name: &str, bytes: &[u8]) -> Result<Vec<Document>> {
     Ok(vec![dna_document(name, &dna_clean(part))?])
 }
 
-/// SFF-Reads als Sequenzen, auf den Qualitäts-Clip gekürzt (1-basiert; 0 = kein Clip).
+/// SFF reads as sequences, trimmed to the quality clip (1-based; 0 = no clip).
 fn sff_documents(bytes: &[u8]) -> Result<Vec<Document>> {
     let f = sff::parse_sff(bytes)?;
     let mut out = Vec::new();
@@ -342,9 +342,9 @@ fn csfasta_documents(text: &str) -> Result<Vec<Document>> {
         .collect()
 }
 
-/// Schneidet schlechte Enden einer Sequenzierung ab: Der Beginn ist die erste Base mit Qualität ≥ `min_quality`, deren Fenster der Breite
-/// `window` eine mittlere Qualität ≥ `min_quality` hat; das Ende die letzte solche Base am Ende eines guten Fensters. Gibt `(Beginn, Ende)` zurück
-/// (Ende exklusiv). Ist `quality` leer oder kürzer als `bases`, bleibt alles; gibt es kein gutes Fenster, ist das Ergebnis `(0, 0)`.
+/// Trims poor ends of a sequencing read: the start is the first base with quality >= `min_quality` whose window of width
+/// `window` has a mean quality >= `min_quality`; the end is the last such base at the end of a good window. Returns `(start, end)`
+/// (end exclusive). If `quality` is empty or shorter than `bases`, everything is kept; if there is no good window, the result is `(0, 0)`.
 pub fn quality_trim_range(
     bases_len: usize,
     quality: &[u8],
@@ -358,7 +358,7 @@ pub fn quality_trim_range(
         let sum: usize = quality[i..i + window].iter().map(|q| *q as usize).sum();
         sum >= min_quality as usize * window
     };
-    // Beginn: erste Base mit guter Qualität, deren Fenster gut ist; Ende: letzte solche Base am Fensterende
+    // Start: first base with good quality whose window is good; end: last such base at the window end
     let start = (0..=bases_len - window).find(|&i| quality[i] >= min_quality && good(i));
     let end = (window..=bases_len)
         .rev()
@@ -369,7 +369,7 @@ pub fn quality_trim_range(
     }
 }
 
-/// Sanger-Sequenzierung (`.ab1`) als Sequenz: Basen ohne schlechte Enden (Fenster 10, mittlere Qualität ≥ 20), Name = Dateiname.
+/// Sanger sequencing (`.ab1`) as a sequence: bases without poor ends (window 10, mean quality >= 20), name = file name.
 fn abif_documents(name: &str, bytes: &[u8]) -> Result<Vec<Document>> {
     let c = abif::parse_abif(bytes)?;
     let (a, b) = quality_trim_range(c.bases.len(), &c.quality, 10, 20);
@@ -382,9 +382,9 @@ fn abif_documents(name: &str, bytes: &[u8]) -> Result<Vec<Document>> {
     Ok(vec![dna_document(name, &dna_clean(part))?])
 }
 
-/// Liest eine Datei als Dokumente: Alignments (MEGA, NEXUS, Clustal, PHYLIP), PIR-, GCG-, csfasta-, SCF- und SFF-Sequenzen,
-/// ACE-Contigs (mit `read`-Features) und sonst wie
-/// `read_sequence_documents` (FASTA, FASTQ, GenBank, EMBL, SnapGene). Der Name von Alignments ist der Dateiname ohne Endung.
+/// Reads a file as documents: alignments (MEGA, NEXUS, Clustal, PHYLIP), PIR, GCG, csfasta, SCF and SFF sequences,
+/// ACE contigs (with `read` features) and otherwise like
+/// `read_sequence_documents` (FASTA, FASTQ, GenBank, EMBL, SnapGene). The name of alignments is the file name without extension.
 pub fn read_documents(path: &Path) -> Result<Vec<Document>> {
     let bytes = std::fs::read(path)?;
     let stem = path
@@ -544,7 +544,7 @@ mod tests {
         } else {
             panic!("keine Sequenz");
         }
-        // ACE: Konsens mit Lücke, zwei Reads
+        // ACE: consensus with gap, two reads
         let a = dir.path().join("a.ace");
         std::fs::write(
             &a,
@@ -565,7 +565,7 @@ mod tests {
         } else {
             panic!("keine Sequenz");
         }
-        // SCF und SFF: aus den Testdaten der Leser nachgebaut
+        // SCF and SFF: rebuilt from the readers' test data
         let mut scf = Vec::new();
         scf.extend_from_slice(b".scf");
         for v in [0u32, 128, 3, 0, 0, 128, 0, 164] {
@@ -586,7 +586,7 @@ mod tests {
 
     #[test]
     fn qualitaetsschnitt() {
-        // schlechtes Ende vorn (5 Basen) und hinten (5 Basen), 20 gute dazwischen
+        // poor end at the front (5 bases) and at the back (5 bases), 20 good ones in between
         let mut q = vec![5u8; 5];
         q.extend(vec![40u8; 20]);
         q.extend(vec![5u8; 5]);

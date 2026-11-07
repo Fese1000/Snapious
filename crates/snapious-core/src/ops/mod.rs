@@ -1,4 +1,4 @@
-//! Operationen: Eingabedokumente + Parameter → Ergebnisdokumente, mit Verlauf.
+//! Operations: input documents + parameters → result documents, with history.
 
 pub mod analysis;
 pub mod builtin;

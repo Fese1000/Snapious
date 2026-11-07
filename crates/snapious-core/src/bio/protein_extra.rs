@@ -1,10 +1,10 @@
-//! Weitere Proteinkennzahlen: Aliphatic Index und GRAVY.
+//! Further protein metrics: aliphatic index and GRAVY.
 
 use crate::bio::protein::hydropathy_value;
 
-/// Aliphatic Index: `X_A + 2.9 * X_V + 3.9 * (X_I + X_L)`, wobei `X` der Molanteil in Prozent (0–100) der Aminosäure an **allen**
-/// Zeichen der Sequenz ist (Uppercase; Groß-/Kleinschreibung egal; Leerzeichen zählen nicht mit). Leere Sequenz → `0.0`.
-/// Beispiel: `AVIL` → 25 + 2.9·25 + 3.9·50 = 292.5.
+/// Aliphatic index: `X_A + 2.9 * X_V + 3.9 * (X_I + X_L)`, where `X` is the mole fraction in percent (0–100) of the amino acid among **all**
+/// characters of the sequence (uppercase; case-insensitive; spaces are not counted). Empty sequence → `0.0`.
+/// Example: `AVIL` → 25 + 2.9·25 + 3.9·50 = 292.5.
 pub fn aliphatic_index(protein: &str) -> f64 {
     let chars: Vec<char> = protein
         .chars()
@@ -20,9 +20,9 @@ pub fn aliphatic_index(protein: &str) -> f64 {
     pct(&['A']) + 2.9 * pct(&['V']) + 3.9 * (pct(&['I']) + pct(&['L']))
 }
 
-/// GRAVY: Mittelwert der Kyte-Doolittle-Werte (`hydropathy_value`) über alle Aminosäuren, für die es einen Wert gibt
-/// (Groß-/Kleinschreibung egal; andere Zeichen zählen weder im Zähler noch im Nenner). Keine bewertbare Aminosäure → `0.0`.
-/// Beispiel: `AIL` → (1.8 + 4.5 + 3.8) / 3.
+/// GRAVY: mean of the Kyte-Doolittle values (`hydropathy_value`) over all amino acids that have a value
+/// (case-insensitive; other characters count in neither numerator nor denominator). No scorable amino acid → `0.0`.
+/// Example: `AIL` → (1.8 + 4.5 + 3.8) / 3.
 pub fn gravy(protein: &str) -> f64 {
     let values: Vec<f64> = protein
         .chars()

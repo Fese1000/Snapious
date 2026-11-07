@@ -3,96 +3,96 @@ package com.snapious.annotation;
 import java.util.*;
 
 /**
- * Codon Usage Analyzer für Genexpressions-Optimierung.
- * Berechnet: CAI (Codon Adaptation Index), GC3-Gehalt, RSCU (Relative Synonymous Codon Usage).
+ * Codon usage analyzer for gene expression optimization.
+ * Computes: CAI (Codon Adaptation Index), GC3 content, RSCU (Relative Synonymous Codon Usage).
  */
 public class CodonUsageAnalyzer {
 
-    // ======== KODON-TABELLE (Standard Genetic Code) ==========
+    // ======== CODON TABLE (Standard Genetic Code) ==========
 
     private static final Map<String, String> CODON_TABLE;
 
     static {
         CODON_TABLE = new HashMap<>();
 
-        // Start-Codons
-        CODON_TABLE.put("ATG", "M");  // Methionin (Start)
-        CODON_TABLE.put("TTG", "L");  // Alternative Start-Codons
+        // Start codons
+        CODON_TABLE.put("ATG", "M");  // methionine (start)
+        CODON_TABLE.put("TTG", "L");  // alternative start codons
         CODON_TABLE.put("GTG", "V");
 
-        // Phenylalanin
+        // Phenylalanine
         CODON_TABLE.put("TTT", "F"); CODON_TABLE.put("TTC", "F");
 
-        // Leucin
+        // Leucine
         CODON_TABLE.put("TTA", "L"); CODON_TABLE.put("TTG", "L");
         CODON_TABLE.put("CTT", "L"); CODON_TABLE.put("CTC", "L");
         CODON_TABLE.put("CTA", "L"); CODON_TABLE.put("CTG", "L");
 
-        // Isoleucin
+        // Isoleucine
         CODON_TABLE.put("ATT", "I"); CODON_TABLE.put("ATC", "I"); CODON_TABLE.put("ATA", "I");
 
-        // Valin
+        // Valine
         CODON_TABLE.put("GTT", "V"); CODON_TABLE.put("GTC", "V");
         CODON_TABLE.put("GTA", "V"); CODON_TABLE.put("GTG", "V");
 
-        // Serin
+        // Serine
         CODON_TABLE.put("TCT", "S"); CODON_TABLE.put("TCC", "S");
         CODON_TABLE.put("TCA", "S"); CODON_TABLE.put("TCG", "S");
         CODON_TABLE.put("AGT", "S"); CODON_TABLE.put("AGC", "S");
 
-        // Prolin
+        // Proline
         CODON_TABLE.put("CCT", "P"); CODON_TABLE.put("CCC", "P");
         CODON_TABLE.put("CCA", "P"); CODON_TABLE.put("CCG", "P");
 
-        // Threonin
+        // Threonine
         CODON_TABLE.put("ACT", "T"); CODON_TABLE.put("ACC", "T");
         CODON_TABLE.put("ACA", "T"); CODON_TABLE.put("ACG", "T");
 
-        // Alanin
+        // Alanine
         CODON_TABLE.put("GCT", "A"); CODON_TABLE.put("GCC", "A");
         CODON_TABLE.put("GCA", "A"); CODON_TABLE.put("GCG", "A");
 
-        // Tyrosin
+        // Tyrosine
         CODON_TABLE.put("TAT", "Y"); CODON_TABLE.put("TAC", "Y");
 
-        // Histidin
+        // Histidine
         CODON_TABLE.put("CAT", "H"); CODON_TABLE.put("CAC", "H");
 
-        // Glutamin
+        // Glutamine
         CODON_TABLE.put("CAA", "Q"); CODON_TABLE.put("CAG", "Q");
 
-        // Asparagin
+        // Asparagine
         CODON_TABLE.put("AAT", "N"); CODON_TABLE.put("AAC", "N");
 
-        // Lysin
+        // Lysine
         CODON_TABLE.put("AAA", "K"); CODON_TABLE.put("AAG", "K");
 
-        // Aspartat
+        // Aspartate
         CODON_TABLE.put("GAT", "D"); CODON_TABLE.put("GAC", "D");
 
-        // Glutamat
+        // Glutamate
         CODON_TABLE.put("GAA", "E"); CODON_TABLE.put("GAG", "E");
 
-        // Cystein
+        // Cysteine
         CODON_TABLE.put("TGT", "C"); CODON_TABLE.put("TGC", "C");
 
         // Tryptophan
         CODON_TABLE.put("TGG", "W");
 
-        // Arginin
+        // Arginine
         CODON_TABLE.put("CGT", "R"); CODON_TABLE.put("CGC", "R");
         CODON_TABLE.put("CGA", "R"); CODON_TABLE.put("CGG", "R");
         CODON_TABLE.put("AGA", "R"); CODON_TABLE.put("AGG", "R");
 
-        // Glycin
+        // Glycine
         CODON_TABLE.put("GGT", "G"); CODON_TABLE.put("GGC", "G");
         CODON_TABLE.put("GGA", "G"); CODON_TABLE.put("GGG", "G");
 
-        // Stop-Codons
+        // Stop codons
         CODON_TABLE.put("TAA", "*"); CODON_TABLE.put("TAG", "*"); CODON_TABLE.put("TGA", "*");
     }
 
-    // ======== AMINOSÄUREN ==========
+    // ======== AMINO ACIDS ==========
 
     private static final Map<String, List<String>> CODONS_BY_AMINO_ACID;
 
@@ -122,20 +122,20 @@ public class CodonUsageAnalyzer {
         CODONS_BY_AMINO_ACID.put("*", Arrays.asList("TAA", "TAG", "TGA"));  // Stop
     }
 
-    // ======== HAUPTANALYSE ==========
+    // ======== MAIN ANALYSIS ==========
 
     /**
-     * Analysiere Codon Usage einer DNA-Sequenz.
+     * Analyze the codon usage of a DNA sequence.
      */
     public static CodonUsageResult analyzeCodonUsage(String sequence) {
         String seq = sequence.toUpperCase().replaceAll("[^ATGC]", "");
 
         if (seq.length() < 3) {
-            throw new IllegalArgumentException("Sequenz zu kurz für Codon-Analyse (< 3bp)");
+            throw new IllegalArgumentException("Sequence too short for codon analysis (< 3bp)");
         }
 
-        // Zähle alle Codons
-        Map<String, Integer> codonCounts = new LinkedHashMap<>();  // Reihenfolge der Erscheinung
+        // Count all codons
+        Map<String, Integer> codonCounts = new LinkedHashMap<>();  // order of appearance
 
         for (int i = 0; i <= seq.length() - 3; i += 3) {
             String codon = seq.substring(i, Math.min(i + 3, seq.length()));
@@ -145,7 +145,7 @@ public class CodonUsageAnalyzer {
             }
         }
 
-        // Zähle Aminosäuren (ohne Stop)
+        // Count amino acids (excluding stop)
         Map<String, Integer> aaCounts = new HashMap<>();
         int totalCodons = 0;
 
@@ -153,36 +153,36 @@ public class CodonUsageAnalyzer {
             String codon = entry.getKey();
             int count = entry.getValue();
 
-            // Überspringe unvollständige Codons und Stop-Codons für CAI
+            // Skip incomplete codons and stop codons for CAI
             if (CODON_TABLE.containsKey(codon)) {
                 String aa = CODON_TABLE.get(codon);
 
-                if (!"*".equals(aa)) {  // Ignoriere Stop-Codons für CAI
+                if (!"*".equals(aa)) {  // ignore stop codons for CAI
                     aaCounts.merge(aa, count, Integer::sum);
                     totalCodons += count;
                 }
             }
         }
 
-        // Berechne CAI (Codon Adaptation Index)
+        // Compute CAI (Codon Adaptation Index)
         double cai = calculateCAI(codonCounts, aaCounts);
 
-        // Berechne GC3-Gehalt
+        // Compute GC3 content
         double gc3 = calculateGC3(seq, codonCounts);
 
-        // Berechne RSCU (Relative Synonymous Codon Usage)
+        // Compute RSCU (Relative Synonymous Codon Usage)
         Map<String, Double> rscu = calculateRSCU(codonCounts, aaCounts);
 
-        // Generiere Optimierungsvorschläge
+        // Generate optimization suggestions
         List<String> recommendations = generateRecommendations(cai, gc3, rscu);
 
         return new CodonUsageResult(codonCounts, aaCounts, cai, gc3, rscu, recommendations);
     }
 
-    /** CAI (Codon Adaptation Index) berechnen. 0-1, wobei 1 optimale Codon-Nutzung ist. */
+    /** Compute the CAI (Codon Adaptation Index). 0-1, where 1 is optimal codon usage. */
     private static double calculateCAI(Map<String, Integer> codonCounts, Map<String, Integer> aaCounts) {
-        // Verwende Referenz-Codon-Usage-Gewichte (vereinfacht)
-        // In einer vollständigen Implementierung würde man eine Referenz-Sequenzbank verwenden
+        // Use reference codon usage weights (simplified)
+        // A full implementation would use a reference sequence database
 
         double sumWeights = 0;
         int nonStopCodons = 0;
@@ -195,7 +195,7 @@ public class CodonUsageAnalyzer {
                 List<String> codonsForAA = CODONS_BY_AMINO_ACID.get(aa);
 
                 if (codonsForAA != null) {
-                    // Vereinfachte Gewichtung: 1/Nr der Synonyme (optimistisch)
+                    // Simplified weighting: 1/number of synonyms (optimistic)
                     double weight = codonsForAA.size() == 1 ? 1.0 : (double) 1 / codonsForAA.size();
 
                     sumWeights += weight * entry.getValue();
@@ -206,13 +206,13 @@ public class CodonUsageAnalyzer {
 
         if (nonStopCodons == 0) return 0.0;
 
-        // Geometrischer Mittelwert
+        // Geometric mean
         double geometricMean = Math.pow(sumWeights / nonStopCodons, 1.0 / nonStopCodons);
 
         return Math.min(1.0, Math.max(0.0, geometricMean));
     }
 
-    /** GC3-Gehalt berechnen (GC-Gehalt der 3. Codon-Position) */
+    /** Compute GC3 content (GC content of the 3rd codon position) */
     private static double calculateGC3(String sequence, Map<String, Integer> codonCounts) {
         int thirdPositionG = 0;
         int thirdPositionC = 0;
@@ -245,7 +245,7 @@ public class CodonUsageAnalyzer {
         for (Map.Entry<String, List<String>> aaEntry : CODONS_BY_AMINO_ACID.entrySet()) {
             String aa = aaEntry.getKey();
 
-            if ("*".equals(aa)) continue;  // Ignoriere Stop-Codons
+            if ("*".equals(aa)) continue;  // ignore stop codons
 
             List<String> codons = aaEntry.getValue();
             int totalAA = aaCounts.getOrDefault(aa, 0);
@@ -256,7 +256,7 @@ public class CodonUsageAnalyzer {
                 if (totalAA == 0) {
                     rscu.put(codon, 0.0);
                 } else {
-                    // RSCU = observed / expected (expected = totalAA / Nr der Synonyme)
+                    // RSCU = observed / expected (expected = totalAA / number of synonyms)
                     double rscuValue = (double) count / (totalAA / (double) codons.size());
                     rscu.put(codon, Math.round(rscuValue * 100.0) / 100.0);
                 }
@@ -266,38 +266,38 @@ public class CodonUsageAnalyzer {
         return rscu;
     }
 
-    /** Generiere Optimierungsvorschläge basierend auf der Analyse */
+    /** Generate optimization suggestions based on the analysis */
     private static List<String> generateRecommendations(double cai, double gc3, Map<String, Double> rscu) {
         List<String> recommendations = new ArrayList<>();
 
-        // CAI-Bewertung
+        // CAI assessment
         if (cai >= 0.8) {
-            recommendations.add("CAI: Ausgezeichnet (" + String.format("%.2f", cai) + ") - hohe Expression wahrscheinlich ✓");
+            recommendations.add("CAI: Excellent (" + String.format("%.2f", cai) + ") - high expression likely ✓");
         } else if (cai >= 0.6) {
-            recommendations.add("CAI: Gut (" + String.format("%.2f", cai) + ") - angemessene Expression erwartet ✓");
+            recommendations.add("CAI: Good (" + String.format("%.2f", cai) + ") - adequate expression expected ✓");
         } else if (cai >= 0.4) {
-            recommendations.add("CAI: Mittel (" + String.format("%.2f", cai) + ") - Optimierung empfohlen");
-            recommendations.add("  → Ersetze unternutzte Codons durch häufigere Synonyme");
+            recommendations.add("CAI: Medium (" + String.format("%.2f", cai) + ") - optimization recommended");
+            recommendations.add("  → Replace underused codons with more frequent synonyms");
         } else {
-            recommendations.add("CAI: Niedrig (" + String.format("%.2f", cai) + ") - starke Optimierung erforderlich");
-            recommendations.add("  → Redesign der Sequenz mit Wirtsspezifischer Codon-Optimierung");
+            recommendations.add("CAI: Low (" + String.format("%.2f", cai) + ") - strong optimization required");
+            recommendations.add("  → Redesign the sequence with host-specific codon optimization");
         }
 
-        // GC3-Bewertung
+        // GC3 assessment
         if (gc3 >= 0.5) {
-            recommendations.add(String.format("GC3: %.0f%% - ausgewogene 3. Position ✓", gc3 * 100));
+            recommendations.add(String.format("GC3: %.0f%% - balanced 3rd position ✓", gc3 * 100));
         } else {
-            recommendations.add(String.format("GC3: %.0f%% - niedrig, GC-reiche Codons könnten Expression verbessern", gc3 * 100));
+            recommendations.add(String.format("GC3: %.0f%% - low, GC-rich codons could improve expression", gc3 * 100));
         }
 
-        // Übernutzte Codons identifizieren (RSCU > 1.5)
+        // Identify overused codons (RSCU > 1.5)
         List<Map.Entry<String, Double>> overused = rscu.entrySet().stream()
             .filter(e -> e.getValue() > 1.5)
             .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
             .toList();
 
         if (!overused.isEmpty()) {
-            recommendations.add("\nÜbernutzte Codons (RSCU > 1.5):");
+            recommendations.add("\nOverused codons (RSCU > 1.5):");
 
             for (int i = 0; i < Math.min(5, overused.size()); i++) {
                 Map.Entry<String, Double> entry = overused.get(i);
@@ -305,7 +305,7 @@ public class CodonUsageAnalyzer {
                 recommendations.add(String.format("  %s → %s (RSCU=%.2f)", entry.getKey(), aa, entry.getValue()));
             }
 
-            recommendations.add("  → Erwäge Ersatz durch seltenere Synonyme");
+            recommendations.add("  → Consider replacing with rarer synonyms");
         }
 
         return recommendations;
@@ -313,12 +313,12 @@ public class CodonUsageAnalyzer {
 
     // ======== RESULT ==========
 
-    /** Ergebnis der Codon Usage Analyse */
+    /** Result of the codon usage analysis */
     public static class CodonUsageResult {
         private Map<String, Integer> codonCounts;
         private Map<String, Integer> aminoAcidCounts;
         private double cai;  // Codon Adaptation Index (0-1)
-        private double gc3Content;  // GC-Gehalt der 3. Codon-Position
+        private double gc3Content;  // GC content of the 3rd codon position
         private Map<String, Double> rscu;  // Relative Synonymous Codon Usage
         private List<String> recommendations;
 
@@ -339,24 +339,24 @@ public class CodonUsageAnalyzer {
         public Map<String, Double> getRscu() { return rscu; }
         public List<String> getRecommendations() { return recommendations; }
 
-        /** CAI als Text */
+        /** CAI as text */
         public String caiLabel() {
             if (cai >= 0.8) return "Hoch (" + String.format("%.2f", cai) + ") ✓✓";
-            if (cai >= 0.6) return "Mittel-Hoch (" + String.format("%.2f", cai) + ") ✓";
-            if (cai >= 0.4) return "Mittel (" + String.format("%.2f", cai) + ")";
-            return "Niedrig (" + String.format("%.2f", cai) + ") ✗";
+            if (cai >= 0.6) return "Medium-High (" + String.format("%.2f", cai) + ") ✓";
+            if (cai >= 0.4) return "Medium (" + String.format("%.2f", cai) + ")";
+            return "Low (" + String.format("%.2f", cai) + ") ✗";
         }
 
-        /** Generiere vollständigen Analysebericht */
+        /** Generate the full analysis report */
         public String generateReport() {
             StringBuilder sb = new StringBuilder();
 
-            sb.append("=== Codon Usage Analyse ===\n\n");
+            sb.append("=== Codon Usage Analysis ===\n\n");
             sb.append(String.format("Codon Adaptation Index (CAI): %s\n", caiLabel()));
-            sb.append(String.format("GC3-Gehalt: %.0f%%\n\n", gc3Content * 100));
+            sb.append(String.format("GC3 content: %.0f%%\n\n", gc3Content * 100));
 
-            // Top-Codons
-            sb.append("Top 15 Codons (Häufigkeit):\n");
+            // Top codons
+            sb.append("Top 15 Codons (frequency):\n");
 
             codonCounts.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
@@ -366,8 +366,8 @@ public class CodonUsageAnalyzer {
                     sb.append(String.format("  %s → %s: %d\n", entry.getKey(), aa, entry.getValue()));
                 });
 
-            // Aminosäure-Zusammensetzung
-            sb.append("\nAminosäuren (Anzahl):\n");
+            // Amino acid composition
+            sb.append("\nAmino acids (count):\n");
 
             aminoAcidCounts.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
@@ -375,21 +375,21 @@ public class CodonUsageAnalyzer {
                     sb.append(String.format("  %s: %d\n", entry.getKey(), entry.getValue()));
                 });
 
-            // Optimierungsvorschläge
-            sb.append("\nOptimierungsempfehlungen:\n");
+            // Optimization suggestions
+            sb.append("\nOptimization recommendations:\n");
 
             for (String rec : recommendations) {
                 sb.append(rec).append("\n");
             }
 
-            // RSCU-Tabelle (übernutzte Codons)
+            // RSCU table (overused codons)
             List<Map.Entry<String, Double>> overused = rscu.entrySet().stream()
                 .filter(e -> e.getValue() > 1.5)
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                 .toList();
 
             if (!overused.isEmpty()) {
-                sb.append("\nÜbernutzte Codons (RSCU > 1.5):\n");
+                sb.append("\nOverused codons (RSCU > 1.5):\n");
 
                 for (Map.Entry<String, Double> entry : overused) {
                     sb.append(String.format("  %s: RSCU=%.2f\n", entry.getKey(), entry.getValue()));
@@ -405,56 +405,56 @@ public class CodonUsageAnalyzer {
         }
     }
 
-    // ======== HAUPTFUNKTIONEN FÜR UI ==========
+    // ======== MAIN FUNCTIONS FOR UI ==========
 
-    /** Analysiere Sequenz und gib Bericht zurück */
+    /** Analyze a sequence and return the report */
     public static String analyzeAndReport(String sequence) {
         try {
             CodonUsageResult result = analyzeCodonUsage(sequence);
             return result.generateReport();
 
         } catch (IllegalArgumentException e) {
-            return "Fehler: " + e.getMessage();
+            return "Error: " + e.getMessage();
         }
     }
 
-    /** Vergleiche Codon Usage zweier Sequenzen */
+    /** Compare codon usage of two sequences */
     public static String compareCodonUsage(String sequence1, String sequence2) {
         try {
             CodonUsageResult result1 = analyzeCodonUsage(sequence1);
             CodonUsageResult result2 = analyzeCodonUsage(sequence2);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("=== Codon Usage Vergleich ===\n\n");
+            sb.append("=== Codon Usage Comparison ===\n\n");
 
-            sb.append(String.format("%s:\n", "Sequenz 1"));
+            sb.append(String.format("%s:\n", "Sequence 1"));
             sb.append(String.format("  CAI: %s\n", result1.caiLabel()));
             sb.append(String.format("  GC3: %.0f%%\n", result1.gc3Content * 100));
 
-            sb.append(String.format("\n%s:\n", "Sequenz 2"));
+            sb.append(String.format("\n%s:\n", "Sequence 2"));
             sb.append(String.format("  CAI: %s\n", result2.caiLabel()));
             sb.append(String.format("  GC3: %.0f%%\n", result2.gc3Content * 100));
 
             double caiDiff = Math.abs(result1.cai - result2.cai);
-            sb.append(String.format("\nCAI-Differenz: %.2f\n", caiDiff));
+            sb.append(String.format("\nCAI difference: %.2f\n", caiDiff));
 
             if (caiDiff < 0.1) {
-                sb.append("Sequenzen haben ähnliche Codon-Nutzung ✓");
+                sb.append("Sequences have similar codon usage ✓");
             } else {
-                sb.append("Codon-Nutzung unterscheidet sich signifikant");
+                sb.append("Codon usage differs significantly");
             }
 
             return sb.toString();
 
         } catch (IllegalArgumentException e) {
-            return "Fehler: " + e.getMessage();
+            return "Error: " + e.getMessage();
         }
     }
 
-    /** Generiere optimierte Sequenz (vereinfachte Codon-Optimierung) */
+    /** Generate an optimized sequence (simplified codon optimization) */
     public static String optimizeCodons(String sequence, String targetOrganism) {
-        // Vereinfachte Optimierung: Ersetze unternutzte Codons durch häufigere Synonyme
-        // In einer vollständigen Implementierung würde man eine Referenz-Codon-Usage-Tabelle für den Organismus verwenden
+        // Simplified optimization: replace underused codons with more frequent synonyms
+        // A full implementation would use a reference codon usage table for the organism
 
         String seq = sequence.toUpperCase().replaceAll("[^ATGC]", "");
         StringBuilder optimized = new StringBuilder(seq.length());
@@ -466,21 +466,21 @@ public class CodonUsageAnalyzer {
                 String aa = CODON_TABLE.get(codon);
 
                 if (!"*".equals(aa)) {
-                    // Ersetze durch häufigstes Codon für diesen Organismus (vereinfacht)
+                    // Replace with the most frequent codon for this organism (simplified)
                     List<String> codonsForAA = CODONS_BY_AMINO_ACID.get(aa);
 
                     if (codonsForAA != null && codonsForAA.size() > 1) {
-                        // Wähle mittleres Codon (als Platzhalter für Organismus-spezifische Optimierung)
+                        // Pick a middle codon (as a placeholder for organism-specific optimization)
                         String preferred = codonsForAA.get(codonsForAA.size() / 2);
                         optimized.append(preferred);
                     } else {
-                        optimized.append(codon);  // Einziges Codon → unverändert
+                        optimized.append(codon);  // only codon → unchanged
                     }
                 } else {
-                    optimized.append(codon);  // Stop-Codons unverändert
+                    optimized.append(codon);  // stop codons unchanged
                 }
             } else {
-                optimized.append(codon);  // Unvollständige Codons unverändert
+                optimized.append(codon);  // incomplete codons unchanged
             }
         }
 

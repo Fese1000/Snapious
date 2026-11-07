@@ -6,19 +6,19 @@ import java.util.*;
 import java.util.stream.*;
 
 /**
- * Multiple Sequence Alignment (MSA) nach progressivem Algorithmus (ClustalW-ähnlich).
- * Erstellt Guide-Tree, aligniert Sequenzen schrittweise von den ähnlichsten zur unterschiedlichsten.
+ * Multiple sequence alignment (MSA) using a progressive algorithm (ClustalW-like).
+ * Builds a guide tree and aligns sequences step by step from the most similar to the most divergent.
  */
 public class MultipleSequenceAlignment {
 
     // ======== MSA RESULT ==========
 
-    /** Repräsentiert das Ergebnis eines Multi-Sequence-Alginments */
+    /** Represents the result of a multiple sequence alignment */
     public static class MSAResult {
-        private List<AlignedSequence> alignedSequences;  // Alignierte Sequenzen mit Gaps
-        private double averageScore;                     // Durchschnittlicher Pairwise-Score
-        private String consensusSequence;                // Konsensus-Sequenz
-        private Map<String, Double> sequenceWeights;     // Sequenz-Gewichte (Gaps %)
+        private List<AlignedSequence> alignedSequences;  // aligned sequences with gaps
+        private double averageScore;                     // average pairwise score
+        private String consensusSequence;                // consensus sequence
+        private Map<String, Double> sequenceWeights;     // sequence weights (gaps %)
 
         public MSAResult(List<AlignedSequence> alignedSequences, double averageScore,
                         String consensusSequence, Map<String, Double> sequenceWeights) {
@@ -33,18 +33,18 @@ public class MultipleSequenceAlignment {
         public String getConsensusSequence() { return consensusSequence; }
         public Map<String, Double> getSequenceWeights() { return sequenceWeights; }
 
-        /** Formatierter Alignment-Output */
+        /** Formatted alignment output */
         public String format() {
             StringBuilder sb = new StringBuilder();
 
             // Header
             sb.append("=== Multiple Sequence Alignment ===\n\n");
-            sb.append(String.format("Sequenzen: %d, Länge: %d bp\n",
+            sb.append(String.format("Sequences: %d, Length: %d bp\n",
                 alignedSequences.size(), getAlignmentLength()));
-            sb.append(String.format("Durchschnittlicher Pairwise-Score: %.1f\n", averageScore));
-            sb.append(String.format("Konsensus: %s\n\n", consensusSequence));
+            sb.append(String.format("Average pairwise score: %.1f\n", averageScore));
+            sb.append(String.format("Consensus: %s\n\n", consensusSequence));
 
-            // Sequenz-weise Ausgabe (blöckweise à 60bp)
+            // Per-sequence output (in blocks of 60bp)
             int blockSize = 60;
             int numBlocks = (getAlignmentLength() + blockSize - 1) / blockSize;
 
@@ -52,28 +52,28 @@ public class MultipleSequenceAlignment {
                 int start = block * blockSize;
                 int end = Math.min(start + blockSize, getAlignmentLength());
 
-                // Konsensus-Zeile
+                // Consensus line
                 sb.append(String.format("Consensus %3d-%3d  %s\n",
                     start + 1, end, getConsensusBlock(block, blockSize)));
 
-                // Jede Sequenz
+                // Each sequence
                 for (AlignedSequence as : alignedSequences) {
                     sb.append(String.format("%-20s %3d-%3d  %s\n",
                         as.getName(), start + 1, end, as.getSequenceBlock(block, blockSize)));
                 }
 
-                sb.append("\n");  // Leerzeile nach jedem Block
+                sb.append("\n");  // blank line after each block
             }
 
             return sb.toString();
         }
 
-        /** Länge des Alignments */
+        /** Length of the alignment */
         public int getAlignmentLength() {
             return alignedSequences.isEmpty() ? 0 : alignedSequences.get(0).getAlignedBases().length();
         }
 
-        /** Konsensus-Block für eine Range */
+        /** Consensus block for a range */
         private String getConsensusBlock(int block, int blockSize) {
             int start = block * blockSize;
             int end = Math.min(start + blockSize, getAlignmentLength());
@@ -85,11 +85,11 @@ public class MultipleSequenceAlignment {
         public String toString() { return format(); }
     }
 
-    /** Repräsentiert eine alignierte Sequenz mit Gaps */
+    /** Represents an aligned sequence with gaps */
     public static class AlignedSequence {
-        private String name;       // Sequenz-Name/ID
-        private String bases;      // Original-Basen (ohne Gaps)
-        private String alignedBases;  // Alignierte Basen (mit Gaps '-')
+        private String name;       // sequence name/ID
+        private String bases;      // original bases (without gaps)
+        private String alignedBases;  // aligned bases (with gaps '-')
 
         public AlignedSequence(String name, String bases, String alignedBases) {
             this.name = name;
@@ -101,18 +101,18 @@ public class MultipleSequenceAlignment {
         public String getBases() { return bases; }
         public String getAlignedBases() { return alignedBases; }
 
-        /** Anzahl der Gaps */
+        /** Number of gaps */
         public int gapCount() {
             return (int) alignedBases.chars().filter(c -> c == '-').count();
         }
 
-        /** Prozentuale Gap-Rate */
+        /** Gap rate in percent */
         public double gapPercent() {
             int len = alignedBases.length();
             return len > 0 ? (double) gapCount() / len * 100 : 0;
         }
 
-        /** Block extrahieren (für blockweise Ausgabe) */
+        /** Extract a block (for block-wise output) */
         public String getSequenceBlock(int block, int blockSize) {
             int start = block * blockSize;
             int end = Math.min(start + blockSize, alignedBases.length());
@@ -127,7 +127,7 @@ public class MultipleSequenceAlignment {
         }
     }
 
-    // ======== PARAMETER ========
+    // ======== PARAMETERS ========
 
     private static final int MATCH = 2;
     private static final int MISMATCH = -1;
@@ -135,12 +135,12 @@ public class MultipleSequenceAlignment {
 
     // ======== GUIDE TREE (UPGMA) ========
 
-    /** Knoten im Guide-Tree; Blätter tragen den Index der Eingabesequenz. */
+    /** Node in the guide tree; leaves carry the index of the input sequence. */
     private static final class GuideTreeNode {
-        final int leafIndex;   // >= 0 bei Blättern, sonst -1
-        final String name;     // nur bei Blättern
-        final double height;   // Abstand zu den Blättern
-        final int size;        // Anzahl Blätter im Teilbaum
+        final int leafIndex;   // >= 0 for leaves, otherwise -1
+        final String name;     // leaves only
+        final double height;   // distance to the leaves
+        final int size;        // number of leaves in the subtree
         final GuideTreeNode left, right;
 
         GuideTreeNode(int leafIndex, String name) {
@@ -164,21 +164,21 @@ public class MultipleSequenceAlignment {
         boolean isLeaf() { return left == null; }
     }
 
-    /** Zeilen einer (Teil-)Alignierung samt Index der Eingabesequenz pro Zeile. */
+    /** Rows of a (partial) alignment together with the input-sequence index per row. */
     private record Profile(List<Integer> ids, List<String> rows) {
         int width() { return rows.get(0).length(); }
     }
 
-    // ======== HAUPTALIGNMENT ==========
+    // ======== MAIN ALIGNMENT ==========
 
     /**
-     * Progressives Multiple Sequence Alignment (ClustalW-ähnlich):
-     * paarweise Distanzen aus globalen Alignments, UPGMA-Guide-Tree, anschließend
-     * Profil-Profil-Alignment entlang des Baums. Die Reihenfolge der Eingabe bleibt erhalten.
+     * Progressive multiple sequence alignment (ClustalW-like):
+     * pairwise distances from global alignments, UPGMA guide tree, then
+     * profile-profile alignment along the tree. The input order is preserved.
      */
     public static MSAResult progressiveAlignment(List<Sequence> sequences) {
         if (sequences == null || sequences.isEmpty()) {
-            throw new IllegalArgumentException("Mindestens eine Sequenz erforderlich");
+            throw new IllegalArgumentException("At least one sequence required");
         }
 
         if (sequences.size() == 1) {
@@ -210,9 +210,9 @@ public class MultipleSequenceAlignment {
         return new MSAResult(aligned, calculateAveragePairwiseScore(aligned), consensus, weights);
     }
 
-    // ======== DISTANZEN & GUIDE TREE ==========
+    // ======== DISTANCES & GUIDE TREE ========
 
-    /** Distanz = 1 - Identität des globalen paarweisen Alignments (0..1). */
+    /** Distance = 1 - identity of the global pairwise alignment (0..1). */
     private static double[][] computeDistanceMatrix(List<Sequence> sequences) {
         int n = sequences.size();
         double[][] dist = new double[n][n];
@@ -268,10 +268,10 @@ public class MultipleSequenceAlignment {
         for (int i = 0; i < n; i++) {
             if (active[i]) return node[i];
         }
-        throw new IllegalStateException("Guide-Tree leer");
+        throw new IllegalStateException("Guide tree empty");
     }
 
-    // ======== PROGRESSIVES ALIGNMENT ==========
+    // ======== PROGRESSIVE ALIGNMENT ==========
 
     private static Profile alignSubtree(GuideTreeNode node, List<Sequence> sequences) {
         if (node.isLeaf()) {
@@ -286,7 +286,7 @@ public class MultipleSequenceAlignment {
         return x == y ? MATCH : MISMATCH;
     }
 
-    /** Durchschnittlicher Paar-Score der Spalte {@code col} gegen eine reine Gap-Spalte. */
+    /** Average pair score of column {@code col} against a pure gap column. */
     private static double gapColumnScore(List<String> rows, int col) {
         double sum = 0;
         for (String row : rows) {
@@ -306,7 +306,7 @@ public class MultipleSequenceAlignment {
         return sum / ((double) a.size() * b.size());
     }
 
-    /** Profil-Profil-Alignment (Needleman-Wunsch auf Spalten, Sum-of-Pairs). */
+    /** Profile-profile alignment (Needleman-Wunsch on columns, sum of pairs). */
     private static Profile mergeProfiles(Profile a, Profile b) {
         int la = a.width(), lb = b.width();
         double[][] f = new double[la + 1][lb + 1];
@@ -366,9 +366,9 @@ public class MultipleSequenceAlignment {
         for (StringBuilder sb : out) sb.append('-');
     }
 
-    // ======== SCORE & STATISTIK ==========
+    // ======== SCORE & STATISTICS ==========
 
-    /** Durchschnittlicher Sum-of-Pairs-Score über alle Sequenzpaare des Alignments. */
+    /** Average sum-of-pairs score over all sequence pairs of the alignment. */
     private static double calculateAveragePairwiseScore(List<AlignedSequence> aligned) {
         int n = aligned.size();
         if (n < 2) return 0.0;
@@ -388,20 +388,20 @@ public class MultipleSequenceAlignment {
         return total / pairs;
     }
 
-    // ======== HAUPTFUNKTIONEN FÜR UI ==========
+    // ======== MAIN FUNCTIONS FOR UI ==========
 
-    /** Generiere MSA-Bericht für Sequenz-Liste */
+    /** Generate an MSA report for a list of sequences */
     public static String generateMSAReport(List<Sequence> sequences) {
         try {
             MSAResult result = progressiveAlignment(sequences);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("=== MSA Zusammenfassung ===\n\n");
-            sb.append(String.format("Sequenzen: %d\n", sequences.size()));
-            sb.append(String.format("Alignment-Länge: %d bp\n", result.getAlignmentLength()));
-            sb.append(String.format("Durchschnittlicher Score: %.1f\n", result.getAverageScore()));
+            sb.append("=== MSA Summary ===\n\n");
+            sb.append(String.format("Sequences: %d\n", sequences.size()));
+            sb.append(String.format("Alignment length: %d bp\n", result.getAlignmentLength()));
+            sb.append(String.format("Average score: %.1f\n", result.getAverageScore()));
 
-            sb.append("\nGap-Statistik:\n");
+            sb.append("\nGap statistics:\n");
             for (AlignedSequence as : result.getAlignedSequences()) {
                 sb.append(String.format("  %s: %.0f%% Gaps (%d bp)\n",
                         as.getName(), as.gapPercent(), as.gapCount()));
@@ -411,24 +411,24 @@ public class MultipleSequenceAlignment {
             if (consensusPreview.length() > 100) {
                 consensusPreview = consensusPreview.substring(0, 100) + "...";
             }
-            sb.append(String.format("\nKonsensus (Preview): %s\n", consensusPreview));
+            sb.append(String.format("\nConsensus (preview): %s\n", consensusPreview));
             sb.append("\n").append(result.format());
             return sb.toString();
 
         } catch (IllegalArgumentException e) {
-            return "Fehler beim MSA: " + e.getMessage();
+            return "MSA error: " + e.getMessage();
         }
     }
 
-    /** Aligniere Sequenzen und gib Ergebnis zurück */
+    /** Align sequences and return the result */
     public static MSAResult alignSequences(List<Sequence> sequences) {
         return progressiveAlignment(sequences);
     }
 
-    /** Guide-Tree der Sequenzen im Newick-Format (Astlängen aus UPGMA-Höhen). */
+    /** Guide tree of the sequences in Newick format (branch lengths from UPGMA heights). */
     public static String generateNewickFromMSA(List<Sequence> sequences) {
         if (sequences == null || sequences.isEmpty()) {
-            throw new IllegalArgumentException("Mindestens eine Sequenz erforderlich");
+            throw new IllegalArgumentException("At least one sequence required");
         }
         if (sequences.size() == 1) return newickLabel(sequences.get(0).getName()) + ";";
         GuideTreeNode root = buildGuideTree(sequences);
@@ -446,7 +446,7 @@ public class MultipleSequenceAlignment {
         return name.replaceAll("[\\s(),:;\\[\\]']", "_");
     }
 
-    /** Exportiere Alignment als FASTA-Datei (mit Gaps) */
+    /** Export the alignment as a FASTA file (with gaps) */
     public static String exportToFASTA(MSAResult result) {
         StringBuilder sb = new StringBuilder();
         for (AlignedSequence as : result.getAlignedSequences()) {

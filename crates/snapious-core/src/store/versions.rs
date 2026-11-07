@@ -1,6 +1,6 @@
-//! Dokumentversionen: beim Speichern wird die vorherige Fassung in der Tabelle `versions` aufbewahrt (höchstens 50 je Dokument).
-//! Tabelle `versions(doc_id, version, time, type, name, created, payload, summary)`; `payload`, `type`, `name`, `created` sind die Spalten
-//! von `documents` zum Zeitpunkt der Fassung.
+//! Document versions: on saving, the previous revision is kept in the table `versions` (at most 50 per document).
+//! Table `versions(doc_id, version, time, type, name, created, payload, summary)`; `payload`, `type`, `name`, `created` are the columns
+//! of `documents` at the time of the revision.
 
 use rusqlite::{params, OptionalExtension};
 
@@ -9,24 +9,24 @@ use crate::model::document::Document;
 use crate::store::project_store::ProjectStore;
 use crate::util::now_secs;
 
-/// Höchstzahl der aufbewahrten Versionen je Dokument.
+/// Maximum number of retained versions per document.
 pub const MAX_VERSIONS: usize = 50;
 
-/// Kurzinfo zu einer Version.
+/// Short info about a version.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VersionInfo {
-    /// Fortlaufende Nummer je Dokument, beginnend bei 1.
+    /// Sequential number per document, starting at 1.
     pub version: i64,
     pub time: i64,
     pub summary: String,
 }
 
 impl ProjectStore {
-    /// Speichert wie `save`, legt aber vorher die alte Fassung ab: Gibt es das Dokument schon (Zeile in `documents`) und ist die neue Nutzlast
-    /// (`payload` nach dem Speichern) von der alten verschieden, wird die alte Zeile als neue Version eingetragen (Nummer = größte vorhandene + 1,
-    /// `time = now_secs()`, `summary` wie übergeben). Danach werden die ältesten Versionen gelöscht, sodass höchstens `MAX_VERSIONS` bleiben.
-    /// Ist die Nutzlast gleich oder das Dokument neu, entsteht keine Version. Hinweis: zuerst die alte Zeile lesen, dann `save`, dann die neue
-    /// Nutzlast lesen und vergleichen; bei gleicher Nutzlast ist nichts zu tun.
+    /// Saves like `save`, but first stores the old revision: if the document already exists (row in `documents`) and the new payload
+    /// (`payload` after saving) differs from the old one, the old row is recorded as a new version (number = largest existing + 1,
+    /// `time = now_secs()`, `summary` as passed). Then the oldest versions are deleted so that at most `MAX_VERSIONS` remain.
+    /// If the payload is the same or the document is new, no version is created. Hint: first read the old row, then `save`, then read the new
+    /// payload and compare; if the payload is the same there is nothing to do.
     pub fn save_versioned(&mut self, doc: &Document, summary: &str) -> Result<()> {
         let prev: Option<String> = self
             .conn
@@ -60,7 +60,7 @@ impl ProjectStore {
         Ok(())
     }
 
-    /// Versionen eines Dokuments, neueste zuerst.
+    /// Versions of a document, newest first.
     pub fn versions(&self, doc_id: &str) -> Result<Vec<VersionInfo>> {
         let mut stmt = self.conn.prepare(
             "SELECT version, time, summary FROM versions WHERE doc_id = ?1 ORDER BY version DESC",
@@ -79,8 +79,8 @@ impl ProjectStore {
         Ok(out)
     }
 
-    /// Lädt eine Version als Dokument (gleiche ID wie das Dokument). Hinweis: Zeile in eine leere `ProjectStore::open_in_memory()` kopieren
-    /// (`INSERT INTO documents(id, type, name, created, payload)`) und dort `load` aufrufen. Unbekannte Version → `Error::InvalidInput`.
+    /// Loads a version as a document (same ID as the document). Hint: copy the row into an empty `ProjectStore::open_in_memory()`
+    /// (`INSERT INTO documents(id, type, name, created, payload)`) and call `load` there. Unknown version -> `Error::InvalidInput`.
     pub fn load_version(&self, doc_id: &str, version: i64) -> Result<Document> {
         let row: Option<(String, String, i64, String)> = self
             .conn
@@ -105,9 +105,9 @@ impl ProjectStore {
             .ok_or_else(|| Error::InvalidInput("Version not readable".to_string()))
     }
 
-    /// Stellt eine Version wieder her: die aktuelle Fassung wird (wenn sie sich unterscheidet) selbst als neue Version abgelegt
-    /// (`summary = "before restore"`), danach wird die Zeile in `documents` (`type`, `name`, `created`, `payload`) durch die der Version ersetzt.
-    /// Die Version bleibt in der Liste. Unbekannte Version oder unbekanntes Dokument → `Error::InvalidInput`.
+    /// Restores a version: the current revision is (if it differs) itself stored as a new version
+    /// (`summary = "before restore"`), then the row in `documents` (`type`, `name`, `created`, `payload`) is replaced by that of the version.
+    /// The version stays in the list. Unknown version or unknown document -> `Error::InvalidInput`.
     pub fn restore_version(&mut self, doc_id: &str, version: i64) -> Result<()> {
         let row: Option<(String, String, i64, String)> = self
             .conn
@@ -156,7 +156,7 @@ impl ProjectStore {
 }
 
 impl ProjectStore {
-    /// Trägt eine Version ein und kürzt die Liste auf `MAX_VERSIONS`.
+    /// Records a version and trims the list to `MAX_VERSIONS`.
     fn insert_version(
         &mut self,
         doc_id: &str,
@@ -251,7 +251,7 @@ mod tests {
         assert_eq!(v[0].summary, "geändert");
         assert_eq!(bases_of(&s.load_version(&id, 1).unwrap()), "AAAA");
         assert_eq!(bases_of(&s.load(&id).unwrap().unwrap()), "CCCC");
-        // gleiche Fassung erneut: keine neue Version
+        // same revision again: no new version
         s.save_versioned(&doc(&base, "CCCC"), "nochmal").unwrap();
         assert_eq!(s.versions(&id).unwrap().len(), 1);
     }
@@ -297,7 +297,7 @@ mod tests {
         }
         let v = s.versions(&id).unwrap();
         assert_eq!(v.len(), MAX_VERSIONS);
-        // neueste zuerst, die ältesten sind weggefallen
+        // newest first, the oldest were dropped
         assert_eq!(v[0].version, 60);
         assert_eq!(v[MAX_VERSIONS - 1].version, 11);
     }

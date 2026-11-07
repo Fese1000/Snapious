@@ -9,7 +9,7 @@ class CoverageAnalyzerTest {
     void testCoverageAnalyseGrundlagen() {
         var ref = new CoverageAnalyzer.ReferenceRegion("chr1", 1000);
 
-        // Erstelle einfache Reads die erste Hälfte abdecken
+        // Create simple reads covering the first half
         var reads = java.util.List.of(
             new CoverageAnalyzer.Read("read1", "ATGC".repeat(200), 0),
             new CoverageAnalyzer.Read("read2", "ATGC".repeat(200), 100)
@@ -26,7 +26,7 @@ class CoverageAnalyzerTest {
     void testDepthBerechnung() {
         var ref = new CoverageAnalyzer.ReferenceRegion("chr1", 100);
 
-        // Zwei Reads die sich überlappen
+        // Two reads that overlap
         var reads = java.util.List.of(
             new CoverageAnalyzer.Read("read1", "ATGC".repeat(50), 0),
             new CoverageAnalyzer.Read("read2", "ATGC".repeat(50), 25)
@@ -54,7 +54,7 @@ class CoverageAnalyzerTest {
     void testGapErkennung() {
         var ref = new CoverageAnalyzer.ReferenceRegion("chr1", 100);
 
-        // Nur die ersten 48 von 100 Positionen abgedeckt
+        // Only the first 48 of 100 positions covered
         var reads = java.util.List.of(
             new CoverageAnalyzer.Read("read1", "ATGC".repeat(12), 0)
         );
@@ -136,7 +136,7 @@ class CoverageAnalyzerTest {
         String report = result.generateReport();
 
         assertNotNull(report);
-        assertTrue(report.contains("Coverage-Analyse"));
+        assertTrue(report.contains("Coverage Analysis"));
     }
 
     @Test
@@ -207,7 +207,7 @@ class CoverageAnalyzerTest {
         String comparison = CoverageAnalyzer.compareCoverage(ref, reads1, reads2);
 
         assertNotNull(comparison);
-        assertTrue(comparison.contains("Coverage-Vergleich"));
+        assertTrue(comparison.contains("Coverage Comparison"));
     }
 
     @Test
@@ -227,7 +227,7 @@ class CoverageAnalyzerTest {
     void testQualitaetsGefilterteAnalyse() {
         var ref = new CoverageAnalyzer.ReferenceRegion("chr1", 100);
 
-        // Reads mit Quality-String (Q30+)
+        // Reads with quality string (Q30+)
         StringBuilder quality = new StringBuilder("ATGC".repeat(50));
 
         for (int i = 0; i < quality.length(); i++) {
@@ -269,7 +269,7 @@ class CoverageAnalyzerTest {
         assertEquals("chr1", ref.getId());
         assertEquals(100, ref.getLength());
 
-        // Generiere N-Sequenz (max 1000)
+        // Generate N sequence (max 1000)
         String nSeq = ref.generateNSequence();
 
         assertEquals(100, nSeq.length());

@@ -1,4 +1,4 @@
-//! Klonierungs-Operationen für Registry und Workflows: Restriktionsklonierung, PCR-Simulation, Codon-Optimierung.
+//! Cloning operations for registry and workflows: restriction cloning, PCR simulation, codon optimization.
 
 use crate::bio::codon_optimize::{optimize_dna, CodonTable, OptimizationOptions};
 use crate::bio::codon_usage::count_codons;
@@ -10,7 +10,7 @@ use crate::model::document::{Document, SequenceDocument, Topology};
 use crate::model::sequence::{Sequence, SequenceType};
 use crate::ops::operation::{required, Operation, OperationContext, OperationResult, Params};
 
-/// Alle Eingaben müssen Sequenzdokumente sein; Fehler Error::Operation.
+/// All inputs must be sequence documents; error Error::Operation.
 fn sequences(inputs: &[Document]) -> Result<Vec<&SequenceDocument>> {
     inputs
         .iter()
@@ -23,7 +23,7 @@ fn sequences(inputs: &[Document]) -> Result<Vec<&SequenceDocument>> {
         .collect()
 }
 
-/// Zerlegt eine Liste wie EcoRI, BamHI (Trenner Komma, Semikolon oder Leerzeichen) in Namen; leere Teile entfallen.
+/// Splits a list like EcoRI, BamHI (separator comma, semicolon or space) into names; empty parts are dropped.
 fn split_list(text: &str) -> Vec<String> {
     text.split(|c: char| c == ',' || c == ';' || c.is_whitespace())
         .filter_map(|s| {
@@ -37,12 +37,12 @@ fn split_list(text: &str) -> Vec<String> {
         .collect()
 }
 
-/// clone.restriction: Restriktionsklonierung. Eingaben: zuerst der Vektor, dann das Insert (zwei Sequenzen, sonst Error::Operation).
-/// Parameter: vector_enzymes und insert_enzymes (Pflicht, Listen wie bei split_list), candidate (optional, 0-basierter Index in
-/// der sortierten Kandidatenliste von restriction_candidates, Standard 0; ungültiger Wert oder Index außerhalb -> Error::Operation).
-/// Ergebnis: ein Ausgabedokument, das construct des gewählten Kandidaten; summary = "Construct {len} bp ({directional|non-directional})".
-/// Gibt es keine Kandidaten: Error::Operation("No matching ends: no construct results"). Fehler der Kernfunktion
-/// werden als Error::Operation mit deren Text weitergegeben (EnzymeDb::standard() verwenden).
+/// clone.restriction: restriction cloning. Inputs: first the vector, then the insert (two sequences, otherwise Error::Operation).
+/// Parameters: vector_enzymes and insert_enzymes (required, lists as in split_list), candidate (optional, 0-based index into
+/// the sorted candidate list of restriction_candidates, default 0; invalid value or index out of range -> Error::Operation).
+/// Result: one output document, the construct of the chosen candidate; summary = "Construct {len} bp ({directional|non-directional})".
+/// If there are no candidates: Error::Operation("No matching ends: no construct results"). Errors of the core function
+/// are passed on as Error::Operation with their text (use EnzymeDb::standard()).
 pub struct RestrictionCloneOperation;
 
 impl Operation for RestrictionCloneOperation {
@@ -129,12 +129,12 @@ impl Operation for RestrictionCloneOperation {
     }
 }
 
-/// pcr.simulate: PCR-Simulation. Eingabe: genau eine Vorlage (Sequenz). Parameter: forward und reverse (Primersequenzen, Pflicht),
-/// optional max_mismatches (Standard 2), min_match (Standard 12), max_length (Standard 10000); Zahlen, die sich nicht lesen
-/// lassen -> Error::Operation. PcrSimulator::new(min_match, max_mismatches, max_length), Primernamen forward und reverse,
-/// zirkulär, wenn die Vorlage Topology::Circular hat. Jedes Produkt wird ein lineares DNA-Dokument namens PCR-Produkt {n}
-/// (n ab 1, Reihenfolge wie die Kernfunktion sie liefert), Metadaten source = "pcr.simulate".
-/// Kein Produkt -> Error::Operation("No PCR product: the primers do not bind suitably"). summary = "{n} PCR-Produkt(e)".
+/// pcr.simulate: PCR simulation. Input: exactly one template (sequence). Parameters: forward and reverse (primer sequences, required),
+/// optional max_mismatches (default 2), min_match (default 12), max_length (default 10000); numbers that cannot be read
+/// -> Error::Operation. PcrSimulator::new(min_match, max_mismatches, max_length), primer names forward and reverse,
+/// circular if the template has Topology::Circular. Each product becomes a linear DNA document named PCR-Produkt {n}
+/// (n from 1, in the order the core function returns them), metadata source = "pcr.simulate".
+/// No product -> Error::Operation("No PCR product: the primers do not bind suitably"). summary = "{n} PCR-Produkt(e)".
 pub struct PcrOperation;
 
 impl Operation for PcrOperation {
@@ -233,12 +233,12 @@ impl Operation for PcrOperation {
     }
 }
 
-/// codon.optimize: Codon-Optimierung. Eingaben: zuerst die codierende DNA, dann ein Referenzdokument, aus dessen Codon-Häufigkeiten
-/// (count_codons auf bases() des Referenzdokuments, dann CodonTable::from_counts) die Tabelle entsteht (zwei Sequenzen, sonst
-/// Error::Operation). Parameter (alle optional): avoid (Liste wie bei split_list, Uppercase, Erkennungsstellen),
-/// max_homopolymer (Standard 6). Sonst OptimizationOptions::standard() (Felder avoid_sites, max_homopolymer setzen).
-/// Ergebnis: ein lineares DNA-Dokument {Name} (optimiert), Metadaten source = "codon.optimize"; summary = "Codon-optimiert, {len} bp".
-/// Fehler der Kernfunktion optimize_dna als Error::Operation mit deren Text.
+/// codon.optimize: codon optimization. Inputs: first the coding DNA, then a reference document whose codon frequencies
+/// (count_codons on bases() of the reference document, then CodonTable::from_counts) form the table (two sequences, otherwise
+/// Error::Operation). Parameters (all optional): avoid (list as in split_list, uppercase, recognition sites),
+/// max_homopolymer (default 6). Otherwise OptimizationOptions::standard() (set fields avoid_sites, max_homopolymer).
+/// Result: one linear DNA document {Name} (optimiert), metadata source = "codon.optimize"; summary = "Codon-optimiert, {len} bp".
+/// Errors of the core function optimize_dna as Error::Operation with their text.
 pub struct CodonOptimizeOperation;
 
 impl Operation for CodonOptimizeOperation {
@@ -444,7 +444,7 @@ mod tests {
         assert_eq!(o.bases(), "ATGAAGTTCGGT");
         assert_eq!(o.name(), "gen (optimized)");
         assert_eq!(r.summary, "Codon-optimized, 12 bp");
-        // verbotene Stelle
+        // forbidden site
         let p = params(&[("avoid", "AAGTTC")]);
         let r2 = run(&CodonOptimizeOperation, &inputs, &p).unwrap();
         assert!(!only_sequence(&r2).bases().contains("AAGTTC"));

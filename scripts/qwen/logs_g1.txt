@@ -1,3 +1,0 @@
-=== backtranslate.rs Versuch 1
-[122s {'prompt_tokens': 1860, 'completion_tokens': 5570, 'total_tokens': 7430, 'completion_tokens_details': {'reasoning_tokens': 4686}}]
-ERGEBNIS backtranslate.rs: GRÜN (2 Tests) nach 1 Versuch(en)

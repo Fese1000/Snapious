@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Tastaturbearbeitung für Sequenz-, Ring- und Linearansicht: Basen tippen, Rücktaste/Entf löschen,
-/// ⌘C kopieren, ⌘X ausschneiden, ⌘V einfügen, Pfeiltasten bewegen den Cursor.
+/// Keyboard editing for sequence, ring and linear views: type bases, Backspace/Delete remove,
+/// ⌘C copy, ⌘X cut, ⌘V paste, arrow keys move the cursor.
 private struct EditKeys: ViewModifier {
     @ObservedObject var model: AppModel
     var focus: FocusState<Bool>.Binding

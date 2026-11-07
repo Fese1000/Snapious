@@ -1,5 +1,5 @@
-//! Ordner, Notizen und Favoriten für Dokumente. Tabellen: `folders(id, name, parent_id)`, `doc_folder(doc_id, folder_id)`,
-//! `notes(doc_id, text)`, `favorites(doc_id)`. Ein leerer Ordnername (`""`) bedeutet die Wurzel.
+//! Folders, notes and favorites for documents. Tables: `folders(id, name, parent_id)`, `doc_folder(doc_id, folder_id)`,
+//! `notes(doc_id, text)`, `favorites(doc_id)`. An empty folder name (`""`) means the root.
 
 use rusqlite::{params, OptionalExtension};
 
@@ -7,18 +7,18 @@ use crate::error::{Error, Result};
 use crate::store::project_store::{DocumentInfo, ProjectStore};
 use crate::util::new_id;
 
-/// Ein Ordner.
+/// A folder.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Folder {
     pub id: String,
     pub name: String,
-    /// ID des übergeordneten Ordners, `""` bei einem Ordner in der Wurzel.
+    /// ID of the parent folder, `""` for a folder in the root.
     pub parent_id: String,
 }
 
 impl ProjectStore {
-    /// Legt einen Ordner an (neue ID mit `new_id()`). Name leer (nach `trim`) → `Error::InvalidInput`; `parent_id` nicht leer und
-    /// unbekannt → `Error::InvalidInput`. Der Name wird ohne umgebenden Leerraum gespeichert.
+    /// Creates a folder (new ID via `new_id()`). Empty name (after `trim`) -> `Error::InvalidInput`; `parent_id` non-empty and
+    /// unknown -> `Error::InvalidInput`. The name is stored without surrounding whitespace.
     pub fn create_folder(&mut self, name: &str, parent_id: &str) -> Result<Folder> {
         let name = name.trim();
         if name.is_empty() {
@@ -44,7 +44,7 @@ impl ProjectStore {
         Ok(f)
     }
 
-    /// Alle Ordner, sortiert nach Name, dann ID.
+    /// All folders, sorted by name, then ID.
     pub fn folders(&self) -> Result<Vec<Folder>> {
         let mut stmt = self
             .conn
@@ -63,7 +63,7 @@ impl ProjectStore {
         Ok(out)
     }
 
-    /// Benennt einen Ordner um. Unbekannte ID oder leerer Name → `Error::InvalidInput`.
+    /// Renames a folder. Unknown ID or empty name -> `Error::InvalidInput`.
     pub fn rename_folder(&mut self, id: &str, name: &str) -> Result<()> {
         let name = name.trim();
         if name.is_empty() {
@@ -81,13 +81,13 @@ impl ProjectStore {
         Ok(())
     }
 
-    /// Löscht den Ordner und alle seine Unterordner (rekursiv). Dokumente darin: bei `delete_contents` werden sie gelöscht
-    /// (`delete`), sonst nur aus dem Ordner gelöst (sie liegen danach in der Wurzel). Unbekannte ID → `Error::InvalidInput`.
+    /// Deletes the folder and all its subfolders (recursively). Documents inside: with `delete_contents` they are deleted
+    /// (`delete`), otherwise only detached from the folder (they then lie in the root). Unknown ID -> `Error::InvalidInput`.
     pub fn delete_folder(&mut self, id: &str, delete_contents: bool) -> Result<()> {
         if !self.folder_exists(id)? {
             return Err(Error::InvalidInput(format!("Unknown folder {}", id)));
         }
-        // Ordner und alle Unterordner einsammeln
+        // Collect folder and all subfolders
         let all = self.folders()?;
         let mut ids = vec![id.to_string()];
         let mut i = 0;
@@ -123,8 +123,8 @@ impl ProjectStore {
         Ok(())
     }
 
-    /// Verschiebt ein Dokument in einen Ordner (`folder_id == ""`: in die Wurzel, der Eintrag in `doc_folder` wird entfernt).
-    /// Unbekanntes Dokument oder unbekannter Ordner → `Error::InvalidInput`.
+    /// Moves a document into a folder (`folder_id == ""`: to the root, the entry in `doc_folder` is removed).
+    /// Unknown document or unknown folder -> `Error::InvalidInput`.
     pub fn move_document(&mut self, doc_id: &str, folder_id: &str) -> Result<()> {
         if self.load(doc_id)?.is_none() {
             return Err(Error::InvalidInput(format!(
@@ -151,7 +151,7 @@ impl ProjectStore {
         Ok(())
     }
 
-    /// Ordner eines Dokuments (`""` = Wurzel).
+    /// Folder of a document (`""` = root).
     pub fn folder_of(&self, doc_id: &str) -> Result<String> {
         Ok(self
             .conn
@@ -164,8 +164,8 @@ impl ProjectStore {
             .unwrap_or_default())
     }
 
-    /// Dokumente eines Ordners in der Reihenfolge von `list()`. Bei `folder_id == ""` die Dokumente ohne Ordner. Einträge in `doc_folder`
-    /// zu gelöschten Dokumenten werden ignoriert.
+    /// Documents of a folder in the order of `list()`. For `folder_id == ""` the documents without a folder. Entries in `doc_folder`
+    /// for deleted documents are ignored.
     pub fn documents_in_folder(&self, folder_id: &str) -> Result<Vec<DocumentInfo>> {
         let mapped: Vec<(String, String)> = {
             let mut stmt = self
@@ -193,7 +193,7 @@ impl ProjectStore {
             .collect())
     }
 
-    /// Setzt die Notiz zu einem Dokument; ein leerer Text (nach `trim`) löscht die Notiz.
+    /// Sets the note for a document; an empty text (after `trim`) deletes the note.
     pub fn set_note(&mut self, doc_id: &str, text: &str) -> Result<()> {
         if text.trim().is_empty() {
             self.conn
@@ -219,7 +219,7 @@ impl ProjectStore {
             .optional()?)
     }
 
-    /// Markiert oder entmarkiert ein Dokument als Favorit (mehrfaches Setzen ist kein Fehler).
+    /// Marks or unmarks a document as a favorite (setting it multiple times is not an error).
     pub fn set_favorite(&mut self, doc_id: &str, favorite: bool) -> Result<()> {
         if favorite {
             self.conn.execute(
@@ -233,7 +233,7 @@ impl ProjectStore {
         Ok(())
     }
 
-    /// Favoriten (nur noch vorhandene Dokumente) in der Reihenfolge von `list()`.
+    /// Favorites (only documents that still exist) in the order of `list()`.
     pub fn favorites(&self) -> Result<Vec<DocumentInfo>> {
         let mut stmt = self.conn.prepare("SELECT doc_id FROM favorites")?;
         let mut ids = Vec::new();
@@ -350,7 +350,7 @@ mod tests {
         assert!(s.folders().unwrap().is_empty());
         assert_eq!(s.documents_in_folder("").unwrap().len(), 2);
         assert_eq!(s.folder_of(&d2).unwrap(), "");
-        // mit Inhalt löschen
+        // delete with contents
         let c = s.create_folder("C", "").unwrap();
         s.move_document(&d1, &c.id).unwrap();
         s.delete_folder(&c.id, true).unwrap();

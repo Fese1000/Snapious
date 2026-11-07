@@ -650,170 +650,170 @@ fileprivate struct FfiConverterData: FfiConverterRustBuffer {
 
 
 /**
- * Eine geöffnete Projektdatei.
+ * An opened project file.
  */
 public protocol ProjectProtocol: AnyObject, Sendable {
     
     /**
-     * Verknüpft eine Datei mit dem Projekt (Pfad wird nur vermerkt, die Datei nicht kopiert).
+     * Links a file to the project (the path is only noted, the file is not copied).
      */
     func addExternalFile(path: String, kind: String, docId: String, label: String) throws  -> ExternalFileDto
     
     /**
-     * Trägt Features ins Dokument ein (als ein Rückgängig-Schritt je Feature).
+     * Adds features to the document (one undo step per feature).
      */
     func addFeatures(id: String, features: [FeatureInfo]) throws 
     
     /**
-     * Richtet mindestens zwei Sequenzdokumente aus und speichert das Alignment. `backend` ist `builtin`, `mafft`, `muscle` oder `clustalo`.
+     * Aligns at least two sequence documents and saves the alignment. `backend` is `builtin`, `mafft`, `muscle` or `clustalo`.
      */
     func alignDocuments(ids: [String], name: String, backend: String) throws  -> DocumentInfoDto
     
     /**
-     * Alignment zur Anzeige.
+     * Alignment for display.
      */
     func alignment(id: String) throws  -> AlignmentDto
     
     /**
-     * Konsenssequenz eines Alignments (Schwelle 0,5, Lücken ohne Gaps) als neues Sequenzdokument.
+     * Consensus sequence of an alignment (threshold 0.5, gaps ignored) as a new sequence document.
      */
     func alignmentConsensus(id: String) throws  -> DocumentInfoDto
     
     /**
-     * Identitätsmatrix (Prozent) der Zeilen eines Alignments.
+     * Identity matrix (percent) of the rows of an alignment.
      */
     func alignmentIdentityMatrix(id: String) throws  -> IdentityMatrixDto
     
     /**
-     * Sequenzlogo eines Alignments (Schneider & Stephens, mit Kleinprobenkorrektur).
+     * Sequence logo of an alignment (Schneider & Stephens, with small-sample correction).
      */
     func alignmentLogo(id: String) throws  -> [LogoColumnDto]
     
     /**
-     * Mittlere paarweise Identität je Alignment-Spalte (0–1), mit einem zentrierten Fenster der Breite `window` geglättet
-     * (0 oder 1 = ungeglättet).
+     * Mean pairwise identity per alignment column (0–1), smoothed with a centered window of width `window`
+     * (0 or 1 = unsmoothed).
      */
     func alignmentSimilarity(id: String, window: UInt64) throws  -> [Double]
     
     /**
-     * Entfernt Spalten mit Lückenanteil `>= threshold` (nur Spalten mit mindestens einer Lücke) und speichert das Ergebnis als neues Alignment.
+     * Removes columns with gap fraction `>= threshold` (only columns with at least one gap) and saves the result as a new alignment.
      */
     func alignmentStrip(id: String, threshold: Double) throws  -> DocumentInfoDto
     
     /**
-     * Varianten aller Alignment-Zeilen gegenüber der Zeile `reference`.
+     * Variants of all alignment rows relative to row `reference`.
      */
     func alignmentVariants(id: String, reference: UInt64) throws  -> [VariantDto]
     
     /**
-     * Golden-Gate-Zusammenbau mit dem Enzym `enzyme` (z. B. `BsaI`).
+     * Golden Gate assembly with the enzyme `enzyme` (e.g. `BsaI`).
      */
     func assembleGoldenGate(ids: [String], enzyme: String, circular: Bool) throws  -> AssemblyDto
     
     /**
-     * Gibson-/Überlappungs-Zusammenbau der Sequenzdokumente in der gegebenen Reihenfolge.
-     * `method` ist `gibson`, `infusion` oder `slic`.
+     * Gibson/overlap assembly of the sequence documents in the given order.
+     * `method` is `gibson`, `infusion` or `slic`.
      */
     func assembleOverlap(ids: [String], method: String, circular: Bool) throws  -> AssemblyDto
     
     /**
-     * Setzt Sequenzdokumente zu Contigs zusammen und speichert jeden Contig als neues Dokument.
+     * Assembles sequence documents into contigs and saves each contig as a new document.
      */
     func assembleReads(ids: [String], minOverlap: UInt64) throws  -> [DocumentInfoDto]
     
     /**
-     * Rückübersetzung eines Protein-Dokuments in ein neues DNA-Dokument. `mode`: `preferred` (häufigste E.-coli-Codons)
-     * oder `degenerate` (IUPAC-Mehrdeutigkeitscodes).
+     * Back-translation of a protein document into a new DNA document. `mode`: `preferred` (most frequent E. coli codons)
+     * or `degenerate` (IUPAC ambiguity codes).
      */
     func backTranslateDocument(id: String, mode: String, name: String) throws  -> DocumentInfoDto
     
     /**
-     * Basen `[start, end)`; ein Ende hinter der Sequenz wird auf die Länge begrenzt.
+     * Bases `[start, end)`; an end beyond the sequence is capped at the length.
      */
     func bases(id: String, start: UInt64, end: UInt64) throws  -> String
     
     /**
-     * Neue Namen nach einem Muster (`{name}`, `{n}`, `{n:03}`, `{type}`) für die gewählten Dokumente anwenden.
+     * Apply new names following a pattern (`{name}`, `{n}`, `{n:03}`, `{type}`) to the chosen documents.
      */
     func batchRename(ids: [String], pattern: String) throws  -> UInt64
     
     /**
-     * BLAST über NCBI (`blastn`/`blastp`/…, Datenbank z. B. `nt`, `nr`). Dauert meist Minuten; blockiert bis zum Ergebnis.
+     * BLAST via NCBI (`blastn`/`blastp`/…, database e.g. `nt`, `nr`). Usually takes minutes; blocks until the result.
      */
     func blastRemote(queryId: String, program: String, database: String) throws  -> [BlastHitDto]
     
     /**
-     * Lokale BLAST-Suche: die Sequenz `query_id` gegen die Sequenzen `subject_ids`; `program` ist `blastn` oder `blastp`.
+     * Local BLAST search: the sequence `query_id` against the sequences `subject_ids`; `program` is `blastn` or `blastp`.
      */
     func blastSearch(queryId: String, subjectIds: [String], program: String, maxHits: UInt64) throws  -> [BlastHitDto]
     
     /**
-     * Erkennt Einzelbasenvarianten: Reads aus einer SAM- oder BAM-Datei gegen die gewählte Sequenz (Standardwerte).
-     * Schreibt die Varianten zusätzlich als VCF nach `vcf_path` (leer = nicht schreiben).
+     * Detects single-base variants: reads from a SAM or BAM file against the chosen sequence (default values).
+     * Additionally writes the variants as VCF to `vcf_path` (empty = do not write).
      */
     func callVariants(referenceId: String, alignmentPath: String, vcfPath: String) throws  -> [SnvDto]
     
     /**
-     * Gleicht eine Sequenzierdatei (`.ab1`) mit der Sequenz des Dokuments ab (Qualität unter 20 wird gemeldet).
+     * Checks a sequencing file (`.ab1`) against the document's sequence (quality below 20 is reported).
      */
     func checkReadFile(id: String, path: String) throws  -> ReadCheckDto
     
     /**
-     * Gateway-Reaktion. `kind` ist `bp` (erstes Dokument: lineares Produkt mit attB1/attB2, zweites: zirkulärer Spendervektor mit
-     * attP1/attP2) oder `lr` (erstes: zirkulärer Entry-Klon mit attL1/attL2, zweites: zirkulärer Zielvektor mit attR1/attR2).
-     * Die att-Stellen kommen aus dem Handbuch des verwendeten Kits.
+     * Gateway reaction. `kind` is `bp` (first document: linear product with attB1/attB2, second: circular donor vector with
+     * attP1/attP2) or `lr` (first: circular entry clone with attL1/attL2, second: circular destination vector with attR1/attR2).
+     * The att sites come from the manual of the kit used.
      */
     func cloneGateway(kind: String, firstId: String, secondId: String, att1: GatewaySiteDto, att2: GatewaySiteDto) throws  -> DocumentInfoDto
     
     /**
-     * TA-Klonierung: setzt das PCR-Produkt in beide Orientierungen in den linearen T-Vektor (zwei neue zirkuläre Dokumente).
+     * TA cloning: inserts the PCR product in both orientations into the linear T vector (two new circular documents).
      */
     func cloneTa(tVectorId: String, pcrProductId: String) throws  -> [DocumentInfoDto]
     
     /**
-     * Gerichtetes TOPO-Klonieren: das Insert muss mit `CACC` beginnen und wird hinter den linearen TOPO-Vektor gesetzt.
+     * Directional TOPO cloning: the insert must begin with `CACC` and is placed after the linear TOPO vector.
      */
     func cloneTopo(vectorId: String, insertId: String) throws  -> DocumentInfoDto
     
     /**
-     * Vergleicht die Features zweier Sequenzen. `mode` ist `exact` (Typ, Beginn und Ende gleich) oder `overlap`
-     * (gleicher Typ, überlappend).
+     * Compares the features of two sequences. `mode` is `exact` (type, start and end equal) or `overlap`
+     * (same type, overlapping).
      */
     func compareAnnotations(idA: String, idB: String, mode: String) throws  -> AnnotationComparisonDto
     
     /**
-     * Fügt Sequenzdokumente in der gegebenen Reihenfolge zu einer neuen Sequenz zusammen (Features wandern mit).
+     * Joins sequence documents in the given order into a new sequence (features move along).
      */
     func concatenateDocuments(ids: [String], name: String, circular: Bool) throws  -> DocumentInfoDto
     
     /**
-     * Konsens aus mehreren Sequenzierungen (Sanger-Reads): Reads, die besser als Gegenstrang zum ersten passen (gemeinsame 8-mer), werden
-     * revers-komplementiert (samt Qualitäten), alle werden ausgerichtet; die Konsensbase je Spalte wählt die Summe der Qualitäten. Legt das
-     * Alignment der Reads und die Konsenssequenz als neue Dokumente an und gibt die Konsenssequenz zurück. `min_quality`: Basen darunter zählen nicht.
+     * Consensus from several sequencing runs (Sanger reads): reads that fit the first one better as the opposite strand (shared 8-mer) are
+     * reverse-complemented (with their qualities), all are aligned; the consensus base per column is chosen by the sum of qualities. Creates the
+     * alignment of the reads and the consensus sequence as new documents and returns the consensus sequence. `min_quality`: bases below it do not count.
      */
     func consensusFromReads(ids: [String], minQuality: UInt8, name: String) throws  -> DocumentInfoDto
     
     /**
-     * Lesetiefe entlang der gewählten Sequenz aus einer SAM- oder BAM-Datei, auf höchstens `bins` Werte gemittelt.
+     * Read depth along the chosen sequence from a SAM or BAM file, averaged to at most `bins` values.
      */
     func coverageDepth(referenceId: String, alignmentPath: String, bins: UInt64) throws  -> [Double]
     
     /**
-     * Kennzahlen der Abdeckung und der Duplikate aus einer SAM/BAM-Datei gegen die gewählte Referenz.
+     * Coverage and duplicate figures from a SAM/BAM file against the chosen reference.
      */
     func coverageReport(referenceId: String, alignmentPath: String) throws  -> CoverageReportDto
     
     /**
-     * CpG-Inseln nach Gardiner-Garden/Frommer (Fenster 200, GC ≥ 50 %, beobachtet/erwartet ≥ 0,6).
+     * CpG islands after Gardiner-Garden/Frommer (window 200, GC ≥ 50 %, observed/expected ≥ 0.6).
      */
     func cpgIslandRegions(id: String) throws  -> [RegionDto]
     
     func createFolder(name: String, parentId: String) throws  -> FolderDto
     
     /**
-     * Legt Sequenzen aus eingefügtem Text an (roher Text, FASTA oder mit Zeilennummern). `kind` ist `DNA`, `RNA`,
-     * `PROTEIN` oder `AUTO` (Erkennung). Ein leerer `name` nimmt den Namen aus der FASTA-Kopfzeile; bei mehreren Einträgen
-     * wird bei gegebenem Namen durchnummeriert. `circular` gilt nur für Nukleotide.
+     * Creates sequences from pasted text (raw text, FASTA or with line numbers). `kind` is `DNA`, `RNA`,
+     * `PROTEIN` or `AUTO` (detection). An empty `name` takes the name from the FASTA header line; with several entries
+     * a given name is numbered consecutively. `circular` applies to nucleotides only.
      */
     func createSequence(name: String, text: String, kind: String, circular: Bool) throws  -> [DocumentInfoDto]
     
@@ -822,267 +822,267 @@ public protocol ProjectProtocol: AnyObject, Sendable {
     func deleteFolder(id: String, deleteContents: Bool) throws 
     
     /**
-     * Bekannte Sequenzmotive (Promotoren, Primerstellen, Tags …) auf beiden Strängen (noch nicht ins Dokument eingetragen).
+     * Known sequence motifs (promoters, primer sites, tags …) on both strands (not yet added to the document).
      */
     func detectCommonFeatures(id: String) throws  -> [FeatureInfo]
     
     /**
-     * Virtueller Verdau mit den genannten Enzymen.
+     * Virtual digest with the given enzymes.
      */
     func digestDocument(id: String, enzymes: [String]) throws  -> [FragmentDto]
     
     /**
-     * Alle Dokumente, nach Erstellungszeit sortiert.
+     * All documents, sorted by creation time.
      */
     func documents() throws  -> [DocumentInfoDto]
     
     func documentsInFolder(folderId: String) throws  -> [DocumentInfoDto]
     
     /**
-     * Dotplot zweier Sequenzen als Diagonalen (Punkte werden zu Linien zusammengefasst).
+     * Dot plot of two sequences as diagonals (points are merged into lines).
      */
     func dotplot(idA: String, idB: String, window: UInt64, minMatches: UInt64, reverse: Bool) throws  -> [DiagonalDto]
     
     /**
-     * Löscht `[start, end)` (Rückgängig möglich).
+     * Deletes `[start, end)` (undoable).
      */
     func editDelete(id: String, start: UInt64, end: UInt64) throws 
     
     /**
-     * Fügt Basen vor Position `position` ein (Rückgängig möglich).
+     * Inserts bases before position `position` (undoable).
      */
     func editInsert(id: String, position: UInt64, bases: String) throws 
     
     /**
-     * Stellt die zuletzt zurückgenommene Änderung wieder her.
+     * Restores the most recently undone change.
      */
     func editRedo(id: String) throws  -> Bool
     
     /**
-     * Ersetzt `[start, end)` durch `bases` (Rückgängig möglich).
+     * Replaces `[start, end)` with `bases` (undoable).
      */
     func editReplace(id: String, start: UInt64, end: UInt64, bases: String) throws 
     
     /**
-     * Zahl der möglichen Rückgängig- und Wiederholen-Schritte `(undo, redo)`.
+     * Number of possible undo and redo steps `(undo, redo)`.
      */
     func editState(id: String) throws  -> [UInt64]
     
     /**
-     * Macht die letzte Änderung rückgängig; `false`, wenn nichts zurückzunehmen ist.
+     * Undoes the last change; `false` if there is nothing to undo.
      */
     func editUndo(id: String) throws  -> Bool
     
     /**
-     * Alle Enzyme der Standarddatenbank.
+     * All enzymes of the standard database.
      */
     func enzymeList()  -> [EnzymeInfoDto]
     
     /**
-     * Enzyme der Standarddatenbank; `filter` ist `all`, `unique`, `double` oder `none`.
+     * Enzymes of the standard database; `filter` is `all`, `unique`, `double` or `none`.
      */
     func enzymeSites(id: String, filter: String) throws  -> [EnzymeEntryDto]
     
     /**
-     * Schreibt ein Dokument in eine Datei. `format`: Sequenz `genbank`, `fasta`, `gff3` oder `svg` (Karte); Alignment `clustal`, `phylip` oder `fasta`;
-     * Baum `newick` oder `svg`.
+     * Writes a document to a file. `format`: sequence `genbank`, `fasta`, `gff3` or `svg` (map); alignment `clustal`, `phylip` or `fasta`;
+     * tree `newick` or `svg`.
      */
     func exportDocument(id: String, path: String, format: String) throws 
     
     /**
-     * Text- und Berichtsexport einer Sequenz: `kind` ist `text` (Positionen, Features) oder `report` (Markdown).
+     * Text and report export of a sequence: `kind` is `text` (positions, features) or `report` (Markdown).
      */
     func exportText(id: String, kind: String) throws  -> String
     
     /**
-     * Verknüpfte externe Dateien (leere `doc_id` = alle).
+     * Linked external files (empty `doc_id` = all).
      */
     func externalFiles(docId: String) throws  -> [ExternalFileDto]
     
     /**
-     * Legt aus allen Features des Typs `feature_type` (leer = alle) je eine neue Sequenz an (mit `flank` Basen Rand, Gegenstrang
-     * revers-komplementiert). Höchstens 1000 Features.
+     * Creates one new sequence from each feature of type `feature_type` (empty = all) (with `flank` bases of margin, reverse strand
+     * reverse-complemented). At most 1000 features.
      */
     func extractFeatures(id: String, featureType: String, flank: UInt64) throws  -> [DocumentInfoDto]
     
     func favorites() throws  -> [DocumentInfoDto]
     
     /**
-     * Teilstücke aller Features mit Spurnummer.
+     * Parts of all features with track number.
      */
     func featureLanes(id: String) throws  -> [PlacedFeatureDto]
     
     /**
-     * Alle Features eines Dokuments.
+     * All features of a document.
      */
     func features(id: String) throws  -> [FeatureInfo]
     
     /**
-     * Gruppen von Sequenzdokumenten mit gleicher Sequenz (Dubletten).
+     * Groups of sequence documents with identical sequence (duplicates).
      */
     func findDuplicates() throws  -> [[DocumentInfoDto]]
     
     /**
-     * gRNA-Stellen auf beiden Strängen; `nuclease` ist `spcas9`, `sacas9` oder `cas12a`.
+     * gRNA sites on both strands; `nuclease` is `spcas9`, `sacas9` or `cas12a`.
      */
     func findGuides(id: String, nuclease: String) throws  -> [GuideDto]
     
     /**
-     * Sucht ein Motiv (IUPAC-Codes erlaubt) auf beiden Strängen; bei zirkulären Sequenzen auch über den Nullpunkt.
+     * Searches a motif (IUPAC codes allowed) on both strands; for circular sequences also across the origin.
      */
     func findMotifHits(id: String, motif: String) throws  -> [MotifHitDto]
     
     /**
-     * Offene Leserahmen (ORFs) mit mindestens `min_codons` Codons auf beiden Strängen (noch nicht ins Dokument eingetragen).
+     * Open reading frames (ORFs) with at least `min_codons` codons on both strands (not yet added to the document).
      */
     func findOrfs(id: String, minCodons: UInt64) throws  -> [FeatureInfo]
     
     /**
-     * Tandem- und invertierte Wiederholungen einer Sequenz.
+     * Tandem and inverted repeats of a sequence.
      */
     func findRepeats(id: String, minUnit: UInt64, maxUnit: UInt64, minCopies: UInt64, minArm: UInt64, maxSpacer: UInt64) throws  -> [RepeatDto]
     
     /**
-     * Sucht die kurze Sequenz `reference` mit höchstens `max_mismatch` Unterschieden auf beiden Strängen (Feature-Finder
-     * nach Ähnlichkeit). Höchstens 5000 Treffer.
+     * Searches the short sequence `reference` with at most `max_mismatch` differences on both strands (feature finder
+     * by similarity). At most 5000 hits.
      */
     func findSimilarFeatures(id: String, reference: String, maxMismatch: UInt64) throws  -> [FeatureMatchDto]
     
     /**
-     * Faltet den Bereich `[start, end)` (Ende 0 = bis zum Ende) mit ViennaRNA (`RNAfold`); höchstens 5000 Basen.
+     * Folds the range `[start, end)` (end 0 = to the end) with ViennaRNA (`RNAfold`); at most 5000 bases.
      */
     func foldRegion(id: String, start: UInt64, end: UInt64) throws  -> RnaFoldDto
     
     func folderOf(docId: String) throws  -> String
     
     /**
-     * Alle Ordner.
+     * All folders.
      */
     func folders() throws  -> [FolderDto]
     
     /**
-     * Fragmente, wenn die Sequenz an den Anfängen und/oder Enden aller Features des Typs `feature_type` (leer = alle Typen)
-     * geschnitten wird. Bei zirkulären Dokumenten umläuft das letzte Fragment den Nullpunkt.
+     * Fragments if the sequence is cut at the starts and/or ends of all features of type `feature_type` (empty = all types)
+     * For circular documents the last fragment wraps around the origin.
      */
     func fragmentsByAnnotation(id: String, featureType: String, atStart: Bool, atEnd: Bool) throws  -> [FragmentDto]
     
     /**
-     * GC-Verlauf in Prozent mit Fenster `window` und Schritt `step`.
+     * GC profile in percent with window `window` and step `step`.
      */
     func gcProfile(id: String, window: UInt64, step: UInt64) throws  -> [GcPointDto]
     
     /**
-     * Liest Annotationen (GFF3 oder BED, nach der Dateiendung `.gff`, `.gff3`, `.bed`) und trägt sie als Features ins Dokument ein.
-     * Die Kennung der Datei (`seqid`/`chrom`) muss dem Dokumentnamen (Leerzeichen als `_`) oder dem Accession-Metadatum entsprechen;
-     * gibt es nur eine Kennung in der Datei, wird sie genommen. Rückgabe: Zahl der eingetragenen Features.
+     * Reads annotations (GFF3 or BED, by file extension `.gff`, `.gff3`, `.bed`) and adds them as features to the document.
+     * The file's identifier (`seqid`/`chrom`) must match the document name (spaces as `_`) or the accession metadata;
+     * if there is only one identifier in the file, it is used. Returns: number of features added.
      */
     func importAnnotations(id: String, path: String) throws  -> UInt64
     
     /**
-     * Liest eine Domänentabelle (`hmmscan --domtblout` oder InterProScan-TSV; `format` = `hmmer` oder `interpro`) und trägt die
-     * Treffer für dieses Protein als Features vom Typ `domain` ein. Gehört mehr als ein Name zur Datei, zählen nur Treffer, deren
-     * Name mit dem Dokumentnamen beginnt (sonst alle). Gibt die Zahl der eingetragenen Features zurück.
+     * Reads a domain table (`hmmscan --domtblout` or InterProScan TSV; `format` = `hmmer` or `interpro`) and adds the
+     * hits for this protein as features of type `domain`. If more than one name belongs to the file, only hits whose
+     * name begins with the document name count (otherwise all). Returns the number of features added.
      */
     func importDomainTable(id: String, path: String, format: String) throws  -> UInt64
     
     /**
-     * Importiert eine Datei und legt die Dokumente an: FASTA, FASTQ, GenBank, EMBL, SnapGene, PIR, GCG (Sequenzen) sowie
-     * MEGA, NEXUS, Clustal und PHYLIP (Alignments). Liefert die neu angelegten Dokumente.
+     * Imports a file and creates the documents: FASTA, FASTQ, GenBank, EMBL, SnapGene, PIR, GCG (sequences) as well as
+     * MEGA, NEXUS, Clustal and PHYLIP (alignments). Returns the newly created documents.
      */
     func importFile(path: String) throws  -> [DocumentInfoDto]
     
     /**
-     * Legt Sequenzen aus einer Tabelle (CSV/TSV) an. `sep` ist `,`, `;` oder `\t`; `name_col` und `seq_col` zählen ab 0.
+     * Creates sequences from a table (CSV/TSV). `sep` is `,`, `;` or `\t`; `name_col` and `seq_col` count from 0.
      */
     func importTable(path: String, sep: String, nameCol: UInt64, seqCol: UInt64, hasHeader: Bool, kind: String, circular: Bool) throws  -> [DocumentInfoDto]
     
     /**
-     * Länge der gewählten Sequenzen als Häufigkeitsverteilung (Klassenbreite `bin_width`, 0 gilt als 1).
+     * Length of the chosen sequences as a frequency distribution (class width `bin_width`, 0 counts as 1).
      */
     func lengthHistogram(ids: [String], binWidth: UInt64) throws  -> [HistogramBinDto]
     
     /**
-     * Bildet Reads (Sequenzdokumente) lückenlos auf die Referenz ab.
+     * Maps reads (sequence documents) onto the reference without gaps.
      */
     func mapReadsTo(referenceId: String, readIds: [String], maxMismatches: UInt64) throws  -> [ReadMapDto]
     
     /**
-     * Bildet Reads (FASTQ-Dateien, eine oder zwei) mit `minimap2` oder `bwa` auf die gewählte Sequenz ab. Die Referenz wird als FASTA
-     * in `output_dir` geschrieben, das Ergebnis als SAM daneben und mit dem Dokument verknüpft.
+     * Maps reads (FASTQ files, one or two) onto the chosen sequence with `minimap2` or `bwa`. The reference is written as FASTA
+     * to `output_dir`, the result as SAM next to it and linked to the document.
      */
     func mapReadsToReference(referenceId: String, readPaths: [String], mapper: String, preset: String, threads: UInt64, outputDir: String) throws  -> ExternalFileDto
     
     /**
-     * Verschiebt ein Dokument in einen Ordner (leer = Wurzel).
+     * Moves a document into a folder (empty = root).
      */
     func moveDocument(docId: String, folderId: String) throws 
     
     /**
-     * Mutagenese-Primer: ersetzt `[start, end)` durch `replacement` (leer = Deletion, `start == end` = Einfügung).
+     * Mutagenesis primers: replaces `[start, end)` with `replacement` (empty = deletion, `start == end` = insertion).
      */
     func mutagenesisPrimers(id: String, start: UInt64, end: UInt64, replacement: String, minFlank: UInt64, maxFlank: UInt64, targetTm: Double) throws  -> MutagenesisDto
     
     /**
-     * Lädt einen NCBI-Datensatz (Kennung aus `ncbi_search`) als GenBank und legt ihn im Projekt an.
+     * Loads an NCBI record (identifier from `ncbi_search`) as GenBank and creates it in the project.
      */
     func ncbiImport(id: String) throws  -> [DocumentInfoDto]
     
     /**
-     * Sucht in NCBI Nucleotide (`nuccore`) und liefert Kurzinfos (braucht Internet und `curl`).
+     * Searches NCBI Nucleotide (`nuccore`) and returns short info (needs internet and `curl`).
      */
     func ncbiSearch(term: String, maxResults: UInt64) throws  -> NcbiSearchDto
     
     func note(docId: String) throws  -> String
     
     /**
-     * Alle Operationen, die in Workflows vorkommen dürfen.
+     * All operations that may occur in workflows.
      */
     func operationList()  -> [OperationInfoDto]
     
     /**
-     * Ordnet die gewählten Reads anhand der Namen (`/1`, `/2` oder `1:`, `2:`) zu Paaren.
+     * Pairs the chosen reads by name (`/1`, `/2` or `1:`, `2:`).
      */
     func pairReadsReport(ids: [String]) throws  -> PairReportDto
     
     func path()  -> String
     
     /**
-     * Bis zu `max_results` Primerpaare, deren Produkt `[target_start, target_end)` einschließt (Standardvorgaben).
+     * Up to `max_results` primer pairs whose product encloses `[target_start, target_end)` (default settings).
      */
     func pickPrimers(id: String, targetStart: UInt64, targetEnd: UInt64, maxResults: UInt64) throws  -> [PrimerPairDto]
     
     /**
-     * Verdau eines Proteins; `protease` ist `trypsin`, `lysc`, `argc`, `gluc`, `chymotrypsin` oder `cnbr`.
+     * Digest of a protein; `protease` is `trypsin`, `lysc`, `argc`, `gluc`, `chymotrypsin` or `cnbr`.
      */
     func proteinDigest(protein: String, protease: String, missedCleavages: UInt64) throws  -> [PeptideDto]
     
     /**
-     * Schwachstellen eines Proteins (N-Glykosylierung, Deamidierung, Isomerisierung, Oxidation, freies Cystein).
+     * Liabilities of a protein (N-glycosylation, deamidation, isomerization, oxidation, free cysteine).
      */
     func proteinLiabilities(id: String) throws  -> [LiabilityDto]
     
     /**
-     * Das Protein, das ein Feature (z. B. CDS) codiert; ein abschließendes Stopp-Zeichen wird weggelassen.
+     * The protein encoded by a feature (e.g. CDS); a trailing stop character is omitted.
      */
     func proteinOfFeature(id: String, featureIndex: UInt64) throws  -> String
     
     /**
-     * Eigenschaften einer Proteinsequenz.
+     * Properties of a protein sequence.
      */
     func proteinProperties(protein: String)  -> ProteinPropsDto
     
     /**
-     * Zeichnet aus dem Verlauf eines Dokuments einen Workflow auf und speichert ihn unter `name`. Rückgabe: Zahl der Schritte.
+     * Records a workflow from a document's history and saves it under `name`. Returns: number of steps.
      */
     func recordWorkflow(docId: String, name: String) throws  -> UInt64
     
     /**
-     * Entfernt eine Verknüpfung (die Datei bleibt).
+     * Removes a link (the file remains).
      */
     func removeExternalFile(id: String) throws 
     
     /**
-     * Entfernt das Feature mit diesem Index (Rückgängig möglich).
+     * Removes the feature with this index (undoable).
      */
     func removeFeature(id: String, index: UInt64) throws 
     
@@ -1093,33 +1093,33 @@ public protocol ProjectProtocol: AnyObject, Sendable {
     func restoreVersion(docId: String, version: Int64) throws 
     
     /**
-     * Mögliche Produkte der Restriktionsklonierung von Insert in Vektor.
+     * Possible products of restriction cloning of an insert into a vector.
      */
     func restrictionCandidates(vectorId: String, vectorEnzymes: [String], insertId: String, insertEnzymes: [String]) throws  -> [CandidateDto]
     
     /**
-     * Speichert das Produkt mit Nummer `index` (aus `restriction_candidates`) als neues Dokument.
+     * Saves the product with number `index` (from `restriction_candidates`) as a new document.
      */
     func saveCandidate(vectorId: String, vectorEnzymes: [String], insertId: String, insertEnzymes: [String], index: UInt64, name: String) throws  -> DocumentInfoDto
     
     /**
-     * Suche: `kind` ist `name`, `type`, `feature`, `metadata` (`text` = Schlüssel, `text2` = Wert) oder `motif`.
+     * Search: `kind` is `name`, `type`, `feature`, `metadata` (`text` = key, `text2` = value) or `motif`.
      */
     func searchDocuments(kind: String, text: String, text2: String) throws  -> [DocumentInfoDto]
     
     /**
-     * Kennzahlen der Auswahl `[start, end)`.
+     * Key figures of the selection `[start, end)`.
      */
     func selectionStats(id: String, start: UInt64, end: UInt64) throws  -> SelectionStatsDto
     
     /**
-     * Text der Auswahl für die Zwischenablage: `format` ist `bases`, `fasta` oder `reverse_complement`.
+     * Text of the selection for the clipboard: `format` is `bases`, `fasta` or `reverse_complement`.
      */
     func selectionText(id: String, start: UInt64, end: UInt64, format: String) throws  -> String
     
     /**
-     * Erzeugt aus einem Alignment eine neue Sequenz: die Referenzzeile (ohne Lücken) mit allen Varianten der Zeile `row`
-     * gegenüber der Zeile `reference`.
+     * Creates a new sequence from an alignment: the reference row (without gaps) with all variants of row `row`
+     * relative to row `reference`.
      */
     func sequenceWithVariants(id: String, reference: UInt64, row: UInt64, name: String) throws  -> DocumentInfoDto
     
@@ -1128,77 +1128,77 @@ public protocol ProjectProtocol: AnyObject, Sendable {
     func setNote(docId: String, text: String) throws 
     
     /**
-     * Mögliche stille Einzelbasenänderungen im CDS-Feature `feature_index` (nur Vorwärtsstrang). `site` ist leer (alle),
-     * eine DNA-Folge oder der Name eines Enzyms; `mode` ist `all`, `create` (erzeugt die Stelle) oder `remove` (zerstört sie).
+     * Possible silent single-base changes in the CDS feature `feature_index` (forward strand only). `site` is empty (all),
+     * a DNA sequence or the name of an enzyme; `mode` is `all`, `create` (creates the site) or `remove` (destroys it).
      */
     func silentChanges(id: String, featureIndex: UInt64, site: String, mode: String) throws  -> [SilentChangeDto]
     
     /**
-     * Einfache Faltung nach Nussinov für `[start, end)` (Ende 0 = bis zum Ende; höchstens 2000 Basen): größte Zahl
-     * nicht kreuzender Basenpaare, ohne Energiemodell. Auch für DNA.
+     * Simple folding after Nussinov for `[start, end)` (end 0 = to the end; at most 2000 bases): largest number
+     * of non-crossing base pairs, without an energy model. Also for DNA.
      */
     func simpleFold(id: String, start: UInt64, end: UInt64) throws  -> SimpleFoldDto
     
     /**
-     * Entfernt Spalten aus einem Alignment und legt das Ergebnis als neues Alignment an. `kind`: `gaps` (Lückenanteil
-     * mindestens `param`, 0–1), `constant` (Spalten ohne Lücke, in denen alle gleich sind) oder `codon` (Codonposition
-     * `param` = 1, 2 oder 3, ab Spalte `start`, 0-basiert).
+     * Removes columns from an alignment and stores the result as a new alignment. `kind`: `gaps` (gap fraction
+     * at least `param`, 0–1), `constant` (columns without a gap in which all are equal) or `codon` (codon position
+     * `param` = 1, 2 or 3, from column `start`, 0-based).
      */
     func stripAlignmentColumns(id: String, kind: String, param: Double, start: UInt64, name: String) throws  -> DocumentInfoDto
     
     /**
-     * Eckdaten eines Dokuments.
+     * Key facts of a document.
      */
     func summary(id: String) throws  -> DocumentSummary
     
     /**
-     * Aminosäuren eines Features (z. B. CDS) in Leserichtung des Features.
+     * Amino acids of a feature (e.g. CDS) in the feature's reading direction.
      */
     func translateFeature(id: String, featureIndex: UInt64) throws  -> [AminoAcidDto]
     
     /**
-     * Aminosäuren im Leserahmen `frame`: 1, 2, 3 auf dem Vorwärtsstrang, −1, −2, −3 auf dem Gegenstrang (0 gilt nicht).
-     * `base_position` ist immer die kleinste Koordinate des Codons im Dokument (auch auf dem Gegenstrang).
+     * Amino acids in reading frame `frame`: 1, 2, 3 on the forward strand, −1, −2, −3 on the reverse strand (0 is not valid).
+     * `base_position` is always the smallest coordinate of the codon in the document (also on the reverse strand).
      */
     func translateFrame(id: String, frame: Int32) throws  -> [AminoAcidDto]
     
     /**
-     * Lädt einen UniProt-Eintrag als Proteinsequenz und legt ihn im Projekt an.
+     * Loads a UniProt entry as a protein sequence and creates it in the project.
      */
     func uniprotImport(accession: String) throws  -> [DocumentInfoDto]
     
     /**
-     * Sucht in UniProt (braucht Internet und `curl`); die Treffer kommen im gleichen Format wie bei NCBI (`accession` = UniProt-Zugang,
-     * `id` = dieselbe Zugangsnummer, `organism`, `title` = Proteinname, `length` in Aminosäuren).
+     * Searches UniProt (needs internet and `curl`); the hits come in the same format as for NCBI (`accession` = UniProt accession,
+     * `id` = the same accession number, `organism`, `title` = protein name, `length` in amino acids).
      */
     func uniprotSearch(query: String, maxResults: UInt64) throws  -> NcbiSearchDto
     
     /**
-     * Gespeicherte Versionen eines Dokuments, neueste zuerst.
+     * Saved versions of a document, newest first.
      */
     func versions(docId: String) throws  -> [VersionDto]
     
     func workflowDelete(name: String) throws 
     
     /**
-     * Alle gespeicherten Workflows.
+     * All saved workflows.
      */
     func workflowList() throws  -> [WorkflowDto]
     
     /**
-     * Führt einen gespeicherten Workflow aus. Braucht der Workflow eine Eingabe, läuft er für jedes der `input_ids` einzeln
-     * (Stapel); sonst bilden alle `input_ids` zusammen die Eingaben eines einzigen Laufs. Ergebnisse werden als neue Dokumente gespeichert.
+     * Runs a saved workflow. If the workflow needs one input, it runs individually for each of the `input_ids`
+     * (batch); otherwise all `input_ids` together form the inputs of a single run. Results are saved as new documents.
      */
     func workflowRun(name: String, inputIds: [String]) throws  -> WorkflowRunDto
     
     /**
-     * Prüft und speichert einen Workflow (JSON); der Name kommt aus dem JSON.
+     * Validates and saves a workflow (JSON); the name comes from the JSON.
      */
     func workflowSave(json: String) throws  -> String
     
 }
 /**
- * Eine geöffnete Projektdatei.
+ * An opened project file.
  */
 open class Project: ProjectProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
@@ -1252,7 +1252,7 @@ open class Project: ProjectProtocol, @unchecked Sendable {
 
     
     /**
-     * Öffnet die Projektdatei oder legt sie neu an.
+     * Opens the project file or creates it anew.
      */
 public static func `open`(path: String)throws  -> Project  {
     return try  FfiConverterTypeProject_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1266,7 +1266,7 @@ public static func `open`(path: String)throws  -> Project  {
 
     
     /**
-     * Verknüpft eine Datei mit dem Projekt (Pfad wird nur vermerkt, die Datei nicht kopiert).
+     * Links a file to the project (the path is only noted, the file is not copied).
      */
 open func addExternalFile(path: String, kind: String, docId: String, label: String)throws  -> ExternalFileDto  {
     return try  FfiConverterTypeExternalFileDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1282,7 +1282,7 @@ open func addExternalFile(path: String, kind: String, docId: String, label: Stri
 }
     
     /**
-     * Trägt Features ins Dokument ein (als ein Rückgängig-Schritt je Feature).
+     * Adds features to the document (one undo step per feature).
      */
 open func addFeatures(id: String, features: [FeatureInfo])throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -1295,7 +1295,7 @@ open func addFeatures(id: String, features: [FeatureInfo])throws   {try rustCall
 }
     
     /**
-     * Richtet mindestens zwei Sequenzdokumente aus und speichert das Alignment. `backend` ist `builtin`, `mafft`, `muscle` oder `clustalo`.
+     * Aligns at least two sequence documents and saves the alignment. `backend` is `builtin`, `mafft`, `muscle` or `clustalo`.
      */
 open func alignDocuments(ids: [String], name: String, backend: String)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1310,7 +1310,7 @@ open func alignDocuments(ids: [String], name: String, backend: String)throws  ->
 }
     
     /**
-     * Alignment zur Anzeige.
+     * Alignment for display.
      */
 open func alignment(id: String)throws  -> AlignmentDto  {
     return try  FfiConverterTypeAlignmentDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1323,7 +1323,7 @@ open func alignment(id: String)throws  -> AlignmentDto  {
 }
     
     /**
-     * Konsenssequenz eines Alignments (Schwelle 0,5, Lücken ohne Gaps) als neues Sequenzdokument.
+     * Consensus sequence of an alignment (threshold 0.5, gaps ignored) as a new sequence document.
      */
 open func alignmentConsensus(id: String)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1336,7 +1336,7 @@ open func alignmentConsensus(id: String)throws  -> DocumentInfoDto  {
 }
     
     /**
-     * Identitätsmatrix (Prozent) der Zeilen eines Alignments.
+     * Identity matrix (percent) of the rows of an alignment.
      */
 open func alignmentIdentityMatrix(id: String)throws  -> IdentityMatrixDto  {
     return try  FfiConverterTypeIdentityMatrixDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1349,7 +1349,7 @@ open func alignmentIdentityMatrix(id: String)throws  -> IdentityMatrixDto  {
 }
     
     /**
-     * Sequenzlogo eines Alignments (Schneider & Stephens, mit Kleinprobenkorrektur).
+     * Sequence logo of an alignment (Schneider & Stephens, with small-sample correction).
      */
 open func alignmentLogo(id: String)throws  -> [LogoColumnDto]  {
     return try  FfiConverterSequenceTypeLogoColumnDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1362,8 +1362,8 @@ open func alignmentLogo(id: String)throws  -> [LogoColumnDto]  {
 }
     
     /**
-     * Mittlere paarweise Identität je Alignment-Spalte (0–1), mit einem zentrierten Fenster der Breite `window` geglättet
-     * (0 oder 1 = ungeglättet).
+     * Mean pairwise identity per alignment column (0–1), smoothed with a centered window of width `window`
+     * (0 or 1 = unsmoothed).
      */
 open func alignmentSimilarity(id: String, window: UInt64)throws  -> [Double]  {
     return try  FfiConverterSequenceDouble.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1377,7 +1377,7 @@ open func alignmentSimilarity(id: String, window: UInt64)throws  -> [Double]  {
 }
     
     /**
-     * Entfernt Spalten mit Lückenanteil `>= threshold` (nur Spalten mit mindestens einer Lücke) und speichert das Ergebnis als neues Alignment.
+     * Removes columns with gap fraction `>= threshold` (only columns with at least one gap) and saves the result as a new alignment.
      */
 open func alignmentStrip(id: String, threshold: Double)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1391,7 +1391,7 @@ open func alignmentStrip(id: String, threshold: Double)throws  -> DocumentInfoDt
 }
     
     /**
-     * Varianten aller Alignment-Zeilen gegenüber der Zeile `reference`.
+     * Variants of all alignment rows relative to row `reference`.
      */
 open func alignmentVariants(id: String, reference: UInt64)throws  -> [VariantDto]  {
     return try  FfiConverterSequenceTypeVariantDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1405,7 +1405,7 @@ open func alignmentVariants(id: String, reference: UInt64)throws  -> [VariantDto
 }
     
     /**
-     * Golden-Gate-Zusammenbau mit dem Enzym `enzyme` (z. B. `BsaI`).
+     * Golden Gate assembly with the enzyme `enzyme` (e.g. `BsaI`).
      */
 open func assembleGoldenGate(ids: [String], enzyme: String, circular: Bool)throws  -> AssemblyDto  {
     return try  FfiConverterTypeAssemblyDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1420,8 +1420,8 @@ open func assembleGoldenGate(ids: [String], enzyme: String, circular: Bool)throw
 }
     
     /**
-     * Gibson-/Überlappungs-Zusammenbau der Sequenzdokumente in der gegebenen Reihenfolge.
-     * `method` ist `gibson`, `infusion` oder `slic`.
+     * Gibson/overlap assembly of the sequence documents in the given order.
+     * `method` is `gibson`, `infusion` or `slic`.
      */
 open func assembleOverlap(ids: [String], method: String, circular: Bool)throws  -> AssemblyDto  {
     return try  FfiConverterTypeAssemblyDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1436,7 +1436,7 @@ open func assembleOverlap(ids: [String], method: String, circular: Bool)throws  
 }
     
     /**
-     * Setzt Sequenzdokumente zu Contigs zusammen und speichert jeden Contig als neues Dokument.
+     * Assembles sequence documents into contigs and saves each contig as a new document.
      */
 open func assembleReads(ids: [String], minOverlap: UInt64)throws  -> [DocumentInfoDto]  {
     return try  FfiConverterSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1450,8 +1450,8 @@ open func assembleReads(ids: [String], minOverlap: UInt64)throws  -> [DocumentIn
 }
     
     /**
-     * Rückübersetzung eines Protein-Dokuments in ein neues DNA-Dokument. `mode`: `preferred` (häufigste E.-coli-Codons)
-     * oder `degenerate` (IUPAC-Mehrdeutigkeitscodes).
+     * Back-translation of a protein document into a new DNA document. `mode`: `preferred` (most frequent E. coli codons)
+     * or `degenerate` (IUPAC ambiguity codes).
      */
 open func backTranslateDocument(id: String, mode: String, name: String)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1466,7 +1466,7 @@ open func backTranslateDocument(id: String, mode: String, name: String)throws  -
 }
     
     /**
-     * Basen `[start, end)`; ein Ende hinter der Sequenz wird auf die Länge begrenzt.
+     * Bases `[start, end)`; an end beyond the sequence is capped at the length.
      */
 open func bases(id: String, start: UInt64, end: UInt64)throws  -> String  {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1481,7 +1481,7 @@ open func bases(id: String, start: UInt64, end: UInt64)throws  -> String  {
 }
     
     /**
-     * Neue Namen nach einem Muster (`{name}`, `{n}`, `{n:03}`, `{type}`) für die gewählten Dokumente anwenden.
+     * Apply new names following a pattern (`{name}`, `{n}`, `{n:03}`, `{type}`) to the chosen documents.
      */
 open func batchRename(ids: [String], pattern: String)throws  -> UInt64  {
     return try  FfiConverterUInt64.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1495,7 +1495,7 @@ open func batchRename(ids: [String], pattern: String)throws  -> UInt64  {
 }
     
     /**
-     * BLAST über NCBI (`blastn`/`blastp`/…, Datenbank z. B. `nt`, `nr`). Dauert meist Minuten; blockiert bis zum Ergebnis.
+     * BLAST via NCBI (`blastn`/`blastp`/…, database e.g. `nt`, `nr`). Usually takes minutes; blocks until the result.
      */
 open func blastRemote(queryId: String, program: String, database: String)throws  -> [BlastHitDto]  {
     return try  FfiConverterSequenceTypeBlastHitDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1510,7 +1510,7 @@ open func blastRemote(queryId: String, program: String, database: String)throws 
 }
     
     /**
-     * Lokale BLAST-Suche: die Sequenz `query_id` gegen die Sequenzen `subject_ids`; `program` ist `blastn` oder `blastp`.
+     * Local BLAST search: the sequence `query_id` against the sequences `subject_ids`; `program` is `blastn` or `blastp`.
      */
 open func blastSearch(queryId: String, subjectIds: [String], program: String, maxHits: UInt64)throws  -> [BlastHitDto]  {
     return try  FfiConverterSequenceTypeBlastHitDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1526,8 +1526,8 @@ open func blastSearch(queryId: String, subjectIds: [String], program: String, ma
 }
     
     /**
-     * Erkennt Einzelbasenvarianten: Reads aus einer SAM- oder BAM-Datei gegen die gewählte Sequenz (Standardwerte).
-     * Schreibt die Varianten zusätzlich als VCF nach `vcf_path` (leer = nicht schreiben).
+     * Detects single-base variants: reads from a SAM or BAM file against the chosen sequence (default values).
+     * Additionally writes the variants as VCF to `vcf_path` (empty = do not write).
      */
 open func callVariants(referenceId: String, alignmentPath: String, vcfPath: String)throws  -> [SnvDto]  {
     return try  FfiConverterSequenceTypeSnvDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1542,7 +1542,7 @@ open func callVariants(referenceId: String, alignmentPath: String, vcfPath: Stri
 }
     
     /**
-     * Gleicht eine Sequenzierdatei (`.ab1`) mit der Sequenz des Dokuments ab (Qualität unter 20 wird gemeldet).
+     * Checks a sequencing file (`.ab1`) against the document's sequence (quality below 20 is reported).
      */
 open func checkReadFile(id: String, path: String)throws  -> ReadCheckDto  {
     return try  FfiConverterTypeReadCheckDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1556,9 +1556,9 @@ open func checkReadFile(id: String, path: String)throws  -> ReadCheckDto  {
 }
     
     /**
-     * Gateway-Reaktion. `kind` ist `bp` (erstes Dokument: lineares Produkt mit attB1/attB2, zweites: zirkulärer Spendervektor mit
-     * attP1/attP2) oder `lr` (erstes: zirkulärer Entry-Klon mit attL1/attL2, zweites: zirkulärer Zielvektor mit attR1/attR2).
-     * Die att-Stellen kommen aus dem Handbuch des verwendeten Kits.
+     * Gateway reaction. `kind` is `bp` (first document: linear product with attB1/attB2, second: circular donor vector with
+     * attP1/attP2) or `lr` (first: circular entry clone with attL1/attL2, second: circular destination vector with attR1/attR2).
+     * The att sites come from the manual of the kit used.
      */
 open func cloneGateway(kind: String, firstId: String, secondId: String, att1: GatewaySiteDto, att2: GatewaySiteDto)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1575,7 +1575,7 @@ open func cloneGateway(kind: String, firstId: String, secondId: String, att1: Ga
 }
     
     /**
-     * TA-Klonierung: setzt das PCR-Produkt in beide Orientierungen in den linearen T-Vektor (zwei neue zirkuläre Dokumente).
+     * TA cloning: inserts the PCR product in both orientations into the linear T vector (two new circular documents).
      */
 open func cloneTa(tVectorId: String, pcrProductId: String)throws  -> [DocumentInfoDto]  {
     return try  FfiConverterSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1589,7 +1589,7 @@ open func cloneTa(tVectorId: String, pcrProductId: String)throws  -> [DocumentIn
 }
     
     /**
-     * Gerichtetes TOPO-Klonieren: das Insert muss mit `CACC` beginnen und wird hinter den linearen TOPO-Vektor gesetzt.
+     * Directional TOPO cloning: the insert must begin with `CACC` and is placed after the linear TOPO vector.
      */
 open func cloneTopo(vectorId: String, insertId: String)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1603,8 +1603,8 @@ open func cloneTopo(vectorId: String, insertId: String)throws  -> DocumentInfoDt
 }
     
     /**
-     * Vergleicht die Features zweier Sequenzen. `mode` ist `exact` (Typ, Beginn und Ende gleich) oder `overlap`
-     * (gleicher Typ, überlappend).
+     * Compares the features of two sequences. `mode` is `exact` (type, start and end equal) or `overlap`
+     * (same type, overlapping).
      */
 open func compareAnnotations(idA: String, idB: String, mode: String)throws  -> AnnotationComparisonDto  {
     return try  FfiConverterTypeAnnotationComparisonDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1619,7 +1619,7 @@ open func compareAnnotations(idA: String, idB: String, mode: String)throws  -> A
 }
     
     /**
-     * Fügt Sequenzdokumente in der gegebenen Reihenfolge zu einer neuen Sequenz zusammen (Features wandern mit).
+     * Joins sequence documents in the given order into a new sequence (features move along).
      */
 open func concatenateDocuments(ids: [String], name: String, circular: Bool)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1634,9 +1634,9 @@ open func concatenateDocuments(ids: [String], name: String, circular: Bool)throw
 }
     
     /**
-     * Konsens aus mehreren Sequenzierungen (Sanger-Reads): Reads, die besser als Gegenstrang zum ersten passen (gemeinsame 8-mer), werden
-     * revers-komplementiert (samt Qualitäten), alle werden ausgerichtet; die Konsensbase je Spalte wählt die Summe der Qualitäten. Legt das
-     * Alignment der Reads und die Konsenssequenz als neue Dokumente an und gibt die Konsenssequenz zurück. `min_quality`: Basen darunter zählen nicht.
+     * Consensus from several sequencing runs (Sanger reads): reads that fit the first one better as the opposite strand (shared 8-mer) are
+     * reverse-complemented (with their qualities), all are aligned; the consensus base per column is chosen by the sum of qualities. Creates the
+     * alignment of the reads and the consensus sequence as new documents and returns the consensus sequence. `min_quality`: bases below it do not count.
      */
 open func consensusFromReads(ids: [String], minQuality: UInt8, name: String)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1651,7 +1651,7 @@ open func consensusFromReads(ids: [String], minQuality: UInt8, name: String)thro
 }
     
     /**
-     * Lesetiefe entlang der gewählten Sequenz aus einer SAM- oder BAM-Datei, auf höchstens `bins` Werte gemittelt.
+     * Read depth along the chosen sequence from a SAM or BAM file, averaged to at most `bins` values.
      */
 open func coverageDepth(referenceId: String, alignmentPath: String, bins: UInt64)throws  -> [Double]  {
     return try  FfiConverterSequenceDouble.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1666,7 +1666,7 @@ open func coverageDepth(referenceId: String, alignmentPath: String, bins: UInt64
 }
     
     /**
-     * Kennzahlen der Abdeckung und der Duplikate aus einer SAM/BAM-Datei gegen die gewählte Referenz.
+     * Coverage and duplicate figures from a SAM/BAM file against the chosen reference.
      */
 open func coverageReport(referenceId: String, alignmentPath: String)throws  -> CoverageReportDto  {
     return try  FfiConverterTypeCoverageReportDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1680,7 +1680,7 @@ open func coverageReport(referenceId: String, alignmentPath: String)throws  -> C
 }
     
     /**
-     * CpG-Inseln nach Gardiner-Garden/Frommer (Fenster 200, GC ≥ 50 %, beobachtet/erwartet ≥ 0,6).
+     * CpG islands after Gardiner-Garden/Frommer (window 200, GC ≥ 50 %, observed/expected ≥ 0.6).
      */
 open func cpgIslandRegions(id: String)throws  -> [RegionDto]  {
     return try  FfiConverterSequenceTypeRegionDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1704,9 +1704,9 @@ open func createFolder(name: String, parentId: String)throws  -> FolderDto  {
 }
     
     /**
-     * Legt Sequenzen aus eingefügtem Text an (roher Text, FASTA oder mit Zeilennummern). `kind` ist `DNA`, `RNA`,
-     * `PROTEIN` oder `AUTO` (Erkennung). Ein leerer `name` nimmt den Namen aus der FASTA-Kopfzeile; bei mehreren Einträgen
-     * wird bei gegebenem Namen durchnummeriert. `circular` gilt nur für Nukleotide.
+     * Creates sequences from pasted text (raw text, FASTA or with line numbers). `kind` is `DNA`, `RNA`,
+     * `PROTEIN` or `AUTO` (detection). An empty `name` takes the name from the FASTA header line; with several entries
+     * a given name is numbered consecutively. `circular` applies to nucleotides only.
      */
 open func createSequence(name: String, text: String, kind: String, circular: Bool)throws  -> [DocumentInfoDto]  {
     return try  FfiConverterSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1741,7 +1741,7 @@ open func deleteFolder(id: String, deleteContents: Bool)throws   {try rustCallWi
 }
     
     /**
-     * Bekannte Sequenzmotive (Promotoren, Primerstellen, Tags …) auf beiden Strängen (noch nicht ins Dokument eingetragen).
+     * Known sequence motifs (promoters, primer sites, tags …) on both strands (not yet added to the document).
      */
 open func detectCommonFeatures(id: String)throws  -> [FeatureInfo]  {
     return try  FfiConverterSequenceTypeFeatureInfo.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1754,7 +1754,7 @@ open func detectCommonFeatures(id: String)throws  -> [FeatureInfo]  {
 }
     
     /**
-     * Virtueller Verdau mit den genannten Enzymen.
+     * Virtual digest with the given enzymes.
      */
 open func digestDocument(id: String, enzymes: [String])throws  -> [FragmentDto]  {
     return try  FfiConverterSequenceTypeFragmentDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1768,7 +1768,7 @@ open func digestDocument(id: String, enzymes: [String])throws  -> [FragmentDto] 
 }
     
     /**
-     * Alle Dokumente, nach Erstellungszeit sortiert.
+     * All documents, sorted by creation time.
      */
 open func documents()throws  -> [DocumentInfoDto]  {
     return try  FfiConverterSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1790,7 +1790,7 @@ open func documentsInFolder(folderId: String)throws  -> [DocumentInfoDto]  {
 }
     
     /**
-     * Dotplot zweier Sequenzen als Diagonalen (Punkte werden zu Linien zusammengefasst).
+     * Dot plot of two sequences as diagonals (points are merged into lines).
      */
 open func dotplot(idA: String, idB: String, window: UInt64, minMatches: UInt64, reverse: Bool)throws  -> [DiagonalDto]  {
     return try  FfiConverterSequenceTypeDiagonalDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1807,7 +1807,7 @@ open func dotplot(idA: String, idB: String, window: UInt64, minMatches: UInt64, 
 }
     
     /**
-     * Löscht `[start, end)` (Rückgängig möglich).
+     * Deletes `[start, end)` (undoable).
      */
 open func editDelete(id: String, start: UInt64, end: UInt64)throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -1821,7 +1821,7 @@ open func editDelete(id: String, start: UInt64, end: UInt64)throws   {try rustCa
 }
     
     /**
-     * Fügt Basen vor Position `position` ein (Rückgängig möglich).
+     * Inserts bases before position `position` (undoable).
      */
 open func editInsert(id: String, position: UInt64, bases: String)throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -1835,7 +1835,7 @@ open func editInsert(id: String, position: UInt64, bases: String)throws   {try r
 }
     
     /**
-     * Stellt die zuletzt zurückgenommene Änderung wieder her.
+     * Restores the most recently undone change.
      */
 open func editRedo(id: String)throws  -> Bool  {
     return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1848,7 +1848,7 @@ open func editRedo(id: String)throws  -> Bool  {
 }
     
     /**
-     * Ersetzt `[start, end)` durch `bases` (Rückgängig möglich).
+     * Replaces `[start, end)` with `bases` (undoable).
      */
 open func editReplace(id: String, start: UInt64, end: UInt64, bases: String)throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -1863,7 +1863,7 @@ open func editReplace(id: String, start: UInt64, end: UInt64, bases: String)thro
 }
     
     /**
-     * Zahl der möglichen Rückgängig- und Wiederholen-Schritte `(undo, redo)`.
+     * Number of possible undo and redo steps `(undo, redo)`.
      */
 open func editState(id: String)throws  -> [UInt64]  {
     return try  FfiConverterSequenceUInt64.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1876,7 +1876,7 @@ open func editState(id: String)throws  -> [UInt64]  {
 }
     
     /**
-     * Macht die letzte Änderung rückgängig; `false`, wenn nichts zurückzunehmen ist.
+     * Undoes the last change; `false` if there is nothing to undo.
      */
 open func editUndo(id: String)throws  -> Bool  {
     return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1889,7 +1889,7 @@ open func editUndo(id: String)throws  -> Bool  {
 }
     
     /**
-     * Alle Enzyme der Standarddatenbank.
+     * All enzymes of the standard database.
      */
 open func enzymeList() -> [EnzymeInfoDto]  {
     return try!  FfiConverterSequenceTypeEnzymeInfoDto.lift(try! rustCall() {
@@ -1901,7 +1901,7 @@ open func enzymeList() -> [EnzymeInfoDto]  {
 }
     
     /**
-     * Enzyme der Standarddatenbank; `filter` ist `all`, `unique`, `double` oder `none`.
+     * Enzymes of the standard database; `filter` is `all`, `unique`, `double` or `none`.
      */
 open func enzymeSites(id: String, filter: String)throws  -> [EnzymeEntryDto]  {
     return try  FfiConverterSequenceTypeEnzymeEntryDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1915,8 +1915,8 @@ open func enzymeSites(id: String, filter: String)throws  -> [EnzymeEntryDto]  {
 }
     
     /**
-     * Schreibt ein Dokument in eine Datei. `format`: Sequenz `genbank`, `fasta`, `gff3` oder `svg` (Karte); Alignment `clustal`, `phylip` oder `fasta`;
-     * Baum `newick` oder `svg`.
+     * Writes a document to a file. `format`: sequence `genbank`, `fasta`, `gff3` or `svg` (map); alignment `clustal`, `phylip` or `fasta`;
+     * tree `newick` or `svg`.
      */
 open func exportDocument(id: String, path: String, format: String)throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -1930,7 +1930,7 @@ open func exportDocument(id: String, path: String, format: String)throws   {try 
 }
     
     /**
-     * Text- und Berichtsexport einer Sequenz: `kind` ist `text` (Positionen, Features) oder `report` (Markdown).
+     * Text and report export of a sequence: `kind` is `text` (positions, features) or `report` (Markdown).
      */
 open func exportText(id: String, kind: String)throws  -> String  {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1944,7 +1944,7 @@ open func exportText(id: String, kind: String)throws  -> String  {
 }
     
     /**
-     * Verknüpfte externe Dateien (leere `doc_id` = alle).
+     * Linked external files (empty `doc_id` = all).
      */
 open func externalFiles(docId: String)throws  -> [ExternalFileDto]  {
     return try  FfiConverterSequenceTypeExternalFileDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1957,8 +1957,8 @@ open func externalFiles(docId: String)throws  -> [ExternalFileDto]  {
 }
     
     /**
-     * Legt aus allen Features des Typs `feature_type` (leer = alle) je eine neue Sequenz an (mit `flank` Basen Rand, Gegenstrang
-     * revers-komplementiert). Höchstens 1000 Features.
+     * Creates one new sequence from each feature of type `feature_type` (empty = all) (with `flank` bases of margin, reverse strand
+     * reverse-complemented). At most 1000 features.
      */
 open func extractFeatures(id: String, featureType: String, flank: UInt64)throws  -> [DocumentInfoDto]  {
     return try  FfiConverterSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1982,7 +1982,7 @@ open func favorites()throws  -> [DocumentInfoDto]  {
 }
     
     /**
-     * Teilstücke aller Features mit Spurnummer.
+     * Parts of all features with track number.
      */
 open func featureLanes(id: String)throws  -> [PlacedFeatureDto]  {
     return try  FfiConverterSequenceTypePlacedFeatureDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -1995,7 +1995,7 @@ open func featureLanes(id: String)throws  -> [PlacedFeatureDto]  {
 }
     
     /**
-     * Alle Features eines Dokuments.
+     * All features of a document.
      */
 open func features(id: String)throws  -> [FeatureInfo]  {
     return try  FfiConverterSequenceTypeFeatureInfo.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2008,7 +2008,7 @@ open func features(id: String)throws  -> [FeatureInfo]  {
 }
     
     /**
-     * Gruppen von Sequenzdokumenten mit gleicher Sequenz (Dubletten).
+     * Groups of sequence documents with identical sequence (duplicates).
      */
 open func findDuplicates()throws  -> [[DocumentInfoDto]]  {
     return try  FfiConverterSequenceSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2020,7 +2020,7 @@ open func findDuplicates()throws  -> [[DocumentInfoDto]]  {
 }
     
     /**
-     * gRNA-Stellen auf beiden Strängen; `nuclease` ist `spcas9`, `sacas9` oder `cas12a`.
+     * gRNA sites on both strands; `nuclease` is `spcas9`, `sacas9` or `cas12a`.
      */
 open func findGuides(id: String, nuclease: String)throws  -> [GuideDto]  {
     return try  FfiConverterSequenceTypeGuideDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2034,7 +2034,7 @@ open func findGuides(id: String, nuclease: String)throws  -> [GuideDto]  {
 }
     
     /**
-     * Sucht ein Motiv (IUPAC-Codes erlaubt) auf beiden Strängen; bei zirkulären Sequenzen auch über den Nullpunkt.
+     * Searches a motif (IUPAC codes allowed) on both strands; for circular sequences also across the origin.
      */
 open func findMotifHits(id: String, motif: String)throws  -> [MotifHitDto]  {
     return try  FfiConverterSequenceTypeMotifHitDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2048,7 +2048,7 @@ open func findMotifHits(id: String, motif: String)throws  -> [MotifHitDto]  {
 }
     
     /**
-     * Offene Leserahmen (ORFs) mit mindestens `min_codons` Codons auf beiden Strängen (noch nicht ins Dokument eingetragen).
+     * Open reading frames (ORFs) with at least `min_codons` codons on both strands (not yet added to the document).
      */
 open func findOrfs(id: String, minCodons: UInt64)throws  -> [FeatureInfo]  {
     return try  FfiConverterSequenceTypeFeatureInfo.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2062,7 +2062,7 @@ open func findOrfs(id: String, minCodons: UInt64)throws  -> [FeatureInfo]  {
 }
     
     /**
-     * Tandem- und invertierte Wiederholungen einer Sequenz.
+     * Tandem and inverted repeats of a sequence.
      */
 open func findRepeats(id: String, minUnit: UInt64, maxUnit: UInt64, minCopies: UInt64, minArm: UInt64, maxSpacer: UInt64)throws  -> [RepeatDto]  {
     return try  FfiConverterSequenceTypeRepeatDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2080,8 +2080,8 @@ open func findRepeats(id: String, minUnit: UInt64, maxUnit: UInt64, minCopies: U
 }
     
     /**
-     * Sucht die kurze Sequenz `reference` mit höchstens `max_mismatch` Unterschieden auf beiden Strängen (Feature-Finder
-     * nach Ähnlichkeit). Höchstens 5000 Treffer.
+     * Searches the short sequence `reference` with at most `max_mismatch` differences on both strands (feature finder
+     * by similarity). At most 5000 hits.
      */
 open func findSimilarFeatures(id: String, reference: String, maxMismatch: UInt64)throws  -> [FeatureMatchDto]  {
     return try  FfiConverterSequenceTypeFeatureMatchDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2096,7 +2096,7 @@ open func findSimilarFeatures(id: String, reference: String, maxMismatch: UInt64
 }
     
     /**
-     * Faltet den Bereich `[start, end)` (Ende 0 = bis zum Ende) mit ViennaRNA (`RNAfold`); höchstens 5000 Basen.
+     * Folds the range `[start, end)` (end 0 = to the end) with ViennaRNA (`RNAfold`); at most 5000 bases.
      */
 open func foldRegion(id: String, start: UInt64, end: UInt64)throws  -> RnaFoldDto  {
     return try  FfiConverterTypeRnaFoldDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2121,7 +2121,7 @@ open func folderOf(docId: String)throws  -> String  {
 }
     
     /**
-     * Alle Ordner.
+     * All folders.
      */
 open func folders()throws  -> [FolderDto]  {
     return try  FfiConverterSequenceTypeFolderDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2133,8 +2133,8 @@ open func folders()throws  -> [FolderDto]  {
 }
     
     /**
-     * Fragmente, wenn die Sequenz an den Anfängen und/oder Enden aller Features des Typs `feature_type` (leer = alle Typen)
-     * geschnitten wird. Bei zirkulären Dokumenten umläuft das letzte Fragment den Nullpunkt.
+     * Fragments if the sequence is cut at the starts and/or ends of all features of type `feature_type` (empty = all types)
+     * For circular documents the last fragment wraps around the origin.
      */
 open func fragmentsByAnnotation(id: String, featureType: String, atStart: Bool, atEnd: Bool)throws  -> [FragmentDto]  {
     return try  FfiConverterSequenceTypeFragmentDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2150,7 +2150,7 @@ open func fragmentsByAnnotation(id: String, featureType: String, atStart: Bool, 
 }
     
     /**
-     * GC-Verlauf in Prozent mit Fenster `window` und Schritt `step`.
+     * GC profile in percent with window `window` and step `step`.
      */
 open func gcProfile(id: String, window: UInt64, step: UInt64)throws  -> [GcPointDto]  {
     return try  FfiConverterSequenceTypeGcPointDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2165,9 +2165,9 @@ open func gcProfile(id: String, window: UInt64, step: UInt64)throws  -> [GcPoint
 }
     
     /**
-     * Liest Annotationen (GFF3 oder BED, nach der Dateiendung `.gff`, `.gff3`, `.bed`) und trägt sie als Features ins Dokument ein.
-     * Die Kennung der Datei (`seqid`/`chrom`) muss dem Dokumentnamen (Leerzeichen als `_`) oder dem Accession-Metadatum entsprechen;
-     * gibt es nur eine Kennung in der Datei, wird sie genommen. Rückgabe: Zahl der eingetragenen Features.
+     * Reads annotations (GFF3 or BED, by file extension `.gff`, `.gff3`, `.bed`) and adds them as features to the document.
+     * The file's identifier (`seqid`/`chrom`) must match the document name (spaces as `_`) or the accession metadata;
+     * if there is only one identifier in the file, it is used. Returns: number of features added.
      */
 open func importAnnotations(id: String, path: String)throws  -> UInt64  {
     return try  FfiConverterUInt64.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2181,9 +2181,9 @@ open func importAnnotations(id: String, path: String)throws  -> UInt64  {
 }
     
     /**
-     * Liest eine Domänentabelle (`hmmscan --domtblout` oder InterProScan-TSV; `format` = `hmmer` oder `interpro`) und trägt die
-     * Treffer für dieses Protein als Features vom Typ `domain` ein. Gehört mehr als ein Name zur Datei, zählen nur Treffer, deren
-     * Name mit dem Dokumentnamen beginnt (sonst alle). Gibt die Zahl der eingetragenen Features zurück.
+     * Reads a domain table (`hmmscan --domtblout` or InterProScan TSV; `format` = `hmmer` or `interpro`) and adds the
+     * hits for this protein as features of type `domain`. If more than one name belongs to the file, only hits whose
+     * name begins with the document name count (otherwise all). Returns the number of features added.
      */
 open func importDomainTable(id: String, path: String, format: String)throws  -> UInt64  {
     return try  FfiConverterUInt64.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2198,8 +2198,8 @@ open func importDomainTable(id: String, path: String, format: String)throws  -> 
 }
     
     /**
-     * Importiert eine Datei und legt die Dokumente an: FASTA, FASTQ, GenBank, EMBL, SnapGene, PIR, GCG (Sequenzen) sowie
-     * MEGA, NEXUS, Clustal und PHYLIP (Alignments). Liefert die neu angelegten Dokumente.
+     * Imports a file and creates the documents: FASTA, FASTQ, GenBank, EMBL, SnapGene, PIR, GCG (sequences) as well as
+     * MEGA, NEXUS, Clustal and PHYLIP (alignments). Returns the newly created documents.
      */
 open func importFile(path: String)throws  -> [DocumentInfoDto]  {
     return try  FfiConverterSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2212,7 +2212,7 @@ open func importFile(path: String)throws  -> [DocumentInfoDto]  {
 }
     
     /**
-     * Legt Sequenzen aus einer Tabelle (CSV/TSV) an. `sep` ist `,`, `;` oder `\t`; `name_col` und `seq_col` zählen ab 0.
+     * Creates sequences from a table (CSV/TSV). `sep` is `,`, `;` or `\t`; `name_col` and `seq_col` count from 0.
      */
 open func importTable(path: String, sep: String, nameCol: UInt64, seqCol: UInt64, hasHeader: Bool, kind: String, circular: Bool)throws  -> [DocumentInfoDto]  {
     return try  FfiConverterSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2231,7 +2231,7 @@ open func importTable(path: String, sep: String, nameCol: UInt64, seqCol: UInt64
 }
     
     /**
-     * Länge der gewählten Sequenzen als Häufigkeitsverteilung (Klassenbreite `bin_width`, 0 gilt als 1).
+     * Length of the chosen sequences as a frequency distribution (class width `bin_width`, 0 counts as 1).
      */
 open func lengthHistogram(ids: [String], binWidth: UInt64)throws  -> [HistogramBinDto]  {
     return try  FfiConverterSequenceTypeHistogramBinDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2245,7 +2245,7 @@ open func lengthHistogram(ids: [String], binWidth: UInt64)throws  -> [HistogramB
 }
     
     /**
-     * Bildet Reads (Sequenzdokumente) lückenlos auf die Referenz ab.
+     * Maps reads (sequence documents) onto the reference without gaps.
      */
 open func mapReadsTo(referenceId: String, readIds: [String], maxMismatches: UInt64)throws  -> [ReadMapDto]  {
     return try  FfiConverterSequenceTypeReadMapDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2260,8 +2260,8 @@ open func mapReadsTo(referenceId: String, readIds: [String], maxMismatches: UInt
 }
     
     /**
-     * Bildet Reads (FASTQ-Dateien, eine oder zwei) mit `minimap2` oder `bwa` auf die gewählte Sequenz ab. Die Referenz wird als FASTA
-     * in `output_dir` geschrieben, das Ergebnis als SAM daneben und mit dem Dokument verknüpft.
+     * Maps reads (FASTQ files, one or two) onto the chosen sequence with `minimap2` or `bwa`. The reference is written as FASTA
+     * to `output_dir`, the result as SAM next to it and linked to the document.
      */
 open func mapReadsToReference(referenceId: String, readPaths: [String], mapper: String, preset: String, threads: UInt64, outputDir: String)throws  -> ExternalFileDto  {
     return try  FfiConverterTypeExternalFileDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2279,7 +2279,7 @@ open func mapReadsToReference(referenceId: String, readPaths: [String], mapper: 
 }
     
     /**
-     * Verschiebt ein Dokument in einen Ordner (leer = Wurzel).
+     * Moves a document into a folder (empty = root).
      */
 open func moveDocument(docId: String, folderId: String)throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -2292,7 +2292,7 @@ open func moveDocument(docId: String, folderId: String)throws   {try rustCallWit
 }
     
     /**
-     * Mutagenese-Primer: ersetzt `[start, end)` durch `replacement` (leer = Deletion, `start == end` = Einfügung).
+     * Mutagenesis primers: replaces `[start, end)` with `replacement` (empty = deletion, `start == end` = insertion).
      */
 open func mutagenesisPrimers(id: String, start: UInt64, end: UInt64, replacement: String, minFlank: UInt64, maxFlank: UInt64, targetTm: Double)throws  -> MutagenesisDto  {
     return try  FfiConverterTypeMutagenesisDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2311,7 +2311,7 @@ open func mutagenesisPrimers(id: String, start: UInt64, end: UInt64, replacement
 }
     
     /**
-     * Lädt einen NCBI-Datensatz (Kennung aus `ncbi_search`) als GenBank und legt ihn im Projekt an.
+     * Loads an NCBI record (identifier from `ncbi_search`) as GenBank and creates it in the project.
      */
 open func ncbiImport(id: String)throws  -> [DocumentInfoDto]  {
     return try  FfiConverterSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2324,7 +2324,7 @@ open func ncbiImport(id: String)throws  -> [DocumentInfoDto]  {
 }
     
     /**
-     * Sucht in NCBI Nucleotide (`nuccore`) und liefert Kurzinfos (braucht Internet und `curl`).
+     * Searches NCBI Nucleotide (`nuccore`) and returns short info (needs internet and `curl`).
      */
 open func ncbiSearch(term: String, maxResults: UInt64)throws  -> NcbiSearchDto  {
     return try  FfiConverterTypeNcbiSearchDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2348,7 +2348,7 @@ open func note(docId: String)throws  -> String  {
 }
     
     /**
-     * Alle Operationen, die in Workflows vorkommen dürfen.
+     * All operations that may occur in workflows.
      */
 open func operationList() -> [OperationInfoDto]  {
     return try!  FfiConverterSequenceTypeOperationInfoDto.lift(try! rustCall() {
@@ -2360,7 +2360,7 @@ open func operationList() -> [OperationInfoDto]  {
 }
     
     /**
-     * Ordnet die gewählten Reads anhand der Namen (`/1`, `/2` oder `1:`, `2:`) zu Paaren.
+     * Pairs the chosen reads by name (`/1`, `/2` or `1:`, `2:`).
      */
 open func pairReadsReport(ids: [String])throws  -> PairReportDto  {
     return try  FfiConverterTypePairReportDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2382,7 +2382,7 @@ open func path() -> String  {
 }
     
     /**
-     * Bis zu `max_results` Primerpaare, deren Produkt `[target_start, target_end)` einschließt (Standardvorgaben).
+     * Up to `max_results` primer pairs whose product encloses `[target_start, target_end)` (default settings).
      */
 open func pickPrimers(id: String, targetStart: UInt64, targetEnd: UInt64, maxResults: UInt64)throws  -> [PrimerPairDto]  {
     return try  FfiConverterSequenceTypePrimerPairDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2398,7 +2398,7 @@ open func pickPrimers(id: String, targetStart: UInt64, targetEnd: UInt64, maxRes
 }
     
     /**
-     * Verdau eines Proteins; `protease` ist `trypsin`, `lysc`, `argc`, `gluc`, `chymotrypsin` oder `cnbr`.
+     * Digest of a protein; `protease` is `trypsin`, `lysc`, `argc`, `gluc`, `chymotrypsin` or `cnbr`.
      */
 open func proteinDigest(protein: String, protease: String, missedCleavages: UInt64)throws  -> [PeptideDto]  {
     return try  FfiConverterSequenceTypePeptideDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2413,7 +2413,7 @@ open func proteinDigest(protein: String, protease: String, missedCleavages: UInt
 }
     
     /**
-     * Schwachstellen eines Proteins (N-Glykosylierung, Deamidierung, Isomerisierung, Oxidation, freies Cystein).
+     * Liabilities of a protein (N-glycosylation, deamidation, isomerization, oxidation, free cysteine).
      */
 open func proteinLiabilities(id: String)throws  -> [LiabilityDto]  {
     return try  FfiConverterSequenceTypeLiabilityDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2426,7 +2426,7 @@ open func proteinLiabilities(id: String)throws  -> [LiabilityDto]  {
 }
     
     /**
-     * Das Protein, das ein Feature (z. B. CDS) codiert; ein abschließendes Stopp-Zeichen wird weggelassen.
+     * The protein encoded by a feature (e.g. CDS); a trailing stop character is omitted.
      */
 open func proteinOfFeature(id: String, featureIndex: UInt64)throws  -> String  {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2440,7 +2440,7 @@ open func proteinOfFeature(id: String, featureIndex: UInt64)throws  -> String  {
 }
     
     /**
-     * Eigenschaften einer Proteinsequenz.
+     * Properties of a protein sequence.
      */
 open func proteinProperties(protein: String) -> ProteinPropsDto  {
     return try!  FfiConverterTypeProteinPropsDto_lift(try! rustCall() {
@@ -2453,7 +2453,7 @@ open func proteinProperties(protein: String) -> ProteinPropsDto  {
 }
     
     /**
-     * Zeichnet aus dem Verlauf eines Dokuments einen Workflow auf und speichert ihn unter `name`. Rückgabe: Zahl der Schritte.
+     * Records a workflow from a document's history and saves it under `name`. Returns: number of steps.
      */
 open func recordWorkflow(docId: String, name: String)throws  -> UInt64  {
     return try  FfiConverterUInt64.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2467,7 +2467,7 @@ open func recordWorkflow(docId: String, name: String)throws  -> UInt64  {
 }
     
     /**
-     * Entfernt eine Verknüpfung (die Datei bleibt).
+     * Removes a link (the file remains).
      */
 open func removeExternalFile(id: String)throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -2479,7 +2479,7 @@ open func removeExternalFile(id: String)throws   {try rustCallWithError(FfiConve
 }
     
     /**
-     * Entfernt das Feature mit diesem Index (Rückgängig möglich).
+     * Removes the feature with this index (undoable).
      */
 open func removeFeature(id: String, index: UInt64)throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -2522,7 +2522,7 @@ open func restoreVersion(docId: String, version: Int64)throws   {try rustCallWit
 }
     
     /**
-     * Mögliche Produkte der Restriktionsklonierung von Insert in Vektor.
+     * Possible products of restriction cloning of an insert into a vector.
      */
 open func restrictionCandidates(vectorId: String, vectorEnzymes: [String], insertId: String, insertEnzymes: [String])throws  -> [CandidateDto]  {
     return try  FfiConverterSequenceTypeCandidateDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2538,7 +2538,7 @@ open func restrictionCandidates(vectorId: String, vectorEnzymes: [String], inser
 }
     
     /**
-     * Speichert das Produkt mit Nummer `index` (aus `restriction_candidates`) als neues Dokument.
+     * Saves the product with number `index` (from `restriction_candidates`) as a new document.
      */
 open func saveCandidate(vectorId: String, vectorEnzymes: [String], insertId: String, insertEnzymes: [String], index: UInt64, name: String)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2556,7 +2556,7 @@ open func saveCandidate(vectorId: String, vectorEnzymes: [String], insertId: Str
 }
     
     /**
-     * Suche: `kind` ist `name`, `type`, `feature`, `metadata` (`text` = Schlüssel, `text2` = Wert) oder `motif`.
+     * Search: `kind` is `name`, `type`, `feature`, `metadata` (`text` = key, `text2` = value) or `motif`.
      */
 open func searchDocuments(kind: String, text: String, text2: String)throws  -> [DocumentInfoDto]  {
     return try  FfiConverterSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2571,7 +2571,7 @@ open func searchDocuments(kind: String, text: String, text2: String)throws  -> [
 }
     
     /**
-     * Kennzahlen der Auswahl `[start, end)`.
+     * Key figures of the selection `[start, end)`.
      */
 open func selectionStats(id: String, start: UInt64, end: UInt64)throws  -> SelectionStatsDto  {
     return try  FfiConverterTypeSelectionStatsDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2586,7 +2586,7 @@ open func selectionStats(id: String, start: UInt64, end: UInt64)throws  -> Selec
 }
     
     /**
-     * Text der Auswahl für die Zwischenablage: `format` ist `bases`, `fasta` oder `reverse_complement`.
+     * Text of the selection for the clipboard: `format` is `bases`, `fasta` or `reverse_complement`.
      */
 open func selectionText(id: String, start: UInt64, end: UInt64, format: String)throws  -> String  {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2602,8 +2602,8 @@ open func selectionText(id: String, start: UInt64, end: UInt64, format: String)t
 }
     
     /**
-     * Erzeugt aus einem Alignment eine neue Sequenz: die Referenzzeile (ohne Lücken) mit allen Varianten der Zeile `row`
-     * gegenüber der Zeile `reference`.
+     * Creates a new sequence from an alignment: the reference row (without gaps) with all variants of row `row`
+     * relative to row `reference`.
      */
 open func sequenceWithVariants(id: String, reference: UInt64, row: UInt64, name: String)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2639,8 +2639,8 @@ open func setNote(docId: String, text: String)throws   {try rustCallWithError(Ff
 }
     
     /**
-     * Mögliche stille Einzelbasenänderungen im CDS-Feature `feature_index` (nur Vorwärtsstrang). `site` ist leer (alle),
-     * eine DNA-Folge oder der Name eines Enzyms; `mode` ist `all`, `create` (erzeugt die Stelle) oder `remove` (zerstört sie).
+     * Possible silent single-base changes in the CDS feature `feature_index` (forward strand only). `site` is empty (all),
+     * a DNA sequence or the name of an enzyme; `mode` is `all`, `create` (creates the site) or `remove` (destroys it).
      */
 open func silentChanges(id: String, featureIndex: UInt64, site: String, mode: String)throws  -> [SilentChangeDto]  {
     return try  FfiConverterSequenceTypeSilentChangeDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2656,8 +2656,8 @@ open func silentChanges(id: String, featureIndex: UInt64, site: String, mode: St
 }
     
     /**
-     * Einfache Faltung nach Nussinov für `[start, end)` (Ende 0 = bis zum Ende; höchstens 2000 Basen): größte Zahl
-     * nicht kreuzender Basenpaare, ohne Energiemodell. Auch für DNA.
+     * Simple folding after Nussinov for `[start, end)` (end 0 = to the end; at most 2000 bases): largest number
+     * of non-crossing base pairs, without an energy model. Also for DNA.
      */
 open func simpleFold(id: String, start: UInt64, end: UInt64)throws  -> SimpleFoldDto  {
     return try  FfiConverterTypeSimpleFoldDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2672,9 +2672,9 @@ open func simpleFold(id: String, start: UInt64, end: UInt64)throws  -> SimpleFol
 }
     
     /**
-     * Entfernt Spalten aus einem Alignment und legt das Ergebnis als neues Alignment an. `kind`: `gaps` (Lückenanteil
-     * mindestens `param`, 0–1), `constant` (Spalten ohne Lücke, in denen alle gleich sind) oder `codon` (Codonposition
-     * `param` = 1, 2 oder 3, ab Spalte `start`, 0-basiert).
+     * Removes columns from an alignment and stores the result as a new alignment. `kind`: `gaps` (gap fraction
+     * at least `param`, 0–1), `constant` (columns without a gap in which all are equal) or `codon` (codon position
+     * `param` = 1, 2 or 3, from column `start`, 0-based).
      */
 open func stripAlignmentColumns(id: String, kind: String, param: Double, start: UInt64, name: String)throws  -> DocumentInfoDto  {
     return try  FfiConverterTypeDocumentInfoDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2691,7 +2691,7 @@ open func stripAlignmentColumns(id: String, kind: String, param: Double, start: 
 }
     
     /**
-     * Eckdaten eines Dokuments.
+     * Key facts of a document.
      */
 open func summary(id: String)throws  -> DocumentSummary  {
     return try  FfiConverterTypeDocumentSummary_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2704,7 +2704,7 @@ open func summary(id: String)throws  -> DocumentSummary  {
 }
     
     /**
-     * Aminosäuren eines Features (z. B. CDS) in Leserichtung des Features.
+     * Amino acids of a feature (e.g. CDS) in the feature's reading direction.
      */
 open func translateFeature(id: String, featureIndex: UInt64)throws  -> [AminoAcidDto]  {
     return try  FfiConverterSequenceTypeAminoAcidDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2718,8 +2718,8 @@ open func translateFeature(id: String, featureIndex: UInt64)throws  -> [AminoAci
 }
     
     /**
-     * Aminosäuren im Leserahmen `frame`: 1, 2, 3 auf dem Vorwärtsstrang, −1, −2, −3 auf dem Gegenstrang (0 gilt nicht).
-     * `base_position` ist immer die kleinste Koordinate des Codons im Dokument (auch auf dem Gegenstrang).
+     * Amino acids in reading frame `frame`: 1, 2, 3 on the forward strand, −1, −2, −3 on the reverse strand (0 is not valid).
+     * `base_position` is always the smallest coordinate of the codon in the document (also on the reverse strand).
      */
 open func translateFrame(id: String, frame: Int32)throws  -> [AminoAcidDto]  {
     return try  FfiConverterSequenceTypeAminoAcidDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2733,7 +2733,7 @@ open func translateFrame(id: String, frame: Int32)throws  -> [AminoAcidDto]  {
 }
     
     /**
-     * Lädt einen UniProt-Eintrag als Proteinsequenz und legt ihn im Projekt an.
+     * Loads a UniProt entry as a protein sequence and creates it in the project.
      */
 open func uniprotImport(accession: String)throws  -> [DocumentInfoDto]  {
     return try  FfiConverterSequenceTypeDocumentInfoDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2746,8 +2746,8 @@ open func uniprotImport(accession: String)throws  -> [DocumentInfoDto]  {
 }
     
     /**
-     * Sucht in UniProt (braucht Internet und `curl`); die Treffer kommen im gleichen Format wie bei NCBI (`accession` = UniProt-Zugang,
-     * `id` = dieselbe Zugangsnummer, `organism`, `title` = Proteinname, `length` in Aminosäuren).
+     * Searches UniProt (needs internet and `curl`); the hits come in the same format as for NCBI (`accession` = UniProt accession,
+     * `id` = the same accession number, `organism`, `title` = protein name, `length` in amino acids).
      */
 open func uniprotSearch(query: String, maxResults: UInt64)throws  -> NcbiSearchDto  {
     return try  FfiConverterTypeNcbiSearchDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2761,7 +2761,7 @@ open func uniprotSearch(query: String, maxResults: UInt64)throws  -> NcbiSearchD
 }
     
     /**
-     * Gespeicherte Versionen eines Dokuments, neueste zuerst.
+     * Saved versions of a document, newest first.
      */
 open func versions(docId: String)throws  -> [VersionDto]  {
     return try  FfiConverterSequenceTypeVersionDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2783,7 +2783,7 @@ open func workflowDelete(name: String)throws   {try rustCallWithError(FfiConvert
 }
     
     /**
-     * Alle gespeicherten Workflows.
+     * All saved workflows.
      */
 open func workflowList()throws  -> [WorkflowDto]  {
     return try  FfiConverterSequenceTypeWorkflowDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2795,8 +2795,8 @@ open func workflowList()throws  -> [WorkflowDto]  {
 }
     
     /**
-     * Führt einen gespeicherten Workflow aus. Braucht der Workflow eine Eingabe, läuft er für jedes der `input_ids` einzeln
-     * (Stapel); sonst bilden alle `input_ids` zusammen die Eingaben eines einzigen Laufs. Ergebnisse werden als neue Dokumente gespeichert.
+     * Runs a saved workflow. If the workflow needs one input, it runs individually for each of the `input_ids`
+     * (batch); otherwise all `input_ids` together form the inputs of a single run. Results are saved as new documents.
      */
 open func workflowRun(name: String, inputIds: [String])throws  -> WorkflowRunDto  {
     return try  FfiConverterTypeWorkflowRunDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2810,7 +2810,7 @@ open func workflowRun(name: String, inputIds: [String])throws  -> WorkflowRunDto
 }
     
     /**
-     * Prüft und speichert einen Workflow (JSON); der Name kommt aus dem JSON.
+     * Validates and saves a workflow (JSON); the name comes from the JSON.
      */
 open func workflowSave(json: String)throws  -> String  {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -2871,7 +2871,7 @@ public func FfiConverterTypeProject_lower(_ value: Project) -> UInt64 {
 
 
 /**
- * Ein Alignment zur Anzeige.
+ * An alignment for display.
  */
 public struct AlignmentDto: Equatable, Hashable {
     public var id: String
@@ -2880,7 +2880,7 @@ public struct AlignmentDto: Equatable, Hashable {
     public var rowNames: [String]
     public var rows: [String]
     /**
-     * Konsens (Schwelle 0.5) und Identität je Spalte (0 bis 1).
+     * Consensus (threshold 0.5) and identity per column (0 to 1).
      */
     public var consensus: String
     public var identity: [Double]
@@ -2889,7 +2889,7 @@ public struct AlignmentDto: Equatable, Hashable {
     // declare one manually.
     public init(id: String, name: String, seqType: String, rowNames: [String], rows: [String], 
         /**
-         * Konsens (Schwelle 0.5) und Identität je Spalte (0 bis 1).
+         * Consensus (threshold 0.5) and identity per column (0 to 1).
          */consensus: String, identity: [Double]) {
         self.id = id
         self.name = name
@@ -2954,7 +2954,7 @@ public func FfiConverterTypeAlignmentDto_lower(_ value: AlignmentDto) -> RustBuf
 
 
 /**
- * Eine Aminosäure unter der Sequenz.
+ * An amino acid below the sequence.
  */
 public struct AminoAcidDto: Equatable, Hashable {
     public var basePosition: UInt64
@@ -3019,7 +3019,7 @@ public func FfiConverterTypeAminoAcidDto_lower(_ value: AminoAcidDto) -> RustBuf
 
 
 /**
- * Ergebnis des Vergleichs der Annotationen zweier Sequenzen (Indizes in der Feature-Liste des jeweiligen Dokuments).
+ * Result of comparing the annotations of two sequences (indices into the feature list of the respective document).
  */
 public struct AnnotationComparisonDto: Equatable, Hashable {
     public var onlyA: [UInt64]
@@ -3084,7 +3084,7 @@ public func FfiConverterTypeAnnotationComparisonDto_lower(_ value: AnnotationCom
 
 
 /**
- * Ergebnis eines Zusammenbaus (Gibson oder Golden Gate): das neue Dokument und Hinweise.
+ * Result of an assembly (Gibson or Golden Gate): the new document and notes.
  */
 public struct AssemblyDto: Equatable, Hashable {
     public var document: DocumentInfoDto
@@ -3141,13 +3141,13 @@ public func FfiConverterTypeAssemblyDto_lower(_ value: AssemblyDto) -> RustBuffe
 
 
 /**
- * Eine Gruppe aus der Aufteilung nach Barcodes.
+ * A group from the split by barcodes.
  */
 public struct BarcodeGroupDto: Equatable, Hashable {
     public var name: String
     public var count: UInt64
     /**
-     * Ausgabedatei (FASTQ).
+     * Output file (FASTQ).
      */
     public var path: String
 
@@ -3155,7 +3155,7 @@ public struct BarcodeGroupDto: Equatable, Hashable {
     // declare one manually.
     public init(name: String, count: UInt64, 
         /**
-         * Ausgabedatei (FASTQ).
+         * Output file (FASTQ).
          */path: String) {
         self.name = name
         self.count = count
@@ -3208,7 +3208,7 @@ public func FfiConverterTypeBarcodeGroupDto_lower(_ value: BarcodeGroupDto) -> R
 
 
 /**
- * Ein Basenpaar einer RNA-Struktur (0-basiert, `first < second`).
+ * A base pair of an RNA structure (0-based, `first < second`).
  */
 public struct BasePairDto: Equatable, Hashable {
     public var first: UInt64
@@ -3265,7 +3265,7 @@ public func FfiConverterTypeBasePairDto_lower(_ value: BasePairDto) -> RustBuffe
 
 
 /**
- * Ein BLAST-Treffer.
+ * A BLAST hit.
  */
 public struct BlastHitDto: Equatable, Hashable {
     public var subject: String
@@ -3354,7 +3354,7 @@ public func FfiConverterTypeBlastHitDto_lower(_ value: BlastHitDto) -> RustBuffe
 
 
 /**
- * Ein mögliches Klonierungsprodukt (Restriktionsklonierung).
+ * A possible cloning product (restriction cloning).
  */
 public struct CandidateDto: Equatable, Hashable {
     public var constructLength: UInt64
@@ -3427,7 +3427,7 @@ public func FfiConverterTypeCandidateDto_lower(_ value: CandidateDto) -> RustBuf
 
 
 /**
- * Ein Eintrag der Befehlspalette.
+ * An entry of the command palette.
  */
 public struct CommandItemDto: Equatable, Hashable {
     public var title: String
@@ -3484,7 +3484,7 @@ public func FfiConverterTypeCommandItemDto_lower(_ value: CommandItemDto) -> Rus
 
 
 /**
- * Kennzahlen der Abdeckung einer SAM/BAM-Datei gegen eine Referenz.
+ * Coverage figures of a SAM/BAM file against a reference.
  */
 public struct CoverageReportDto: Equatable, Hashable {
     public var mean: Double
@@ -3492,11 +3492,11 @@ public struct CoverageReportDto: Equatable, Hashable {
     public var min: UInt64
     public var max: UInt64
     /**
-     * Anteil der Positionen mit Tiefe ≥ 1, ≥ 10 und ≥ 30 (in dieser Reihenfolge).
+     * Fraction of positions with depth ≥ 1, ≥ 10 and ≥ 30 (in this order).
      */
     public var fractions: [Double]
     /**
-     * Zugeordnete Reads, davon Duplikate (gleiche Referenz, Position und Richtung).
+     * Mapped reads, of which duplicates (same reference, position and orientation).
      */
     public var mappedReads: UInt64
     public var duplicateReads: UInt64
@@ -3505,10 +3505,10 @@ public struct CoverageReportDto: Equatable, Hashable {
     // declare one manually.
     public init(mean: Double, median: Double, min: UInt64, max: UInt64, 
         /**
-         * Anteil der Positionen mit Tiefe ≥ 1, ≥ 10 und ≥ 30 (in dieser Reihenfolge).
+         * Fraction of positions with depth ≥ 1, ≥ 10 and ≥ 30 (in this order).
          */fractions: [Double], 
         /**
-         * Zugeordnete Reads, davon Duplikate (gleiche Referenz, Position und Richtung).
+         * Mapped reads, of which duplicates (same reference, position and orientation).
          */mappedReads: UInt64, duplicateReads: UInt64) {
         self.mean = mean
         self.median = median
@@ -3573,7 +3573,7 @@ public func FfiConverterTypeCoverageReportDto_lower(_ value: CoverageReportDto) 
 
 
 /**
- * Diagonale eines Dotplots.
+ * Diagonal of a dot plot.
  */
 public struct DiagonalDto: Equatable, Hashable {
     public var startA: UInt64
@@ -3634,11 +3634,11 @@ public func FfiConverterTypeDiagonalDto_lower(_ value: DiagonalDto) -> RustBuffe
 
 
 /**
- * Ein Unterschied zwischen Read und Referenz.
+ * A difference between read and reference.
  */
 public struct DifferenceDto: Equatable, Hashable {
     /**
-     * `MISMATCH`, `INSERTION`, `DELETION` oder `LOW_QUALITY`.
+     * `MISMATCH`, `INSERTION`, `DELETION` or `LOW_QUALITY`.
      */
     public var kind: String
     public var referencePosition: UInt64
@@ -3651,7 +3651,7 @@ public struct DifferenceDto: Equatable, Hashable {
     // declare one manually.
     public init(
         /**
-         * `MISMATCH`, `INSERTION`, `DELETION` oder `LOW_QUALITY`.
+         * `MISMATCH`, `INSERTION`, `DELETION` or `LOW_QUALITY`.
          */kind: String, referencePosition: UInt64, readPosition: UInt64, expected: String, observed: String, quality: UInt8) {
         self.kind = kind
         self.referencePosition = referencePosition
@@ -3713,14 +3713,14 @@ public func FfiConverterTypeDifferenceDto_lower(_ value: DifferenceDto) -> RustB
 
 
 /**
- * Kurzinfo zu einem Dokument im Projekt.
+ * Short info about a document in the project.
  */
 public struct DocumentInfoDto: Equatable, Hashable {
     public var id: String
     public var name: String
     public var docType: String
     /**
-     * Erstellungszeit, Sekunden seit 1970 (UTC).
+     * Creation time, seconds since 1970 (UTC).
      */
     public var created: Int64
 
@@ -3728,7 +3728,7 @@ public struct DocumentInfoDto: Equatable, Hashable {
     // declare one manually.
     public init(id: String, name: String, docType: String, 
         /**
-         * Erstellungszeit, Sekunden seit 1970 (UTC).
+         * Creation time, seconds since 1970 (UTC).
          */created: Int64) {
         self.id = id
         self.name = name
@@ -3784,7 +3784,7 @@ public func FfiConverterTypeDocumentInfoDto_lower(_ value: DocumentInfoDto) -> R
 
 
 /**
- * Eckdaten eines Sequenzdokuments.
+ * Key facts of a sequence document.
  */
 public struct DocumentSummary: Equatable, Hashable {
     public var id: String
@@ -3792,16 +3792,16 @@ public struct DocumentSummary: Equatable, Hashable {
     public var docType: String
     public var length: UInt64
     /**
-     * `LINEAR` oder `CIRCULAR`.
+     * `LINEAR` or `CIRCULAR`.
      */
     public var topology: String
     /**
-     * `DNA`, `RNA` oder `PROTEIN`.
+     * `DNA`, `RNA` or `PROTEIN`.
      */
     public var seqType: String
     public var featureCount: UInt64
     /**
-     * GC-Anteil in Prozent.
+     * GC fraction in percent.
      */
     public var gcPercent: Double
     public var description: String
@@ -3812,13 +3812,13 @@ public struct DocumentSummary: Equatable, Hashable {
     // declare one manually.
     public init(id: String, name: String, docType: String, length: UInt64, 
         /**
-         * `LINEAR` oder `CIRCULAR`.
+         * `LINEAR` or `CIRCULAR`.
          */topology: String, 
         /**
-         * `DNA`, `RNA` oder `PROTEIN`.
+         * `DNA`, `RNA` or `PROTEIN`.
          */seqType: String, featureCount: UInt64, 
         /**
-         * GC-Anteil in Prozent.
+         * GC fraction in percent.
          */gcPercent: Double, description: String, accession: String, organism: String) {
         self.id = id
         self.name = name
@@ -3895,7 +3895,7 @@ public func FfiConverterTypeDocumentSummary_lower(_ value: DocumentSummary) -> R
 
 
 /**
- * Ein Enzym mit seinen Schnittstellen.
+ * An enzyme with its cut sites.
  */
 public struct EnzymeEntryDto: Equatable, Hashable {
     public var enzyme: String
@@ -3956,7 +3956,7 @@ public func FfiConverterTypeEnzymeEntryDto_lower(_ value: EnzymeEntryDto) -> Rus
 
 
 /**
- * Ein Enzym der Standarddatenbank.
+ * An enzyme of the standard database.
  */
 public struct EnzymeInfoDto: Equatable, Hashable {
     public var name: String
@@ -4017,13 +4017,13 @@ public func FfiConverterTypeEnzymeInfoDto_lower(_ value: EnzymeInfoDto) -> RustB
 
 
 /**
- * Ein Enzymset.
+ * An enzyme set.
  */
 public struct EnzymeSetDto: Equatable, Hashable {
     public var name: String
     public var enzymes: [String]
     /**
-     * `true` bei den eingebauten Sets (nicht löschbar).
+     * `true` for the built-in sets (cannot be deleted).
      */
     public var builtin: Bool
 
@@ -4031,7 +4031,7 @@ public struct EnzymeSetDto: Equatable, Hashable {
     // declare one manually.
     public init(name: String, enzymes: [String], 
         /**
-         * `true` bei den eingebauten Sets (nicht löschbar).
+         * `true` for the built-in sets (cannot be deleted).
          */builtin: Bool) {
         self.name = name
         self.enzymes = enzymes
@@ -4084,7 +4084,7 @@ public func FfiConverterTypeEnzymeSetDto_lower(_ value: EnzymeSetDto) -> RustBuf
 
 
 /**
- * Titel und Lösungsvorschlag zu einer Fehlermeldung.
+ * Title and suggested solution for an error message.
  */
 public struct ErrorHelpDto: Equatable, Hashable {
     public var title: String
@@ -4141,7 +4141,7 @@ public func FfiConverterTypeErrorHelpDto_lower(_ value: ErrorHelpDto) -> RustBuf
 
 
 /**
- * Expressionswerte einer Referenz.
+ * Expression values of a reference.
  */
 public struct ExpressionRowDto: Equatable, Hashable {
     public var reference: String
@@ -4210,7 +4210,7 @@ public func FfiConverterTypeExpressionRowDto_lower(_ value: ExpressionRowDto) ->
 
 
 /**
- * Eine mit dem Projekt verknüpfte externe Datei.
+ * An external file linked to the project.
  */
 public struct ExternalFileDto: Equatable, Hashable {
     public var id: String
@@ -4279,7 +4279,7 @@ public func FfiConverterTypeExternalFileDto_lower(_ value: ExternalFileDto) -> R
 
 
 /**
- * Ein Feature (Annotation) mit Gesamtbereich `[start, end)`.
+ * A feature (annotation) with overall range `[start, end)`.
  */
 public struct FeatureInfo: Equatable, Hashable {
     public var featureType: String
@@ -4287,7 +4287,7 @@ public struct FeatureInfo: Equatable, Hashable {
     public var start: UInt64
     public var end: UInt64
     /**
-     * `FORWARD`, `REVERSE` oder `NONE`.
+     * `FORWARD`, `REVERSE` or `NONE`.
      */
     public var strand: String
 
@@ -4295,7 +4295,7 @@ public struct FeatureInfo: Equatable, Hashable {
     // declare one manually.
     public init(featureType: String, name: String, start: UInt64, end: UInt64, 
         /**
-         * `FORWARD`, `REVERSE` oder `NONE`.
+         * `FORWARD`, `REVERSE` or `NONE`.
          */strand: String) {
         self.featureType = featureType
         self.name = name
@@ -4354,7 +4354,7 @@ public func FfiConverterTypeFeatureInfo_lower(_ value: FeatureInfo) -> RustBuffe
 
 
 /**
- * Ein Treffer der Feature-Suche nach Ähnlichkeit.
+ * A hit of the feature search by similarity.
  */
 public struct FeatureMatchDto: Equatable, Hashable {
     public var start: UInt64
@@ -4419,7 +4419,7 @@ public func FfiConverterTypeFeatureMatchDto_lower(_ value: FeatureMatchDto) -> R
 
 
 /**
- * Ordner im Projekt.
+ * Folder in the project.
  */
 public struct FolderDto: Equatable, Hashable {
     public var id: String
@@ -4480,17 +4480,17 @@ public func FfiConverterTypeFolderDto_lower(_ value: FolderDto) -> RustBuffer {
 
 
 /**
- * Ein Fragment eines virtuellen Verdaus.
+ * A fragment of a virtual digest.
  */
 public struct FragmentDto: Equatable, Hashable {
     public var length: UInt64
     /**
-     * Schnittpositionen in der Quelle; bei einem Fragment über den Nullpunkt ist `end < start`.
+     * Cut positions in the source; for a fragment across the origin, `end < start`.
      */
     public var start: UInt64
     public var end: UInt64
     /**
-     * Textform der Enden, z. B. `stumpf`, `5' AATT`, `3' TGCA`.
+     * Text form of the ends, e.g. `stumpf`, `5' AATT`, `3' TGCA`.
      */
     public var leftEnd: String
     public var rightEnd: String
@@ -4499,10 +4499,10 @@ public struct FragmentDto: Equatable, Hashable {
     // declare one manually.
     public init(length: UInt64, 
         /**
-         * Schnittpositionen in der Quelle; bei einem Fragment über den Nullpunkt ist `end < start`.
+         * Cut positions in the source; for a fragment across the origin, `end < start`.
          */start: UInt64, end: UInt64, 
         /**
-         * Textform der Enden, z. B. `stumpf`, `5' AATT`, `3' TGCA`.
+         * Text form of the ends, e.g. `stumpf`, `5' AATT`, `3' TGCA`.
          */leftEnd: String, rightEnd: String) {
         self.length = length
         self.start = start
@@ -4561,7 +4561,7 @@ public func FfiConverterTypeFragmentDto_lower(_ value: FragmentDto) -> RustBuffe
 
 
 /**
- * Eine att-Stelle für Gateway: Name, Kern und die vier Arme (`attB = links_b + kern + rechts_b`, `attP = links_p + kern + rechts_p`).
+ * An att site for Gateway: name, core and the four arms (`attB = left_b + core + right_b`, `attP = left_p + core + right_p`).
  */
 public struct GatewaySiteDto: Equatable, Hashable {
     public var name: String
@@ -4634,7 +4634,7 @@ public func FfiConverterTypeGatewaySiteDto_lower(_ value: GatewaySiteDto) -> Rus
 
 
 /**
- * GC-Anteil eines Fensters.
+ * GC fraction of a window.
  */
 public struct GcPointDto: Equatable, Hashable {
     public var position: UInt64
@@ -4691,7 +4691,7 @@ public func FfiConverterTypeGcPointDto_lower(_ value: GcPointDto) -> RustBuffer 
 
 
 /**
- * Eine Gelbande: `mobility` 0 = oben, 1 = unten; `intensity` 0 bis 1.
+ * A gel band: `mobility` 0 = top, 1 = bottom; `intensity` 0 to 1.
  */
 public struct GelBandDto: Equatable, Hashable {
     public var sizeBp: UInt64
@@ -4752,7 +4752,7 @@ public func FfiConverterTypeGelBandDto_lower(_ value: GelBandDto) -> RustBuffer 
 
 
 /**
- * Eine gRNA-Stelle.
+ * A gRNA site.
  */
 public struct GuideDto: Equatable, Hashable {
     public var protospacer: String
@@ -4833,7 +4833,7 @@ public func FfiConverterTypeGuideDto_lower(_ value: GuideDto) -> RustBuffer {
 
 
 /**
- * Eine Klasse eines Häufigkeitsdiagramms.
+ * A class of a frequency chart.
  */
 public struct HistogramBinDto: Equatable, Hashable {
     public var start: UInt64
@@ -4890,7 +4890,7 @@ public func FfiConverterTypeHistogramBinDto_lower(_ value: HistogramBinDto) -> R
 
 
 /**
- * Paarweise Identität (Prozent) aller Zeilen eines Alignments; `values` zeilenweise (`names.len()²` Werte).
+ * Pairwise identity (percent) of all rows of an alignment; `values` row by row (`names.len()²` values).
  */
 public struct IdentityMatrixDto: Equatable, Hashable {
     public var names: [String]
@@ -4947,7 +4947,7 @@ public func FfiConverterTypeIdentityMatrixDto_lower(_ value: IdentityMatrixDto) 
 
 
 /**
- * Fragmentlängen gepaarter Reads.
+ * Fragment lengths of paired reads.
  */
 public struct InsertReportDto: Equatable, Hashable {
     public var count: UInt64
@@ -4955,7 +4955,7 @@ public struct InsertReportDto: Equatable, Hashable {
     public var median: Double
     public var stdDev: Double
     /**
-     * Häufigkeit in Klassen der Breite 25 bp (Beginn der Klasse, Anzahl).
+     * Frequency in classes of width 25 bp (class start, count).
      */
     public var bins: [HistogramBinDto]
 
@@ -4963,7 +4963,7 @@ public struct InsertReportDto: Equatable, Hashable {
     // declare one manually.
     public init(count: UInt64, mean: Double, median: Double, stdDev: Double, 
         /**
-         * Häufigkeit in Klassen der Breite 25 bp (Beginn der Klasse, Anzahl).
+         * Frequency in classes of width 25 bp (class start, count).
          */bins: [HistogramBinDto]) {
         self.count = count
         self.mean = mean
@@ -5022,7 +5022,7 @@ public func FfiConverterTypeInsertReportDto_lower(_ value: InsertReportDto) -> R
 
 
 /**
- * Ein k-mer mit Häufigkeit.
+ * A k-mer with frequency.
  */
 public struct KmerDto: Equatable, Hashable {
     public var kmer: String
@@ -5079,7 +5079,7 @@ public func FfiConverterTypeKmerDto_lower(_ value: KmerDto) -> RustBuffer {
 
 
 /**
- * Eine Schwachstelle in einem Protein.
+ * A liability in a protein.
  */
 public struct LiabilityDto: Equatable, Hashable {
     public var position: UInt64
@@ -5144,7 +5144,7 @@ public func FfiConverterTypeLiabilityDto_lower(_ value: LiabilityDto) -> RustBuf
 
 
 /**
- * Eine Spalte des Sequenzlogos: Symbole aufsteigend nach Höhe, `heights` in Bit.
+ * A column of the sequence logo: symbols ascending by height, `heights` in bits.
  */
 public struct LogoColumnDto: Equatable, Hashable {
     public var symbols: [String]
@@ -5201,7 +5201,7 @@ public func FfiConverterTypeLogoColumnDto_lower(_ value: LogoColumnDto) -> RustB
 
 
 /**
- * Ein Fundort einer Motivsuche.
+ * A location of a motif search.
  */
 public struct MotifHitDto: Equatable, Hashable {
     public var start: UInt64
@@ -5262,7 +5262,7 @@ public func FfiConverterTypeMotifHitDto_lower(_ value: MotifHitDto) -> RustBuffe
 
 
 /**
- * Primerpaar für gezielte Mutagenese.
+ * Primer pair for site-directed mutagenesis.
  */
 public struct MutagenesisDto: Equatable, Hashable {
     public var forward: String
@@ -5331,7 +5331,7 @@ public func FfiConverterTypeMutagenesisDto_lower(_ value: MutagenesisDto) -> Rus
 
 
 /**
- * Ein NCBI-Treffer.
+ * An NCBI hit.
  */
 public struct NcbiRecordDto: Equatable, Hashable {
     public var id: String
@@ -5339,7 +5339,7 @@ public struct NcbiRecordDto: Equatable, Hashable {
     public var title: String
     public var organism: String
     /**
-     * Länge in Basen, 0 wenn unbekannt.
+     * Length in bases, 0 if unknown.
      */
     public var length: UInt64
 
@@ -5347,7 +5347,7 @@ public struct NcbiRecordDto: Equatable, Hashable {
     // declare one manually.
     public init(id: String, accession: String, title: String, organism: String, 
         /**
-         * Länge in Basen, 0 wenn unbekannt.
+         * Length in bases, 0 if unknown.
          */length: UInt64) {
         self.id = id
         self.accession = accession
@@ -5406,7 +5406,7 @@ public func FfiConverterTypeNcbiRecordDto_lower(_ value: NcbiRecordDto) -> RustB
 
 
 /**
- * Ergebnis einer NCBI-Suche.
+ * Result of an NCBI search.
  */
 public struct NcbiSearchDto: Equatable, Hashable {
     public var total: UInt64
@@ -5463,7 +5463,7 @@ public func FfiConverterTypeNcbiSearchDto_lower(_ value: NcbiSearchDto) -> RustB
 
 
 /**
- * Eine verfügbare Operation (für Workflows).
+ * An available operation (for workflows).
  */
 public struct OperationInfoDto: Equatable, Hashable {
     public var id: String
@@ -5520,11 +5520,11 @@ public func FfiConverterTypeOperationInfoDto_lower(_ value: OperationInfoDto) ->
 
 
 /**
- * Ein Read-Paar und die ungepaarten Reads.
+ * A read pair and the unpaired reads.
  */
 public struct PairReportDto: Equatable, Hashable {
     /**
-     * Je Paar `[Vorwärtsread, Rückwärtsread]`.
+     * Per pair `[forward read, reverse read]`.
      */
     public var pairs: [[String]]
     public var unpaired: [String]
@@ -5533,7 +5533,7 @@ public struct PairReportDto: Equatable, Hashable {
     // declare one manually.
     public init(
         /**
-         * Je Paar `[Vorwärtsread, Rückwärtsread]`.
+         * Per pair `[forward read, reverse read]`.
          */pairs: [[String]], unpaired: [String]) {
         self.pairs = pairs
         self.unpaired = unpaired
@@ -5583,7 +5583,7 @@ public func FfiConverterTypePairReportDto_lower(_ value: PairReportDto) -> RustB
 
 
 /**
- * Eine Kette einer PDB-Struktur: Sequenz und C-alpha-Koordinaten (`ca` = x, y, z hintereinander).
+ * A chain of a PDB structure: sequence and C-alpha coordinates (`ca` = x, y, z consecutively).
  */
 public struct PdbChainDto: Equatable, Hashable {
     public var id: String
@@ -5644,21 +5644,21 @@ public func FfiConverterTypePdbChainDto_lower(_ value: PdbChainDto) -> RustBuffe
 
 
 /**
- * Eine eingelesene PDB-Datei.
+ * A parsed PDB file.
  */
 public struct PdbDto: Equatable, Hashable {
     public var atomCount: UInt64
     public var chains: [PdbChainDto]
     /**
-     * Alle Atome als x, y, z (nur bei Molekülen aus XYZ/MOL; bei PDB leer).
+     * All atoms as x, y, z (only for molecules from XYZ/MOL; empty for PDB).
      */
     public var atoms: [Double]
     /**
-     * Elementsymbole zu `atoms` (ein Eintrag je Atom).
+     * Element symbols for `atoms` (one entry per atom).
      */
     public var elements: [String]
     /**
-     * Bindungen als Paare von Atomindizes (0-basiert) in `atoms`.
+     * Bonds as pairs of atom indices (0-based) into `atoms`.
      */
     public var bonds: [UInt64]
 
@@ -5666,13 +5666,13 @@ public struct PdbDto: Equatable, Hashable {
     // declare one manually.
     public init(atomCount: UInt64, chains: [PdbChainDto], 
         /**
-         * Alle Atome als x, y, z (nur bei Molekülen aus XYZ/MOL; bei PDB leer).
+         * All atoms as x, y, z (only for molecules from XYZ/MOL; empty for PDB).
          */atoms: [Double], 
         /**
-         * Elementsymbole zu `atoms` (ein Eintrag je Atom).
+         * Element symbols for `atoms` (one entry per atom).
          */elements: [String], 
         /**
-         * Bindungen als Paare von Atomindizes (0-basiert) in `atoms`.
+         * Bonds as pairs of atom indices (0-based) into `atoms`.
          */bonds: [UInt64]) {
         self.atomCount = atomCount
         self.chains = chains
@@ -5731,7 +5731,7 @@ public func FfiConverterTypePdbDto_lower(_ value: PdbDto) -> RustBuffer {
 
 
 /**
- * Ein Peptid aus einem Verdau.
+ * A peptide from a digest.
  */
 public struct PeptideDto: Equatable, Hashable {
     public var sequence: String
@@ -5800,11 +5800,11 @@ public func FfiConverterTypePeptideDto_lower(_ value: PeptideDto) -> RustBuffer 
 
 
 /**
- * Ein Teilstück eines Features mit Spur (für die Annotationsleisten unter der Sequenz).
+ * A part of a feature with a track (for the annotation bars below the sequence).
  */
 public struct PlacedFeatureDto: Equatable, Hashable {
     /**
-     * Index in der Liste von `features`.
+     * Index into the list of `features`.
      */
     public var featureIndex: UInt64
     public var featureType: String
@@ -5812,7 +5812,7 @@ public struct PlacedFeatureDto: Equatable, Hashable {
     public var start: UInt64
     public var end: UInt64
     /**
-     * `FORWARD`, `REVERSE` oder `NONE`.
+     * `FORWARD`, `REVERSE` or `NONE`.
      */
     public var strand: String
     public var lane: UInt32
@@ -5821,10 +5821,10 @@ public struct PlacedFeatureDto: Equatable, Hashable {
     // declare one manually.
     public init(
         /**
-         * Index in der Liste von `features`.
+         * Index into the list of `features`.
          */featureIndex: UInt64, featureType: String, name: String, start: UInt64, end: UInt64, 
         /**
-         * `FORWARD`, `REVERSE` oder `NONE`.
+         * `FORWARD`, `REVERSE` or `NONE`.
          */strand: String, lane: UInt32) {
         self.featureIndex = featureIndex
         self.featureType = featureType
@@ -5889,7 +5889,7 @@ public func FfiConverterTypePlacedFeatureDto_lower(_ value: PlacedFeatureDto) ->
 
 
 /**
- * Ein Primerpaar für ein Zielfragment.
+ * A primer pair for a target fragment.
  */
 public struct PrimerPairDto: Equatable, Hashable {
     public var forwardSequence: String
@@ -5978,7 +5978,7 @@ public func FfiConverterTypePrimerPairDto_lower(_ value: PrimerPairDto) -> RustB
 
 
 /**
- * Eigenschaften eines Proteins.
+ * Properties of a protein.
  */
 public struct ProteinPropsDto: Equatable, Hashable {
     public var length: UInt64
@@ -5989,7 +5989,7 @@ public struct ProteinPropsDto: Equatable, Hashable {
     public var aromaticity: Double
     public var aliphaticIndex: Double
     /**
-     * Mittlere Hydrophobie nach Kyte-Doolittle (GRAVY).
+     * Mean hydropathy by Kyte-Doolittle (GRAVY).
      */
     public var gravy: Double
 
@@ -5997,7 +5997,7 @@ public struct ProteinPropsDto: Equatable, Hashable {
     // declare one manually.
     public init(length: UInt64, molecularWeight: Double, isoelectricPoint: Double, chargePh7: Double, extinction280: Double, aromaticity: Double, aliphaticIndex: Double, 
         /**
-         * Mittlere Hydrophobie nach Kyte-Doolittle (GRAVY).
+         * Mean hydropathy by Kyte-Doolittle (GRAVY).
          */gravy: Double) {
         self.length = length
         self.molecularWeight = molecularWeight
@@ -6065,7 +6065,7 @@ public func FfiConverterTypeProteinPropsDto_lower(_ value: ProteinPropsDto) -> R
 
 
 /**
- * Ergebnis des Qualitätsberichts einer FASTQ-Datei.
+ * Result of the quality report of a FASTQ file.
  */
 public struct QcDto: Equatable, Hashable {
     public var reads: UInt64
@@ -6162,7 +6162,7 @@ public func FfiConverterTypeQcDto_lower(_ value: QcDto) -> RustBuffer {
 
 
 /**
- * Ergebnis des Abgleichs eines Reads mit einer Referenz.
+ * Result of checking a read against a reference.
  */
 public struct ReadCheckDto: Equatable, Hashable {
     public var readName: String
@@ -6243,7 +6243,7 @@ public func FfiConverterTypeReadCheckDto_lower(_ value: ReadCheckDto) -> RustBuf
 
 
 /**
- * Abbildung eines Reads auf eine Referenz.
+ * Mapping of a read onto a reference.
  */
 public struct ReadMapDto: Equatable, Hashable {
     public var name: String
@@ -6312,7 +6312,7 @@ public func FfiConverterTypeReadMapDto_lower(_ value: ReadMapDto) -> RustBuffer 
 
 
 /**
- * Ein Bereich `[start, end)`.
+ * A range `[start, end)`.
  */
 public struct RegionDto: Equatable, Hashable {
     public var start: UInt64
@@ -6369,7 +6369,7 @@ public func FfiConverterTypeRegionDto_lower(_ value: RegionDto) -> RustBuffer {
 
 
 /**
- * Eine Wiederholung (`kind`: `tandem` oder `inverted`); `detail` beschreibt Einheit/Arme.
+ * A repeat (`kind`: `tandem` or `inverted`); `detail` describes unit/arms.
  */
 public struct RepeatDto: Equatable, Hashable {
     public var kind: String
@@ -6434,7 +6434,7 @@ public func FfiConverterTypeRepeatDto_lower(_ value: RepeatDto) -> RustBuffer {
 
 
 /**
- * Ergebnis einer RNA-Faltung.
+ * Result of an RNA folding.
  */
 public struct RnaFoldDto: Equatable, Hashable {
     public var sequence: String
@@ -6499,7 +6499,7 @@ public func FfiConverterTypeRnaFoldDto_lower(_ value: RnaFoldDto) -> RustBuffer 
 
 
 /**
- * Kennzahlen einer Auswahl.
+ * Key figures of a selection.
  */
 public struct SelectionStatsDto: Equatable, Hashable {
     public var length: UInt64
@@ -6560,7 +6560,7 @@ public func FfiConverterTypeSelectionStatsDto_lower(_ value: SelectionStatsDto) 
 
 
 /**
- * Programmeinstellungen (Schlüssel wird in Meldungen nie ausgegeben).
+ * Program settings (the key is never printed in messages).
  */
 public struct SettingsDto: Equatable, Hashable {
     public var ncbiEmail: String
@@ -6629,14 +6629,14 @@ public func FfiConverterTypeSettingsDto_lower(_ value: SettingsDto) -> RustBuffe
 
 
 /**
- * Eine mögliche stille Änderung in einem CDS-Feature (Position im Dokument, 0-basiert).
+ * A possible silent change in a CDS feature (position in the document, 0-based).
  */
 public struct SilentChangeDto: Equatable, Hashable {
     public var position: UInt64
     public var from: String
     public var to: String
     /**
-     * Nummer des Codons im CDS (1-basiert).
+     * Number of the codon in the CDS (1-based).
      */
     public var codon: UInt64
 
@@ -6644,7 +6644,7 @@ public struct SilentChangeDto: Equatable, Hashable {
     // declare one manually.
     public init(position: UInt64, from: String, to: String, 
         /**
-         * Nummer des Codons im CDS (1-basiert).
+         * Number of the codon in the CDS (1-based).
          */codon: UInt64) {
         self.position = position
         self.from = from
@@ -6700,12 +6700,12 @@ public func FfiConverterTypeSilentChangeDto_lower(_ value: SilentChangeDto) -> R
 
 
 /**
- * Ergebnis der einfachen Faltung.
+ * Result of the simple folding.
  */
 public struct SimpleFoldDto: Equatable, Hashable {
     public var pairs: UInt64
     /**
-     * Punkt-Klammer-Schreibweise.
+     * Dot-bracket notation.
      */
     public var structure: String
 
@@ -6713,7 +6713,7 @@ public struct SimpleFoldDto: Equatable, Hashable {
     // declare one manually.
     public init(pairs: UInt64, 
         /**
-         * Punkt-Klammer-Schreibweise.
+         * Dot-bracket notation.
          */structure: String) {
         self.pairs = pairs
         self.structure = structure
@@ -6763,7 +6763,7 @@ public func FfiConverterTypeSimpleFoldDto_lower(_ value: SimpleFoldDto) -> RustB
 
 
 /**
- * Eine erkannte Einzelbasenvariante.
+ * A detected single-base variant.
  */
 public struct SnvDto: Equatable, Hashable {
     public var position: UInt64
@@ -6836,11 +6836,11 @@ public func FfiConverterTypeSnvDto_lower(_ value: SnvDto) -> RustBuffer {
 
 
 /**
- * Ein Farbkanal einer Sequenzierspur.
+ * A color channel of a sequencing trace.
  */
 public struct TraceChannelDto: Equatable, Hashable {
     /**
-     * Base des Kanals (`A`, `C`, `G`, `T`).
+     * Base of the channel (`A`, `C`, `G`, `T`).
      */
     public var base: String
     public var values: [Int32]
@@ -6849,7 +6849,7 @@ public struct TraceChannelDto: Equatable, Hashable {
     // declare one manually.
     public init(
         /**
-         * Base des Kanals (`A`, `C`, `G`, `T`).
+         * Base of the channel (`A`, `C`, `G`, `T`).
          */base: String, values: [Int32]) {
         self.base = base
         self.values = values
@@ -6899,7 +6899,7 @@ public func FfiConverterTypeTraceChannelDto_lower(_ value: TraceChannelDto) -> R
 
 
 /**
- * Eine gelesene Sequenzierspur (`.ab1`).
+ * A sequencing trace that was read (`.ab1`).
  */
 public struct TraceDto: Equatable, Hashable {
     public var bases: String
@@ -6964,7 +6964,7 @@ public func FfiConverterTypeTraceDto_lower(_ value: TraceDto) -> RustBuffer {
 
 
 /**
- * Statistik eines Trimming-Laufs.
+ * Statistics of a trimming run.
  */
 public struct TrimStatsDto: Equatable, Hashable {
     public var inputReads: UInt64
@@ -7029,7 +7029,7 @@ public func FfiConverterTypeTrimStatsDto_lower(_ value: TrimStatsDto) -> RustBuf
 
 
 /**
- * Eine Variante aus einem Alignment.
+ * A variant from an alignment.
  */
 public struct VariantDto: Equatable, Hashable {
     public var column: UInt64
@@ -7102,7 +7102,7 @@ public func FfiConverterTypeVariantDto_lower(_ value: VariantDto) -> RustBuffer 
 
 
 /**
- * Eine gespeicherte Version eines Dokuments.
+ * A saved version of a document.
  */
 public struct VersionDto: Equatable, Hashable {
     public var version: Int64
@@ -7163,13 +7163,13 @@ public func FfiConverterTypeVersionDto_lower(_ value: VersionDto) -> RustBuffer 
 
 
 /**
- * Ein gespeicherter Workflow.
+ * A saved workflow.
  */
 public struct WorkflowDto: Equatable, Hashable {
     public var name: String
     public var json: String
     /**
-     * Zahl der Eingabedokumente, die der Workflow braucht (0, wenn das JSON ungültig ist).
+     * Number of input documents the workflow needs (0 if the JSON is invalid).
      */
     public var inputCount: UInt64
     public var stepCount: UInt64
@@ -7178,7 +7178,7 @@ public struct WorkflowDto: Equatable, Hashable {
     // declare one manually.
     public init(name: String, json: String, 
         /**
-         * Zahl der Eingabedokumente, die der Workflow braucht (0, wenn das JSON ungültig ist).
+         * Number of input documents the workflow needs (0 if the JSON is invalid).
          */inputCount: UInt64, stepCount: UInt64) {
         self.name = name
         self.json = json
@@ -7234,12 +7234,12 @@ public func FfiConverterTypeWorkflowDto_lower(_ value: WorkflowDto) -> RustBuffe
 
 
 /**
- * Ergebnis eines Workflow-Laufs.
+ * Result of a workflow run.
  */
 public struct WorkflowRunDto: Equatable, Hashable {
     public var documents: [DocumentInfoDto]
     /**
-     * Fehlermeldungen je Lauf (leer bei Erfolg).
+     * Error messages per run (empty on success).
      */
     public var errors: [String]
 
@@ -7247,7 +7247,7 @@ public struct WorkflowRunDto: Equatable, Hashable {
     // declare one manually.
     public init(documents: [DocumentInfoDto], 
         /**
-         * Fehlermeldungen je Lauf (leer bei Erfolg).
+         * Error messages per run (empty on success).
          */errors: [String]) {
         self.documents = documents
         self.errors = errors
@@ -7297,7 +7297,7 @@ public func FfiConverterTypeWorkflowRunDto_lower(_ value: WorkflowRunDto) -> Rus
 
 
 /**
- * Fehler für die Oberfläche (die Meldung ist deutsch und für Nutzer gedacht).
+ * Error for the UI (the message is German and meant for users).
  */
 public 
 enum ApiError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
@@ -8628,7 +8628,7 @@ fileprivate struct FfiConverterSequenceSequenceTypeDocumentInfoDto: FfiConverter
     }
 }
 /**
- * Rückübersetzung eines Proteintextes: `preferred` (häufigste E.-coli-Codons) oder `degenerate` (IUPAC-Codes).
+ * Back-translation of a protein text: `preferred` (most frequent E. coli codons) or `degenerate` (IUPAC codes).
  */
 public func backTranslate(protein: String, mode: String)throws  -> String  {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8640,7 +8640,7 @@ public func backTranslate(protein: String, mode: String)throws  -> String  {
 })
 }
 /**
- * Liest eine BLAST-Tabelle (`-outfmt 6`) für die Anzeige.
+ * Reads a BLAST table (`-outfmt 6`) for display.
  */
 public func blastTableOpen(path: String)throws  -> [BlastHitDto]  {
     return try  FfiConverterSequenceTypeBlastHitDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8651,7 +8651,7 @@ public func blastTableOpen(path: String)throws  -> [BlastHitDto]  {
 })
 }
 /**
- * Kopienzahl von dsDNA.
+ * Copy number of dsDNA.
  */
 public func calcCopyNumber(ng: Double, bp: UInt64)throws  -> Double  {
     return try  FfiConverterDouble.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8663,7 +8663,7 @@ public func calcCopyNumber(ng: Double, bp: UInt64)throws  -> Double  {
 })
 }
 /**
- * Volumen der Stammlösung für eine Verdünnung.
+ * Volume of the stock solution for a dilution.
  */
 public func calcDilutionVolume(cStock: Double, cFinal: Double, vFinal: Double)throws  -> Double  {
     return try  FfiConverterDouble.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8676,7 +8676,7 @@ public func calcDilutionVolume(cStock: Double, cFinal: Double, vFinal: Double)th
 })
 }
 /**
- * Benötigte Insert-Menge in ng für ein molares Verhältnis.
+ * Required insert amount in ng for a molar ratio.
  */
 public func calcLigationInsertNg(vectorNg: Double, vectorBp: UInt64, insertBp: UInt64, molarRatio: Double)throws  -> Double  {
     return try  FfiConverterDouble.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8690,7 +8690,7 @@ public func calcLigationInsertNg(vectorNg: Double, vectorBp: UInt64, insertBp: U
 })
 }
 /**
- * Ng → pmol für dsDNA.
+ * ng → pmol for dsDNA.
  */
 public func calcNgToPmol(ng: Double, bp: UInt64)throws  -> Double  {
     return try  FfiConverterDouble.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8702,7 +8702,7 @@ public func calcNgToPmol(ng: Double, bp: UInt64)throws  -> Double  {
 })
 }
 /**
- * Sortiert die Befehle nach Treffer für `query` (unscharfe Suche über Titel und Stichwörter) und gibt die Indizes zurück.
+ * Sorts the commands by match for `query` (fuzzy search over title and keywords) and returns the indices.
  */
 public func commandRank(items: [CommandItemDto], query: String) -> [UInt64]  {
     return try!  FfiConverterSequenceUInt64.lift(try! rustCall() {
@@ -8714,7 +8714,7 @@ public func commandRank(items: [CommandItemDto], query: String) -> [UInt64]  {
 })
 }
 /**
- * Version des Kerns (zum Prüfen, ob die Bibliothek geladen ist).
+ * Version of the core (to check whether the library is loaded).
  */
 public func coreVersion() -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
@@ -8724,7 +8724,7 @@ public func coreVersion() -> String  {
 })
 }
 /**
- * Löscht ein eigenes Enzymset (eingebaute lassen sich nicht löschen).
+ * Deletes a custom enzyme set (built-in ones cannot be deleted).
  */
 public func enzymeSetDelete(name: String)throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -8734,8 +8734,8 @@ public func enzymeSetDelete(name: String)throws   {try rustCallWithError(FfiConv
 }
 }
 /**
- * Speichert ein eigenes Enzymset (Name und Enzyme als Text, getrennt durch Komma, Semikolon oder Leerzeichen).
- * Ein vorhandenes eigenes Set gleichen Namens wird ersetzt; eingebaute Namen sind nicht erlaubt.
+ * Saves a custom enzyme set (name and enzymes as text, separated by comma, semicolon or space).
+ * An existing custom set of the same name is replaced; built-in names are not allowed.
  */
 public func enzymeSetSave(name: String, enzymes: String)throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -8746,7 +8746,7 @@ public func enzymeSetSave(name: String, enzymes: String)throws   {try rustCallWi
 }
 }
 /**
- * Alle Enzymsets: eingebaute und eigene (aus `~/.snapious/enzyme_sets.json`).
+ * All enzyme sets: built-in and custom (from `~/.snapious/enzyme_sets.json`).
  */
 public func enzymeSets() -> [EnzymeSetDto]  {
     return try!  FfiConverterSequenceTypeEnzymeSetDto.lift(try! rustCall() {
@@ -8756,7 +8756,7 @@ public func enzymeSets() -> [EnzymeSetDto]  {
 })
 }
 /**
- * Expressionswerte aus einer SAM- oder BAM-Datei: Reads je Referenz (nur zugeordnete, keine sekundären), RPKM und TPM.
+ * Expression values from a SAM or BAM file: reads per reference (mapped only, no secondary), RPKM and TPM.
  */
 public func expressionFromAlignment(path: String)throws  -> [ExpressionRowDto]  {
     return try  FfiConverterSequenceTypeExpressionRowDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8767,7 +8767,7 @@ public func expressionFromAlignment(path: String)throws  -> [ExpressionRowDto]  
 })
 }
 /**
- * Wandelt eine FASTQ-Datei in FASTA und QUAL (Phred+33) um. Gibt die Zahl der Reads zurück.
+ * Converts a FASTQ file to FASTA and QUAL (Phred+33). Returns the number of reads.
  */
 public func fastqToFastaQual(path: String, fastaPath: String, qualPath: String)throws  -> UInt64  {
     return try  FfiConverterUInt64.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8780,7 +8780,7 @@ public func fastqToFastaQual(path: String, fastaPath: String, qualPath: String)t
 })
 }
 /**
- * Häufigste k-mer der ersten `max_reads` Reads einer FASTQ-Datei (zum Erkennen von Adaptern und Verunreinigungen).
+ * Most frequent k-mers of the first `max_reads` reads of a FASTQ file (for detecting adapters and contaminants).
  */
 public func fastqTopKmers(path: String, k: UInt64, top: UInt64, maxReads: UInt64)throws  -> [KmerDto]  {
     return try  FfiConverterSequenceTypeKmerDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8794,8 +8794,8 @@ public func fastqTopKmers(path: String, k: UInt64, top: UInt64, maxReads: UInt64
 })
 }
 /**
- * Reihenfolge der Zeilen der Feature-Tabelle nach Filter und Sortierung. `type_filter` leer = alle Typen, `text` = Teil des Namens.
- * `column`: `type`, `name`, `start`, `end` oder `length`.
+ * Order of the rows of the feature table after filtering and sorting. `type_filter` empty = all types, `text` = part of the name.
+ * `column`: `type`, `name`, `start`, `end` or `length`.
  */
 public func featureTableOrder(features: [FeatureInfo], typeFilter: String, text: String, column: String, ascending: Bool) -> [UInt64]  {
     return try!  FfiConverterSequenceUInt64.lift(try! rustCall() {
@@ -8810,7 +8810,7 @@ public func featureTableOrder(features: [FeatureInfo], typeFilter: String, text:
 })
 }
 /**
- * Wandelt `cmd+shift+k` in die Schreibweise `⇧⌘K` um.
+ * Converts `cmd+shift+k` into the notation `⇧⌘K`.
  */
 public func formatShortcut(keys: String) -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
@@ -8821,7 +8821,7 @@ public func formatShortcut(keys: String) -> String  {
 })
 }
 /**
- * Übersetzt eine technische Fehlermeldung in Titel und Lösungsvorschlag.
+ * Translates a technical error message into a title and suggested solution.
  */
 public func friendlyError(message: String) -> ErrorHelpDto  {
     return try!  FfiConverterTypeErrorHelpDto_lift(try! rustCall() {
@@ -8832,7 +8832,7 @@ public func friendlyError(message: String) -> ErrorHelpDto  {
 })
 }
 /**
- * Banden eines Größenstandards: `generic_1kb` oder `generic_100bp`.
+ * Bands of a size standard: `generic_1kb` or `generic_100bp`.
  */
 public func gelLadder(name: String, agarosePercent: Double)throws  -> [GelBandDto]  {
     return try  FfiConverterSequenceTypeGelBandDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8844,7 +8844,7 @@ public func gelLadder(name: String, agarosePercent: Double)throws  -> [GelBandDt
 })
 }
 /**
- * Banden einer Gelspur für Fragmentgrößen.
+ * Bands of a gel lane for fragment sizes.
  */
 public func gelLane(sizes: [UInt64], agarosePercent: Double, massNg: Double) -> [GelBandDto]  {
     return try!  FfiConverterSequenceTypeGelBandDto.lift(try! rustCall() {
@@ -8857,7 +8857,7 @@ public func gelLane(sizes: [UInt64], agarosePercent: Double, massNg: Double) -> 
 })
 }
 /**
- * Fragmentlängen gepaarter Reads aus einer SAM/BAM-Datei.
+ * Fragment lengths of paired reads from a SAM/BAM file.
  */
 public func insertSizeReport(path: String)throws  -> InsertReportDto  {
     return try  FfiConverterTypeInsertReportDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8868,7 +8868,7 @@ public func insertSizeReport(path: String)throws  -> InsertReportDto  {
 })
 }
 /**
- * Angepasste p-Werte nach Benjamini-Hochberg (Mehrfachtest-Korrektur).
+ * Adjusted p-values by Benjamini-Hochberg (multiple-testing correction).
  */
 public func pAdjustBh(p: [Double]) -> [Double]  {
     return try!  FfiConverterSequenceDouble.lift(try! rustCall() {
@@ -8879,7 +8879,7 @@ public func pAdjustBh(p: [Double]) -> [Double]  {
 })
 }
 /**
- * Liest eine PDB-Datei (Ketten, Sequenzen, C-alpha-Spur) für die 3D-Ansicht.
+ * Reads a PDB file (chains, sequences, C-alpha trace) for the 3D view.
  */
 public func pdbOpen(path: String)throws  -> PdbDto  {
     return try  FfiConverterTypePdbDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8890,7 +8890,7 @@ public func pdbOpen(path: String)throws  -> PdbDto  {
 })
 }
 /**
- * Ordner der Plugins (wird bei Bedarf angelegt).
+ * Folder of the plugins (created if needed).
  */
 public func pluginsDirectory() -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
@@ -8900,7 +8900,7 @@ public func pluginsDirectory() -> String  {
 })
 }
 /**
- * Namen der gefundenen Plugins mit ihren Operationen und die Warnungen des Ladens.
+ * Names of the plugins found with their operations, and the warnings from loading.
  */
 public func pluginsList() -> [String]  {
     return try!  FfiConverterSequenceString.lift(try! rustCall() {
@@ -8910,7 +8910,7 @@ public func pluginsList() -> [String]  {
 })
 }
 /**
- * Schwachstellen eines Proteintextes (z. B. aus einem CDS-Feature übersetzt).
+ * Liabilities of a protein text (e.g. translated from a CDS feature).
  */
 public func proteinLiabilitiesText(protein: String) -> [LiabilityDto]  {
     return try!  FfiConverterSequenceTypeLiabilityDto.lift(try! rustCall() {
@@ -8921,7 +8921,7 @@ public func proteinLiabilitiesText(protein: String) -> [LiabilityDto]  {
 })
 }
 /**
- * Qualitätsbericht einer FASTQ-Datei (auch `.gz`). Liest höchstens `max_reads` Reads (0 = alle).
+ * Quality report of a FASTQ file (also `.gz`). Reads at most `max_reads` reads (0 = all).
  */
 public func qcFastq(path: String, maxReads: UInt64)throws  -> QcDto  {
     return try  FfiConverterTypeQcDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8933,7 +8933,7 @@ public func qcFastq(path: String, maxReads: UInt64)throws  -> QcDto  {
 })
 }
 /**
- * Liest eine Sequenzierdatei (`.ab1` im ABIF-Format oder `.scf` Version 3): Basen, Qualitäten, Peakpositionen und Spuren.
+ * Reads a sequencing file (`.ab1` in ABIF format or `.scf` version 3): bases, qualities, peak positions and traces.
  */
 public func readTrace(path: String)throws  -> TraceDto  {
     return try  FfiConverterTypeTraceDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -8944,7 +8944,7 @@ public func readTrace(path: String)throws  -> TraceDto  {
 })
 }
 /**
- * Setzt `path` an den Anfang der Liste der zuletzt geöffneten Projekte (höchstens `max` Einträge).
+ * Puts `path` at the front of the list of recently opened projects (at most `max` entries).
  */
 public func recentAdd(list: [String], path: String, max: UInt64) -> [String]  {
     return try!  FfiConverterSequenceString.lift(try! rustCall() {
@@ -8957,7 +8957,7 @@ public func recentAdd(list: [String], path: String, max: UInt64) -> [String]  {
 })
 }
 /**
- * Liest die Einstellungen aus `~/.snapious/settings.json`.
+ * Reads the settings from `~/.snapious/settings.json`.
  */
 public func settingsLoad() -> SettingsDto  {
     return try!  FfiConverterTypeSettingsDto_lift(try! rustCall() {
@@ -8967,7 +8967,7 @@ public func settingsLoad() -> SettingsDto  {
 })
 }
 /**
- * Speichert die Einstellungen (Datei nur für den Besitzer lesbar).
+ * Saves the settings (file readable by the owner only).
  */
 public func settingsSave(s: SettingsDto)throws   {try rustCallWithError(FfiConverterTypeApiError_lift) {
         uniffiCallStatus in
@@ -8977,7 +8977,7 @@ public func settingsSave(s: SettingsDto)throws   {try rustCallWithError(FfiConve
 }
 }
 /**
- * Doppelt belegte Tastenkürzel: Paare von Indizes in `keys` (Tastenangaben wie `cmd+shift+k`).
+ * Duplicate keyboard shortcuts: pairs of indices into `keys` (key notations like `cmd+shift+k`).
  */
 public func shortcutConflictPairs(keys: [String]) -> [[UInt64]]  {
     return try!  FfiConverterSequenceSequenceUInt64.lift(try! rustCall() {
@@ -8988,7 +8988,7 @@ public func shortcutConflictPairs(keys: [String]) -> [[UInt64]]  {
 })
 }
 /**
- * Größenfaktoren (Median der Verhältnisse) für `counts[gen][probe]`.
+ * Size factors (median of ratios) for `counts[gene][sample]`.
  */
 public func sizeFactors(counts: [[Double]]) -> [Double]  {
     return try!  FfiConverterSequenceDouble.lift(try! rustCall() {
@@ -8999,9 +8999,9 @@ public func sizeFactors(counts: [[Double]]) -> [Double]  {
 })
 }
 /**
- * Teilt eine FASTQ-Datei nach Barcodes am Anfang der Reads. `barcodes` enthält je Zeile `Name,Sequenz` (oder mit Leerzeichen/Tab
- * getrennt; Zeilen mit `#` und leere Zeilen werden übersprungen). Je Barcode entsteht `<ordner>/<name>.fastq` (Read ohne
- * Barcode samt gekürzter Qualität), nicht zugeordnete Reads landen in `unassigned.fastq`.
+ * Splits a FASTQ file by barcodes at the start of the reads. `barcodes` contains one `name,sequence` per line (or separated by space/tab;
+ * lines with `#` and empty lines are skipped). Each barcode yields `<folder>/<name>.fastq` (read without the
+ * barcode, with correspondingly trimmed quality), unassigned reads end up in `unassigned.fastq`.
  */
 public func splitFastqByBarcode(path: String, barcodes: String, maxMismatch: UInt64, outDir: String)throws  -> [BarcodeGroupDto]  {
     return try  FfiConverterSequenceTypeBarcodeGroupDto.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -9015,7 +9015,7 @@ public func splitFastqByBarcode(path: String, barcodes: String, maxMismatch: UIn
 })
 }
 /**
- * Öffnet eine Struktur- oder Moleküldatei für die 3D-Ansicht: `.pdb`, `.xyz` oder `.mol`/`.sdf` (erstes Molekül).
+ * Opens a structure or molecule file for the 3D view: `.pdb`, `.xyz` or `.mol`/`.sdf` (first molecule).
  */
 public func structureOpen(path: String)throws  -> PdbDto  {
     return try  FfiConverterTypePdbDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -9026,7 +9026,7 @@ public func structureOpen(path: String)throws  -> PdbDto  {
 })
 }
 /**
- * Erste Zeilen einer Tabelle (CSV/TSV) zur Vorschau.
+ * First lines of a table (CSV/TSV) for preview.
  */
 public func tablePreview(path: String, sep: String, maxRows: UInt64)throws  -> [[String]]  {
     return try  FfiConverterSequenceSequenceString.lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -9039,7 +9039,7 @@ public func tablePreview(path: String, sep: String, maxRows: UInt64)throws  -> [
 })
 }
 /**
- * Trimmt eine FASTQ-Datei (Standardeinstellungen) und schreibt das Ergebnis nach `output` (Klartext-FASTQ).
+ * Trims a FASTQ file (default settings) and writes the result to `output` (plain-text FASTQ).
  */
 public func trimFastq(input: String, output: String)throws  -> TrimStatsDto  {
     return try  FfiConverterTypeTrimStatsDto_lift(try rustCallWithError(FfiConverterTypeApiError_lift) {
@@ -9066,205 +9066,205 @@ private let initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_back_translate() != 8834) {
+    if (uniffi_snapious_ffi_checksum_func_back_translate() != 1768) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_blast_table_open() != 60706) {
+    if (uniffi_snapious_ffi_checksum_func_blast_table_open() != 29911) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_calc_copy_number() != 11546) {
+    if (uniffi_snapious_ffi_checksum_func_calc_copy_number() != 27343) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_calc_dilution_volume() != 47394) {
+    if (uniffi_snapious_ffi_checksum_func_calc_dilution_volume() != 5710) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_calc_ligation_insert_ng() != 20209) {
+    if (uniffi_snapious_ffi_checksum_func_calc_ligation_insert_ng() != 56858) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_calc_ng_to_pmol() != 35944) {
+    if (uniffi_snapious_ffi_checksum_func_calc_ng_to_pmol() != 23459) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_command_rank() != 39693) {
+    if (uniffi_snapious_ffi_checksum_func_command_rank() != 30909) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_core_version() != 14135) {
+    if (uniffi_snapious_ffi_checksum_func_core_version() != 50824) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_enzyme_set_delete() != 45902) {
+    if (uniffi_snapious_ffi_checksum_func_enzyme_set_delete() != 34955) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_enzyme_set_save() != 26064) {
+    if (uniffi_snapious_ffi_checksum_func_enzyme_set_save() != 1419) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_enzyme_sets() != 32407) {
+    if (uniffi_snapious_ffi_checksum_func_enzyme_sets() != 40657) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_expression_from_alignment() != 39158) {
+    if (uniffi_snapious_ffi_checksum_func_expression_from_alignment() != 32210) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_fastq_to_fasta_qual() != 35370) {
+    if (uniffi_snapious_ffi_checksum_func_fastq_to_fasta_qual() != 17523) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_fastq_top_kmers() != 29287) {
+    if (uniffi_snapious_ffi_checksum_func_fastq_top_kmers() != 33799) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_feature_table_order() != 20911) {
+    if (uniffi_snapious_ffi_checksum_func_feature_table_order() != 16142) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_format_shortcut() != 42368) {
+    if (uniffi_snapious_ffi_checksum_func_format_shortcut() != 11589) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_friendly_error() != 6477) {
+    if (uniffi_snapious_ffi_checksum_func_friendly_error() != 19028) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_gel_ladder() != 25874) {
+    if (uniffi_snapious_ffi_checksum_func_gel_ladder() != 12062) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_gel_lane() != 13367) {
+    if (uniffi_snapious_ffi_checksum_func_gel_lane() != 20288) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_insert_size_report() != 64978) {
+    if (uniffi_snapious_ffi_checksum_func_insert_size_report() != 49156) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_p_adjust_bh() != 64364) {
+    if (uniffi_snapious_ffi_checksum_func_p_adjust_bh() != 20997) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_pdb_open() != 61682) {
+    if (uniffi_snapious_ffi_checksum_func_pdb_open() != 50265) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_plugins_directory() != 56415) {
+    if (uniffi_snapious_ffi_checksum_func_plugins_directory() != 46475) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_plugins_list() != 4967) {
+    if (uniffi_snapious_ffi_checksum_func_plugins_list() != 43534) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_protein_liabilities_text() != 14612) {
+    if (uniffi_snapious_ffi_checksum_func_protein_liabilities_text() != 24546) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_qc_fastq() != 9833) {
+    if (uniffi_snapious_ffi_checksum_func_qc_fastq() != 47436) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_read_trace() != 24438) {
+    if (uniffi_snapious_ffi_checksum_func_read_trace() != 4772) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_recent_add() != 48628) {
+    if (uniffi_snapious_ffi_checksum_func_recent_add() != 14587) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_settings_load() != 57793) {
+    if (uniffi_snapious_ffi_checksum_func_settings_load() != 36995) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_settings_save() != 52964) {
+    if (uniffi_snapious_ffi_checksum_func_settings_save() != 22986) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_shortcut_conflict_pairs() != 6325) {
+    if (uniffi_snapious_ffi_checksum_func_shortcut_conflict_pairs() != 50958) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_size_factors() != 58558) {
+    if (uniffi_snapious_ffi_checksum_func_size_factors() != 57336) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_split_fastq_by_barcode() != 19252) {
+    if (uniffi_snapious_ffi_checksum_func_split_fastq_by_barcode() != 58416) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_structure_open() != 57968) {
+    if (uniffi_snapious_ffi_checksum_func_structure_open() != 5935) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_table_preview() != 16836) {
+    if (uniffi_snapious_ffi_checksum_func_table_preview() != 40080) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_func_trim_fastq() != 18898) {
+    if (uniffi_snapious_ffi_checksum_func_trim_fastq() != 16332) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_add_external_file() != 18084) {
+    if (uniffi_snapious_ffi_checksum_method_project_add_external_file() != 16152) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_add_features() != 22106) {
+    if (uniffi_snapious_ffi_checksum_method_project_add_features() != 16212) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_align_documents() != 65435) {
+    if (uniffi_snapious_ffi_checksum_method_project_align_documents() != 38410) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_alignment() != 26650) {
+    if (uniffi_snapious_ffi_checksum_method_project_alignment() != 39657) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_alignment_consensus() != 3909) {
+    if (uniffi_snapious_ffi_checksum_method_project_alignment_consensus() != 198) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_alignment_identity_matrix() != 15014) {
+    if (uniffi_snapious_ffi_checksum_method_project_alignment_identity_matrix() != 37934) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_alignment_logo() != 3355) {
+    if (uniffi_snapious_ffi_checksum_method_project_alignment_logo() != 27213) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_alignment_similarity() != 35740) {
+    if (uniffi_snapious_ffi_checksum_method_project_alignment_similarity() != 34718) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_alignment_strip() != 55008) {
+    if (uniffi_snapious_ffi_checksum_method_project_alignment_strip() != 38064) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_alignment_variants() != 13396) {
+    if (uniffi_snapious_ffi_checksum_method_project_alignment_variants() != 30707) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_assemble_golden_gate() != 23395) {
+    if (uniffi_snapious_ffi_checksum_method_project_assemble_golden_gate() != 34660) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_assemble_overlap() != 2500) {
+    if (uniffi_snapious_ffi_checksum_method_project_assemble_overlap() != 55604) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_assemble_reads() != 9499) {
+    if (uniffi_snapious_ffi_checksum_method_project_assemble_reads() != 11301) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_back_translate_document() != 14881) {
+    if (uniffi_snapious_ffi_checksum_method_project_back_translate_document() != 8427) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_bases() != 46087) {
+    if (uniffi_snapious_ffi_checksum_method_project_bases() != 60653) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_batch_rename() != 38205) {
+    if (uniffi_snapious_ffi_checksum_method_project_batch_rename() != 7447) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_blast_remote() != 29779) {
+    if (uniffi_snapious_ffi_checksum_method_project_blast_remote() != 8805) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_blast_search() != 51695) {
+    if (uniffi_snapious_ffi_checksum_method_project_blast_search() != 15768) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_call_variants() != 26751) {
+    if (uniffi_snapious_ffi_checksum_method_project_call_variants() != 7711) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_check_read_file() != 42554) {
+    if (uniffi_snapious_ffi_checksum_method_project_check_read_file() != 55301) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_clone_gateway() != 65376) {
+    if (uniffi_snapious_ffi_checksum_method_project_clone_gateway() != 16213) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_clone_ta() != 56782) {
+    if (uniffi_snapious_ffi_checksum_method_project_clone_ta() != 27190) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_clone_topo() != 2406) {
+    if (uniffi_snapious_ffi_checksum_method_project_clone_topo() != 5744) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_compare_annotations() != 15127) {
+    if (uniffi_snapious_ffi_checksum_method_project_compare_annotations() != 22667) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_concatenate_documents() != 21694) {
+    if (uniffi_snapious_ffi_checksum_method_project_concatenate_documents() != 20284) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_consensus_from_reads() != 40960) {
+    if (uniffi_snapious_ffi_checksum_method_project_consensus_from_reads() != 15330) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_coverage_depth() != 26538) {
+    if (uniffi_snapious_ffi_checksum_method_project_coverage_depth() != 30313) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_coverage_report() != 21953) {
+    if (uniffi_snapious_ffi_checksum_method_project_coverage_report() != 37816) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_cpg_island_regions() != 40679) {
+    if (uniffi_snapious_ffi_checksum_method_project_cpg_island_regions() != 26930) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_snapious_ffi_checksum_method_project_create_folder() != 7069) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_create_sequence() != 8720) {
+    if (uniffi_snapious_ffi_checksum_method_project_create_sequence() != 52695) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_snapious_ffi_checksum_method_project_delete_document() != 4093) {
@@ -9273,166 +9273,166 @@ private let initializationResult: InitializationResult = {
     if (uniffi_snapious_ffi_checksum_method_project_delete_folder() != 19680) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_detect_common_features() != 35812) {
+    if (uniffi_snapious_ffi_checksum_method_project_detect_common_features() != 58816) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_digest_document() != 21627) {
+    if (uniffi_snapious_ffi_checksum_method_project_digest_document() != 48272) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_documents() != 1089) {
+    if (uniffi_snapious_ffi_checksum_method_project_documents() != 37836) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_snapious_ffi_checksum_method_project_documents_in_folder() != 35417) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_dotplot() != 10745) {
+    if (uniffi_snapious_ffi_checksum_method_project_dotplot() != 1050) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_edit_delete() != 28059) {
+    if (uniffi_snapious_ffi_checksum_method_project_edit_delete() != 29324) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_edit_insert() != 15007) {
+    if (uniffi_snapious_ffi_checksum_method_project_edit_insert() != 64149) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_edit_redo() != 39066) {
+    if (uniffi_snapious_ffi_checksum_method_project_edit_redo() != 33776) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_edit_replace() != 10539) {
+    if (uniffi_snapious_ffi_checksum_method_project_edit_replace() != 4956) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_edit_state() != 34922) {
+    if (uniffi_snapious_ffi_checksum_method_project_edit_state() != 7303) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_edit_undo() != 4878) {
+    if (uniffi_snapious_ffi_checksum_method_project_edit_undo() != 251) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_enzyme_list() != 8347) {
+    if (uniffi_snapious_ffi_checksum_method_project_enzyme_list() != 50419) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_enzyme_sites() != 37807) {
+    if (uniffi_snapious_ffi_checksum_method_project_enzyme_sites() != 50679) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_export_document() != 20982) {
+    if (uniffi_snapious_ffi_checksum_method_project_export_document() != 11094) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_export_text() != 5936) {
+    if (uniffi_snapious_ffi_checksum_method_project_export_text() != 39438) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_external_files() != 20105) {
+    if (uniffi_snapious_ffi_checksum_method_project_external_files() != 45633) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_extract_features() != 6240) {
+    if (uniffi_snapious_ffi_checksum_method_project_extract_features() != 23457) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_snapious_ffi_checksum_method_project_favorites() != 40118) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_feature_lanes() != 21780) {
+    if (uniffi_snapious_ffi_checksum_method_project_feature_lanes() != 41415) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_features() != 3565) {
+    if (uniffi_snapious_ffi_checksum_method_project_features() != 53930) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_find_duplicates() != 21380) {
+    if (uniffi_snapious_ffi_checksum_method_project_find_duplicates() != 43404) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_find_guides() != 16303) {
+    if (uniffi_snapious_ffi_checksum_method_project_find_guides() != 31722) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_find_motif_hits() != 13751) {
+    if (uniffi_snapious_ffi_checksum_method_project_find_motif_hits() != 19773) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_find_orfs() != 4713) {
+    if (uniffi_snapious_ffi_checksum_method_project_find_orfs() != 19881) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_find_repeats() != 6455) {
+    if (uniffi_snapious_ffi_checksum_method_project_find_repeats() != 22521) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_find_similar_features() != 51066) {
+    if (uniffi_snapious_ffi_checksum_method_project_find_similar_features() != 29727) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_fold_region() != 51078) {
+    if (uniffi_snapious_ffi_checksum_method_project_fold_region() != 58051) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_snapious_ffi_checksum_method_project_folder_of() != 15492) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_folders() != 11468) {
+    if (uniffi_snapious_ffi_checksum_method_project_folders() != 20658) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_fragments_by_annotation() != 14351) {
+    if (uniffi_snapious_ffi_checksum_method_project_fragments_by_annotation() != 12529) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_gc_profile() != 6814) {
+    if (uniffi_snapious_ffi_checksum_method_project_gc_profile() != 12585) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_import_annotations() != 58187) {
+    if (uniffi_snapious_ffi_checksum_method_project_import_annotations() != 13936) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_import_domain_table() != 62646) {
+    if (uniffi_snapious_ffi_checksum_method_project_import_domain_table() != 53664) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_import_file() != 19351) {
+    if (uniffi_snapious_ffi_checksum_method_project_import_file() != 31534) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_import_table() != 18190) {
+    if (uniffi_snapious_ffi_checksum_method_project_import_table() != 21928) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_length_histogram() != 27567) {
+    if (uniffi_snapious_ffi_checksum_method_project_length_histogram() != 46004) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_map_reads_to() != 11244) {
+    if (uniffi_snapious_ffi_checksum_method_project_map_reads_to() != 32058) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_map_reads_to_reference() != 18144) {
+    if (uniffi_snapious_ffi_checksum_method_project_map_reads_to_reference() != 3792) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_move_document() != 62465) {
+    if (uniffi_snapious_ffi_checksum_method_project_move_document() != 7156) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_mutagenesis_primers() != 19190) {
+    if (uniffi_snapious_ffi_checksum_method_project_mutagenesis_primers() != 29733) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_ncbi_import() != 53513) {
+    if (uniffi_snapious_ffi_checksum_method_project_ncbi_import() != 6724) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_ncbi_search() != 10232) {
+    if (uniffi_snapious_ffi_checksum_method_project_ncbi_search() != 35039) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_snapious_ffi_checksum_method_project_note() != 44690) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_operation_list() != 44842) {
+    if (uniffi_snapious_ffi_checksum_method_project_operation_list() != 30472) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_pair_reads_report() != 18339) {
+    if (uniffi_snapious_ffi_checksum_method_project_pair_reads_report() != 8939) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_snapious_ffi_checksum_method_project_path() != 997) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_pick_primers() != 12498) {
+    if (uniffi_snapious_ffi_checksum_method_project_pick_primers() != 36567) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_protein_digest() != 40362) {
+    if (uniffi_snapious_ffi_checksum_method_project_protein_digest() != 35183) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_protein_liabilities() != 50514) {
+    if (uniffi_snapious_ffi_checksum_method_project_protein_liabilities() != 23233) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_protein_of_feature() != 30181) {
+    if (uniffi_snapious_ffi_checksum_method_project_protein_of_feature() != 54265) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_protein_properties() != 19375) {
+    if (uniffi_snapious_ffi_checksum_method_project_protein_properties() != 33611) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_record_workflow() != 23419) {
+    if (uniffi_snapious_ffi_checksum_method_project_record_workflow() != 17292) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_remove_external_file() != 65456) {
+    if (uniffi_snapious_ffi_checksum_method_project_remove_external_file() != 55259) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_remove_feature() != 42850) {
+    if (uniffi_snapious_ffi_checksum_method_project_remove_feature() != 46673) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_snapious_ffi_checksum_method_project_rename_document() != 62242) {
@@ -9444,22 +9444,22 @@ private let initializationResult: InitializationResult = {
     if (uniffi_snapious_ffi_checksum_method_project_restore_version() != 39224) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_restriction_candidates() != 36044) {
+    if (uniffi_snapious_ffi_checksum_method_project_restriction_candidates() != 47902) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_save_candidate() != 32499) {
+    if (uniffi_snapious_ffi_checksum_method_project_save_candidate() != 14378) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_search_documents() != 18424) {
+    if (uniffi_snapious_ffi_checksum_method_project_search_documents() != 47884) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_selection_stats() != 51571) {
+    if (uniffi_snapious_ffi_checksum_method_project_selection_stats() != 56236) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_selection_text() != 8988) {
+    if (uniffi_snapious_ffi_checksum_method_project_selection_text() != 53322) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_sequence_with_variants() != 7002) {
+    if (uniffi_snapious_ffi_checksum_method_project_sequence_with_variants() != 47367) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_snapious_ffi_checksum_method_project_set_favorite() != 37816) {
@@ -9468,46 +9468,46 @@ private let initializationResult: InitializationResult = {
     if (uniffi_snapious_ffi_checksum_method_project_set_note() != 10543) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_silent_changes() != 59217) {
+    if (uniffi_snapious_ffi_checksum_method_project_silent_changes() != 22305) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_simple_fold() != 4820) {
+    if (uniffi_snapious_ffi_checksum_method_project_simple_fold() != 50141) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_strip_alignment_columns() != 34198) {
+    if (uniffi_snapious_ffi_checksum_method_project_strip_alignment_columns() != 43691) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_summary() != 7431) {
+    if (uniffi_snapious_ffi_checksum_method_project_summary() != 4874) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_translate_feature() != 15890) {
+    if (uniffi_snapious_ffi_checksum_method_project_translate_feature() != 3711) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_translate_frame() != 52491) {
+    if (uniffi_snapious_ffi_checksum_method_project_translate_frame() != 51557) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_uniprot_import() != 43959) {
+    if (uniffi_snapious_ffi_checksum_method_project_uniprot_import() != 52483) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_uniprot_search() != 12361) {
+    if (uniffi_snapious_ffi_checksum_method_project_uniprot_search() != 48869) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_versions() != 44743) {
+    if (uniffi_snapious_ffi_checksum_method_project_versions() != 44487) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_snapious_ffi_checksum_method_project_workflow_delete() != 5903) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_workflow_list() != 26231) {
+    if (uniffi_snapious_ffi_checksum_method_project_workflow_list() != 16057) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_workflow_run() != 39844) {
+    if (uniffi_snapious_ffi_checksum_method_project_workflow_run() != 52657) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_method_project_workflow_save() != 39009) {
+    if (uniffi_snapious_ffi_checksum_method_project_workflow_save() != 61804) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_snapious_ffi_checksum_constructor_project_open() != 39263) {
+    if (uniffi_snapious_ffi_checksum_constructor_project_open() != 7588) {
         return InitializationResult.apiChecksumMismatch
     }
 

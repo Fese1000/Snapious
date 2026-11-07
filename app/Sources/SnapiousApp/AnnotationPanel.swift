@@ -3,7 +3,7 @@ import SwiftUI
 
 private let annotationTypes = ["misc_feature", "gene", "CDS", "promoter", "terminator", "rep_origin", "primer_bind", "protein_bind", "misc_binding", "regulatory", "sig_peptide", "mat_peptide"]
 
-/// Annotationsliste neben Sequenz und Karte: ansehen, anspringen, anlegen, ändern, löschen, nach Typ ein-/ausblenden.
+/// Annotation list next to sequence and map: view, jump to, create, edit, delete, show/hide by type.
 struct AnnotationPanel: View {
     @ObservedObject var model: AppModel
     @State private var editing: Int?
@@ -14,7 +14,7 @@ struct AnnotationPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(tr("Annotationen")).font(Theme.heading())
+                Text(tr("Annotations")).font(Theme.heading())
                 Text("\(model.features.count)").foregroundStyle(Theme.inkSoft)
                 Spacer()
                 Menu {
@@ -23,14 +23,14 @@ struct AnnotationPanel: View {
                                                 set: { if $0 { model.hiddenTypes.remove(t) } else { model.hiddenTypes.insert(t) } }))
                     }
                     Divider()
-                    Button(tr("Alle zeigen")) { model.hiddenTypes = [] }
+                    Button(tr("Show all")) { model.hiddenTypes = [] }
                 } label: { Image(systemName: model.hiddenTypes.isEmpty ? "eye" : "eye.slash") }
-                    .menuStyle(.borderlessButton).fixedSize().help(tr("Typen ein- und ausblenden"))
+                    .menuStyle(.borderlessButton).fixedSize().help(tr("Show and hide types"))
             }
             .padding(10)
             Divider()
             if model.features.isEmpty {
-                EmptyState(icon: "tag", title: tr("Keine Annotationen"), message: tr("Bereich wählen und „Neu aus Auswahl“ drücken."))
+                EmptyState(icon: "tag", title: tr("No annotations"), message: tr("Select a range and press “New from selection”."))
                     .frame(maxHeight: .infinity)
             } else {
                 List {
@@ -43,11 +43,11 @@ struct AnnotationPanel: View {
             }
             Divider()
             HStack {
-                Button { showNew = true } label: { Label(tr("Neu aus Auswahl"), systemImage: "plus") }
+                Button { showNew = true } label: { Label(tr("New from selection"), systemImage: "plus") }
                     .disabled(model.selStart == nil)
                     .popover(isPresented: $showNew) {
                         let a = min(model.selStart ?? 0, model.selEnd ?? 0), b = max(model.selStart ?? 0, model.selEnd ?? 0)
-                        AnnotationForm(title: tr("Neue Annotation"), initial: FeatureInfo(featureType: "misc_feature", name: "", start: UInt64(a), end: UInt64(b == a ? min(a + 1, model.docLength) : b), strand: "FORWARD"),
+                        AnnotationForm(title: tr("New annotation"), initial: FeatureInfo(featureType: "misc_feature", name: "", start: UInt64(a), end: UInt64(b == a ? min(a + 1, model.docLength) : b), strand: "FORWARD"),
                                        length: model.docLength) { info in
                             model.addAnnotation(info); showNew = false
                         }
@@ -70,20 +70,20 @@ struct AnnotationPanel: View {
                     .font(Theme.label(11)).foregroundStyle(Theme.inkSoft).lineLimit(1)
             }
             Spacer()
-            Button { editing = i } label: { Image(systemName: "pencil") }.buttonStyle(.plain).help(tr("Ändern"))
+            Button { editing = i } label: { Image(systemName: "pencil") }.buttonStyle(.plain).help(tr("Modify"))
                 .popover(isPresented: Binding(get: { editing == i }, set: { if !$0 { editing = nil } })) {
-                    AnnotationForm(title: tr("Annotation ändern"), initial: f, length: model.docLength) { info in
+                    AnnotationForm(title: tr("Edit annotation"), initial: f, length: model.docLength) { info in
                         model.updateAnnotation(index: i, to: info); editing = nil
                     }
                 }
-            Button { model.removeFeature(index: i) } label: { Image(systemName: "trash") }.buttonStyle(.plain).help(tr("Löschen"))
+            Button { model.removeFeature(index: i) } label: { Image(systemName: "trash") }.buttonStyle(.plain).help(tr("Delete"))
         }
         .contentShape(Rectangle())
         .onTapGesture { model.focusFeature(i) }
     }
 }
 
-/// Eingabemaske für Name, Typ, Strang und Bereich (angezeigt ab 1, einschließlich Ende).
+/// Input form for name, type, strand and range (shown 1-based, end inclusive).
 struct AnnotationForm: View {
     let title: String
     let initial: FeatureInfo
@@ -104,21 +104,21 @@ struct AnnotationForm: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title).font(Theme.heading())
             TextField(tr("Name"), text: $name).textFieldStyle(.roundedBorder).frame(width: 240)
-            Picker(tr("Typ"), selection: $type) {
+            Picker(tr("Type"), selection: $type) {
                 ForEach(Array(Set(annotationTypes + [initial.featureType])).sorted(), id: \.self) { Text($0).tag($0) }
             }
-            Picker(tr("Strang"), selection: $strand) {
+            Picker(tr("Strand"), selection: $strand) {
                 Text("+").tag("FORWARD"); Text("−").tag("REVERSE"); Text("ohne").tag("NONE")
             }.pickerStyle(.segmented)
             HStack {
                 TextField("von", text: $from).textFieldStyle(.roundedBorder).frame(width: 80)
                 Text("–")
                 TextField("bis", text: $to).textFieldStyle(.roundedBorder).frame(width: 80)
-                Text(tr("von %@", "\(length)")).foregroundStyle(Theme.inkSoft)
+                Text(tr("of %@", "\(length)")).foregroundStyle(Theme.inkSoft)
             }
             HStack {
                 Spacer()
-                Button(tr("Speichern")) {
+                Button(tr("Save")) {
                     onSave(FeatureInfo(featureType: type, name: name.isEmpty ? type : name, start: UInt64((Int(from) ?? 1) - 1), end: UInt64(Int(to) ?? 1), strand: strand))
                 }
                 .keyboardShortcut(.defaultAction).disabled(!valid)

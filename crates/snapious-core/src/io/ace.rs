@@ -1,43 +1,43 @@
-//! ACE-Dateien (Assemblies von Phrap/CAP3) lesen.
+//! Read ACE files (assemblies from Phrap/CAP3).
 
 use crate::error::{Error, Result};
 
-/// Ein Read im Contig.
+/// A read in the contig.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AceRead {
     pub name: String,
-    /// Position im Contig (1-basiert wie in der Datei, kann ≤ 0 sein).
+    /// Position in the contig (1-based as in the file, may be <= 0).
     pub offset: i64,
-    /// `true`, wenn der Read komplementär (`C`) liegt.
+    /// `true` if the read is complemented (`C`).
     pub complement: bool,
     pub sequence: String,
 }
 
-/// Ein Contig.
+/// A contig.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AceContig {
     pub name: String,
-    /// Konsens ohne Zeilenumbrüche, mit `*` an Lückenstellen.
+    /// Consensus without line breaks, with `*` at gap positions.
     pub consensus: String,
-    /// Reads in der Reihenfolge der `AF`-Zeilen.
+    /// Reads in the order of the `AF` lines.
     pub reads: Vec<AceRead>,
 }
 
-/// Liest eine ACE-Datei. Zeilen:
-/// * `AS ...`: Kopf, ignorieren.
-/// * `CO name nbases nreads nsegs strand`: beginnt ein Contig; die folgenden Zeilen bis zur ersten leeren Zeile sind der Konsens
-///   (Leerraum entfernt, zusammengesetzt).
-/// * `BQ`: Qualitätszeilen bis zur nächsten leeren Zeile überspringen.
-/// * `AF name U|C offset`: Read des aktuellen Contigs (`C` = komplementär), Reihenfolge merken.
-/// * `RD name len a b`: danach Sequenzzeilen bis zur leeren Zeile (Leerraum entfernt); gehört zum Read mit diesem Namen aus den `AF`-Zeilen.
-/// * `QA ...`, `DS ...`, `BS ...`, `WA{`/`}`-Blöcke und alle anderen Zeilen: ignorieren.
+/// Reads an ACE file. Lines:
+/// * `AS ...`: header, ignore.
+/// * `CO name nbases nreads nsegs strand`: starts a contig; the following lines up to the first empty line are the consensus
+///   (whitespace removed, concatenated).
+/// * `BQ`: skip quality lines up to the next empty line.
+/// * `AF name U|C offset`: read of the current contig (`C` = complemented), remember the order.
+/// * `RD name len a b`: followed by sequence lines up to the empty line (whitespace removed); belongs to the read with this name from the `AF` lines.
+/// * `QA ...`, `DS ...`, `BS ...`, `WA{`/`}` blocks and all other lines: ignore.
 ///
-/// Fehler `Error::InvalidInput`: `AF`/`RD`/`CO` mit zu wenigen Feldern oder nicht lesbarem Versatz, ein `RD` ohne passenden `AF`,
-/// ein `AF` ohne `RD` oder keine Contigs.
+/// Error `Error::InvalidInput`: `AF`/`RD`/`CO` with too few fields or an unreadable offset, an `RD` without a matching `AF`,
+/// an `AF` without `RD`, or no contigs.
 pub fn parse_ace(text: &str) -> Result<Vec<AceContig>> {
     let mut contigs: Vec<AceContig> = Vec::new();
     let mut lines = text.lines().peekable();
-    let mut pending: Vec<(String, Option<String>)> = Vec::new(); // (Read-Name, Sequenz) des aktuellen Contigs
+    let mut pending: Vec<(String, Option<String>)> = Vec::new(); // (read name, sequence) of the current contig
 
     fn finish(
         contigs: &mut [AceContig],

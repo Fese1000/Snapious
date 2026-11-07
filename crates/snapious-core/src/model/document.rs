@@ -1,6 +1,6 @@
-//! Dokumente: Sequenzdokument mit Annotationen, Topologie und Metadaten.
+//! Documents: sequence document with annotations, topology and metadata.
 //!
-//! Alle Änderungen liefern ein NEUES Dokument (gleiche ID), das Original bleibt unverändert.
+//! All changes return a NEW document (same ID); the original stays unchanged.
 
 use std::collections::BTreeMap;
 
@@ -9,14 +9,14 @@ use crate::model::feature::{Feature, Interval, Location};
 use crate::model::sequence::Sequence;
 use crate::util::{new_id, now_secs};
 
-/// Linear oder zirkulär (Plasmid).
+/// Linear or circular (plasmid).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Topology {
     Linear,
     Circular,
 }
 
-/// Ein Sequenzdokument.
+/// A sequence document.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SequenceDocument {
     id: String,
@@ -49,7 +49,7 @@ impl SequenceDocument {
         }
     }
 
-    /// Neues lineares Dokument ohne Features mit neuer ID.
+    /// New linear document without features and with a new ID.
     pub fn of(name: &str, sequence: Sequence) -> Self {
         Self::new(
             &new_id(),
@@ -70,7 +70,7 @@ impl SequenceDocument {
         &self.name
     }
 
-    /// Erstellungszeit in Sekunden seit 1970 (UTC).
+    /// Creation time in seconds since 1970 (UTC).
     pub fn created(&self) -> i64 {
         self.created
     }
@@ -103,7 +103,7 @@ impl SequenceDocument {
         self.sequence.bases()
     }
 
-    /// Kopie als neues Dokument: neue ID, neue Erstellungszeit, neuer Name.
+    /// Copy as a new document: new ID, new creation time, new name.
     pub fn derive(&self, name: &str) -> Self {
         Self {
             id: new_id(),
@@ -141,9 +141,9 @@ impl SequenceDocument {
         }
     }
 
-    /// Fügt `bases` vor Position `position` ein. Features werden mitgeführt:
-    /// Intervalle ab `position` wandern, Intervalle über `position` hinweg wachsen,
-    /// Intervalle, die genau bei `position` enden, bleiben unverändert.
+    /// Inserts `bases` before position `position`. Features are carried along:
+    /// intervals from `position` on shift, intervals spanning `position` grow,
+    /// intervals ending exactly at `position` stay unchanged.
     pub fn insert(&self, position: usize, bases: &str) -> Result<Self> {
         if position > self.len() {
             return Err(Error::OutOfRange(format!(
@@ -172,7 +172,7 @@ impl SequenceDocument {
         })
     }
 
-    /// Löscht `[start, end)`. Features werden gekürzt, verschoben oder entfernt.
+    /// Deletes `[start, end)`. Features are shortened, shifted or removed.
     pub fn delete(&self, start: usize, end: usize) -> Result<Self> {
         self.check_range(start, end)?;
         let mut combined = String::with_capacity(self.len() - (end - start));
@@ -192,12 +192,12 @@ impl SequenceDocument {
         })
     }
 
-    /// Ersetzt `[start, end)` durch `bases` (Löschen, dann Einfügen bei `start`).
+    /// Replaces `[start, end)` with `bases` (delete, then insert at `start`).
     pub fn replace(&self, start: usize, end: usize, bases: &str) -> Result<Self> {
         self.delete(start, end)?.insert(start, bases)
     }
 
-    /// Ausschnitt `[start, end)` mit allen vollständig darin liegenden Features (Positionen minus `start`).
+    /// Excerpt `[start, end)` with all features lying entirely within it (positions minus `start`).
     pub fn sub_document(&self, start: usize, end: usize) -> Result<Self> {
         self.check_range(start, end)?;
         let sequence = self.sequence.with_bases(&self.bases()[start..end])?;
@@ -215,7 +215,7 @@ impl SequenceDocument {
         })
     }
 
-    /// Reverse-Komplement: Features werden gespiegelt, der Strang gedreht.
+    /// Reverse complement: features are mirrored, the strand is flipped.
     pub fn reverse_complement(&self) -> Result<Self> {
         let len = self.len();
         let sequence = self.sequence.reverse_complement()?;
@@ -294,7 +294,7 @@ fn shift_for_delete(f: &Feature, start: usize, end: usize) -> Result<Option<Feat
     for iv in loc.intervals() {
         let (ns, ne) = (map(iv.start()), map(iv.end()));
         if ns == ne && iv.length() > 0 {
-            continue; // Intervall lag vollständig im gelöschten Bereich
+            continue; // Interval was entirely within the deleted region
         }
         out.push(Interval::new(ns, ne)?);
     }
@@ -304,7 +304,7 @@ fn shift_for_delete(f: &Feature, start: usize, end: usize) -> Result<Option<Feat
     Ok(Some(f.with_location(loc.with_intervals(out)?)))
 }
 
-/// Ein Dokument des Projekts.
+/// A document of the project.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Document {
     Sequence(SequenceDocument),
@@ -333,7 +333,7 @@ impl Document {
         }
     }
 
-    /// Dokumenttyp als Text für die Datenbank (`sequence` oder `alignment`).
+    /// Document type as text for the database (`sequence` or `alignment`).
     pub fn doc_type(&self) -> &'static str {
         match self {
             Document::Sequence(_) => "sequence",

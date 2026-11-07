@@ -1,52 +1,52 @@
-//! PCR-Simulation: Primerbindung finden und Produkte aus Primerpaaren berechnen.
+//! PCR simulation: find primer binding and compute products from primer pairs.
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 
-/// Ein Primer (Sequenz 5'→3').
+/// A primer (sequence 5'→3').
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Primer {
     pub name: String,
     pub sequence: String,
 }
 
-/// Bindung eines Primers an die Vorlage.
+/// Binding of a primer to the template.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PrimerBinding {
     pub primer_name: String,
-    /// Gebundener Bereich der Vorlage `[start, end)` ohne den 5'-Schwanz. `start` liegt in `0..Länge`;
-    /// bei zirkulären Vorlagen kann `end` größer als die Länge sein (Bindung über den Nullpunkt).
+    /// Bound region of the template `[start, end)` without the 5' tail. `start` lies in `0..length`;
+    /// for circular templates `end` can be greater than the length (binding across the origin).
     pub start: usize,
     pub end: usize,
-    /// `true`: Primer entspricht dem Oberstrang (Vorwärtsprimer); `false`: bindet am Oberstrang, sein
-    /// Reverse-Komplement steht im Oberstrang.
+    /// `true`: primer corresponds to the top strand (forward primer); `false`: binds to the top strand, its
+    /// reverse complement is in the top strand.
     pub forward: bool,
-    /// Abweichungen im gebundenen Bereich.
+    /// Mismatches in the bound region.
     pub mismatches: usize,
-    /// Länge des 5'-Teils des Primers, der nicht bindet.
+    /// Length of the 5' part of the primer that does not bind.
     pub tail_length: usize,
 }
 
-/// Ein PCR-Produkt.
+/// A PCR product.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PcrProduct {
-    /// Vorwärtsprimer (ganz, mit Schwanz) + Vorlagenbereich dazwischen + Reverse-Komplement des Rückwärtsprimers (ganz).
+    /// Forward primer (whole, with tail) + template region in between + reverse complement of the reverse primer (whole).
     pub sequence: String,
-    /// Beginn der Vorwärtsbindung (`forward.start`) und Ende der Rückwärtsbindung in aufgerollten Koordinaten
-    /// (bei Zirkularität kann `template_end` größer als die Vorlagenlänge sein).
+    /// Start of the forward binding (`forward.start`) and end of the reverse binding in unrolled coordinates
+    /// (for circular templates `template_end` can be greater than the template length).
     pub template_start: usize,
     pub template_end: usize,
     pub forward: PrimerBinding,
     pub reverse: PrimerBinding,
 }
 
-/// Einstellungen der Simulation.
+/// Settings of the simulation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PcrSimulator {
-    /// So viele Basen am 3'-Ende des Primers müssen exakt passen (mindestens 1).
+    /// This many bases at the 3' end of the primer must match exactly (at least 1).
     pub min_three_prime_match: usize,
-    /// Höchstzahl der Abweichungen im 5'-seitigen gebundenen Teil.
+    /// Maximum number of mismatches in the 5'-side bound part.
     pub max_mismatches: usize,
-    /// Produkte mit längerer Sequenz entfallen.
+    /// Products with a longer sequence are dropped.
     pub max_product_length: usize,
 }
 
@@ -74,24 +74,24 @@ impl PcrSimulator {
         }
     }
 
-    /// Alle Bindungen von `primer` an `template` (Uppercase, `U` wie `T`; Basen außerhalb von A, C, G, T passen nie).
+    /// All bindings of `primer` to `template` (uppercase, `U` as `T`; bases other than A, C, G, T never match).
     ///
-    /// Vorwärtsprimer (Länge `m`, `k = min_three_prime_match`, Primer kürzer als `k` → keine Bindung): Für jede Endposition
-    /// `e` (exklusives Ende der Bindung, nicht zirkulär `k..=Länge`, zirkulär `1..=Länge` mit Umlauf) müssen die letzten `k`
-    /// Basen des Primers exakt `template[e−k..e]` entsprechen. Dann wird Base für Base nach 5' erweitert (`j = k, k+1, …, m−1`):
-    /// verglichen werden `primer[m−1−j]` und `template[e−1−j]`; nicht zirkulär bricht die Erweiterung ab, wenn die Vorlage zu Ende
-    /// ist (Index < 0). Jede Abweichung erhöht den Zähler; übersteigt er `max_mismatches`, bricht die Erweiterung ab. Die
-    /// gebundene Länge ist das größte `j + 1` (mindestens `k`), bei dem die zuletzt verglichene Base **passt** (der gebundene Teil
-    /// endet 5'-seitig nie mit einer Abweichung). `mismatches` zählt nur Abweichungen innerhalb des gebundenen Teils,
-    /// `tail_length = m − gebundene Länge`, `start = (e − gebundene Länge) mod Länge` (zirkulär) bzw. `e − gebundene Länge`,
-    /// `end = start + gebundene Länge`.
+    /// Forward primer (length `m`, `k = min_three_prime_match`, primer shorter than `k` → no binding): for every end position
+    /// `e` (exclusive end of the binding, non-circular `k..=length`, circular `1..=length` with wrap-around) the last `k`
+    /// bases of the primer must exactly equal `template[e−k..e]`. Then it is extended base by base towards 5' (`j = k, k+1, …, m−1`):
+    /// `primer[m−1−j]` and `template[e−1−j]` are compared; non-circular, the extension stops when the template has ended
+    /// (index < 0). Each mismatch increments the counter; if it exceeds `max_mismatches`, the extension stops. The
+    /// bound length is the largest `j + 1` (at least `k`) at which the last compared base **matches** (the bound part
+    /// never ends with a mismatch on the 5' side). `mismatches` counts only mismatches within the bound part,
+    /// `tail_length = m − bound length`, `start = (e − bound length) mod length` (circular) or `e − bound length`,
+    /// `end = start + bound length`.
     ///
-    /// Rückwärtsprimer: Das Reverse-Komplement `r` des Primers wird gesucht. Die ersten `k` Basen von `r` (das ist das
-    /// 3'-Ende des Primers) müssen exakt an `template[s..s+k]` passen, `s` in `0..Länge` (zirkulär mit Umlauf, nicht zirkulär
-    /// nur mit `s + k <= Länge`). Erweiterung nach rechts mit denselben Regeln: `r[j]` gegen `template[s+j]`. `start = s`,
-    /// `end = s + gebundene Länge`, `forward = false`.
+    /// Reverse primer: the reverse complement `r` of the primer is searched. The first `k` bases of `r` (which is the
+    /// 3' end of the primer) must match `template[s..s+k]` exactly, `s` in `0..length` (circular with wrap-around, non-circular
+    /// only with `s + k <= length`). Extension to the right with the same rules: `r[j]` against `template[s+j]`. `start = s`,
+    /// `end = s + bound length`, `forward = false`.
     ///
-    /// Ergebnis nach `start`, dann `end` sortiert, Vorwärtsbindungen vor Rückwärtsbindungen bei Gleichstand.
+    /// Result sorted by `start`, then `end`, forward bindings before reverse bindings on a tie.
     pub fn find_bindings(
         &self,
         template: &str,
@@ -110,7 +110,7 @@ impl PcrSimulator {
         if len == 0 || m < k {
             return Vec::new();
         }
-        // Basis der Vorlage an Position i (zirkulär mit Umlauf), None außerhalb
+        // Template base at position i (circular with wrap-around), None outside
         let at = |i: isize| -> Option<u8> {
             let idx = if circular { i.rem_euclid(len) } else { i };
             if idx < 0 || idx >= len {
@@ -121,7 +121,7 @@ impl PcrSimulator {
         let same = |t: Option<u8>, c: Option<&u8>| -> bool {
             matches!((t, c), (Some(a), Some(b)) if a == *b && matches!(a, b'A' | b'C' | b'G' | b'T'))
         };
-        // Erweitert ab dem exakten 3'-Teil: `base(j)` liefert (Vorlagenbase, Primerbase) für die j-te Base vom 3'-Ende.
+        // Extends from the exact 3' part: `base(j)` returns (template base, primer base) for the j-th base from the 3' end.
         let extend = |base: &dyn Fn(usize) -> (Option<u8>, Option<u8>)| -> (usize, usize) {
             let (mut best, mut best_mm, mut mm) = (k, 0usize, 0usize);
             let mut j = k;
@@ -147,7 +147,7 @@ impl PcrSimulator {
         };
 
         let mut found = Vec::new();
-        // Vorwärtsprimer: letzte k Basen enden bei e (exklusiv)
+        // Forward primer: the last k bases end at e (exclusive)
         let ends = if circular {
             1..=len
         } else {
@@ -174,7 +174,7 @@ impl PcrSimulator {
                 tail_length: m - best,
             });
         }
-        // Rückwärtsprimer: Reverse-Komplement steht im Oberstrang, die ersten k Basen davon beginnen bei s
+        // Reverse primer: the reverse complement is in the top strand, its first k bases start at s
         let starts = if circular {
             0..len
         } else {
@@ -205,20 +205,20 @@ impl PcrSimulator {
         found
     }
 
-    /// Berechnet alle Produkte aus allen Paaren (Vorwärtsbindung F, Rückwärtsbindung R) der Primer in `primers`
-    /// (derselbe Primer darf beide Rollen haben).
-    /// - Nicht zirkulär: nur Paare mit `R.start >= F.end`.
-    /// - Zirkulär: `R.start` wird um die Vorlagenlänge erhöht, bis es `>= F.end` ist (kleinste solche Verschiebung;
-    ///   `R.end` wird mit verschoben, das Produkt trägt die verschobene Rückwärtsbindung in `reverse`).
-    /// - Sequenz: Primer von F (ganz) + Vorlagenbereich von `F.end` bis `R.start` (bei Zirkularität mit Umlauf) + Reverse-Komplement
-    ///   des Primers von R (ganz).
-    /// - `template_start = F.start`, `template_end = R.end` (verschoben).
-    /// - Produkte, deren Sequenz länger als `max_product_length` ist, entfallen.
-    /// - Sortierung nach Sequenzlänge, dann `template_start`, dann Name des Vorwärtsprimers.
+    /// Computes all products from all pairs (forward binding F, reverse binding R) of the primers in `primers`
+    /// (the same primer may take both roles).
+    /// - Non-circular: only pairs with `R.start >= F.end`.
+    /// - Circular: `R.start` is increased by the template length until it is `>= F.end` (smallest such shift;
+    ///   `R.end` is shifted along, the product carries the shifted reverse binding in `reverse`).
+    /// - Sequence: primer of F (whole) + template region from `F.end` to `R.start` (with wrap-around if circular) + reverse complement
+    ///   of the primer of R (whole).
+    /// - `template_start = F.start`, `template_end = R.end` (shifted).
+    /// - Products whose sequence is longer than `max_product_length` are dropped.
+    /// - Sorting by sequence length, then `template_start`, then name of the forward primer.
     pub fn simulate(&self, template: &str, circular: bool, primers: &[Primer]) -> Vec<PcrProduct> {
         let text = template.to_ascii_uppercase().replace('U', "T");
         let len = text.len();
-        // Bindungen mit der Sequenz ihres Primers
+        // Bindings with the sequence of their primer
         let mut forwards: Vec<(PrimerBinding, String)> = Vec::new();
         let mut reverses: Vec<(PrimerBinding, String)> = Vec::new();
         for p in primers {
@@ -388,7 +388,7 @@ mod tests {
             ),
             (0, 14, 1, 0)
         );
-        // Abweichung ganz außen: gebundener Teil endet vorher, Base 0 wird Schwanz
+        // Mismatch at the very edge: bound part ends earlier, base 0 becomes tail
         let mut s2: Vec<char> = T[..14].chars().collect();
         s2[0] = 'C';
         let s2: String = s2.into_iter().collect();
@@ -442,7 +442,7 @@ mod tests {
         assert_eq!(echt[0].sequence, tt[47..81]);
         assert_eq!(echt[0].sequence.len(), 34);
         assert_eq!((echt[0].template_start, echt[0].template_end), (47, 81));
-        // dieselbe Vorlage linear: Vorwärtsprimer über den Nullpunkt findet nichts
+        // same template linear: forward primer across the origin finds nothing
         assert!(sim()
             .find_bindings(T, false, &primer("F", &tt[47..61]))
             .is_empty());

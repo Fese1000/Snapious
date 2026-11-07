@@ -1,11 +1,11 @@
-//! SOLiD-Farbraumdaten (csfasta und QUAL) lesen und in Basen umrechnen.
+//! Read SOLiD color-space data (csfasta and QUAL) and convert it to bases.
 
 use crate::error::{Error, Result};
 
-/// Liest csfasta: Zeilen mit `#` am Anfang und leere Zeilen werden übersprungen; eine Zeile `>Name` beginnt einen Eintrag
-/// (Name = Rest getrimmt), die folgenden Zeilen (Leerraum entfernt) werden zur Farbfolge zusammengesetzt, z. B. `T0123`
-/// (erste Base, dann Farben). Ergebnis `(Name, Farbfolge)`. Fehler `Error::InvalidInput`, wenn Zeichen vor der ersten
-/// `>`-Zeile stehen, die nicht übersprungen werden, oder wenn es keine Einträge gibt.
+/// Reads csfasta: lines starting with `#` and empty lines are skipped; a line `>name` begins an entry
+/// (name = rest, trimmed), the following lines (whitespace removed) are concatenated into the color sequence, e.g. `T0123`
+/// (first base, then colors). Result `(name, color sequence)`. `Error::InvalidInput` if characters that are not skipped precede the first
+/// `>` line, or if there are no entries.
 pub fn parse_csfasta(text: &str) -> Result<Vec<(String, String)>> {
     let mut out: Vec<(String, String)> = Vec::new();
     for line in text.lines().map(str::trim) {
@@ -30,11 +30,11 @@ pub fn parse_csfasta(text: &str) -> Result<Vec<(String, String)>> {
     Ok(out)
 }
 
-/// Wandelt eine Farbfolge (erste Base `A`, `C`, `G` oder `T`, dann Farben `0`–`3`) in Basen um (Groß-/Kleinschreibung egal).
-/// Die Ausgabe hat die Länge der Eingabe (Startbase plus eine Base je Farbe). Nächste Base aus der vorigen und der Farbe:
-/// 0: gleiche Base; 1: A↔C und G↔T; 2: A↔G und C↔T; 3: A↔T und C↔G.
-/// Eine Farbe, die keine Ziffer 0–3 ist (z. B. `.` oder `4`), ergibt `N`, und alle folgenden Basen sind ebenfalls `N`.
-/// Fehler `Error::InvalidInput`: leere Eingabe oder erste Base nicht A, C, G, T. Beispiel: `T0123` → `TTGAT`.
+/// Converts a color sequence (first base `A`, `C`, `G` or `T`, then colors `0`-`3`) into bases (case-insensitive).
+/// The output has the length of the input (start base plus one base per color). Next base from the previous one and the color:
+/// 0: same base; 1: A<->C and G<->T; 2: A<->G and C<->T; 3: A<->T and C<->G.
+/// A color that is not a digit 0-3 (e.g. `.` or `4`) yields `N`, and all following bases are `N` as well.
+/// `Error::InvalidInput`: empty input or first base not A, C, G, T. Example: `T0123` -> `TTGAT`.
 pub fn decode_color_space(colors: &str) -> Result<String> {
     let mut chars = colors.chars();
     let first = chars
@@ -69,9 +69,9 @@ pub fn decode_color_space(colors: &str) -> Result<String> {
     Ok(out)
 }
 
-/// Liest SOLiD-QUAL: wie bei csfasta (`#`-Zeilen und leere Zeilen übersprungen, `>Name` beginnt einen Eintrag), die Zeilen danach
-/// enthalten durch Leerraum getrennte Zahlen (0–255), die zu einem Vektor zusammengesetzt werden. Fehler `Error::InvalidInput`,
-/// wenn ein Wert keine Zahl 0–255 ist oder Zahlen vor der ersten `>`-Zeile stehen.
+/// Reads SOLiD QUAL: as with csfasta (`#` lines and empty lines skipped, `>name` begins an entry), the lines after it
+/// contain whitespace-separated numbers (0-255) that are assembled into a vector. `Error::InvalidInput`
+/// if a value is not a number 0-255 or numbers precede the first `>` line.
 pub fn parse_solid_qual(text: &str) -> Result<Vec<(String, Vec<u8>)>> {
     let mut out: Vec<(String, Vec<u8>)> = Vec::new();
     for line in text.lines().map(str::trim) {

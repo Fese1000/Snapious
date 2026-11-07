@@ -2,7 +2,7 @@ import AppKit
 import SnapiousFFI
 import SwiftUI
 
-/// Ein Befehl der Befehlspalette (⌘K).
+/// A command of the command palette (⌘K).
 struct AppCommand: Identifiable {
     let id = UUID()
     let title: String
@@ -11,7 +11,7 @@ struct AppCommand: Identifiable {
     let run: () -> Void
 }
 
-/// Befehlspalette: tippen, mit ↑↓ wählen, Return führt aus.
+/// Command palette: type, choose with ↑↓, Return runs it.
 struct CommandPaletteView: View {
     let commands: [AppCommand]
     @Environment(\.dismiss) private var dismiss
@@ -28,7 +28,7 @@ struct CommandPaletteView: View {
         VStack(spacing: 0) {
             HStack {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField(tr("Befehl, Ansicht oder Dokument …"), text: $query)
+                TextField(tr("Command, view or document …"), text: $query)
                     .textFieldStyle(.plain)
                     .font(.title3)
                     .focused($focused)
@@ -55,7 +55,7 @@ struct CommandPaletteView: View {
                             .id(i)
                         }
                         if ranked.isEmpty {
-                            Text(tr("Nichts gefunden")).foregroundStyle(.secondary).padding(20)
+                            Text(tr("Nothing found")).foregroundStyle(.secondary).padding(20)
                         }
                     }
                 }
@@ -75,7 +75,7 @@ struct CommandPaletteView: View {
     }
 }
 
-/// Willkommensseite ohne Projekt: neues Projekt, öffnen und zuletzt benutzte Projekte.
+/// Welcome page without a project: new project, open and recently used projects.
 struct WelcomeView: View {
     @ObservedObject var model: AppModel
 
@@ -83,16 +83,16 @@ struct WelcomeView: View {
         VStack(spacing: 20) {
             Image(systemName: "dna").font(.system(size: 54, weight: .light)).foregroundStyle(Color.accentColor)
             Text("Snapious").font(.largeTitle.bold())
-            Text(tr("Sequenzen ansehen, bearbeiten und klonieren")).foregroundStyle(.secondary)
+            Text(tr("View, edit and clone sequences")).foregroundStyle(.secondary)
             HStack(spacing: 12) {
-                Button { model.newProject() } label: { Label(tr("Neues Projekt"), systemImage: "doc.badge.plus").frame(width: 150) }
+                Button { model.newProject() } label: { Label(tr("New project"), systemImage: "doc.badge.plus").frame(width: 150) }
                     .buttonStyle(.borderedProminent).controlSize(.large)
-                Button { model.openProject() } label: { Label(tr("Projekt öffnen"), systemImage: "folder").frame(width: 150) }
+                Button { model.openProject() } label: { Label(tr("Open project"), systemImage: "folder").frame(width: 150) }
                     .controlSize(.large)
             }
             if !model.recentProjects.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(tr("Zuletzt geöffnet")).font(.headline)
+                    Text(tr("Recently opened")).font(.headline)
                     ForEach(model.recentProjects.prefix(6), id: \.self) { p in
                         Button { model.open(path: p) } label: {
                             HStack {
@@ -118,7 +118,7 @@ struct WelcomeView: View {
     }
 }
 
-/// Inspektor rechts: Eckdaten, Features und Notiz des gewählten Dokuments.
+/// Inspector on the right: key data, features and note of the selected document.
 struct InspectorView: View {
     @ObservedObject var model: AppModel
     @State private var note = ""
@@ -149,15 +149,15 @@ struct InspectorView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    if model.features.count > 60 { Text(tr("… und %@ weitere", "\(model.features.count - 60)")).font(.caption).foregroundStyle(.secondary) }
+                    if model.features.count > 60 { Text(tr("… and %@ more", "\(model.features.count - 60)")).font(.caption).foregroundStyle(.secondary) }
                     Divider()
-                    Text(tr("Notiz")).font(.headline)
+                    Text(tr("Note")).font(.headline)
                     TextEditor(text: $note)
                         .frame(minHeight: 100)
                         .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.separator))
-                    Button(tr("Notiz speichern")) { saveNote() }
+                    Button(tr("Save note")) { saveNote() }
                 } else {
-                    Text(tr("Wähle ein Dokument.")).foregroundStyle(.secondary)
+                    Text(tr("Select a document.")).foregroundStyle(.secondary)
                 }
             }
             .padding(14)
@@ -178,23 +178,23 @@ struct InspectorView: View {
     }
 }
 
-/// Übersicht der Tastenkürzel (⌘/).
+/// Overview of keyboard shortcuts (⌘/).
 struct ShortcutsView: View {
     @Environment(\.dismiss) private var dismiss
     static let all: [(String, String)] = [
-        (tr("Befehlspalette"), "cmd+k"),
-        (tr("Neue Sequenz"), "cmd+shift+n"),
-        (tr("Neues Projekt"), "cmd+n"),
-        (tr("Projekt öffnen"), "cmd+o"),
-        (tr("Importieren"), "cmd+i"),
-        (tr("Rückgängig (Sequenzansicht)"), "cmd+z"),
-        (tr("Wiederholen (Sequenzansicht)"), "cmd+shift+z"),
-        (tr("Tastenkürzel anzeigen"), "cmd+/"),
+        (tr("Command palette"), "cmd+k"),
+        (tr("New sequence"), "cmd+shift+n"),
+        (tr("New project"), "cmd+n"),
+        (tr("Open project"), "cmd+o"),
+        (tr("Import"), "cmd+i"),
+        (tr("Undo (sequence view)"), "cmd+z"),
+        (tr("Redo (sequence view)"), "cmd+shift+z"),
+        (tr("Show keyboard shortcuts"), "cmd+/"),
     ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(tr("Tastenkürzel")).font(.title2.bold())
+            Text(tr("Keyboard shortcuts")).font(.title2.bold())
             ForEach(Self.all, id: \.0) { item in
                 HStack {
                     Text(item.0)
@@ -204,17 +204,17 @@ struct ShortcutsView: View {
             }
             let conflicts = shortcutConflictPairs(keys: Self.all.map { $0.1 })
             if !conflicts.isEmpty {
-                Text(tr("Doppelt belegt: ") + conflicts.map { "\(Self.all[Int($0[0])].0) / \(Self.all[Int($0[1])].0)" }.joined(separator: "; "))
+                Text(tr("Duplicate assignments: ") + conflicts.map { "\(Self.all[Int($0[0])].0) / \(Self.all[Int($0[1])].0)" }.joined(separator: "; "))
                     .foregroundStyle(.orange)
             }
-            Text(tr("In der Sequenzansicht: Klicken setzt den Cursor, Tippen fügt Basen ein, Rücktaste löscht, ⌘V fügt Text ein."))
+            Text(tr("In the sequence view: click sets the cursor, typing inserts bases, backspace deletes, ⌘V pastes text."))
                 .font(.caption).foregroundStyle(.secondary)
-            HStack { Spacer(); Button(tr("Schließen")) { dismiss() }.keyboardShortcut(.defaultAction) }
+            HStack { Spacer(); Button(tr("Close")) { dismiss() }.keyboardShortcut(.defaultAction) }
         }
         .padding(20)
         .frame(width: 420)
     }
 
-    /// Darstellung im macOS-Stil (⇧⌘K).
+    /// macOS-style display (⇧⌘K).
     static func pretty(_ keys: String) -> String { formatShortcut(keys: keys) }
 }

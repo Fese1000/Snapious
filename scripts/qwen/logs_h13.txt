@@ -1,3 +1,0 @@
-=== cut_positions.rs Versuch 1
-[26s {'prompt_tokens': 2061, 'completion_tokens': 1156, 'total_tokens': 3217}]
-ERGEBNIS cut_positions.rs: GRÜN (3 Tests) nach 1 Versuch(en)

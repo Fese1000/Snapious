@@ -1,43 +1,43 @@
-//! InterProScan-Ausgabe im TSV-Format lesen.
+//! Read InterProScan output in TSV format.
 
 use crate::error::{Error, Result};
 
-/// Ein Treffer einer Signatur.
+/// A hit of a signature.
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterProHit {
-    /// Zugangsnummer/Name des Proteins (Spalte 1).
+    /// Accession/name of the protein (column 1).
     pub protein: String,
-    /// Analyse, z. B. `Pfam` (Spalte 4).
+    /// Analysis, e.g. `Pfam` (column 4).
     pub analysis: String,
-    /// Signatur-Zugangsnummer (Spalte 5).
+    /// Signature accession (column 5).
     pub signature: String,
-    /// Beschreibung der Signatur (Spalte 6, `-` → leer).
+    /// Description of the signature (column 6, `-` -> empty).
     pub description: String,
-    /// Beginn und Ende (Spalten 7 und 8), 1-basiert.
+    /// Start and end (columns 7 and 8), 1-based.
     pub start: usize,
     pub end: usize,
-    /// Wert (Spalte 9); `-` → `None`.
+    /// Score (column 9); `-` -> `None`.
     pub score: Option<f64>,
-    /// InterPro-Zugangsnummer (Spalte 12); `-` oder fehlend → `None`.
+    /// InterPro accession (column 12); `-` or missing -> `None`.
     pub interpro: Option<String>,
 }
 
-/// Liest die TSV-Ausgabe (Felder durch Tabulator getrennt). Leere Zeilen und Zeilen mit `#` am Anfang werden übersprungen. Jede Zeile
-/// braucht mindestens 9 Felder. Fehler `Error::InvalidInput`: too few fields oder Beginn/Ende keine ganzen Zahlen (mit Zeilennummer).
+/// Reads the TSV output (tab-separated fields). Empty lines and lines starting with `#` are skipped. Each line
+/// needs at least 9 fields. `Error::InvalidInput`: too few fields or start/end not integers (with line number).
 pub fn parse_interpro_tsv(text: &str) -> Result<Vec<InterProHit>> {
     let mut hits = Vec::new();
 
     for (line_num, line) in text.lines().enumerate() {
         let trimmed = line.trim();
 
-        // Leere Zeilen oder Kommentare überspringen
+        // Skip empty lines or comments
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
 
         let fields: Vec<&str> = trimmed.split('\t').collect();
 
-        // Mindestens 9 Felder erforderlich (Indizes 0 bis 8)
+        // At least 9 fields required (indices 0 to 8)
         if fields.len() < 9 {
             return Err(Error::InvalidInput(format!(
                 "Line {}: Too few fields ({} present, 9 needed)",
@@ -46,23 +46,23 @@ pub fn parse_interpro_tsv(text: &str) -> Result<Vec<InterProHit>> {
             )));
         }
 
-        // Spalte 1: Protein (Index 0)
+        // Column 1: protein (index 0)
         let protein = fields[0].to_string();
 
-        // Spalte 4: Analyse (Index 3)
+        // Column 4: analysis (index 3)
         let analysis = fields[3].to_string();
 
-        // Spalte 5: Signatur (Index 4)
+        // Column 5: signature (index 4)
         let signature = fields[4].to_string();
 
-        // Spalte 6: Beschreibung (Index 5), '-' wird zu leerem String
+        // Column 6: description (index 5), '-' becomes an empty string
         let description = if fields[5] == "-" {
             String::new()
         } else {
             fields[5].to_string()
         };
 
-        // Spalte 7: Start (Index 6), muss eine ganze Zahl sein
+        // Column 7: start (index 6), must be an integer
         let start = fields[6].parse::<usize>().map_err(|_| {
             Error::InvalidInput(format!(
                 "Line {}: Start '{}' is not a valid number",
@@ -71,7 +71,7 @@ pub fn parse_interpro_tsv(text: &str) -> Result<Vec<InterProHit>> {
             ))
         })?;
 
-        // Spalte 8: Ende (Index 7), muss eine ganze Zahl sein
+        // Column 8: end (index 7), must be an integer
         let end = fields[7].parse::<usize>().map_err(|_| {
             Error::InvalidInput(format!(
                 "Line {}: End '{}' is not a valid number",
@@ -80,19 +80,19 @@ pub fn parse_interpro_tsv(text: &str) -> Result<Vec<InterProHit>> {
             ))
         })?;
 
-        // Spalte 9: Score (Index 8), '-' oder invalid number -> None
+        // Column 9: score (index 8), '-' or invalid number -> None
         let score = if fields[8] == "-" {
             None
         } else {
-            // Versuche, den Score als f64 zu parsen.
-            // InterProScan nutzt oft wissenschaftliche Notation (z.B. 1.5E-50).
-            // VonStr für f64 unterstützt das standardmäßig.
+            // Try to parse the score as f64.
+            // InterProScan often uses scientific notation (e.g. 1.5E-50).
+            // FromStr for f64 supports this by default.
             fields[8].parse::<f64>().ok()
         };
 
-        // Spalte 12: InterPro (Index 11)
-        // Falls weniger als 12 Felder vorhanden sind, ist es None.
-        // Wenn vorhanden und '-', dann None. Sonst String.
+        // Column 12: InterPro (index 11)
+        // If fewer than 12 fields are present, it is None.
+        // If present and '-', then None. Otherwise a string.
         let interpro = if fields.len() > 11 {
             let val = fields[11];
             if val == "-" || val.is_empty() {

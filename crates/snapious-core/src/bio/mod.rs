@@ -1,4 +1,4 @@
-//! Bioinformatik-Algorithmen: Alignment, Bäume, Distanzen.
+//! Bioinformatics algorithms: alignment, trees, distances.
 
 pub mod align;
 pub mod align_columns;

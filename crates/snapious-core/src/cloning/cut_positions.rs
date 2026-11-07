@@ -1,12 +1,12 @@
-//! Fragmente aus beliebigen Schnittstellen bilden (Schnitt nach Position oder Annotation).
+//! Form fragments from arbitrary cut sites (cut by position or annotation).
 
 use std::collections::BTreeSet;
 
-/// Fragmente `(Beginn, Ende)` (Ende exklusiv) aus Schnittpositionen. Eine Position `p` ist ein Schnitt zwischen Base `p-1` und
-/// Base `p`. Die Positionen werden sortiert und ohne Doppelte verwendet.
-/// * linear: Positionen `0` und `>= len` werden ignoriert; Fragmente reichen von 0 über die Schnitte bis `len`; ohne Schnitt `[(0, len)]`.
-/// * zirkulär: Positionen `>= len` werden ignoriert, `0` ist erlaubt; Fragmente laufen von Schnitt zu Schnitt, das letzte Fragment
-///   umläuft das Ende (`Ende <= Beginn`); ein einziger Schnitt `p` ergibt `[(p, p)]`; ohne Schnitt `[]`.
+/// Fragments `(start, end)` (end exclusive) from cut positions. A position `p` is a cut between base `p-1` and
+/// base `p`. The positions are used sorted and without duplicates.
+/// * linear: positions `0` and `>= len` are ignored; fragments run from 0 across the cuts to `len`; without a cut `[(0, len)]`.
+/// * circular: positions `>= len` are ignored, `0` is allowed; fragments run from cut to cut, the last fragment
+///   wraps around the end (`end <= start`); a single cut `p` yields `[(p, p)]`; without a cut `[]`.
 pub fn fragments_from_cuts(len: usize, positions: &[usize], circular: bool) -> Vec<(usize, usize)> {
     let mut valid_positions = BTreeSet::new();
 
@@ -51,8 +51,8 @@ pub fn fragments_from_cuts(len: usize, positions: &[usize], circular: bool) -> V
     }
 }
 
-/// Schnittpositionen aus Annotationsbereichen `(Beginn, Ende)`: mit `at_start` kommt jeder Beginn dazu, mit `at_end` jedes Ende.
-/// Ergebnis sortiert und ohne Doppelte.
+/// Cut positions from annotation ranges `(start, end)`: with `at_start` each start is added, with `at_end` each end.
+/// Result sorted and without duplicates.
 pub fn cut_positions_from_spans(
     spans: &[(usize, usize)],
     at_start: bool,

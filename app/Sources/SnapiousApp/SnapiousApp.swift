@@ -2,17 +2,17 @@ import SnapiousFFI
 import AppKit
 import SwiftUI
 
-/// Beim Beenden mit offenen Änderungen an der Sequenz nachfragen.
+/// Ask for confirmation on quit when there are unsaved changes to the sequence.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         MainActor.assumeIsolated {
             guard let m = AppModel.current, m.currentDirty else { return .terminateNow }
             let alert = NSAlert()
-            alert.messageText = tr("Änderungen an „%@“ speichern?", "\(m.selectedName)")
-            alert.informativeText = tr("Verwerfen nimmt alle Änderungen seit dem Öffnen zurück.")
-            alert.addButton(withTitle: tr("Speichern"))
-            alert.addButton(withTitle: tr("Verwerfen"))
-            alert.addButton(withTitle: tr("Abbrechen"))
+            alert.messageText = tr("Save changes to “%@”?", "\(m.selectedName)")
+            alert.informativeText = tr("Discard reverts all changes since it was opened.")
+            alert.addButton(withTitle: tr("Save"))
+            alert.addButton(withTitle: tr("Discard"))
+            alert.addButton(withTitle: tr("Cancel"))
             switch alert.runModal() {
             case .alertFirstButtonReturn: m.commitEdits(); return .terminateNow
             case .alertSecondButtonReturn: m.discardEdits(); return .terminateNow
@@ -28,7 +28,7 @@ struct SnapiousApp: App {
     @StateObject private var model = AppModel()
 
     init() {
-        // Ohne Fenster Ansichten als PNG ausgeben:  Snapious --snapshot <Projekt> <Ordner>
+        // Without a window, output views as PNG:  Snapious --snapshot <project> <folder>
         let args = CommandLine.arguments
         if let i = args.firstIndex(of: "--snapshot"), args.count > i + 2 {
             MainActor.assumeIsolated { Snapshot.run(project: args[i + 1], outDir: args[i + 2]) }
@@ -44,12 +44,12 @@ struct SnapiousApp: App {
         .defaultSize(width: 1280, height: 820)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button(tr("Neues Projekt…")) { model.newProject() }
+                Button(tr("New project…")) { model.newProject() }
                     .keyboardShortcut("n")
-                Button(tr("Projekt öffnen…")) { model.openProject() }
+                Button(tr("Open project…")) { model.openProject() }
                     .keyboardShortcut("o")
                 Divider()
-                Button(tr("Sequenzen importieren…")) { model.chooseFilesToImport() }
+                Button(tr("Import sequences…")) { model.chooseFilesToImport() }
                     .keyboardShortcut("i")
                     .disabled(model.project == nil)
             }

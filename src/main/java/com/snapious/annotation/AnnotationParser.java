@@ -4,15 +4,15 @@ import java.util.*;
 import java.util.stream.*;
 
 /**
- * Annotation Parser für GFF3 und GenBank Format.
- * Parst Annotations-Dateien und extrahiert Feature-Tabellen mit Positionen, Typen und Metadaten.
+ * Annotation parser for GFF3 and GenBank formats.
+ * Parses annotation files and extracts feature tables with positions, types and metadata.
  */
 public class AnnotationParser {
 
-    // ======== FEATURE TYPEN (Ontologie) ==========
+    // ======== FEATURE TYPES (ontology) ==========
 
     public enum FeatureType {
-        // Gen-Elemente
+        // Gene elements
         GENE("gene"), TRANSCRIPT("transcript"), MRNA("mRNA"),
 
         // Exons/Introns
@@ -21,21 +21,21 @@ public class AnnotationParser {
         // CDS/Protein
         CDS("CDS"), START_CODON("start_codon"), STOP_CODON("stop_codon"),
 
-        // Reguläre Elemente
+        // Regulatory elements
         PROMOTER("promoter"), ENHANCER("enhancer"), SILENCER("silencer"),
 
-        // Transkriptions-Faktoren
+        // Transcription factors
         TFBS("transcription_binding_site", "TF_binding_site"), RBS("ribosome_binding_site"),
 
-        // Sonstige
+        // Miscellaneous
         SIGNAL_PEPTIDE("signal_peptide"), TRANSMEMBRANE("transmembrane"),
         DOMAIN("domain"), MOTIF("motif"),
 
-        // Marker/Other
+        // Markers/other
         REPETITIVE_ELEMENT("repetitive_element"), TRANSPOSON("transposon"),
         SNP("snp"), MUTATION("mutation"),
 
-        // Alles, was nicht erkannt wird
+        // Anything that is not recognized
         OTHER("other");
 
         private final List<String> aliases;
@@ -46,7 +46,7 @@ public class AnnotationParser {
 
         public List<String> getAliases() { return aliases; }
 
-        /** Erkenne FeatureType aus String-Label */
+        /** Detect FeatureType from a string label */
         public static FeatureType fromString(String label) {
             if (label == null || label.isEmpty()) return null;
 
@@ -58,23 +58,23 @@ public class AnnotationParser {
                 }
             }
 
-            return FeatureType.OTHER;  // Fallback für unbekannte Typen
+            return FeatureType.OTHER;  // fallback for unknown types
         }
     }
 
     // ======== FEATURE (Hauptdatenstruktur) ==========
 
-    /** Repräsentiert ein Genomisches Feature mit allen Metadaten */
+    /** Represents a genomic feature with all metadata */
     public static class GenomicFeature {
-        private String seqId;           // Chromosom/Scaffold ID (z.B. "chr1", "NC_000001")
-        private String source;          // Quelle (z.B. "RefSeq", "Ensembl")
-        private FeatureType type;       // Typ (z.B. CDS, Exon)
-        private int start;              // Start-Position (1-basiert, inklusiv)
-        private int end;                // End-Position (1-basiert, inklusiv)
-        private double score;           // Score (oder -1 für keine Angabe)
-        private char strand;            // '+' oder '-'
-        private String phase;           // CDS-Phase (0, 1, 2) oder leer
-        private Map<String, List<String>> attributes;  // Freie Attribute (key → values)
+        private String seqId;           // chromosome/scaffold ID (e.g. "chr1", "NC_000001")
+        private String source;          // source (e.g. "RefSeq", "Ensembl")
+        private FeatureType type;       // type (e.g. CDS, exon)
+        private int start;              // start position (1-based, inclusive)
+        private int end;                // end position (1-based, inclusive)
+        private double score;           // score (or -1 if not given)
+        private char strand;            // '+' or '-'
+        private String phase;           // CDS phase (0, 1, 2) or empty
+        private Map<String, List<String>> attributes;  // free attributes (key → values)
 
         public GenomicFeature(String seqId, String source, FeatureType type,
                              int start, int end, double score, char strand,
@@ -99,45 +99,45 @@ public class AnnotationParser {
         public char getStrand() { return strand; }
         public String getPhase() { return phase; }
 
-        /** Länge des Features */
+        /** Length of the feature */
         public int length() { return end - start + 1; }
 
-        /** Mitte des Features */
+        /** Midpoint of the feature */
         public int midpoint() { return (start + end) / 2; }
 
-        /** Prüfe ob sich zwei Features überlappen */
+        /** Check whether two features overlap */
         public boolean overlaps(GenomicFeature other) {
             return this.seqId.equals(other.seqId) &&
                 this.start <= other.end && this.end >= other.start;
         }
 
-        /** Hole Attribut-Wert (erster Wert) */
+        /** Get attribute value (first value) */
         public String getAttribute(String key) {
             List<String> values = attributes.get(key);
             return (values != null && !values.isEmpty()) ? values.get(0) : null;
         }
 
-        /** Hole ID (meist "ID=...") */
+        /** Get ID (usually "ID=...") */
         public String getId() { return getAttribute("ID"); }
 
-        /** Hole Parent-ID (meist "Parent=...") */
+        /** Get parent ID (usually "Parent=...") */
         public String getParentId() { return getAttribute("Parent"); }
 
-        /** Hole Name (meist "Name=...") */
+        /** Get name (usually "Name=...") */
         public String getName() { return getAttribute("Name"); }
 
-        /** Hole Alias (meist "Alias=...") */
+        /** Get alias (usually "Alias=...") */
         public String getAlias() { return getAttribute("Alias"); }
 
-        /** Hole Beschreibung (meist "note=..." oder "description=...") */
+        /** Get description (usually "note=..." or "description=...") */
         public String getDescription() {
             return getAttribute("note") != null ? getAttribute("note") : getAttribute("description");
         }
 
-        /** Alle Attribute */
+        /** All attributes */
         public Map<String, List<String>> getAttributes() { return attributes; }
 
-        /** Formatierter Output */
+        /** Formatted output */
         public String format() {
             StringBuilder sb = new StringBuilder();
 
@@ -167,17 +167,17 @@ public class AnnotationParser {
         public String toString() { return format(); }
     }
 
-    // ======== GEN STRUKTUR ==========
+    // ======== GENE STRUCTURE ==========
 
-    /** Repräsentiert ein Gen mit allen seinen Transkripten und Features */
+    /** Represents a gene with all its transcripts and features */
     public static class Gene {
-        private String id;           // Gen-ID (z.B. "ENSG00000139618")
-        private String name;         // Gen-Name/Symbol (z.B. "BRCA1")
-        private String seqId;        // Chromosom (z.B. "chr17")
-        private char strand;         // Strang (+/-)
-        private int start;           // Gen-Start (über alle Transkripte)
-        private int end;             // Gen-Ende (über alle Transkripte)
-        private List<Transcript> transcripts;  // Transkripte dieses Gens
+        private String id;           // gene ID (e.g. "ENSG00000139618")
+        private String name;         // gene name/symbol (e.g. "BRCA1")
+        private String seqId;        // chromosome (e.g. "chr17")
+        private char strand;         // strand (+/-)
+        private int start;           // gene start (across all transcripts)
+        private int end;             // gene end (across all transcripts)
+        private List<Transcript> transcripts;  // transcripts of this gene
 
         public Gene(String id, String name, String seqId, char strand,
                    int start, int end, List<Transcript> transcripts) {
@@ -197,34 +197,34 @@ public class AnnotationParser {
         public int getStart() { return start; }
         public int getEnd() { return end; }
 
-        /** Gen-Länge */
+        /** Gene length */
         public int length() { return end - start + 1; }
 
-        /** Anzahl der Transkripte */
+        /** Number of transcripts */
         public int transcriptCount() { return transcripts.size(); }
 
-        /** Longest Transcript (LTT) */
+        /** Longest transcript (LTT) */
         public Transcript getLongestTranscript() {
             return transcripts.stream()
                 .max(Comparator.comparingInt(t -> t.cdsLength()))
                 .orElse(null);
         }
 
-        /** Generiere Gen-Zusammenfassung */
+        /** Generate gene summary */
         public String summary() {
             StringBuilder sb = new StringBuilder();
 
             sb.append(String.format("Gen: %s (%s)", name, id));
-            sb.append(String.format("\nChromosom: %s", seqId));
-            sb.append(String.format("Strang: %c", strand));
-            sb.append(String.format("Länge: %d bp", length()));
-                    sb.append(String.format("Transkripte: %d", transcripts.size()));
+            sb.append(String.format("\nChromosome: %s", seqId));
+            sb.append(String.format("Strand: %c", strand));
+            sb.append(String.format("Length: %d bp", length()));
+                    sb.append(String.format("Transcripts: %d", transcripts.size()));
 
-            // CDS-Länge des längsten Transkripts
+            // CDS length of the longest transcript
             Transcript ltt = getLongestTranscript();
 
             if (ltt != null) {
-                sb.append(String.format("\nCDS-Länge (LTT): %d bp", ltt.cdsLength()));
+                sb.append(String.format("\nCDS length (LTT): %d bp", ltt.cdsLength()));
                 sb.append(String.format("Exons (LTT): %d", ltt.exonCount()));
             }
 
@@ -235,13 +235,13 @@ public class AnnotationParser {
         public String toString() { return summary(); }
     }
 
-    /** Repräsentiert ein Transkript mit Exons und CDS */
+    /** Represents a transcript with exons and CDS */
     public static class Transcript {
-        private String id;           // Transkript-ID (z.B. "ENST00000261843")
-        private String geneId;       // Parent-Gen-ID
-        private String name;         // Transkript-Symbol
-        private List<GenomicFeature> exons;       // Exon-Features
-        private List<GenomicFeature> cdsFeatures;  // CDS-Features
+        private String id;           // transcript ID (e.g. "ENST00000261843")
+        private String geneId;       // parent gene ID
+        private String name;         // transcript symbol
+        private List<GenomicFeature> exons;       // exon features
+        private List<GenomicFeature> cdsFeatures;  // CDS features
 
         public Transcript(String id, String geneId, String name,
                          List<GenomicFeature> exons, List<GenomicFeature> cdsFeatures) {
@@ -255,33 +255,33 @@ public class AnnotationParser {
         public String getId() { return id; }
         public String getGeneId() { return geneId; }
 
-        /**总数 von Exons */
+        /**Total number of exons */
         public int exonCount() { return exons.size(); }
 
-        /** CDS-Länge (summiert über alle Exons) */
+        /** CDS length (summed over all exons) */
         public int cdsLength() {
             return cdsFeatures.stream().mapToInt(GenomicFeature::length).sum();
         }
 
-        /** Transkript-Länge (über alle Exons, ohne Introns) */
+        /** Transcript length (over all exons, without introns) */
         public int transcriptLength() {
             return exons.stream().mapToInt(GenomicFeature::length).sum();
         }
 
-        /** Start-Position des längsten Exons */
+        /** Start position of the longest exon */
         public int transcriptionStart() {
             return exons.stream().mapToInt(GenomicFeature::getStart).min().orElse(0);
         }
 
-        /** End-Position des längsten Exons */
+        /** End position of the longest exon */
         public int transcriptionEnd() {
             return exons.stream().mapToInt(GenomicFeature::getEnd).max().orElse(0);
         }
 
-        /** Generiere Transkript-Zusammenfassung */
+        /** Generate transcript summary */
         public String summary() {
-            return String.format("Transcript: %s (Gen: %s)\n" +
-                "  Exons: %d, CDS-Länge: %d bp, Transcript-Länge: %d bp",
+            return String.format("Transcript: %s (Gene: %s)\n" +
+                "  Exons: %d, CDS length: %d bp, Transcript length: %d bp",
                 id, geneId, exonCount(), cdsLength(), transcriptLength());
         }
 
@@ -292,8 +292,8 @@ public class AnnotationParser {
     // ======== GFF3 PARSER ==========
 
     /**
-     * Parst GFF3 Format (Generic Feature Format Version 3).
-     * Standard: 9 Spalten, semikolon-getrennte Attribute.
+     * Parses the GFF3 format (Generic Feature Format Version 3).
+     * Standard: 9 columns, semicolon-separated attributes.
      */
     public static List<GenomicFeature> parseGFF3(String gff3Content) {
         List<GenomicFeature> features = new ArrayList<>();
@@ -307,12 +307,12 @@ public class AnnotationParser {
         for (int lineNum = 0; lineNum < lines.length; lineNum++) {
             String line = lines[lineNum].trim();
 
-            // Überspringe leere Zeilen und Header
+            // Skip empty lines and headers
             if (line.isEmpty() || line.startsWith("##") ) {
                 continue;
             }
 
-            // Überspringe Feature-Zeilen ohne korrekte Struktur
+            // Skip feature lines without a correct structure
             if (!line.startsWith("#")) {
                 try {
                     GenomicFeature feature = parseGFF3Line(line, lineNum + 1);
@@ -322,7 +322,7 @@ public class AnnotationParser {
                     }
 
                 } catch (Exception e) {
-                    // Ignoriere fehlerhafte Zeilen, logge aber Warnung
+                    // Ignore malformed lines, but log a warning
                 }
             }
         }
@@ -330,13 +330,13 @@ public class AnnotationParser {
         return features;
     }
 
-    /** Parse einzelne GFF3-Zeile (9 Spalten) */
+    /** Parse a single GFF3 line (9 columns) */
     private static GenomicFeature parseGFF3Line(String line, int lineNum) {
         String[] columns = line.split("\t");
 
         if (columns.length < 9) {
-            throw new IllegalArgumentException("Ungültige GFF3-Zeile (Zeile " + lineNum
-                + ": Mindestens 9 Spalten erforderlich, gefunden: " + columns.length);
+            throw new IllegalArgumentException("Invalid GFF3 line (line " + lineNum
+                + ": At least 9 columns required, found: " + columns.length);
         }
 
         String seqId = columns[0].trim();
@@ -353,30 +353,30 @@ public class AnnotationParser {
             String scoreStr = columns[5].trim();
 
             if (".".equals(scoreStr)) {
-                score = -1;  // Keine Angabe
+                score = -1;  // not given
             } else {
                 score = Double.parseDouble(scoreStr);
             }
 
         } catch (NumberFormatException e) {
-            score = -1;  // Fallback bei ungültigem Score
+            score = -1;  // fallback for invalid score
         }
 
         char strand = columns[6].trim().charAt(0);
 
         if (strand != '+' && strand != '-') {
-            strand = '.';  // Unbekannter Strang
+            strand = '.';  // unknown strand
         }
 
-        String phase = columns[7].trim();  // "0", "1", "2" oder "."
+        String phase = columns[7].trim();  // "0", "1", "2" or "."
 
-        // Parse Attribute (8. Spalte, semikolon-getrennte key=value Paare)
+        // Parse attributes (column 8, semicolon-separated key=value pairs)
         Map<String, List<String>> attributes = parseGFF3Attributes(columns[8]);
 
         return new GenomicFeature(seqId, source, type, start, end, score, strand, phase, attributes);
     }
 
-    /** Parse GFF3 Attribute-Spalte (semikolon-getrennte key=value Paare) */
+    /** Parse the GFF3 attribute column (semicolon-separated key=value pairs) */
     private static Map<String, List<String>> parseGFF3Attributes(String attrString) {
         Map<String, List<String>> attributes = new HashMap<>();
 
@@ -407,8 +407,8 @@ public class AnnotationParser {
     // ======== GENBANK PARSER ==========
 
     /**
-     * Parst GenBank Format (vereinfacht).
-     * Extrahiert Features von der FEATURES-Table.
+     * Parses the GenBank format (simplified).
+     * Extracts features from the FEATURES table.
      */
     public static List<GenomicFeature> parseGenBank(String genbankContent) {
         List<GenomicFeature> features = new ArrayList<>();
@@ -421,13 +421,13 @@ public class AnnotationParser {
         boolean inFeaturesSection = false;
 
         for (String line : lines) {
-            // Erkennen der FEATURES-Section
+            // Detect the FEATURES section
             if (line.trim().startsWith("features")) {
                 inFeaturesSection = true;
                 continue;
             }
 
-            // Ende der Features-Section (nächste Top-Level-Sektion)
+            // End of the features section (next top-level section)
             if (inFeaturesSection && line.length() <= 60 && Character.isLetterOrDigit(line.charAt(0))) {
                 String topKey = line.substring(0, Math.min(20, line.length())).trim();
 
@@ -438,7 +438,7 @@ public class AnnotationParser {
             }
 
             if (inFeaturesSection) {
-                // Feature-Zeilen beginnen mit 6 Leerzeichen, dann Position und Typ
+                // Feature lines start with 6 spaces, followed by position and type
                 if (line.trim().startsWith("///") || line.trim().isEmpty()) {
                     continue;
                 }
@@ -451,7 +451,7 @@ public class AnnotationParser {
                     }
 
                 } catch (Exception e) {
-                    // Ignoriere fehlerhafte Features
+                    // Ignore malformed features
                 }
             }
         }
@@ -459,24 +459,24 @@ public class AnnotationParser {
         return features;
     }
 
-    /** Parse einzelne GenBank Feature-Zeile */
+    /** Parse a single GenBank feature line */
     private static GenomicFeature parseGenBankFeature(String line) {
         String trimmed = line.trim();
 
-        // Überspringe leere Zeilen und "locus_tag" / "product" etc. (Beschreibungszeilen)
+        // Skip empty lines and "locus_tag" / "product" etc. (description lines)
         if (trimmed.startsWith("locus_tag") || trimmed.startsWith("product")
             || trimmed.startsWith("note")) {
-            return null;  // Keine neue Feature-Zeile, sondern beschreibende Info
+            return null;  // not a new feature line, but descriptive info
         }
 
-        // GenBank Position-Format: z.B. "100..200", "complement(100..200)", "<100"
+        // GenBank position format: e.g. "100..200", "complement(100..200)", "<100"
         int featureStartPos = trimmed.indexOf('<') >= 0 ? trimmed.indexOf('<') :
                              trimmed.indexOf('^') >= 0 ? trimmed.indexOf('^') : 0;
 
         String posString = "";
         char strand = '+';
 
-        // Prüfe auf complement() für Strang
+        // Check for complement() to determine the strand
         if (trimmed.startsWith("complement(")) {
             strand = '-';
             posString = trimmed.substring(13, trimmed.indexOf(')'));
@@ -485,7 +485,7 @@ public class AnnotationParser {
             posString = trimmed.substring(featureStartPos, trimmed.indexOf(' ', featureStartPos));
         }
 
-        // Parse Position (Format: "100..200" oder "<100" oder ">300")
+        // Parse position (format: "100..200" or "<100" or ">300")
         int start, end;
 
         if (posString.contains("..")) {
@@ -495,21 +495,21 @@ public class AnnotationParser {
             end = parseGenBankPosition(parts[1]);
 
         } else {
-            // Einzelne Position (z.B. site, binding)
+            // Single position (e.g. site, binding)
             start = parseGenBankPosition(posString);
-            end = start;  // Einzelne Position
+            end = start;  // single position
         }
 
-        // Feature-Typ (z.B. "CDS", "exon", "gene")
+        // Feature type (e.g. "CDS", "exon", "gene")
         String typeStr = trimmed.substring(0, featureStartPos).trim();
 
         if (typeStr.isEmpty()) {
-            return null;  // Keine gültige Feature-Zeile
+            return null;  // not a valid feature line
         }
 
         FeatureType type = FeatureType.fromString(typeStr);
 
-        // Extrahiere Attribute aus Klammern (z.B. "gene=BRCA1", "product=helicase")
+        // Extract attributes from parentheses (e.g. "gene=BRCA1", "product=helicase")
         Map<String, List<String>> attributes = new HashMap<>();
 
         int parenStart = trimmed.indexOf('(');
@@ -531,21 +531,21 @@ public class AnnotationParser {
             }
         }
 
-        // Standard-Werte für GenBank
+        // Default values for GenBank
         return new GenomicFeature(
-            "genbank",  // seqId wird aus Header extrahiert (nicht in Features)
+            "genbank",  // seqId is extracted from the header (not in features)
             "GenBank",  // source
-            type,       // Typ
-            start,      // Start-Position (1-basiert)
-            end,        // End-Position (1-basiert)
-            -1,         // Score (GenBank hat keinen Score in Features)
-            strand,     // Strang
-            "",         // Phase (GenBank hat keine CDS-Phase in Features)
-            attributes  // Attribute
+            type,       // type
+            start,      // start position (1-based)
+            end,        // end position (1-based)
+            -1,         // score (GenBank has no score in features)
+            strand,     // strand
+            "",         // phase (GenBank has no CDS phase in features)
+            attributes  // attributes
         );
     }
 
-    /** Parse GenBank-Position mit < und > (approximative Positionen) */
+    /** Parse a GenBank position with < and > (approximate positions) */
     private static int parseGenBankPosition(String posString) {
         String clean = posString.replaceAll("[<>]", "");
 
@@ -553,52 +553,52 @@ public class AnnotationParser {
             return Integer.parseInt(clean);
 
         } catch (NumberFormatException e) {
-            return 0;  // Fallback bei ungültiger Position
+            return 0;  // fallback for invalid position
         }
     }
 
-    // ======== ANNOTATION ZUSAMMENFASSUNG ==========
+    // ======== ANNOTATION SUMMARY ==========
 
-    /** Generiere Annotations-Zusammenfassung aus Features */
+    /** Generate an annotation summary from features */
     public static String generateAnnotationSummary(List<GenomicFeature> features) {
-        if (features.isEmpty()) return "Keine Annotationen vorhanden.";
+        if (features.isEmpty()) return "No annotations present.";
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("=== Annotations-Zusammenfassung ===\n\n");
+        sb.append("=== Annotation Summary ===\n\n");
 
-        // Feature-Typen zählen
+        // Count feature types
         Map<FeatureType, Integer> typeCounts = new LinkedHashMap<>();
 
         for (GenomicFeature feature : features) {
             typeCounts.merge(feature.getType(), 1, Integer::sum);
         }
 
-        // Sortiere nach Häufigkeit
+        // Sort by frequency
         List<Map.Entry<FeatureType, Integer>> sortedTypes = typeCounts.entrySet().stream()
             .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
             .toList();
 
-        sb.append("Feature-Typen:\n");
+        sb.append("Feature types:\n");
 
         for (Map.Entry<FeatureType, Integer> entry : sortedTypes) {
             sb.append(String.format("  %-25s: %d\n", entry.getKey().name(), entry.getValue()));
         }
 
-        // Chromosomen/Sequenzen
+        // Chromosomes/sequences
         Set<String> seqIds = features.stream().map(GenomicFeature::getSeqId).collect(Collectors.toSet());
 
-        sb.append(String.format("\nSequenzen/Chromosomen: %s", seqIds));
+        sb.append(String.format("\nSequences/chromosomes: %s", seqIds));
 
-        // Strang-Statistik
+        // Strand statistics
         long forwardStrand = features.stream().filter(f -> f.getStrand() == '+').count();
         long reverseStrand = features.stream().filter(f -> f.getStrand() == '-').count();
 
-        sb.append(String.format("\nVorwärts-Strang: %d\n", forwardStrand));
-        sb.append(String.format("Rückwärts-Strang: %d\n", reverseStrand));
+        sb.append(String.format("\nForward strand: %d\n", forwardStrand));
+        sb.append(String.format("Reverse strand: %d\n", reverseStrand));
 
-        // Größe der Features
-        sb.append("\nFeature-Größen (bp):\n");
+        // Feature sizes
+        sb.append("\nFeature sizes (bp):\n");
 
         List<GenomicFeature> sizedFeatures = features.stream()
             .filter(f -> f.length() > 0)
@@ -609,14 +609,14 @@ public class AnnotationParser {
 
             Arrays.sort(sizes);
 
-            sb.append(String.format("  Mindestgröße: %d bp\n", sizes[0]));
-            sb.append(String.format("  Maximalgröße: %d bp\n", sizes[sizes.length - 1]));
+            sb.append(String.format("  Minimum size: %d bp\n", sizes[0]));
+            sb.append(String.format("  Maximum size: %d bp\n", sizes[sizes.length - 1]));
 
             double avgSize = Arrays.stream(sizes).average().orElse(0);
-                    sb.append(String.format("  Durchschnitt: %.0f bp\n", avgSize));
+                    sb.append(String.format("  Average: %.0f bp\n", avgSize));
         }
 
-        // Gene extrahieren (Features vom Typ GEN)
+        // Extract genes (features of type GENE)
         List<GenomicFeature> genes = features.stream()
             .filter(f -> f.getType() == FeatureType.GENE)
             .collect(Collectors.toList());
@@ -627,19 +627,19 @@ public class AnnotationParser {
             for (GenomicFeature gene : genes.subList(0, Math.min(5, genes.size()))) {
                 String geneName = gene.getName() != null ? gene.getName() : gene.getId();
 
-                sb.append(String.format("  %s (%s): %d bp auf %c\n",
+                sb.append(String.format("  %s (%s): %d bp on %c\n",
                     geneName, gene.getId(), gene.length(), gene.getStrand()));
             }
 
             if (genes.size() > 5) {
-                sb.append(String.format("  ... und %d weitere Gene\n", genes.size() - 5));
+                sb.append(String.format("  ... and %d more genes\n", genes.size() - 5));
             }
         }
 
         return sb.toString();
     }
 
-    /** Extrahiere Gene mit allen ihren Transkripten */
+    /** Extract genes with all their transcripts */
     public static List<Gene> extractGenes(List<GenomicFeature> features) {
         Map<String, List<GenomicFeature>> geneGroups = features.stream()
             .filter(f -> f.getType() == FeatureType.GENE)
@@ -650,20 +650,20 @@ public class AnnotationParser {
         for (Map.Entry<String, List<GenomicFeature>> entry : geneGroups.entrySet()) {
             String geneId = entry.getKey();
 
-            // Finde Gen-Feature
+            // Find the gene feature
             GenomicFeature geneFeature = entry.getValue().get(0);
 
-            // Finde alle Transkripte (Parent = Gen-ID)
+            // Find all transcripts (Parent = gene ID)
             List<GenomicFeature> transcriptFeatures = features.stream()
                 .filter(f -> "transcript".equalsIgnoreCase(f.getType().name())
                     && geneId.equals(f.getParentId()))
                 .collect(Collectors.toList());
 
-            // Baue Gene-Objekt mit allen Transkripten
+            // Build the gene object with all transcripts
             List<Transcript> transcripts = new ArrayList<>();
 
             for (GenomicFeature tf : transcriptFeatures) {
-                // Finde Exons und CDS für dieses Transkript
+                // Find exons and CDS for this transcript
                 List<GenomicFeature> exons = features.stream()
                     .filter(f -> "exon".equalsIgnoreCase(f.getType().name())
                         && tf.getId().equals(f.getParentId()))
@@ -680,7 +680,7 @@ public class AnnotationParser {
                     tf.getId(), geneId, tf.getName(), exons, cds));
             }
 
-            // Berechne Gen-Region (über alle Transkripte)
+            // Compute the gene region (across all transcripts)
             int geneStart = transcriptFeatures.stream()
                 .mapToInt(GenomicFeature::getStart).min().orElse(geneFeature.getStart());
 
@@ -695,14 +695,14 @@ public class AnnotationParser {
         return genes;
     }
 
-    /** Generiere vollständigen Annotations-Bericht */
+    /** Generate the full annotation report */
     public static String generateFullAnnotationReport(List<GenomicFeature> features) {
         StringBuilder sb = new StringBuilder();
 
-        // Zusammenfassung
+        // Summary
         sb.append(generateAnnotationSummary(features));
 
-        // Gene-Liste
+        // Gene list
         List<Gene> genes = extractGenes(features);
 
         if (!genes.isEmpty()) {
@@ -711,15 +711,15 @@ public class AnnotationParser {
             for (Gene gene : genes) {
                 sb.append(gene.toString()).append("\n");
 
-                // Transkripte auflisten
+                // List transcripts
                 if (!gene.transcripts.isEmpty()) {
-                    sb.append("  Transkripte:\n");
+                    sb.append("  Transcripts:\n");
 
                     for (Transcript transcript : gene.transcripts) {
                         sb.append("    ").append(transcript.toString()).append("\n");
                     }
 
-                    // LTT Details
+                    // LTT details
                     Transcript ltt = gene.getLongestTranscript();
 
                     if (ltt != null) {
@@ -727,18 +727,18 @@ public class AnnotationParser {
                     }
                 }
 
-                sb.append("\n");  // Leerzeile nach jedem Gen
+                sb.append("\n");  // blank line after each gene
             }
         }
 
         return sb.toString();
     }
 
-    /** Exportiere Features als GFF3-String */
+    /** Export features as a GFF3 string */
     public static String exportToGFF3(List<GenomicFeature> features) {
         StringBuilder sb = new StringBuilder();
 
-        // Header (zwingend erforderlich für GFF3)
+        // Header (mandatory for GFF3)
         sb.append("##gff-version 3\n");
 
         for (GenomicFeature feature : features) {
@@ -748,7 +748,7 @@ public class AnnotationParser {
         return sb.toString();
     }
 
-    /** Exportiere Features als GenBank-Features (vereinfacht) */
+    /** Export features as GenBank features (simplified) */
     public static String exportToGenBank(List<GenomicFeature> features) {
         StringBuilder sb = new StringBuilder();
 
@@ -769,10 +769,10 @@ public class AnnotationParser {
                 position = String.format("%d..%d", feature.start, feature.end);
             }
 
-            // Feature-Typ (linksbündig)
+            // Feature type (left-aligned)
             sb.append(String.format("    %-30s %s\n", feature.getType().name(), position));
 
-            // Qualifier (in Klammern)
+            // Qualifiers (in parentheses)
                     if (!feature.getAttributes().isEmpty()) {
                 sb.append("            /");
 
@@ -791,21 +791,21 @@ public class AnnotationParser {
         return sb.toString();
     }
 
-    /** Finde alle Features eines bestimmten Typs */
+    /** Find all features of a given type */
     public static List<GenomicFeature> filterByType(List<GenomicFeature> features, FeatureType type) {
         return features.stream()
             .filter(f -> f.getType() == type)
             .collect(Collectors.toList());
     }
 
-    /** Finde alle Features auf einem bestimmten Chromosom */
+    /** Find all features on a given chromosome */
     public static List<GenomicFeature> filterByChromosome(List<GenomicFeature> features, String seqId) {
         return features.stream()
             .filter(f -> f.getSeqId().equals(seqId))
             .collect(Collectors.toList());
     }
 
-    /** Finde überlappende Features (konfliktreiche Annotationen) */
+    /** Find overlapping features (conflicting annotations) */
     public static List<List<GenomicFeature>> findOverlappingFeatures(List<GenomicFeature> features) {
         List<List<GenomicFeature>> overlappingGroups = new ArrayList<>();
 
@@ -817,13 +817,13 @@ public class AnnotationParser {
                     group.add(features.get(i));
                     group.add(features.get(j));
 
-                    // Finde alle weiteren überlappenden Features (transitiv)
+                    // Find all further overlapping features (transitive)
                     for (int k = 0; k < features.size(); k++) {
                         if (k != i && k != j) {
                             for (GenomicFeature existing : group) {
                                 if (existing.overlaps(features.get(k))) {
                                     group.add(features.get(k));
-                                    break;  // Kein weiterer Scan für dieses k
+                                    break;  // no further scan for this k
                                 }
                             }
                         }

@@ -12,3 +12,8 @@ scripts/qwen/STOP
 .claude/
 .vscode/
 .idea/
+scripts/qwen/logs_*.txt
+scripts/qwen/audit/out/
+scripts/qwen/audit/run.log
+scripts/qwen/audit/kern_luecken.txt
+scripts/qwen/queue_done.txt

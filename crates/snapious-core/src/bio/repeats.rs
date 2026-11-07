@@ -1,25 +1,25 @@
-//! Wiederholungen in einer Sequenz: Tandem-Wiederholungen und invertierte Wiederholungen (Haarnadeln).
+//! Repeats in a sequence: tandem repeats and inverted repeats (hairpins).
 
-/// Eine Tandem-Wiederholung.
+/// A tandem repeat.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TandemRepeat {
-    /// Beginn (0-basiert, inklusive).
+    /// Start (0-based, inclusive).
     pub start: usize,
-    /// Ende (exklusive).
+    /// End (exclusive).
     pub end: usize,
-    /// Wiederholte Einheit in Uppercase.
+    /// Repeated unit in uppercase.
     pub unit: String,
-    /// Anzahl der Kopien (`(end - start) / unit.len()`).
+    /// Number of copies (`(end - start) / unit.len()`).
     pub copies: usize,
 }
 
-/// Sucht Tandem-Wiederholungen in `seq` (Uppercase; nur genaue Wiederholungen).
-/// Ablauf: `i = 0`; solange `i < Länge`: für Einheitenlängen `k = min_unit..=max_unit` (aufsteigend; abbrechen, wenn `i + k > Länge`):
-/// Einheit `u = seq[i..i+k]`; überspringe `k`, wenn `u` selbst aus einer kürzeren Einheit besteht
-/// (z. B. „ACAC“ besteht aus „AC“; es zählt nur die kürzeste Einheit); zähle die aufeinanderfolgenden Kopien `c` von `u` ab `i`;
-/// ist `c >= min_copies`, melde `(i, i + k*c, u, c)`, setze `i = i + k*c` und gehe zum nächsten `i` (die übrigen `k` entfallen).
-/// Wurde kein `k` gemeldet, ist `i += 1`. `min_unit` muss mindestens 1 sein (kleinere Werte wie 1 behandeln); ist `min_unit == 0`,
-/// `max_unit < min_unit` oder `min_copies < 2`, ist das Ergebnis leer.
+/// Searches tandem repeats in `seq` (uppercase; exact repeats only).
+/// Procedure: `i = 0`; while `i < length`: for unit lengths `k = min_unit..=max_unit` (ascending; stop if `i + k > length`):
+/// unit `u = seq[i..i+k]`; skip `k` if `u` itself consists of a shorter unit
+/// (e.g. "ACAC" consists of "AC"; only the shortest unit counts); count the consecutive copies `c` of `u` from `i`;
+/// if `c >= min_copies`, report `(i, i + k*c, u, c)`, set `i = i + k*c` and move on to the next `i` (the remaining `k` are dropped).
+/// If no `k` was reported, `i += 1`. `min_unit` must be at least 1 (treat smaller values like 1); if `min_unit == 0`,
+/// `max_unit < min_unit` or `min_copies < 2`, the result is empty.
 pub fn find_tandem_repeats(
     seq: &str,
     min_unit: usize,
@@ -33,7 +33,7 @@ pub fn find_tandem_repeats(
     let bytes = seq.as_bytes();
     let len = bytes.len();
     let mut result = Vec::new();
-    // Einheiten, die länger als die Sequenz sind, können nie zweimal vorkommen
+    // Units longer than the sequence can never occur twice
     let max_unit = max_unit.min(len);
 
     let mut i = 0;
@@ -46,7 +46,7 @@ pub fn find_tandem_repeats(
 
             let u_bytes = &bytes[i..i + k];
 
-            // Überspringe, wenn die Einheit selbst aus einer kürzeren Einheit besteht
+            // Skip if the unit itself consists of a shorter unit
             let mut is_shorter = false;
             for p in 1..k {
                 if k % p == 0 {
@@ -61,7 +61,7 @@ pub fn find_tandem_repeats(
                 continue;
             }
 
-            // Zähle aufeinanderfolgende Kopien
+            // Count consecutive copies
             let mut c: usize = 0;
             while i + c * k + k <= len {
                 if &bytes[i + c * k..i + (c + 1) * k] == u_bytes {
@@ -79,7 +79,7 @@ pub fn find_tandem_repeats(
                     copies: c,
                 });
                 i += k * c;
-                found = true; // Übrige k für diesen i entfallen
+                found = true; // Remaining k for this i are dropped
                 break;
             }
         }
@@ -91,30 +91,30 @@ pub fn find_tandem_repeats(
     result
 }
 
-/// Eine invertierte Wiederholung: linker Arm, Spacer, rechter Arm (Reverskomplement des linken Arms).
+/// An inverted repeat: left arm, spacer, right arm (reverse complement of the left arm).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InvertedRepeat {
-    /// Beginn des linken Arms.
+    /// Start of the left arm.
     pub start: usize,
-    /// Länge eines Arms.
+    /// Length of one arm.
     pub arm: usize,
-    /// Länge des Spacers zwischen den Armen.
+    /// Length of the spacer between the arms.
     pub spacer: usize,
 }
 
 impl InvertedRepeat {
-    /// Ende (exklusive) des rechten Arms: `start + 2 * arm + spacer`.
+    /// End (exclusive) of the right arm: `start + 2 * arm + spacer`.
     pub fn end(&self) -> usize {
         self.start + 2 * self.arm + self.spacer
     }
 }
 
-/// Sucht invertierte Wiederholungen in `seq` (Uppercase, nur A, C, G, T; andere Zeichen paaren nie).
-/// Für jede Position `p` in `0..=Länge` (Ende des linken Arms, exklusiv) und jede Spacerlänge `s` in `0..=max_spacer`:
-/// zähle `k`, solange `p - k - 1 >= 0`, `p + s + k < Länge` und `seq[p-k-1]` das Komplement von `seq[p+s+k]` ist (A–T, C–G).
-/// Ist `k >= min_arm`, melde `InvertedRepeat { start: p - k, arm: k, spacer: s }`.
-/// Sortierung nach `start`, dann nach `spacer`. Ist `min_arm == 0`, ist das Ergebnis leer.
-/// Tipp: `iupac_reverse_complement` steht zur Verfügung, wird aber nicht benötigt.
+/// Searches inverted repeats in `seq` (uppercase, only A, C, G, T; other characters never pair).
+/// For each position `p` in `0..=length` (end of the left arm, exclusive) and each spacer length `s` in `0..=max_spacer`:
+/// count `k` while `p - k - 1 >= 0`, `p + s + k < length` and `seq[p-k-1]` is the complement of `seq[p+s+k]` (A–T, C–G).
+/// If `k >= min_arm`, report `InvertedRepeat { start: p - k, arm: k, spacer: s }`.
+/// Sorting by `start`, then by `spacer`. If `min_arm == 0`, the result is empty.
+/// Hint: `iupac_reverse_complement` is available but not needed.
 pub fn find_inverted_repeats(seq: &str, min_arm: usize, max_spacer: usize) -> Vec<InvertedRepeat> {
     if min_arm == 0 {
         return Vec::new();
@@ -123,7 +123,7 @@ pub fn find_inverted_repeats(seq: &str, min_arm: usize, max_spacer: usize) -> Ve
     let bytes = seq.as_bytes();
     let len = bytes.len();
     let mut result = Vec::new();
-    // ein Spacer ab der Sequenzlänge lässt keinen rechten Arm mehr zu
+    // a spacer starting at the sequence length leaves no room for a right arm
     let max_spacer = max_spacer.min(len);
 
     for p in 0..=len {

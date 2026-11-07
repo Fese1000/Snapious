@@ -1,4 +1,4 @@
-//! Codon-Optimierung: Protein oder codierende DNA mit einer Codon-Häufigkeitstabelle in DNA umsetzen.
+//! Codon optimization: convert a protein or coding DNA to DNA using a codon frequency table.
 
 use std::collections::BTreeMap;
 
@@ -7,16 +7,16 @@ use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::error::{Error, Result};
 use crate::model::sequence::amino_acid_for;
 
-/// Relative Häufigkeit jedes Codons innerhalb seiner Aminosäure.
+/// Relative frequency of each codon within its amino acid.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CodonTable {
     freq: BTreeMap<String, f64>,
 }
 
 impl CodonTable {
-    /// Aus Paaren `(Codon, Häufigkeit)`. Fehler `Error::InvalidInput`, wenn ein Codon nicht aus genau drei Zeichen
-    /// A, C, G, T (Uppercase) besteht oder eine Häufigkeit negativ oder keine Zahl ist.
-    /// Nicht genannte Codons haben die Häufigkeit 0.
+    /// From pairs `(codon, frequency)`. Error `Error::InvalidInput` if a codon does not consist of exactly three characters
+    /// A, C, G, T (uppercase) or a frequency is negative or not a number.
+    /// Codons not listed have frequency 0.
     pub fn from_frequencies(pairs: &[(&str, f64)]) -> Result<CodonTable> {
         let mut freq = BTreeMap::new();
         for (codon, f) in pairs {
@@ -35,8 +35,8 @@ impl CodonTable {
         Ok(CodonTable { freq })
     }
 
-    /// Aus Zählungen: `anzahl / Summe der Anzahlen der Familie` (Summe 0 → 0.0). Zählungen von Codons,
-    /// die keine gültigen Codons sind, werden ignoriert.
+    /// From counts: `count / sum of the counts of the family` (sum 0 → 0.0). Counts of codons
+    /// that are not valid codons are ignored.
     pub fn from_counts(counts: &CodonCounts) -> CodonTable {
         let mut freq = BTreeMap::new();
         for codons in codon_families().values() {
@@ -59,7 +59,7 @@ impl CodonTable {
         CodonTable { freq }
     }
 
-    /// Häufigkeit des Codons (Uppercase, `U` wie `T`); unbekannt → 0.0.
+    /// Frequency of the codon (uppercase, `U` as `T`); unknown → 0.0.
     pub fn frequency(&self, codon: &str) -> f64 {
         self.freq
             .get(codon.to_ascii_uppercase().replace('U', "T").as_str())
@@ -67,8 +67,8 @@ impl CodonTable {
             .unwrap_or(0.0)
     }
 
-    /// Alle Codons der Aminosäure (Einbuchstabencode, Stopp = `*`, Uppercase), nach Häufigkeit absteigend,
-    /// bei Gleichstand alphabetisch. Unbekannte Aminosäure → leere Liste. Verwende `codon_families`.
+    /// All codons of the amino acid (one-letter code, stop = `*`, uppercase), by descending frequency,
+    /// alphabetical on ties. Unknown amino acid → empty list. Uses `codon_families`.
     pub fn codons_for(&self, amino_acid: char) -> Vec<String> {
         let mut codons = codon_families()
             .get(&amino_acid)
@@ -83,31 +83,31 @@ impl CodonTable {
     }
 }
 
-/// Wie das Codon gewählt wird.
+/// How the codon is chosen.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Strategy {
-    /// Immer das häufigste Codon (`codons_for(aa)[0]`).
+    /// Always the most frequent codon (`codons_for(aa)[0]`).
     MostFrequent,
-    /// Zufällig nach der Häufigkeitsverteilung (deterministisch aus `seed`).
+    /// Random according to the frequency distribution (deterministic from `seed`).
     Harmonized,
 }
 
-/// Einstellungen.
+/// Settings.
 #[derive(Clone, Debug, PartialEq)]
 pub struct OptimizationOptions {
     pub strategy: Strategy,
-    /// Verbotene Erkennungsstellen (nur A, C, G, T; Uppercase); auch ihr Reverse-Komplement ist verboten.
+    /// Forbidden recognition sites (only A, C, G, T; uppercase); their reverse complement is forbidden too.
     pub avoid_sites: Vec<String>,
-    /// Längste erlaubte Folge gleicher Basen.
+    /// Longest allowed run of identical bases.
     pub max_homopolymer: usize,
-    /// Erlaubter GC-Anteil (0 bis 1) der ganzen Sequenz.
+    /// Allowed GC fraction (0 to 1) of the whole sequence.
     pub min_gc: f64,
     pub max_gc: f64,
     pub seed: u64,
 }
 
 impl OptimizationOptions {
-    /// `MostFrequent`, keine verbotenen Stellen, `max_homopolymer 6`, `min_gc 0.35`, `max_gc 0.65`, `seed 1`.
+    /// `MostFrequent`, no forbidden sites, `max_homopolymer 6`, `min_gc 0.35`, `max_gc 0.65`, `seed 1`.
     pub fn standard() -> OptimizationOptions {
         OptimizationOptions {
             strategy: Strategy::MostFrequent,
@@ -120,10 +120,10 @@ impl OptimizationOptions {
     }
 }
 
-/// Der Zufallsgenerator (SplitMix64), damit Ergebnisse reproduzierbar sind:
+/// The random number generator (SplitMix64), so that results are reproducible:
 /// `state = state.wrapping_add(0x9E3779B97F4A7C15); z = state; z = (z ^ (z >> 30)).wrapping_mul(0xBF58476D1CE4E5B9);
-/// z = (z ^ (z >> 27)).wrapping_mul(0x94D049BB133111EB); z ^ (z >> 31)`. Eine Zufallszahl in `[0, 1)` ist
-/// `(z >> 11) as f64 / 9007199254740992.0`. Der Anfangszustand ist `seed`.
+/// z = (z ^ (z >> 27)).wrapping_mul(0x94D049BB133111EB); z ^ (z >> 31)`. A random number in `[0, 1)` is
+/// `(z >> 11) as f64 / 9007199254740992.0`. The initial state is `seed`.
 #[derive(Clone, Debug)]
 pub struct SplitMix64 {
     state: u64,
@@ -150,29 +150,29 @@ impl SplitMix64 {
     }
 }
 
-/// Setzt eine Proteinsequenz in DNA um (Stopp `*` ist erlaubt, Kleinbuchstaben auch).
+/// Converts a protein sequence to DNA (stop `*` is allowed, lowercase too).
 ///
-/// 1. Codon je Aminosäure laut `options.strategy` (`Harmonized`: Zufallszahl `r = next_f64() · Summe der Häufigkeiten` der
-///    Familie, gewählt wird das erste Codon in der Reihenfolge von `codons_for`, bei dem die laufende Summe `> r` ist;
-///    ist die Summe 0, das erste Codon). Eine Zufallszahl pro Aminosäure, in Reihenfolge der Sequenz.
-/// 2. Korrekturen in dieser festen Reihenfolge, jeweils mit höchstens 10000 Durchgängen:
-///    a) Verbotene Stellen (auch Reverse-Komplement): Solange eine vorkommt (die erste Fundstelle in der DNA, kleinste Position),
-///    werden die Codons betrachtet, die die Fundstelle berühren, von links nach rechts; für jedes davon die Alternativen
-///    (die übrigen Codons der Aminosäure in der Reihenfolge von `codons_for`). Angenommen wird die erste Ersetzung, die die
-///    Gesamtzahl der verbotenen Vorkommen verringert. Gibt es keine, wird die Schleife beendet.
-///    b) Homopolymere: Solange ein Lauf gleicher Basen länger als `max_homopolymer` existiert (der erste, kleinste Beginn), werden
-///    die Codons betrachtet, die den Lauf berühren, beginnend mit dem mittleren (Index `(erstes + letztes) / 2`),
-///    danach abwechselnd nach links und rechts. Angenommen wird die erste Ersetzung, die die Kennzahl
-///    `Summe über alle Läufe von (Länge − max_homopolymer), nur Läufe länger als max_homopolymer` verringert und
-///    die Zahl verbotener Vorkommen nicht erhöht. Gibt es keine, wird die Schleife beendet. `max_homopolymer == 0` wird wie 1 behandelt.
-///    c) GC-Anteil (Anteil von G und C an allen Basen) unter `min_gc` oder über `max_gc`: Unter allen Ersetzungen (Codon-Index von
-///    links nach rechts, Alternativen in der Reihenfolge von `codons_for`), die die Zahl der G/C im gewünschten Sinn ändern
-///    (bei zu wenig GC mehr G/C, bei zu viel weniger), wird die mit dem kleinsten Häufigkeitsverlust gewählt,
-///    also dem kleinsten `frequency(aktuell) − frequency(alt)`, bei Gleichstand die erste in der genannten Reihenfolge. Sie wird nur genommen, wenn sie weder die Zahl verbotener Vorkommen noch die
-///    Homopolymer-Kennzahl erhöht. Gibt es keine, wird die Schleife beendet.
-/// 3. Das Ergebnis codiert immer dasselbe Protein (Uppercase, T statt U).
+/// 1. Codon per amino acid according to `options.strategy` (`Harmonized`: random number `r = next_f64() · sum of the frequencies` of the
+///    family; the first codon in the order of `codons_for` whose running sum is `> r` is chosen;
+///    if the sum is 0, the first codon). One random number per amino acid, in sequence order.
+/// 2. Corrections in this fixed order, each with at most 10000 passes:
+///    a) Forbidden sites (also reverse complement): while one occurs (the first match in the DNA, smallest position),
+///    the codons touching the match are considered, left to right; for each of them the alternatives
+///    (the remaining codons of the amino acid in the order of `codons_for`). The first replacement that reduces the
+///    total number of forbidden occurrences is accepted. If there is none, the loop ends.
+///    b) Homopolymers: while a run of identical bases longer than `max_homopolymer` exists (the first, smallest start),
+///    the codons touching the run are considered, starting with the middle one (index `(first + last) / 2`),
+///    then alternating left and right. The first replacement is accepted that reduces the metric
+///    `sum over all runs of (length − max_homopolymer), only runs longer than max_homopolymer` and
+///    does not increase the number of forbidden occurrences. If there is none, the loop ends. `max_homopolymer == 0` is treated as 1.
+///    c) GC fraction (fraction of G and C among all bases) below `min_gc` or above `max_gc`: among all replacements (codon index from
+///    left to right, alternatives in the order of `codons_for`) that change the number of G/C in the desired direction
+///    (more G/C if GC is too low, fewer if too high), the one with the smallest frequency loss is chosen,
+///    i.e. the smallest `frequency(current) − frequency(alt)`, on ties the first in the stated order. It is taken only if it increases neither the number of forbidden occurrences nor the
+///    homopolymer metric. If there is none, the loop ends.
+/// 3. The result always encodes the same protein (uppercase, T instead of U).
 ///
-/// Fehler `Error::InvalidInput` bei Zeichen, die keine Aminosäure (20 Standard-Aminosäuren oder `*`) sind. Leere Eingabe → "".
+/// Error `Error::InvalidInput` for characters that are not amino acids (20 standard amino acids or `*`). Empty input → "".
 pub fn optimize(
     table: &CodonTable,
     protein: &str,
@@ -201,7 +201,7 @@ pub fn optimize(
     };
     let mut rng = SplitMix64::new(options.seed);
 
-    // Schritt 1: Initiale Translation
+    // Step 1: initial translation
     for aa_byte in protein.bytes() {
         let codons = table.codons_for(aa_byte as char);
         if options.strategy == Strategy::MostFrequent {
@@ -225,7 +225,7 @@ pub fn optimize(
         }
     }
 
-    // Schritt 2a: Verbotene Stellen entfernen
+    // Step 2a: remove forbidden sites
     for _ in 0..10000 {
         match find_first_forbidden(&dna, &options.avoid_sites) {
             None => break,
@@ -267,7 +267,7 @@ pub fn optimize(
         }
     }
 
-    // Schritt 2b: Homopolymere kürzen
+    // Step 2b: shorten homopolymers
     for _ in 0..10000 {
         match find_first_long_run(&dna, max_hp) {
             None => break,
@@ -315,7 +315,7 @@ pub fn optimize(
         }
     }
 
-    // Schritt 2c: GC-Anteil anpassen
+    // Step 2c: adjust GC fraction
     for _ in 0..10000 {
         let current_gc = gc(&dna);
         if current_gc >= options.min_gc && current_gc <= options.max_gc {
@@ -371,8 +371,8 @@ pub fn optimize(
     Ok(dna)
 }
 
-/// Übersetzt `coding_dna` (Länge durch 3 teilbar, nur A, C, G, T/U in beliebiger Schreibweise) mit `amino_acid_for`
-/// in ein Protein (Stopp = `*`) und ruft `optimize` auf. Sonst `Error::InvalidInput`.
+/// Translates `coding_dna` (length divisible by 3, only A, C, G, T/U in any case) with `amino_acid_for`
+/// into a protein (stop = `*`) and calls `optimize`. Otherwise `Error::InvalidInput`.
 pub fn optimize_dna(
     table: &CodonTable,
     coding_dna: &str,
@@ -496,7 +496,7 @@ fn gc(s: &str) -> f64 {
 mod tests {
     use super::*;
 
-    /// Synthetische Tabelle: je Familie das alphabetisch erste Codon 0.6, das zweite 0.4, der Rest 0 (Einzelcodons 1.0).
+    /// Synthetic table: per family the alphabetically first codon 0.6, the second 0.4, the rest 0 (single codons 1.0).
     fn table() -> CodonTable {
         let mut pairs: Vec<(String, f64)> = Vec::new();
         for codons in codon_families().values() {
@@ -517,7 +517,7 @@ mod tests {
         CodonTable::from_frequencies(&refs).unwrap()
     }
 
-    /// Standardwerte ohne GC-Fenster, damit die Codonwahl selbst geprüft wird.
+    /// Default values without GC window, so that the codon choice itself is tested.
     fn no_gc() -> OptimizationOptions {
         let mut o = OptimizationOptions::standard();
         o.min_gc = 0.0;
@@ -612,13 +612,13 @@ mod tests {
     #[test]
     fn verbotene_stelle() {
         let mut o = no_gc();
-        // E (GAA) gefolgt von F (TTC) ergäbe GAATTC
+        // E (GAA) followed by F (TTC) would give GAATTC
         assert_eq!(optimize(&table(), "EF", &o).unwrap(), "GAATTC");
         o.avoid_sites = vec!["GAATTC".to_string()];
         let d = optimize(&table(), "EF", &o).unwrap();
         assert!(!d.contains("GAATTC"));
         assert_eq!(translate(&d), "EF");
-        // nicht palindromische Stelle: auch das Reverse-Komplement ist verboten (A = GCA, S = AGC ergibt GCAAGC)
+        // non-palindromic site: its reverse complement is forbidden too (A = GCA, S = AGC gives GCAAGC)
         o.avoid_sites = Vec::new();
         assert_eq!(optimize(&table(), "AS", &o).unwrap(), "GCAAGC");
         o.avoid_sites = vec!["GCAAGC".to_string()];
@@ -669,7 +669,7 @@ mod tests {
     #[test]
     fn dna_eingabe() {
         let o = no_gc();
-        // GCG GCG (Alanin) → GCA GCA
+        // GCG GCG (alanine) → GCA GCA
         assert_eq!(optimize_dna(&table(), "gcggcg", &o).unwrap(), "GCAGCA");
         assert_eq!(optimize_dna(&table(), "AUGUAA", &o).unwrap(), "ATGTAA");
         assert!(optimize_dna(&table(), "ATGA", &o).is_err());

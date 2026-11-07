@@ -1,11 +1,11 @@
-//! Tastenkürzel für die Anzeige im macOS-Stil schreiben.
+//! Write keyboard shortcuts for display in macOS style.
 
 use crate::view::shortcut_conflicts::normalize_keys;
 
-/// Wandelt `"cmd+shift+k"` in `"⇧⌘K"` um. Zuerst `normalize_keys` (bei `None` kommt `keys` unverändert zurück). Reihenfolge der
-/// Zeichen wie unter macOS: Control `⌃`, Option `⌥`, Umschalt `⇧`, Befehl `⌘`, dann die Taste. Die Taste wird großgeschrieben;
-/// besondere Tasten: `return` → `↩`, `enter` → `⌅`, `delete` → `⌫`, `esc` oder `escape` → `⎋`, `tab` → `⇥`, `space` → `␣`,
-/// `left` → `←`, `right` → `→`, `up` → `↑`, `down` → `↓`. Beispiel `ctrl+alt+delete` → `⌃⌥⌫`.
+/// Converts `"cmd+shift+k"` into `"⇧⌘K"`. First `normalize_keys` (for `None`, `keys` is returned unchanged). Order of the
+/// symbols as on macOS: Control `⌃`, Option `⌥`, Shift `⇧`, Command `⌘`, then the key. The key is capitalized;
+/// special keys: `return` → `↩`, `enter` → `⌅`, `delete` → `⌫`, `esc` or `escape` → `⎋`, `tab` → `⇥`, `space` → `␣`,
+/// `left` → `←`, `right` → `→`, `up` → `↑`, `down` → `↓`. Example `ctrl+alt+delete` → `⌃⌥⌫`.
 pub fn format_shortcut(keys: &str) -> String {
     let Some(norm) = normalize_keys(keys) else {
         return keys.to_string();
@@ -20,7 +20,7 @@ pub fn format_shortcut(keys: &str) -> String {
     }
     let parts: Vec<&str> = norm.split('+').collect();
     for (name, symbol) in [("ctrl", "⌃"), ("alt", "⌥"), ("shift", "⇧"), ("cmd", "⌘")] {
-        // die Taste selbst kann ebenfalls so heißen, wenn sie die letzte ist; Modifikatoren stehen davor
+        // the key itself may also have such a name if it is the last one; modifiers come before it
         if parts[..parts.len() - 1].contains(&name) {
             out.push_str(symbol);
         }

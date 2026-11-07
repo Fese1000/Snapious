@@ -1,9 +1,9 @@
-//! Sequenzen aus einer Tabelle (CSV/TSV, bereits in Zeilen und Felder zerlegt) übernehmen.
+//! Import sequences from a table (CSV/TSV, already split into rows and fields).
 
-/// Liest `(Name, Sequenz)` aus den Spalten `name_col` und `seq_col` (0-basiert). Ist `has_header` wahr, wird die erste Zeile
-/// übersprungen. Die Sequenz wird von Leerraum befreit und in Uppercase gewandelt. Zeilen, in denen eine der Spalten fehlt
-/// oder die Sequenz danach leer ist, entfallen. Ist der Name (getrimmt) leer, heißt der Eintrag `Zeile {n}` mit `n` = Index der
-/// Zeile in `rows` plus 1 (die Kopfzeile zählt mit).
+/// Reads `(name, sequence)` from columns `name_col` and `seq_col` (0-based). If `has_header` is true, the first row is
+/// skipped. The sequence is stripped of whitespace and converted to uppercase. Rows in which one of the columns is missing
+/// or the sequence is empty afterwards are dropped. If the (trimmed) name is empty, the entry is named `Zeile {n}` with `n` = index of the
+/// row in `rows` plus 1 (the header row counts).
 pub fn sequences_from_table(
     rows: &[Vec<String>],
     name_col: usize,
@@ -12,42 +12,42 @@ pub fn sequences_from_table(
 ) -> Vec<(String, String)> {
     let mut result = Vec::new();
 
-    // Startindex festlegen: Wenn Header vorhanden ist, wird Zeile 0 übersprungen.
+    // Determine start index: if a header is present, row 0 is skipped.
     let start_index = if has_header { 1 } else { 0 };
 
     for (i, row) in rows.iter().enumerate() {
-        // Header-Zeile überspringen, falls aktiviert
+        // Skip header row if enabled
         if i < start_index {
             continue;
         }
 
-        // Prüfen, ob die benötigten Spalten in der Zeile existieren
+        // Check that the required columns exist in the row
         let name_raw = match row.get(name_col) {
             Some(n) => n,
-            None => continue, // Spalte fehlt -> Zeile überspringen
+            None => continue, // Column missing -> skip row
         };
 
         let seq_raw = match row.get(seq_col) {
             Some(s) => s,
-            None => continue, // Spalte fehlt -> Zeile überspringen
+            None => continue, // Column missing -> skip row
         };
 
-        // Name verarbeiten: Trimmen. Wenn leer, Standardname verwenden.
+        // Process name: trim. If empty, use default name.
         let name = name_raw.trim().to_string();
         let final_name = if name.is_empty() {
-            // Index in `rows` plus 1 (da "Kopfzeile zählt mit" und i der Index in rows ist)
+            // Index in `rows` plus 1 (since "the header row counts" and i is the index in rows)
             format!("Row {}", i + 1)
         } else {
             name
         };
 
-        // Sequenz verarbeiten: Trimmen, Leerzeichen entfernen und Uppercase.
-        // "Leerraum befreien" bedeutet hier, alle Whitespaces zu entfernen (nicht nur Trimmen),
-        // da "AC GT" zu "ACGT" werden soll.
+        // Process sequence: trim, remove spaces and uppercase.
+        // "Stripped of whitespace" here means removing all whitespace (not just trimming),
+        // since "AC GT" should become "ACGT".
         let seq: String = seq_raw.chars().filter(|c| !c.is_whitespace()).collect();
 
         if seq.is_empty() {
-            continue; // Leere Sequenz nach Bereinigung überspringen
+            continue; // Skip empty sequence after cleanup
         }
 
         result.push((final_name, seq.to_uppercase()));

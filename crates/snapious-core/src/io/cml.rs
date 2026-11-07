@@ -1,20 +1,20 @@
-//! CML-Moleküldateien (Chemical Markup Language) lesen: Atome und Bindungen.
+//! Read CML molecule files (Chemical Markup Language): atoms and bonds.
 
 use crate::error::{Error, Result};
 
-/// Ein Atom.
+/// An atom.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CmlAtom {
-    /// Wert von `id`.
+    /// Value of `id`.
     pub id: String,
-    /// Wert von `elementType`.
+    /// Value of `elementType`.
     pub element: String,
     pub x: f64,
     pub y: f64,
     pub z: f64,
 }
 
-/// Eine Bindung zwischen zwei Atomen (Indizes in der Atomliste, 0-basiert) mit Ordnung.
+/// A bond between two atoms (indices into the atom list, 0-based) with order.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CmlBond {
     pub from: usize,
@@ -22,11 +22,11 @@ pub struct CmlBond {
     pub order: u8,
 }
 
-/// Liest Atome und Bindungen. Gesucht werden Tags `<atom ... />` (oder `<atom ...>`) mit den Attributen `id`, `elementType`, `x3`, `y3`,
-/// `z3` und Tags `<bond ... />` mit `atomRefs2="id1 id2"` und `order` (Zahl `1`–`3`; `S` = 1, `D` = 2, `T` = 3; fehlend = 1).
-/// Attributwerte stehen in doppelten oder einfachen Anführungszeichen. Kein XML-Parser nötig: Tag für Tag nach `<atom` und `<bond`
-/// suchen und die Attribute lesen. Fehler `Error::InvalidInput`: ein Atom ohne `id`, `elementType` oder lesbare Koordinaten `x3`/`y3`/`z3`,
-/// eine Bindung, die auf unbekannte Atom-IDs verweist oder kein `atomRefs2` hat, oder keine Atome.
+/// Reads atoms and bonds. Looks for tags `<atom ... />` (or `<atom ...>`) with the attributes `id`, `elementType`, `x3`, `y3`,
+/// `z3` and tags `<bond ... />` with `atomRefs2="id1 id2"` and `order` (number `1`-`3`; `S` = 1, `D` = 2, `T` = 3; missing = 1).
+/// Attribute values are in double or single quotes. No XML parser needed: search tag by tag for `<atom` and `<bond`
+/// and read the attributes. `Error::InvalidInput`: an atom without `id`, `elementType` or readable coordinates `x3`/`y3`/`z3`,
+/// a bond that refers to unknown atom IDs or has no `atomRefs2`, or no atoms.
 pub fn parse_cml(text: &str) -> Result<(Vec<CmlAtom>, Vec<CmlBond>)> {
     fn attr(tag: &str, name: &str) -> Option<String> {
         let mut from = 0;
@@ -57,7 +57,7 @@ pub fn parse_cml(text: &str) -> Result<(Vec<CmlAtom>, Vec<CmlBond>)> {
         while let Some(i) = text[from..].find(open) {
             let start = from + i;
             let after = start + open.len();
-            // nur "<atom " / "<atom>" / "<atom/", nicht "<atomArray"
+            // only "<atom " / "<atom>" / "<atom/", not "<atomArray"
             let next = text[after..].chars().next();
             if next.is_some_and(|c| c.is_whitespace() || c == '>' || c == '/') {
                 if let Some(end) = text[after..].find('>') {

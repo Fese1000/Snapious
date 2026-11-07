@@ -1,21 +1,21 @@
-//! Fragmentlängen (Insert Size) aus gepaarten Alignments.
+//! Fragment lengths (insert size) from paired alignments.
 
 use crate::io::sam::SamRecord;
 
-/// Zusammenfassung der Längen.
+/// Summary of the lengths.
 #[derive(Clone, Debug, PartialEq)]
 pub struct InsertStats {
     pub count: usize,
     pub mean: f64,
     pub median: f64,
-    /// Standardabweichung der Stichprobe (Nenner `n - 1`); bei weniger als zwei Werten `0.0`.
+    /// Sample standard deviation (denominator `n - 1`); `0.0` for fewer than two values.
     pub std_dev: f64,
 }
 
-/// Fragmentlängen: Für jeden Eintrag, der gepaart ist (Flag `0x1`), der erste Read des Paares (Flag `0x40`), nicht ausgerichtet
-/// ist es nicht (Flag `0x4` nicht gesetzt), dessen Partner ausgerichtet ist (Flag `0x8` nicht gesetzt), kein sekundärer Eintrag ist
-/// (Flag `0x100` nicht gesetzt), `mate_reference == "="` oder gleich `reference` ist und `template_length != 0` hat, zählt
-/// `|template_length|`. Reihenfolge wie in der Eingabe.
+/// Fragment lengths: for every entry that is paired (flag `0x1`), is the first read of the pair (flag `0x40`), is aligned
+/// (flag `0x4` not set), whose mate is aligned (flag `0x8` not set), is not a secondary entry
+/// (flag `0x100` not set), has `mate_reference == "="` or equal to `reference`, and has `template_length != 0`,
+/// `|template_length|` counts. Order as in the input.
 pub fn insert_sizes(records: &[SamRecord]) -> Vec<u64> {
     records
         .iter()
@@ -32,7 +32,7 @@ pub fn insert_sizes(records: &[SamRecord]) -> Vec<u64> {
         .collect()
 }
 
-/// Mittelwert, Median (bei gerader Zahl der Mittelwert der beiden mittleren Werte) und Standardabweichung. Keine Werte → alles `0`.
+/// Mean, median (for an even count the mean of the two middle values) and standard deviation. No values → all `0`.
 pub fn insert_stats(sizes: &[u64]) -> InsertStats {
     if sizes.is_empty() {
         return InsertStats {

@@ -54,7 +54,7 @@ class CodonUsageAnalyzerTest {
         String report = result.generateReport();
 
         assertNotNull(report);
-        assertTrue(report.contains("Codon Usage Analyse"));
+        assertTrue(report.contains("Codon Usage Analysis"));
     }
 
     @Test
@@ -65,7 +65,7 @@ class CodonUsageAnalyzerTest {
         String comparison = CodonUsageAnalyzer.compareCodonUsage(seq1, seq2);
 
         assertNotNull(comparison);
-        assertTrue(comparison.contains("Codon Usage Vergleich"));
+        assertTrue(comparison.contains("Codon Usage Comparison"));
     }
 
     @Test
@@ -91,13 +91,13 @@ class CodonUsageAnalyzerTest {
         String report = CodonUsageAnalyzer.analyzeAndReport(sequence);
 
         assertNotNull(report);
-        assertTrue(report.contains("Codon Usage Analyse"));
+        assertTrue(report.contains("Codon Usage Analysis"));
     }
 
     @Test
     void testFehlerhafteSequenz() {
         String report = CodonUsageAnalyzer.analyzeAndReport("AT");
 
-        assertTrue(report.contains("Fehler"));
+        assertTrue(report.contains("Error"));
     }
 }

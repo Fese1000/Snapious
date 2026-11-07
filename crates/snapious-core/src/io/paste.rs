@@ -1,6 +1,6 @@
-//! Eingefügten Sequenztext (roh, FASTA oder mit Zeilennummern) säubern und die Art der Sequenz erkennen.
+//! Clean pasted sequence text (raw, FASTA or with line numbers) and detect the kind of sequence.
 
-/// Art der Sequenz.
+/// Kind of sequence.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
     Dna,
@@ -8,19 +8,19 @@ pub enum Kind {
     Protein,
 }
 
-/// Ein Eintrag aus dem Text.
+/// An entry from the text.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PastedRecord {
-    /// Name aus der FASTA-Kopfzeile (ohne `>`, getrimmt); leer ohne Kopfzeile.
+    /// Name from the FASTA header line (without `>`, trimmed); empty without a header line.
     pub name: String,
-    /// Großgeschriebene Buchstaben.
+    /// Uppercase letters.
     pub residues: String,
 }
 
-/// Zerlegt den Text in Einträge. Beginnt der Text (nach führendem Leerraum) mit `>`, ist es FASTA: jede Zeile, die mit `>`
-/// beginnt, startet einen Eintrag (Name = Rest der Zeile getrimmt); die folgenden Zeilen gehören dazu. Sonst ist der ganze Text
-/// ein einziger Eintrag mit leerem Namen. Aus den Sequenzzeilen werden nur ASCII-Buchstaben behalten (Leerzeichen, Ziffern,
-/// `*`, `-`, `\r` usw. fallen weg) und in Uppercase gewandelt. Einträge ohne Buchstaben entfallen; leerer Text → leere Liste.
+/// Splits the text into entries. If the text (after leading whitespace) starts with `>`, it is FASTA: every line that starts with `>`
+/// begins an entry (name = rest of the line, trimmed); the following lines belong to it. Otherwise the whole text is
+/// a single entry with an empty name. From the sequence lines only ASCII letters are kept (spaces, digits,
+/// `*`, `-`, `\r` etc. are dropped) and converted to uppercase. Entries without letters are dropped; empty text -> empty list.
 pub fn parse_pasted(text: &str) -> Vec<PastedRecord> {
     fn letters(line: &str) -> String {
         line.chars()
@@ -59,9 +59,9 @@ pub fn parse_pasted(text: &str) -> Vec<PastedRecord> {
     records
 }
 
-/// Erkennt die Art: Zähle die Buchstaben außer Leerraum. Leer → `Dna`. Gehören mindestens 80 % zu `A C G T U N`, ist es
-/// Nukleinsäure: enthält die Sequenz `U` und kein `T` → `Rna`; enthält sie `U` und `T` → `Protein`; sonst `Dna`. Alles andere → `Protein`.
-/// Groß-/Kleinschreibung egal.
+/// Detects the kind: count the letters excluding whitespace. Empty -> `Dna`. If at least 80% belong to `A C G T U N`, it is a
+/// nucleic acid: if the sequence contains `U` and no `T` -> `Rna`; if it contains `U` and `T` -> `Protein`; otherwise `Dna`. Everything else -> `Protein`.
+/// Case-insensitive.
 pub fn detect_kind(residues: &str) -> Kind {
     let upper: Vec<char> = residues
         .chars()
@@ -117,7 +117,7 @@ mod tests {
         assert_eq!(detect_kind("ACGTU"), Kind::Protein);
         assert_eq!(detect_kind("MKVLAAGIVGLLLAQ"), Kind::Protein);
         assert_eq!(detect_kind("ACGTNNNNNN"), Kind::Dna);
-        assert_eq!(detect_kind("ACGTRYACGT"), Kind::Dna); // 8 von 10
+        assert_eq!(detect_kind("ACGTRYACGT"), Kind::Dna); // 8 of 10
         assert_eq!(detect_kind(""), Kind::Dna);
     }
 }

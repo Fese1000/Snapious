@@ -1,30 +1,30 @@
-//! Verteilung von Features auf Spuren (Lanes), damit sich in der Anzeige nichts überdeckt.
+//! Distribution of features onto lanes so that nothing overlaps in the display.
 
 use crate::model::feature::{Feature, Interval};
 
-/// Ein Teilstück (Segment) eines Features mit seiner Spur.
+/// A piece (segment) of a feature with its lane.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PlacedFeature {
-    /// Index des Features in der übergebenen Liste.
+    /// Index of the feature in the passed list.
     pub feature_index: usize,
     pub segment: Interval,
     pub lane: usize,
 }
 
-/// Ordnet jedem Feature eine Spur zu. Regeln:
-/// 1. Features werden in der Reihenfolge `location().start()` aufsteigend, bei Gleichstand nach
-///    `location().length()` absteigend, bei weiterem Gleichstand nach Listenindex bearbeitet.
-/// 2. Jedes Feature bekommt die kleinste Spur, in der keines seiner Segmente ein bereits dort liegendes
-///    Segment überlappt (`Interval::overlaps`). Alle Segmente eines Features liegen in derselben Spur.
-/// 3. Ergebnis: ein `PlacedFeature` je Segment, sortiert nach `feature_index`, dann nach Segmentreihenfolge im Feature.
+/// Assigns a lane to each feature. Rules:
+/// 1. Features are processed in the order `location().start()` ascending, ties by
+///    `location().length()` descending, further ties by list index.
+/// 2. Each feature gets the smallest lane in which none of its segments overlaps a segment already
+///    there (`Interval::overlaps`). All segments of a feature lie in the same lane.
+/// 3. Result: one `PlacedFeature` per segment, sorted by `feature_index`, then by segment order within the feature.
 pub fn assign_lanes(features: &[Feature]) -> Vec<PlacedFeature> {
     let count = features.len();
     if count == 0 {
         return Vec::new();
     }
 
-    // Bestimme die Reihenfolge der Feature-Bearbeitung: nach kleinstem Start aller Segmente,
-    // dann größte Gesamtlänge, dann Feature-Index.
+    // Determine the processing order of the features: by smallest start of all segments,
+    // then largest total length, then feature index.
     let mut feature_order: Vec<usize> = (0..count).collect();
     feature_order.sort_by(|&a, &b| {
         let a_intervals = features[a].location().intervals();
@@ -50,7 +50,7 @@ pub fn assign_lanes(features: &[Feature]) -> Vec<PlacedFeature> {
         }
     });
 
-    // Sammle alle Segmente mit ihrem Feature-Index.
+    // Collect all segments with their feature index.
     struct SegmentEntry {
         feature_index: usize,
         interval: Interval,
@@ -67,33 +67,33 @@ pub fn assign_lanes(features: &[Feature]) -> Vec<PlacedFeature> {
         }
     }
 
-    // Für jedes Feature alle Segment-Indizes sammeln.
+    // Collect all segment indices for each feature.
     let mut feature_segments: Vec<Vec<usize>> = vec![Vec::new(); count];
     for (i, seg) in segments.iter().enumerate() {
         feature_segments[seg.feature_index].push(i);
     }
 
-    // Spur-Zuweisung: pro Feature alle Segmente in dieselbe Spur legen.
+    // Lane assignment: put all segments of a feature into the same lane.
     let mut spuren: Vec<Vec<Interval>> = Vec::new();
 
-    // Ergebnis: Platzhalter für jedes Segment.
+    // Result: placeholder for each segment.
     let mut result: Vec<Option<PlacedFeature>> = vec![None; segments.len()];
 
-    // Verarbeite Features in der sortierten Reihenfolge.
+    // Process features in the sorted order.
     for &fi in &feature_order {
         let seg_indices = &feature_segments[fi];
 
-        // Finde die kleinste Spur, in der ALLE Segmente dieses Features passen.
+        // Find the smallest lane in which ALL segments of this feature fit.
         let mut lane: usize = spuren.len();
         for candidate in 0..=spuren.len() {
             if candidate == spuren.len() {
-                // Neue Spur anlegen.
+                // Create a new lane.
                 spuren.push(Vec::new());
                 lane = candidate;
                 break;
             }
 
-            // Prüfe, ob alle Segmente dieses Features in diese Spur passen.
+            // Check whether all segments of this feature fit into this lane.
             let mut fits = true;
             for &si in seg_indices {
                 if spuren[candidate]
@@ -110,7 +110,7 @@ pub fn assign_lanes(features: &[Feature]) -> Vec<PlacedFeature> {
             }
         }
 
-        // Füge alle Segmente dieser Feature in die Spur.
+        // Add all segments of this feature to the lane.
         for &si in seg_indices {
             spuren[lane].push(segments[si].interval);
             result[si] = Some(PlacedFeature {
@@ -121,13 +121,13 @@ pub fn assign_lanes(features: &[Feature]) -> Vec<PlacedFeature> {
         }
     }
 
-    // Ergebnis sortiert nach feature_index, dann segment_order.
+    // Result sorted by feature_index, then segment_order.
     let mut placed: Vec<PlacedFeature> = result.into_iter().flatten().collect();
     placed.sort_by_key(|p| p.feature_index);
     placed
 }
 
-/// Anzahl der benutzten Spuren (0 bei leerer Liste).
+/// Number of lanes used (0 for an empty list).
 pub fn lane_count(placed: &[PlacedFeature]) -> usize {
     placed
         .iter()
@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn gleicher_start_laengeres_zuerst() {
-        // B (0..10) ist länger und kommt zuerst in Spur 0; A (0..5) muss in Spur 1
+        // B (0..10) is longer and comes first in lane 0; A (0..5) must go into lane 1
         let p = assign_lanes(&[feat(0, 5), feat(0, 10)]);
         assert_eq!(lanes(&p), vec![1, 0]);
     }
@@ -200,12 +200,12 @@ mod tests {
             vec![],
         );
         let p = assign_lanes(&[join, feat(10, 15)]);
-        // Segmente des Join-Features: Index 0, dann 1; danach das zweite Feature
+        // Segments of the join feature: index 0, then 1; then the second feature
         assert_eq!(p.len(), 3);
         assert_eq!((p[0].feature_index, p[0].lane), (0, 0));
         assert_eq!((p[1].feature_index, p[1].lane), (0, 0));
         assert_eq!(p[1].segment, Interval::new(20, 25).unwrap());
-        // das zweite Feature überlappt kein Segment und passt in Spur 0
+        // the second feature overlaps no segment and fits into lane 0
         assert_eq!((p[2].feature_index, p[2].lane), (1, 0));
     }
 
@@ -226,7 +226,7 @@ mod tests {
             .unwrap(),
             vec![],
         );
-        // Das erste Feature (0..40) liegt in Spur 0 und überlapft beide Segmente
+        // The first feature (0..40) lies in lane 0 and overlaps both segments
         let p = assign_lanes(&[feat(0, 40), join]);
         let join_lanes: Vec<usize> = p
             .iter()
@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn spur_wird_wiederverwendet() {
-        // Spur 0: [0,10) und [12,20'); Spur 1: [5,15)
+        // Lane 0: [0,10) and [12,20'); lane 1: [5,15)
         let p = assign_lanes(&[feat(0, 10), feat(5, 15), feat(12, 20)]);
         assert_eq!(lanes(&p), vec![0, 1, 0]);
     }

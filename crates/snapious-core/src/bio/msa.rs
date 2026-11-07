@@ -1,8 +1,8 @@
-//! Progressives Mehrfach-Sequenzalignment (ClustalW-ähnlich).
+//! Progressive multiple sequence alignment (ClustalW-like).
 //!
-//! Ablauf: paarweise Distanzen (1 − Identität des globalen Alignments), UPGMA-Guide-Tree,
-//! Profil-Profil-Alignment entlang des Baums mit Sum-of-Pairs-Spaltenwerten.
-//! Quellen: Thompson, Higgins & Gibson, Nucleic Acids Res. 22 (1994); Sokal & Michener (1958, UPGMA).
+//! Procedure: pairwise distances (1 − identity of the global alignment), UPGMA guide tree,
+//! profile-profile alignment along the tree with sum-of-pairs column scores.
+//! Sources: Thompson, Higgins & Gibson, Nucleic Acids Res. 22 (1994); Sokal & Michener (1958, UPGMA).
 
 use std::collections::BTreeMap;
 
@@ -16,13 +16,13 @@ const MATCH: i32 = 2;
 const MISMATCH: i32 = -1;
 const GAP: i32 = -1;
 
-/// Eine ausgerichtete Zeile.
+/// An aligned row.
 #[derive(Clone, Debug, PartialEq)]
 pub struct AlignedSequence {
     pub name: String,
-    /// Ursprüngliche Basen ohne Lücken.
+    /// Original bases without gaps.
     pub bases: String,
-    /// Basen mit Lückenzeichen `-`.
+    /// Bases with gap character `-`.
     pub aligned: String,
 }
 
@@ -31,7 +31,7 @@ impl AlignedSequence {
         self.aligned.bytes().filter(|b| *b == b'-').count()
     }
 
-    /// Lückenanteil in Prozent.
+    /// Gap fraction in percent.
     pub fn gap_percent(&self) -> f64 {
         if self.aligned.is_empty() {
             0.0
@@ -41,14 +41,14 @@ impl AlignedSequence {
     }
 }
 
-/// Ergebnis eines Mehrfachalignments.
+/// Result of a multiple alignment.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MsaResult {
     pub sequences: Vec<AlignedSequence>,
-    /// Durchschnittlicher Sum-of-Pairs-Score über alle Paare (Summe der Spaltenwerte je Paar).
+    /// Average sum-of-pairs score over all pairs (sum of column scores per pair).
     pub average_score: f64,
     pub consensus: String,
-    /// Gewicht je Sequenz: 1 − Lückenanteil.
+    /// Weight per sequence: 1 − gap fraction.
     pub weights: BTreeMap<String, f64>,
 }
 
@@ -57,7 +57,7 @@ impl MsaResult {
         self.sequences.first().map(|s| s.aligned.len()).unwrap_or(0)
     }
 
-    /// FASTA mit Lücken, 60 Zeichen pro Zeile.
+    /// FASTA with gaps, 60 characters per line.
     pub fn to_fasta(&self) -> String {
         let mut out = String::new();
         for s in &self.sequences {
@@ -72,7 +72,7 @@ impl MsaResult {
         out
     }
 
-    /// Lesbare Blockdarstellung (60 Spalten) mit Namen.
+    /// Readable block rendering (60 columns) with names.
     pub fn format(&self) -> String {
         let width = self
             .sequences
@@ -138,7 +138,7 @@ impl Profile {
     }
 }
 
-/// Distanz = 1 − Identität des globalen Alignments (0 bis 1).
+/// Distance = 1 − identity of the global alignment (0 to 1).
 fn distance_matrix(seqs: &[Sequence]) -> Result<Vec<Vec<f64>>> {
     let n = seqs.len();
     let pairs: Vec<(usize, usize)> = (0..n)
@@ -161,7 +161,7 @@ fn distance_matrix(seqs: &[Sequence]) -> Result<Vec<Vec<f64>>> {
     Ok(d)
 }
 
-/// UPGMA: jeweils die beiden Cluster mit der kleinsten Distanz verschmelzen (kleinster Index zuerst).
+/// UPGMA: merge the two clusters with the smallest distance each time (smallest index first).
 fn upgma_tree(d: &[Vec<f64>]) -> Result<Node> {
     let n = d.len();
     if n == 0 {
@@ -243,7 +243,7 @@ const D_DIAG: u8 = 1;
 const D_UP: u8 = 2;
 const D_LEFT: u8 = 3;
 
-/// Profil-Profil-Alignment (Needleman-Wunsch auf Spalten). Gleichstand: Diagonale vor Lücke.
+/// Profile-profile alignment (Needleman-Wunsch on columns). Tie: diagonal before gap.
 fn merge_profiles(a: Profile, b: Profile) -> Profile {
     let (la, lb) = (a.width(), b.width());
     let w = lb + 1;
@@ -341,7 +341,7 @@ fn align_node(node: &Node, seqs: &[Sequence]) -> Profile {
     }
 }
 
-/// Durchschnittlicher Sum-of-Pairs-Score über alle Zeilenpaare.
+/// Average sum-of-pairs score over all row pairs.
 fn average_pair_score(rows: &[AlignedSequence]) -> f64 {
     let n = rows.len();
     if n < 2 {
@@ -360,7 +360,7 @@ fn average_pair_score(rows: &[AlignedSequence]) -> f64 {
     total as f64 / pairs as f64
 }
 
-/// Progressives Alignment. Die Reihenfolge der Eingabe bleibt erhalten.
+/// Progressive alignment. The input order is preserved.
 pub fn progressive_alignment(seqs: &[Sequence]) -> Result<MsaResult> {
     if seqs.is_empty() {
         return Err(Error::InvalidInput(
@@ -434,7 +434,7 @@ fn to_newick(node: &Node, parent_height: f64, seqs: &[Sequence]) -> String {
     }
 }
 
-/// Guide-Tree der Sequenzen als Newick-Text (Astlängen aus den UPGMA-Höhen).
+/// Guide tree of the sequences as Newick text (branch lengths from the UPGMA heights).
 pub fn guide_tree_newick(seqs: &[Sequence]) -> Result<String> {
     if seqs.is_empty() {
         return Err(Error::InvalidInput(

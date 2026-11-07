@@ -1,11 +1,11 @@
-//! UniProt: Suche und FASTA-Abruf über die REST-Schnittstelle (`https://rest.uniprot.org`).
+//! UniProt: search and FASTA retrieval via the REST interface (`https://rest.uniprot.org`).
 
 use crate::db::ncbi::{percent_encode, HttpGet};
 use crate::error::{Error, Result};
 use serde_json::Value;
 
-/// `https://rest.uniprot.org/uniprotkb/search?query={kodiert}&size={size}&format=json&fields=accession,id,protein_name,organism_name,length`
-/// (Prozentkodierung mit `percent_encode`).
+/// `https://rest.uniprot.org/uniprotkb/search?query={encoded}&size={size}&format=json&fields=accession,id,protein_name,organism_name,length`
+/// (percent encoding with `percent_encode`).
 pub fn search_url(query: &str, size: usize) -> String {
     format!(
         "https://rest.uniprot.org/uniprotkb/search?query={}&size={}&format=json&fields=accession,id,protein_name,organism_name,length",
@@ -14,7 +14,7 @@ pub fn search_url(query: &str, size: usize) -> String {
     )
 }
 
-/// `https://rest.uniprot.org/uniprotkb/{accession kodiert}.fasta`
+/// `https://rest.uniprot.org/uniprotkb/{accession encoded}.fasta`
 pub fn fasta_url(accession: &str) -> String {
     format!(
         "https://rest.uniprot.org/uniprotkb/{}.fasta",
@@ -22,23 +22,23 @@ pub fn fasta_url(accession: &str) -> String {
     )
 }
 
-/// Ein Treffer der Suche.
+/// A search hit.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProteinRecord {
     /// `primaryAccession`.
     pub accession: String,
     /// `uniProtkbId`.
     pub entry_name: String,
-    /// `proteinDescription.recommendedName.fullName.value`, sonst `proteinDescription.submissionNames[0].fullName.value`, sonst leer.
+    /// `proteinDescription.recommendedName.fullName.value`, otherwise `proteinDescription.submissionNames[0].fullName.value`, otherwise empty.
     pub name: String,
-    /// `organism.scientificName`, sonst leer.
+    /// `organism.scientificName`, otherwise empty.
     pub organism: String,
-    /// `sequence.length`, sonst 0.
+    /// `sequence.length`, otherwise 0.
     pub length: u64,
 }
 
-/// Liest die Suchantwort: `{"results": [ {...}, ... ]}`. Kein JSON oder `results` fehlt/ist keine Liste → `Error::InvalidInput`.
-/// Einträge ohne `primaryAccession` werden übersprungen. Reihenfolge wie in der Antwort.
+/// Reads the search response: `{"results": [ {...}, ... ]}`. Not JSON, or `results` missing/not a list → `Error::InvalidInput`.
+/// Entries without `primaryAccession` are skipped. Order as in the response.
 pub fn parse_search(json: &str) -> Result<Vec<ProteinRecord>> {
     let root = serde_json::from_str::<Value>(json)
         .map_err(|e| Error::InvalidInput(format!("Invalid JSON: {}", e)))?;
@@ -106,7 +106,7 @@ pub fn parse_search(json: &str) -> Result<Vec<ProteinRecord>> {
     Ok(records)
 }
 
-/// Client mit austauschbarem Abruf (`HttpGet` aus `db::ncbi`).
+/// Client with a replaceable fetch (`HttpGet` from `db::ncbi`).
 pub struct UniprotClient<H: HttpGet> {
     pub http: H,
 }
@@ -116,14 +116,14 @@ impl<H: HttpGet> UniprotClient<H> {
         UniprotClient { http }
     }
 
-    /// Sucht mit `search_url` und liest die Treffer.
+    /// Searches with `search_url` and reads the hits.
     pub fn search(&self, query: &str, size: usize) -> Result<Vec<ProteinRecord>> {
         let url = search_url(query, size);
         let text = self.http.get(&url)?;
         parse_search(&text)
     }
 
-    /// Lädt den Eintrag als FASTA-Text. Beginnt die Antwort (nach Leerraum) nicht mit `>`, `Error::InvalidInput("Kein FASTA für {accession}")`.
+    /// Downloads the entry as FASTA text. If the response (after whitespace) does not start with `>`, `Error::InvalidInput("Kein FASTA für {accession}")`.
     pub fn fetch_fasta(&self, accession: &str) -> Result<String> {
         let url = fasta_url(accession);
         let text = self.http.get(&url)?;

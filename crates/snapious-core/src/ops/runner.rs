@@ -1,4 +1,4 @@
-//! Führt Operationen aus und schreibt den Verlauf.
+//! Executes operations and writes the history.
 
 use crate::error::{Error, Result};
 use crate::model::document::Document;
@@ -7,7 +7,7 @@ use crate::util::{new_id, now_secs};
 
 type Listener = Box<dyn FnMut(&HistoryEntry)>;
 
-/// Führt Operationen aus. Jeder erfolgreiche Lauf erzeugt einen [`HistoryEntry`].
+/// Executes operations. Every successful run produces a [`HistoryEntry`].
 #[derive(Default)]
 pub struct OperationRunner {
     history: Vec<HistoryEntry>,
@@ -19,7 +19,7 @@ impl OperationRunner {
         Self::default()
     }
 
-    /// Runner, der jeden neuen Verlaufseintrag zusätzlich an `listener` meldet.
+    /// Runner that additionally reports each new history entry to `listener`.
     pub fn with_listener(listener: Listener) -> Self {
         Self {
             history: Vec::new(),
@@ -27,12 +27,12 @@ impl OperationRunner {
         }
     }
 
-    /// Bisheriger Verlauf in Ausführungsreihenfolge.
+    /// History so far in order of execution.
     pub fn history(&self) -> &[HistoryEntry] {
         &self.history
     }
 
-    /// Führt `op` aus. Bei Fehler oder Abbruch wird nichts protokolliert.
+    /// Executes `op`. On error or cancellation nothing is logged.
     pub fn execute(
         &mut self,
         op: &dyn Operation,

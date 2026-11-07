@@ -1,10 +1,10 @@
-//! Sequenzierungsabgleich („Align to Reference“): einen Read gegen eine Referenz ausrichten und Unterschiede melden.
+//! Sequencing check ("Align to Reference"): align a read against a reference and report differences.
 
 use crate::bio::align::Aligner;
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::error::{Error, Result};
 
-/// Art eines Unterschieds.
+/// Kind of difference.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DifferenceType {
     Mismatch,
@@ -13,42 +13,42 @@ pub enum DifferenceType {
     LowQuality,
 }
 
-/// Ein Unterschied zwischen Read und Referenz.
+/// A difference between read and reference.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Difference {
     pub kind: DifferenceType,
-    /// Position in der Referenz (0-basiert). Bei einer Einfügung die Position der nächsten Referenzbase, bei zirkulärer Referenz modulo Länge.
+    /// Position in the reference (0-based). For an insertion the position of the next reference base; for a circular reference modulo length.
     pub reference_position: usize,
-    /// Position im ausgerichteten Read (bei `reversed` im reverse-komplementierten Read), 0-basiert. Bei einer Löschung
-    /// der Index der nächsten Readbase.
+    /// Position in the aligned read (in the reverse-complemented read when `reversed`), 0-based. For a deletion
+    /// the index of the next read base.
     pub read_position: usize,
-    /// Base der Referenz, leer bei einer Einfügung.
+    /// Reference base, empty for an insertion.
     pub expected: String,
-    /// Base des Reads, leer bei einer Löschung.
+    /// Read base, empty for a deletion.
     pub observed: String,
-    /// Qualität der Readbase (bei einer Löschung 40).
+    /// Quality of the read base (40 for a deletion).
     pub quality: u8,
 }
 
-/// Ergebnis des Abgleichs.
+/// Result of the check.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CheckResult {
     pub read_name: String,
-    /// `true`, wenn der reverse-komplementierte Read besser passt.
+    /// `true` if the reverse-complemented read fits better.
     pub reversed: bool,
-    /// Ausgerichteter Referenzbereich: Beginn und Ende (exklusiv). Bei zirkulärer Referenz kann `reference_end < reference_start` sein
-    /// (Bereich über den Nullpunkt); liegt das Ende genau auf der Länge, ist es die Länge.
+    /// Aligned reference range: start and end (exclusive). For a circular reference `reference_end < reference_start` is possible
+    /// (range across the origin); if the end lies exactly at the length, it is the length.
     pub reference_start: usize,
     pub reference_end: usize,
-    /// Anteil der Spalten mit gleichen Basen an allen Spalten des Alignments in Prozent.
+    /// Fraction of columns with identical bases among all alignment columns, in percent.
     pub identity: f64,
-    /// Sortiert nach `reference_position`, dann `read_position`, dann Art (Reihenfolge der Varianten von `DifferenceType`).
+    /// Sorted by `reference_position`, then `read_position`, then kind (order of the variants of `DifferenceType`).
     pub differences: Vec<Difference>,
     pub aligned_read: String,
     pub aligned_reference: String,
 }
 
-/// Einstellung: Basen mit Qualität unter `min_quality` werden zusätzlich als `LowQuality` gemeldet.
+/// Setting: bases with quality below `min_quality` are additionally reported as `LowQuality`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SequencingCheck {
     pub min_quality: u8,
@@ -66,26 +66,26 @@ impl SequencingCheck {
         SequencingCheck { min_quality }
     }
 
-    /// Richtet `read` gegen `reference` aus.
+    /// Aligns `read` against `reference`.
     ///
-    /// 1. Fehler `Error::InvalidInput` bei leerer Referenz, leerem Read oder wenn `quality` weder leer noch so lang wie `read` ist.
-    ///    Eine leere `quality` zählt als „überall 40“. Alle Basen werden in Uppercase mit `T` statt `U` gelesen.
-    /// 2. Der Read und sein Reverse-Komplement (`iupac_reverse_complement`, Qualitäten umgekehrt) werden mit
-    ///    `Aligner::new(2, -3, -5).semi_global(read, referenz)` ausgerichtet (Ergebnis: `seq1_aln` = Read, `seq2_aln` = Referenz;
-    ///    Bereich in der Referenz: `seq2_start..seq2_end`). Bei zirkulärer Referenz wird `referenz + referenz` verwendet. Gewinnt die
-    ///    Richtung mit dem höheren `score` (bei Gleichstand vorwärts); `reversed` zeigt, ob es der reverse-komplementierte Read war.
-    /// 3. Zirkulär: `reference_start = seq2_start % Länge`, `reference_end = seq2_end − Länge`, wenn `seq2_end > Länge`, sonst `seq2_end`
-    ///    (beim Ende genau auf der Länge bleibt die Länge); Positionen der Unterschiede werden modulo Länge angegeben.
+    /// 1. Error `Error::InvalidInput` for an empty reference, an empty read, or if `quality` is neither empty nor as long as `read`.
+    ///    An empty `quality` counts as "40 everywhere". All bases are read in uppercase with `T` instead of `U`.
+    /// 2. The read and its reverse complement (`iupac_reverse_complement`, qualities reversed) are aligned with
+    ///    `Aligner::new(2, -3, -5).semi_global(read, reference)` (result: `seq1_aln` = read, `seq2_aln` = reference;
+    ///    range in the reference: `seq2_start..seq2_end`). For a circular reference `reference + reference` is used. The
+    ///    direction with the higher `score` wins (forward on a tie); `reversed` shows whether it was the reverse-complemented read.
+    /// 3. Circular: `reference_start = seq2_start % length`, `reference_end = seq2_end − length` if `seq2_end > length`, otherwise `seq2_end`
+    ///    (an end exactly at the length stays the length); positions of the differences are given modulo length.
     ///    Linear: `reference_start = seq2_start`, `reference_end = seq2_end`.
-    /// 4. Spalte für Spalte durch das Alignment (Referenzindex und Readindex mitzählen):
-    ///    - beide Zeichen vorhanden und verschieden → `Mismatch` (`expected` Referenzbase, `observed` Readbase);
-    ///    - Lücke in der Referenz, Readbase vorhanden → `Insertion` (`reference_position` = Index der nächsten Referenzbase);
-    ///    - Lücke im Read, Referenzbase vorhanden → `Deletion` (`read_position` = Index der nächsten Readbase, `quality` 40).
+    /// 4. Column by column through the alignment (tracking reference index and read index):
+    ///    - both characters present and different → `Mismatch` (`expected` reference base, `observed` read base);
+    ///    - gap in the reference, read base present → `Insertion` (`reference_position` = index of the next reference base);
+    ///    - gap in the read, reference base present → `Deletion` (`read_position` = index of the next read base, `quality` 40).
     ///
-    ///    Zusätzlich für jede Readbase mit Qualität `< min_quality` (auch bei Übereinstimmung und bei Einfügungen) ein
-    ///    `LowQuality`-Eintrag (`expected` Referenzbase oder leer bei Einfügung, `observed` Readbase, `quality` der Base).
+    ///    Additionally, for every read base with quality `< min_quality` (also on a match and on insertions) a
+    ///    `LowQuality` entry (`expected` reference base or empty for an insertion, `observed` read base, `quality` of the base).
     ///
-    /// 5. `identity` = Spalten mit gleichen Zeichen ÷ alle Spalten × 100.
+    /// 5. `identity` = columns with identical characters ÷ all columns × 100.
     pub fn check(
         &self,
         reference: &str,
@@ -109,19 +109,19 @@ impl SequencingCheck {
         let read_norm = read.to_uppercase().replace('U', "T");
         let ref_norm = reference.to_uppercase().replace('U', "T");
 
-        // Qualitäten normalisieren: leer bedeutet 40 für alle
+        // normalize qualities: empty means 40 for all
         let quals: Vec<u8> = if quality.is_empty() {
             vec![40u8; read.len()]
         } else {
             quality.to_vec()
         };
 
-        // Reverse-Qualitäten vorbereiten (für den Fall, dass der reverse-komplementierte Read gewinnt)
+        // prepare reverse qualities (in case the reverse-complemented read wins)
         let rc_quals: Vec<u8> = quals.iter().rev().cloned().collect();
 
         let aligner = Aligner::new(2, -3, -5);
 
-        // Forward-Alignment
+        // forward alignment
         let aln_ref = if circular {
             format!("{}{}", ref_norm, ref_norm)
         } else {
@@ -130,11 +130,11 @@ impl SequencingCheck {
 
         let fwd = aligner.semi_global(&read_norm, &aln_ref)?;
 
-        // Reverse-Alignment: Read wird reverse-komplementiert, Qualitäten werden umgekehrt
+        // reverse alignment: the read is reverse-complemented, qualities are reversed
         let rc_read = iupac_reverse_complement(&read_norm);
         let bwd = aligner.semi_global(&rc_read, &aln_ref)?;
 
-        // Entscheiden, welche Ausrichtung besser ist (höherer Score gewinnt, bei Gleichstand Forward)
+        // decide which alignment is better (higher score wins, forward on a tie)
         let (best_fwd, reversed) = if fwd.score >= bwd.score {
             (fwd, false)
         } else {
@@ -144,7 +144,7 @@ impl SequencingCheck {
         let seq1_aln = best_fwd.seq1_aln;
         let seq2_aln = best_fwd.seq2_aln;
 
-        // Referenzbereich berechnen
+        // compute the reference range
         let (reference_start, reference_end) = if circular {
             let s = best_fwd.seq2_start;
             let e = best_fwd.seq2_end;
@@ -155,23 +155,23 @@ impl SequencingCheck {
 
         let mut differences: Vec<Difference> = Vec::new();
         let mut matching_cols = 0usize;
-        // Gesamtlänge des Alignments (Anzahl der Spalten)
+        // total alignment length (number of columns)
         let total_cols = seq1_aln.len();
 
-        // Indizes für die ursprünglichen Sequenzen (vor dem Alignment)
+        // indices into the original sequences (before alignment)
         let mut orig_read_idx = 0usize;
         let mut orig_ref_idx = best_fwd.seq2_start;
 
-        // Die relevanten Qualitäten basierend auf der gewählten Richtung
+        // the relevant qualities based on the chosen direction
         let processing_quals = if reversed { &rc_quals } else { &quals };
 
-        // Durch das Alignment iterieren
+        // iterate through the alignment
         for (c1, c2) in seq1_aln.chars().zip(seq2_aln.chars()) {
             let is_gap1 = c1 == '-';
             let is_gap2 = c2 == '-';
 
             if !is_gap1 && !is_gap2 {
-                // Beide Zeichen vorhanden (Match oder Mismatch)
+                // both characters present (match or mismatch)
                 if c1 == c2 {
                     matching_cols += 1;
                 } else {
@@ -191,7 +191,7 @@ impl SequencingCheck {
                     });
                 }
 
-                // Qualitätsprüfung für LowQuality-Eintrag
+                // quality check for the LowQuality entry
                 let q = processing_quals.get(orig_read_idx).copied().unwrap_or(40);
                 if q < self.min_quality {
                     differences.push(Difference {
@@ -211,9 +211,9 @@ impl SequencingCheck {
                 orig_read_idx += 1;
                 orig_ref_idx += 1;
             } else if is_gap1 && !is_gap2 {
-                // Lücke im Read (Deletion in der Referenz bezogen auf den Read, oder Insertion im Read?)
-                // Laut Aufgabenstellung: "Lücke im Read, Referenzbase vorhanden → Deletion"
-                // Das bedeutet, die Referenz hat eine Base, der Read nicht.
+                // gap in the read (deletion relative to the read, or insertion in the read?)
+                // Per the specification: "gap in the read, reference base present → Deletion"
+                // That means the reference has a base, the read does not.
                 let ref_pos = if circular {
                     orig_ref_idx % ref_len
                 } else {
@@ -222,14 +222,14 @@ impl SequencingCheck {
                 differences.push(Difference {
                     kind: DifferenceType::Deletion,
                     reference_position: ref_pos,
-                    read_position: orig_read_idx, // Index der nächsten Readbase (da Lücke im Read)
-                    expected: c2.to_string(),     // Referenzbase
-                    observed: String::new(),      // Keine Readbase
-                    quality: 40,                  // Standardwert für Deletionen
+                    read_position: orig_read_idx, // index of the next read base (gap in the read)
+                    expected: c2.to_string(),     // reference base
+                    observed: String::new(),      // no read base
+                    quality: 40,                  // default value for deletions
                 });
                 orig_ref_idx += 1;
             } else if !is_gap1 && is_gap2 {
-                // Lücke in der Referenz (Insertion im Read)
+                // gap in the reference (insertion in the read)
                 let ref_pos = if circular {
                     orig_ref_idx % ref_len
                 } else {
@@ -238,34 +238,34 @@ impl SequencingCheck {
                 let q = processing_quals.get(orig_read_idx).copied().unwrap_or(40);
                 differences.push(Difference {
                     kind: DifferenceType::Insertion,
-                    reference_position: ref_pos, // Position der nächsten Referenzbase (oder aktuelle, da Lücke in Ref)
+                    reference_position: ref_pos, // position of the next reference base (or the current one, since gap in ref)
                     read_position: orig_read_idx,
-                    expected: String::new(),  // Keine Referenzbase
-                    observed: c1.to_string(), // Readbase
+                    expected: String::new(),  // no reference base
+                    observed: c1.to_string(), // read base
                     quality: q,
                 });
 
-                // Qualitätsprüfung für LowQuality bei Einfügung
+                // quality check for LowQuality on an insertion
                 if q < self.min_quality {
                     differences.push(Difference {
                         kind: DifferenceType::LowQuality,
                         reference_position: ref_pos,
                         read_position: orig_read_idx,
-                        expected: String::new(), // Keine Referenzbase bei Insertion
-                        observed: c1.to_string(), // Readbase
+                        expected: String::new(), // no reference base on an insertion
+                        observed: c1.to_string(), // read base
                         quality: q,
                     });
                 }
 
                 orig_read_idx += 1;
             } else {
-                // Beide Lücken (sollte theoretisch nicht vorkommen in sinnvollem Alignment, aber sicherheitshalber)
+                // both gaps (should not occur in a sensible alignment, but just to be safe)
                 orig_read_idx += 1;
                 orig_ref_idx += 1;
             }
         }
 
-        // Sortieren der Unterschiede gemäß Spezifikation
+        // sort the differences per the specification
         differences.sort_by(|a, b| {
             a.reference_position
                 .cmp(&b.reference_position)
@@ -273,7 +273,7 @@ impl SequencingCheck {
                 .then_with(|| a.kind.cmp(&b.kind))
         });
 
-        // Identität berechnen
+        // compute identity
         let identity = if total_cols == 0 {
             100.0
         } else {
@@ -297,7 +297,7 @@ impl SequencingCheck {
 mod tests {
     use super::*;
 
-    /// Deterministische, nicht wiederholende Testfolge.
+    /// Deterministic, non-repeating test sequence.
     fn seq(n: usize, seed: u64) -> String {
         let mut s = seed;
         (0..n)
@@ -363,7 +363,7 @@ mod tests {
         assert_eq!(d.expected, old.to_string());
         assert_eq!(d.observed, alt.to_string());
         assert!((res.identity - 29.0 / 30.0 * 100.0).abs() < 1e-9);
-        // Rückwärts: derselbe Unterschied, Read-Position im ausgerichteten (reverse-komplementierten) Read
+        // Reverse: the same difference, read position in the aligned (reverse-complemented) read
         let rev = SequencingCheck::default()
             .check(&r, false, "r", &rc(&read), &[])
             .unwrap();
@@ -376,7 +376,7 @@ mod tests {
     fn einfuegung_und_loeschung() {
         let r = reference();
         let rc_chars = chars(&r);
-        // Einfügung zwischen Referenzbasen 24 und 25 (Read-Index 15): Base, die keiner der Nachbarn ist
+        // Insertion between reference bases 24 and 25 (read index 15): a base that is neither of the neighbors
         let ins = other_base(&[rc_chars[24], rc_chars[25]]);
         let read = format!("{}{}{}", &r[10..25], ins, &r[25..40]);
         let res = SequencingCheck::default()
@@ -391,7 +391,7 @@ mod tests {
             ("", ins.to_string().as_str())
         );
         assert!((res.identity - 30.0 / 31.0 * 100.0).abs() < 1e-9);
-        // Löschung: eine Referenzbase, die sich von ihren Nachbarn unterscheidet
+        // Deletion: a reference base that differs from its neighbors
         let p = (30..60)
             .find(|&p| rc_chars[p] != rc_chars[p - 1] && rc_chars[p] != rc_chars[p + 1])
             .unwrap();
@@ -428,13 +428,13 @@ mod tests {
         );
         assert_eq!(d.observed, r[13..14].to_string());
         assert_eq!(d.expected, r[13..14].to_string());
-        // eigene Schwelle: 10 ist nicht „unter 10“
+        // own threshold: 10 is not "below 10"
         assert!(SequencingCheck::new(10)
             .check(&r, false, "q", &read, &q)
             .unwrap()
             .differences
             .is_empty());
-        // rückwärts: Qualitäten werden mitgedreht
+        // reverse: qualities are flipped too
         let mut qr = vec![40u8; 30];
         qr[29 - 3] = 10;
         let rev = SequencingCheck::default()
@@ -478,7 +478,7 @@ mod tests {
         assert_eq!((res.reference_start, res.reference_end), (50, 20));
         assert!(res.differences.is_empty());
         assert!((res.identity - 100.0).abs() < 1e-9);
-        // Unterschied hinter dem Nullpunkt: Position modulo Länge
+        // Difference after the origin: position modulo length
         let mut v = chars(&read);
         v[15] = other_base(&[v[15]]);
         let read: String = v.into_iter().collect();

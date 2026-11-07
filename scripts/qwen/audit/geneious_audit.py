@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Geneious-Plugin für Plugin mit Qwen vergleichen: python3 geneious_audit.py [Plugin-Teilname ...]
-Je Plugin: Klassen- und Beschriftungsliste aus dem Jar (wie REA sie als Inventar zeigt) + Funktionsübersicht von Snapious -> Qwen (ohne Denkphase,
-über /v1/completions) -> out/<plugin>.md. Qwen bekommt immer nur ein Plugin."""
+"""Compare Geneious plugins one by one with Qwen: python3 geneious_audit.py [plugin name part ...]
+Per plugin: class and label list from the jar (as REA shows it as an inventory) + function overview of Snapious -> Qwen (no thinking phase,
+via /v1/completions) -> out/<plugin>.md. Qwen only ever gets one plugin."""
 import json, os, re, sys, urllib.request, zipfile, glob
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "../../.."))
@@ -74,31 +74,31 @@ def main():
         names, labels = digest(os.path.join(PLUG, d))
         if not names:
             continue
-        # Schritt A: nur das Plugin beschreiben, ohne Snapious zu erwähnen
-        a = ask(f"""Geneious Prime (Bioinformatik-Software), Plugin: {short}
-Klassen:
+        # Step A: describe only the plugin, without mentioning Snapious
+        a = ask(f"""Geneious Prime (bioinformatics software), plugin: {short}
+Classes:
 {chr(10).join(names)}
-Sichtbare Texte:
+Visible texts:
 {chr(10).join(labels)}
 
-Welche biologischen Funktionen bietet dieses Plugin dem Nutzer (Operationen, Analysen, Dateiformate, Ansichten mit biologischem Inhalt)?
-Antworte nur mit einer Liste, eine kurze Funktion pro Zeile (je höchstens 10 Wörter), höchstens 12 Zeilen, Deutsch, mit "- " beginnend.
-Nur Funktionen, die aus den Klassennamen oder Texten oben erkennbar sind; nichts erfinden. Ohne biologische Funktion: nur KEINE.""")
-        if a.strip().upper().startswith("KEINE") or not a.strip():
-            open(out, "w").write("KEINE\n"); continue
-        # Schritt B: jede Funktion gegen Snapious prüfen
-        b = ask(f"""Snapious ist ein Nachbau von Geneious. Funktionsübersicht von Snapious (Datei: Zweck):
+Which biological functions does this plugin offer the user (operations, analyses, file formats, views with biological content)?
+Answer only with a list, one short function per line (at most 10 words each), at most 12 lines, in English, starting with "- ".
+Only functions that can be recognized from the class names or texts above; do not invent anything. If there is no biological function: only NONE.""")
+        if a.strip().upper().startswith(("NONE", "KEINE")) or not a.strip():
+            open(out, "w").write("NONE\n"); continue
+        # Step B: check each function against Snapious
+        b = ask(f"""Snapious is a rebuild of Geneious. Function overview of Snapious (file: purpose):
 {feats}
 
-In der Snapious-App erreichbare Funktionen (Schnittstelle): {ffi}
+Functions reachable in the Snapious app (interface): {ffi}
 
-Geneious-Funktionen aus dem Plugin {short}:
+Geneious functions from the plugin {short}:
 {a}
 
-Prüfe JEDE dieser Geneious-Funktionen einzeln gegen Snapious. Ein Eintrag pro Zeile im Format:
-- <Funktion> | Kern: ja/teilweise/nein | App: ja/nein | <passende Snapious-Datei oder was fehlt>
-Nenne nur Dateien und Funktionsnamen, die oben wirklich vorkommen. Keine zusätzlichen Funktionen hinzufügen. Sei streng: im Zweifel "nein".""")
-        open(out, "w").write("GENEIOUS-FUNKTIONEN:\n" + a + "\n\nABGLEICH:\n" + b + "\n")
+Check EACH of these Geneious functions individually against Snapious. One entry per line in the format:
+- <function> | Core: yes/partial/no | App: yes/no | <matching Snapious file or what is missing>
+Name only files and function names that actually appear above. Do not add extra functions. Be strict: when in doubt, "no".""")
+        open(out, "w").write("GENEIOUS FUNCTIONS:\n" + a + "\n\nCOMPARISON:\n" + b + "\n")
         print(short, flush=True)
 
 main()

@@ -1,35 +1,35 @@
-//! PDB-Dateien (Atomkoordinaten) lesen: Atome, Ketten und Sequenz.
+//! Read PDB files (atom coordinates): atoms, chains and sequence.
 
 use crate::error::{Error, Result};
 
-/// Ein Atom aus einer `ATOM`- oder `HETATM`-Zeile.
+/// An atom from an `ATOM` or `HETATM` line.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Atom {
-    /// Atomname (Spalten 13–16, ohne Leerraum).
+    /// Atom name (columns 13-16, without whitespace).
     pub name: String,
-    /// Residuenname (Spalten 18–20, ohne Leerraum).
+    /// Residue name (columns 18-20, without whitespace).
     pub residue: String,
-    /// Kette (Spalte 22).
+    /// Chain (column 22).
     pub chain: char,
-    /// Residuennummer (Spalten 23–26).
+    /// Residue number (columns 23-26).
     pub number: i32,
     pub x: f64,
     pub y: f64,
     pub z: f64,
-    /// Element (Spalten 77–78, ohne Leerraum; leer, wenn die Zeile kürzer ist).
+    /// Element (columns 77-78, without whitespace; empty if the line is shorter).
     pub element: String,
-    /// `true` bei `HETATM`.
+    /// `true` for `HETATM`.
     pub hetero: bool,
 }
 
-/// Eine eingelesene Struktur.
+/// A parsed structure.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Pdb {
     pub atoms: Vec<Atom>,
 }
 
-/// Dreibuchstabencode → Einbuchstabencode der 20 Standard-Aminosäuren (Uppercase, z. B. `GLY` → `G`); `MSE` zählt als `M`,
-/// alles andere ist `X`.
+/// Three-letter code -> one-letter code of the 20 standard amino acids (uppercase, e.g. `GLY` -> `G`); `MSE` counts as `M`,
+/// everything else is `X`.
 pub fn one_letter(residue: &str) -> char {
     let upper = residue.trim().to_uppercase();
     match upper.as_str() {
@@ -56,10 +56,10 @@ pub fn one_letter(residue: &str) -> char {
     }
 }
 
-/// Liest `ATOM`- und `HETATM`-Zeilen (Spalten wie in der PDB-Beschreibung, 1-basiert: Name 13–16, Residuum 18–20, Kette 22,
-/// Nummer 23–26, x 31–38, y 39–46, z 47–54, Element 77–78). Alle anderen Zeilen werden ignoriert; Zeilen, die zu kurz für die
-/// Koordinaten (weniger als 54 Zeichen) sind oder deren Zahlen sich nicht lesen lassen, werden übersprungen. Zeilenenden `\n` und `\r\n`.
-/// Fehler gibt es nicht; eine Datei ohne Atome ergibt eine leere Struktur.
+/// Reads `ATOM` and `HETATM` lines (columns as in the PDB specification, 1-based: name 13-16, residue 18-20, chain 22,
+/// number 23-26, x 31-38, y 39-46, z 47-54, element 77-78). All other lines are ignored; lines that are too short for the
+/// coordinates (fewer than 54 characters) or whose numbers cannot be parsed are skipped. Line endings `\n` and `\r\n`.
+/// There are no errors; a file without atoms yields an empty structure.
 pub fn parse_pdb(text: &str) -> Pdb {
     let mut atoms = Vec::new();
     for line in text.lines() {
@@ -70,7 +70,7 @@ pub fn parse_pdb(text: &str) -> Pdb {
             continue;
         }
 
-        // `get` statt Indexierung: bei Mehrbyte-Zeichen in einer Spalte liegt die Grenze nicht auf einem Zeichen, die Zeile wird dann übersprungen
+        // `get` instead of indexing: with multi-byte characters in a column the boundary is not on a character, and the line is skipped
         let col = |from: usize, to: usize| line.get(from..to).map(str::trim);
         let (Some(name), Some(residue), Some(num), Some(xs), Some(ys), Some(zs)) = (
             col(12, 16),
@@ -119,7 +119,7 @@ pub fn parse_pdb(text: &str) -> Pdb {
 }
 
 impl Pdb {
-    /// Ketten in der Reihenfolge des ersten Auftretens (nur Atome mit `hetero == false` zählen, Kette ` ` ebenfalls als Zeichen).
+    /// Chains in order of first appearance (only atoms with `hetero == false` count; chain ` ` also counts as a character).
     pub fn chains(&self) -> Vec<char> {
         let mut seen = Vec::new();
         for a in &self.atoms {
@@ -130,8 +130,8 @@ impl Pdb {
         seen
     }
 
-    /// Sequenz einer Kette aus den Nicht-HETATM-Atomen: ein Buchstabe je neuem Residuum (Wechsel der Residuennummer gegenüber dem
-    /// vorigen Atom derselben Kette) mit `one_letter`. Unbekannte Kette → leerer Text.
+    /// Sequence of a chain from the non-HETATM atoms: one letter per new residue (change of residue number relative to the
+    /// previous atom of the same chain) using `one_letter`. Unknown chain -> empty text.
     pub fn sequence(&self, chain: char) -> String {
         let mut seq = String::new();
         let mut last_num: Option<i32> = None;
@@ -150,7 +150,7 @@ impl Pdb {
         seq
     }
 
-    /// Zahl der Residuen der Kette (wie bei `sequence`).
+    /// Number of residues in the chain (as in `sequence`).
     pub fn residue_count(&self, chain: char) -> usize {
         let mut count = 0;
         let mut last_num: Option<i32> = None;
@@ -169,7 +169,7 @@ impl Pdb {
         count
     }
 
-    /// Mittelpunkt aller Atome (Mittel von x, y, z); `Error::InvalidInput` ohne Atome.
+    /// Centroid of all atoms (mean of x, y, z); `Error::InvalidInput` without atoms.
     pub fn center(&self) -> Result<(f64, f64, f64)> {
         if self.atoms.is_empty() {
             return Err(Error::InvalidInput("No atoms present".into()));

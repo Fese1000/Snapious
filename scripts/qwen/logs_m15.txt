@@ -1,3 +1,0 @@
-=== sdf.rs Versuch 1
-[33s {'prompt_tokens': 4472, 'completion_tokens': 1146, 'total_tokens': 5618}]
-ERGEBNIS sdf.rs: GRÜN (2 Tests) nach 1 Versuch(en)

@@ -1,7 +1,7 @@
 import SnapiousFFI
 import SwiftUI
 
-/// Ähnlichkeitsverlauf eines Alignments: Identität je Spalte (grau) und geglättet (Akzentfarbe).
+/// Similarity profile of an alignment: per-column identity (gray) and smoothed (accent color).
 struct SimilarityGraphSheet: View {
     @ObservedObject var model: AppModel
     let alignmentID: String
@@ -13,10 +13,10 @@ struct SimilarityGraphSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(tr("Ähnlichkeitsverlauf")).font(.title2.bold())
-            Text(tr("Mittlere paarweise Identität je Spalte (Lücken zählen nicht). 1 = alle gleich."))
+            Text(tr("Similarity profile")).font(.title2.bold())
+            Text(tr("Mean pairwise identity per column (gaps do not count). 1 = all identical."))
                 .font(.callout).foregroundStyle(.secondary)
-            Stepper(tr("Glättungsfenster: %@ Spalten", "\(window)"), value: $window, in: 1...201, step: 2)
+            Stepper(tr("Smoothing window: %@ columns", "\(window)"), value: $window, in: 1...201, step: 2)
                 .onChange(of: window) { _, _ in load() }
             Canvas { ctx, size in
                 guard raw.count > 1 else { return }
@@ -35,11 +35,11 @@ struct SimilarityGraphSheet: View {
             .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
             if let message { Text(message).foregroundStyle(.red) }
             if !smooth.isEmpty {
-                Text(String(format: tr("Mittelwert %.1f %% · niedrigster geglätteter Wert %.1f %%"),
+                Text(String(format: tr("Mean %.1f %% · lowest smoothed value %.1f %%"),
                             100 * smooth.reduce(0, +) / Double(smooth.count), 100 * (smooth.min() ?? 0)))
                     .font(.callout).foregroundStyle(.secondary)
             }
-            HStack { Spacer(); Button(tr("Schließen")) { dismiss() }.keyboardShortcut(.defaultAction) }
+            HStack { Spacer(); Button(tr("Close")) { dismiss() }.keyboardShortcut(.defaultAction) }
         }
         .padding(20)
         .frame(width: 560)

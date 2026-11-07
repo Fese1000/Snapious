@@ -1,20 +1,20 @@
-//! Workflow aus dem Verlauf aufzeichnen.
+//! Record a workflow from the history.
 
 use crate::error::{Error, Result};
 use crate::ops::operation::HistoryEntry;
 use crate::ops::workflow::{Workflow, WorkflowStep};
 
-/// Baut aus Verlaufseinträgen (in der Reihenfolge ihrer Ausführung) einen Workflow.
-/// * Schritt `i` (0-basiert) bekommt die ID `s{i}`, `operation_id` und `parameters` des Eintrags.
-/// * Jede Eingabe-ID eines Eintrags wird zum Verweis: wurde sie von einem **früheren** Eintrag als Ausgabe erzeugt (`output_ids`, jeweils der letzte
-///   solche Eintrag vor diesem), ist es `$step:S:N` (`S` = Index jenes Eintrags, `N` = Position der ID in dessen `output_ids`); sonst eine
-///   externe Eingabe `$in:K`, wobei `K` in der Reihenfolge des ersten Auftretens der verschiedenen externen IDs vergeben wird (0, 1, …).
-///   Dieselbe externe ID bekommt überall denselben Verweis.
-/// * `input_count` = Zahl der verschiedenen externen Eingaben.
-/// * `outputs` = Verweise `$step:L:N` für alle Ausgaben des letzten Eintrags `L` (`N` = 0, 1, …).
-/// * `description` = die Zusammenfassungen (`summary`) der Einträge, durch ` → ` getrennt (leere Zusammenfassungen entfallen).
+/// Builds a workflow from history entries (in order of execution).
+/// * Step `i` (0-based) gets the ID `s{i}`, and the `operation_id` and `parameters` of the entry.
+/// * Each input ID of an entry becomes a reference: if it was produced as an output by an **earlier** entry (`output_ids`, taking the last
+///   such entry before this one), it is `$step:S:N` (`S` = index of that entry, `N` = position of the ID in its `output_ids`); otherwise an
+///   external input `$in:K`, where `K` is assigned in order of first occurrence of the distinct external IDs (0, 1, …).
+///   The same external ID gets the same reference everywhere.
+/// * `input_count` = number of distinct external inputs.
+/// * `outputs` = references `$step:L:N` for all outputs of the last entry `L` (`N` = 0, 1, …).
+/// * `description` = the summaries (`summary`) of the entries, joined by ` → ` (empty summaries are dropped).
 ///
-/// Fehler `Error::InvalidInput`, wenn `entries` leer ist.
+/// Error `Error::InvalidInput` if `entries` is empty.
 pub fn workflow_from_history(name: &str, entries: &[HistoryEntry]) -> Result<Workflow> {
     if entries.is_empty() {
         return Err(Error::InvalidInput(
@@ -26,7 +26,7 @@ pub fn workflow_from_history(name: &str, entries: &[HistoryEntry]) -> Result<Wor
     for (i, e) in entries.iter().enumerate() {
         let mut inputs = Vec::new();
         for id in &e.input_ids {
-            // letzter früherer Erzeuger
+            // last earlier producer
             let producer =
                 entries[..i].iter().enumerate().rev().find_map(|(s, prev)| {
                     prev.output_ids.iter().position(|o| o == id).map(|n| (s, n))
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn spaeterer_eintrag_ueberschreibt_und_fehler() {
-        // "d" wird von Schritt 0 und Schritt 1 erzeugt; Schritt 2 verweist auf den letzten Erzeuger (Schritt 1)
+        // "d" is produced by step 0 and step 1; step 2 refers to the last producer (step 1)
         let h = vec![
             entry("a.op", &["in"], &["d"], "", &[]),
             entry("b.op", &["in"], &["d"], "", &[]),
@@ -157,7 +157,7 @@ mod tests {
             workflow_from_history("W", &[]),
             Err(Error::InvalidInput(_))
         ));
-        // der Workflow lässt sich in JSON schreiben und lesen
+        // the workflow can be written to and read from JSON
         let again = Workflow::from_json(&w.to_json()).unwrap();
         assert_eq!(again, w);
     }

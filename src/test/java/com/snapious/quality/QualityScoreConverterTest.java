@@ -7,7 +7,7 @@ class QualityScoreConverterTest {
 
     @Test
     void testEncodingErkennungSanger() {
-        // Sanger: ASCII 33-93 ('!' bis '~')
+        // Sanger: ASCII 33-93 ('!' to '~')
         String qualityString = "!#$$$%&'()*+";
 
         assertEquals(QualityScoreConverter.EncodingType.SANGER,
@@ -16,7 +16,7 @@ class QualityScoreConverterTest {
 
     @Test
     void testEncodingErkennungIllumina13() {
-        // Illumina 1.0-1.3: ASCII 64-126 ('@' bis '~')
+        // Illumina 1.0-1.3: ASCII 64-126 ('@' to '~')
         String qualityString = "@ABCDEFGHI";
 
         assertEquals(QualityScoreConverter.EncodingType.ILLUMINA_13,
@@ -74,7 +74,7 @@ class QualityScoreConverterTest {
         String report = QualityScoreConverter.generateQualityReport(qualityStrings);
 
         assertNotNull(report);
-        assertTrue(report.contains("Quality-Bericht"));
+        assertTrue(report.contains("Quality Report"));
     }
 
     @Test

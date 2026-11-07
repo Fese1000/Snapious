@@ -13,7 +13,7 @@ class RestrictionEnzymeDBTest {
     void testGetAllEnzymes() {
         var enzymes = enzymeDB.getAllEnzymes();
 
-        assertTrue(enzymes.size() > 50, "Sollte mindestens 50 Enzyme enthalten");
+        assertTrue(enzymes.size() > 50, "Should contain at least 50 enzymes");
     }
 
     @Test
@@ -66,14 +66,14 @@ class RestrictionEnzymeDBTest {
             .findFirst();
 
         assertTrue(ecoSite.isPresent());
-        assertEquals(3, ecoSite.get().getPosition());  // GAATTC beginnt bei Position 3
+        assertEquals(3, ecoSite.get().getPosition());  // GAATTC starts at position 3
     }
 
     @Test
     void testMultipleCutSites() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 5; i++) {
-            sb.append("GAATTC");  // Mehrere EcoRI Stellen
+            sb.append("GAATTC");  // several EcoRI sites
         }
 
         Sequence seq = new Sequence("multi", "Multi", sb.toString(), Sequence.SequenceType.DNA);
@@ -110,7 +110,7 @@ class RestrictionEnzymeDBTest {
             .findFirst();
 
         assertTrue(smaI.isPresent());
-        assertTrue(smaI.get().isBluntEnd());  // SmaI schneidet stumpf: CCC^GGG
+        assertTrue(smaI.get().isBluntEnd());  // SmaI cuts blunt: CCC^GGG
     }
 
     @Test
@@ -173,7 +173,7 @@ class RestrictionEnzymeDBTest {
 
         var sites = enzymeDB.findAllCutSites(seq);
 
-        // Sollte wenige oder keine Schnittstellen haben (A/T-reich)
+        // Should have few or no cut sites (A/T-rich)
         assertNotNull(sites);
     }
 
@@ -198,7 +198,7 @@ class RestrictionEnzymeDBTest {
             .findFirst();
 
         assertTrue(taqI.isPresent());
-        assertEquals("65°C", taqI.get().getTemperature());  // TaqI bei höherer Temperatur
+        assertEquals("65°C", taqI.get().getTemperature());  // TaqI at a higher temperature
     }
 
     @Test
@@ -209,7 +209,7 @@ class RestrictionEnzymeDBTest {
             .filter(e -> e.getRecognitionSequence().equals("CCCGGG"))
             .toList();
 
-        assertTrue(smaIEnzymes.size() >= 2);  // SmaI und XmaI haben gleiche Erkennungssequenz
+        assertTrue(smaIEnzymes.size() >= 2);  // SmaI and XmaI have the same recognition sequence
     }
 
     @Test
@@ -225,7 +225,7 @@ class RestrictionEnzymeDBTest {
         var sites = enzymeDB.findAllCutSites(seq);
         long elapsed = System.currentTimeMillis() - startTime;
 
-        assertTrue(elapsed < 5000, "Sollte innerhalb von 5s.finishen");
+        assertTrue(elapsed < 5000, "Should finish within 5s");
         assertNotNull(sites);
     }
 
@@ -263,17 +263,17 @@ class RestrictionEnzymeDBTest {
 
         assertTrue(ecoRI.isPresent());
 
-        // Kompatible Enzyme sollten stumpfe Enden haben (da EcoRI sticky ends)
+        // Compatible enzymes should have blunt ends (since EcoRI has sticky ends)
         var compatible = enzymeDB.findCompatibleEnzymes(ecoRI.get());
 
-        assertNotNull(compatible);  // Kann leer sein wenn keine komplementären Overhänge
+        assertNotNull(compatible);  // may be empty if there are no complementary overhangs
     }
 
     @Test
     void testMethylationSensitiveEnzymes() {
         var sensitive = enzymeDB.getMethylationSensitive();
 
-        assertNotNull(sensitive);  // Sollte Liste zurückgeben (kann leer sein)
+        assertNotNull(sensitive);  // should return a list (may be empty)
     }
 
     @Test
@@ -285,7 +285,7 @@ class RestrictionEnzymeDBTest {
             .distinct()
             .toList();
 
-        assertTrue(types.size() >= 2);  // palindromische Typ-II und Typ-IIS-Enzyme
+        assertTrue(types.size() >= 2);  // palindromic type II and type IIS enzymes
     }
 
     @Test
@@ -299,7 +299,7 @@ class RestrictionEnzymeDBTest {
             .findFirst();
 
         assertTrue(smaISite.isPresent());
-        assertTrue(smaISite.get().isBlunt());  // SmaI: CCC^GGG (stumpf)
+        assertTrue(smaISite.get().isBlunt());  // SmaI: CCC^GGG (blunt)
     }
 
     @Test
@@ -317,7 +317,7 @@ class RestrictionEnzymeDBTest {
         assertTrue(ecoRI1.isPresent());
         assertTrue(ecoRI2.isPresent());
 
-        assertEquals(ecoRI1.get(), ecoRI2.get());  // Gleiche Namen = gleich
+        assertEquals(ecoRI1.get(), ecoRI2.get());  // same names = equal
         assertEquals(ecoRI1.get().hashCode(), ecoRI2.get().hashCode());
     }
 
@@ -336,7 +336,7 @@ class RestrictionEnzymeDBTest {
         assertTrue(bamHI.isPresent());
         assertTrue(mboI.isPresent());
 
-        // Beide erkennen GATC und generieren kompatible sticky ends
+        // Both recognize GATC and generate compatible sticky ends
         assertTrue(bamHI.get().isStickyEnd());
         assertTrue(mboI.get().isStickyEnd());
     }
@@ -381,7 +381,7 @@ class RestrictionEnzymeDBTest {
         assertTrue(xhoI.isPresent());
         assertTrue(xbaI.isPresent());
 
-        // XhoI (CTCGAG) und XbaI (TCTAGA) generieren kompatible sticky ends
+        // XhoI (CTCGAG) and XbaI (TCTAGA) generate compatible sticky ends
         assertTrue(xhoI.get().isStickyEnd());
         assertTrue(xbaI.get().isStickyEnd());
     }
@@ -392,7 +392,7 @@ class RestrictionEnzymeDBTest {
 
         var sites = enzymeDB.findAllCutSites(seq);
 
-        // 4bp Sequenz kann keine Schnittstellen für 6-8bp cutter haben
+        // A 4bp sequence cannot have cut sites for 6-8bp cutters
         assertTrue(sites.isEmpty());
     }
 
@@ -402,7 +402,7 @@ class RestrictionEnzymeDBTest {
 
         var pos1Enzymes = enzymeDB.findByCutPosition(1);
 
-        assertTrue(pos1Enzymes.size() > 0);  // Viele Enzyme schneiden bei Position 1
+        assertTrue(pos1Enzymes.size() > 0);  // many enzymes cut at position 1
     }
 
     @Test
@@ -421,12 +421,12 @@ class RestrictionEnzymeDBTest {
     void testOvernightDigestionEnzymes() {
         var enzymes = enzymeDB.getAllEnzymes();
 
-        // Enzyme die nicht bei 37°C schneiden (overnight Digestion)
+        // Enzymes that do not cut at 37°C (overnight digestion)
         var non37Enzymes = enzymes.stream()
             .filter(e -> !e.getTemperature().equals("37°C"))
             .toList();
 
-        assertTrue(non37Enzymes.size() > 0);  // z.B. PmeI bei 30°C, TaqI bei 65°C
+        assertTrue(non37Enzymes.size() > 0);  // e.g. PmeI at 30°C, TaqI at 65°C
     }
 
     @Test
@@ -442,7 +442,7 @@ class RestrictionEnzymeDBTest {
         assertTrue(ecoSite.isPresent());
 
         String overhang = ecoSite.get().getOverhang();
-        // EcoRI: G^AATTC → 5' Überhang "AATT"
+        // EcoRI: G^AATTC → 5' overhang "AATT"
         assertEquals("AATT", overhang);
     }
 
@@ -450,7 +450,7 @@ class RestrictionEnzymeDBTest {
     void testDatabaseCompleteness() {
         var enzymes = enzymeDB.getAllEnzymes();
 
-        // Prüfe ob häufige Enzyme vorhanden sind
+        // Check whether common enzymes are present
         String[] commonEnzymes = {"EcoRI", "BamHI", "HindIII", "NotI", "XhoI", "XbaI",
             "SalI", "PstI", "SmaI", "NcoI", "NdeI", "BglII"};
 
@@ -459,7 +459,7 @@ class RestrictionEnzymeDBTest {
                 .filter(e -> e.getName().equals(name))
                 .findFirst();
 
-            assertTrue(found.isPresent(), "Fehlendes häufiges Enzym: " + name);
+            assertTrue(found.isPresent(), "Missing common enzyme: " + name);
         }
     }
 
@@ -511,7 +511,7 @@ class RestrictionEnzymeDBTest {
     @Test
     void testNonPalindromicSiteFoundOnBothStrands() {
         var bsaI = enzymeDB.searchByName("BsaI").get(0);
-        // GGTCTC vorwärts bzw. als Reverse-Komplement GAGACC
+        // GGTCTC forward or as reverse complement GAGACC
         assertEquals(1, enzymeDB.findEnzymePositions(bsaI, "AAAGGTCTCAAAAAAAAAA").size());
         assertEquals(1, enzymeDB.findEnzymePositions(bsaI, "AAAGAGACCAAAAAAAAAA").size());
     }

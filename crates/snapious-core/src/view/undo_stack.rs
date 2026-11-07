@@ -1,6 +1,6 @@
-//! Rückgängig/Wiederholen für Dokumentzustände (begrenzte Tiefe).
+//! Undo/redo for document states (limited depth).
 
-/// Zwei Stapel: Zustände zum Zurückgehen und zum Wiederholen.
+/// Two stacks: states to go back to and states to redo.
 #[derive(Clone, Debug)]
 pub struct UndoStack<T: Clone> {
     undo: Vec<T>,
@@ -9,7 +9,7 @@ pub struct UndoStack<T: Clone> {
 }
 
 impl<T: Clone> UndoStack<T> {
-    /// Leerer Stapel; `limit` ist die größte Zahl gespeicherter Rückgängig-Schritte (mindestens 1: `limit.max(1)`).
+    /// Empty stack; `limit` is the largest number of stored undo steps (at least 1: `limit.max(1)`).
     pub fn new(limit: usize) -> Self {
         Self {
             undo: Vec::new(),
@@ -18,8 +18,8 @@ impl<T: Clone> UndoStack<T> {
         }
     }
 
-    /// Merkt `state` (den Zustand VOR einer Änderung) für Rückgängig, leert den Wiederholen-Stapel und wirft bei
-    /// Überschreiten des Limits den ältesten Eintrag weg.
+    /// Remembers `state` (the state BEFORE a change) for undo, clears the redo stack and drops the oldest entry when
+    /// the limit is exceeded.
     pub fn push(&mut self, state: T) {
         self.redo.clear();
         self.undo.push(state);
@@ -28,16 +28,16 @@ impl<T: Clone> UndoStack<T> {
         }
     }
 
-    /// Geht einen Schritt zurück: nimmt den obersten Rückgängig-Zustand und gibt ihn zurück; `current` (der Zustand jetzt)
-    /// kommt auf den Wiederholen-Stapel. Ist nichts zum Zurückgehen da → `None`, nichts ändert sich.
+    /// Goes back one step: takes the top undo state and returns it; `current` (the state now)
+    /// goes onto the redo stack. If there is nothing to go back to → `None`, nothing changes.
     pub fn undo(&mut self, current: T) -> Option<T> {
         let prev = self.undo.pop()?;
         self.redo.push(current);
         Some(prev)
     }
 
-    /// Wie `undo`, aber umgekehrt: nimmt den obersten Wiederholen-Zustand, `current` kommt auf den Rückgängig-Stapel
-    /// (ohne das Limit zu verletzen: ältester Eintrag fällt weg). Nichts zum Wiederholen → `None`.
+    /// Like `undo`, but reversed: takes the top redo state, `current` goes onto the undo stack
+    /// (without violating the limit: the oldest entry is dropped). Nothing to redo → `None`.
     pub fn redo(&mut self, current: T) -> Option<T> {
         let next = self.redo.pop()?;
         self.undo.push(current);
@@ -55,7 +55,7 @@ impl<T: Clone> UndoStack<T> {
         !self.redo.is_empty()
     }
 
-    /// Zahl der möglichen Rückgängig-Schritte.
+    /// Number of possible undo steps.
     pub fn undo_len(&self) -> usize {
         self.undo.len()
     }
@@ -71,7 +71,7 @@ mod tests {
         assert!(!s.can_undo() && !s.can_redo());
         s.push(1);
         s.push(2);
-        s.push(3); // 1 fällt weg, Rückgängig hält [2, 3]
+        s.push(3); // 1 is dropped, undo holds [2, 3]
         assert_eq!(s.undo_len(), 2);
         assert_eq!(s.undo(4), Some(3));
         assert!(s.can_redo());
@@ -96,6 +96,6 @@ mod tests {
         let mut z = UndoStack::new(0);
         z.push(1);
         z.push(2);
-        assert_eq!(z.undo_len(), 1); // Limit mindestens 1
+        assert_eq!(z.undo_len(), 1); // limit is at least 1
     }
 }

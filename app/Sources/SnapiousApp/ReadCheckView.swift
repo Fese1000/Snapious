@@ -2,7 +2,7 @@ import AppKit
 import SnapiousFFI
 import SwiftUI
 
-/// Sequenzierabgleich: eine .ab1-Datei gegen das gewählte Dokument prüfen, Unterschiede und Spur ansehen.
+/// Sequencing check: compare an .ab1 file against the selected document, view differences and trace.
 struct ReadCheckView: View {
     @ObservedObject var model: AppModel
     @State private var trace: TraceDto?
@@ -15,19 +15,19 @@ struct ReadCheckView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Button(tr("Sequenzierdatei wählen…")) { choose() }
+                Button(tr("Choose sequencing file…")) { choose() }
                 if let r = result {
-                    Text(tr("%@: %@Referenz %@–%@, Identität %@ %", "\(r.readName)", "\(r.reversed ? "reverse-komplementär, " : "")", "\(r.referenceStart + 1)", "\(r.referenceEnd)", "\(String(format: "%.2f", r.identity))"))
+                    Text(tr("%@: %@Reference %@–%@, identity %@ %", "\(r.readName)", "\(r.reversed ? "reverse-komplementär, " : "")", "\(r.referenceStart + 1)", "\(r.referenceEnd)", "\(String(format: "%.2f", r.identity))"))
                         .foregroundStyle(Theme.inkSoft)
                 }
                 Spacer()
             }
             if let message { Text(message).foregroundStyle(Theme.danger) }
             if let own = ownTrace {
-                GroupBox(tr("Spur der Sequenzierdatei „%@“ (im Projektordner abgelegt)", "\(ownFile)")) {
+                GroupBox(tr("Trace of the sequencing file “%@” (stored in the project folder)", "\(ownFile)")) {
                     VStack(alignment: .leading, spacing: 4) {
                         TraceCanvas(trace: own).frame(height: 160)
-                        Text(tr("Qualität: ") + qualitySummary(own)).font(.caption).foregroundStyle(.secondary)
+                        Text(tr("Quality: ") + qualitySummary(own)).font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -37,15 +37,15 @@ struct ReadCheckView: View {
             }
             if !rows.isEmpty {
                 Table(rows) {
-                    TableColumn(tr("Art")) { r in Text(kindName(r.dto.kind)) }.width(120)
-                    TableColumn(tr("Referenz")) { r in Text("\(r.dto.referencePosition + 1)") }.width(80)
+                    TableColumn(tr("Kind")) { r in Text(kindName(r.dto.kind)) }.width(120)
+                    TableColumn(tr("Reference")) { r in Text("\(r.dto.referencePosition + 1)") }.width(80)
                     TableColumn(tr("Read")) { r in Text("\(r.dto.readPosition + 1)") }.width(70)
-                    TableColumn(tr("Erwartet")) { r in Text(r.dto.expected.isEmpty ? "–" : r.dto.expected) }.width(80)
-                    TableColumn(tr("Gefunden")) { r in Text(r.dto.observed.isEmpty ? "–" : r.dto.observed) }.width(80)
-                    TableColumn(tr("Qualität")) { r in Text("\(r.dto.quality)") }.width(70)
+                    TableColumn(tr("Expected")) { r in Text(r.dto.expected.isEmpty ? "–" : r.dto.expected) }.width(80)
+                    TableColumn(tr("Found")) { r in Text(r.dto.observed.isEmpty ? "–" : r.dto.observed) }.width(80)
+                    TableColumn(tr("Quality")) { r in Text("\(r.dto.quality)") }.width(70)
                 }
             } else if result != nil {
-                Text(tr("Keine Unterschiede.")).foregroundStyle(Theme.inkSoft)
+                Text(tr("No differences.")).foregroundStyle(Theme.inkSoft)
             }
             Spacer(minLength: 0)
         }
@@ -61,7 +61,7 @@ struct ReadCheckView: View {
         }
     }
 
-    /// Lädt die Spur der verknüpften `.ab1`-Datei des gewählten Dokuments (falls vorhanden).
+    /// Loads the trace of the linked `.ab1` file of the selected document (if present).
     private func loadOwnTrace() {
         ownTrace = nil
         ownFile = ""
@@ -72,18 +72,18 @@ struct ReadCheckView: View {
     }
 
     private func qualitySummary(_ t: TraceDto) -> String {
-        guard !t.quality.isEmpty else { return tr("nicht gespeichert") }
+        guard !t.quality.isEmpty else { return tr("not saved") }
         let mean = Double(t.quality.reduce(0) { $0 + Int($1) }) / Double(t.quality.count)
         let good = t.quality.filter { $0 >= 20 }.count
-        return String(format: tr("Mittel %.1f, %d von %d Basen mit Q ≥ 20"), mean, good, t.quality.count)
+        return String(format: tr("Mean %.1f, %d of %d bases with Q ≥ 20"), mean, good, t.quality.count)
     }
 
     private func kindName(_ k: String) -> String {
         switch k {
-        case "MISMATCH": return tr("Austausch")
-        case "INSERTION": return tr("Einfügung")
-        case "DELETION": return tr("Löschung")
-        default: return tr("Niedrige Qualität")
+        case "MISMATCH": return tr("Substitution")
+        case "INSERTION": return tr("Insertion")
+        case "DELETION": return tr("Deletion")
+        default: return tr("Low quality")
         }
     }
 
@@ -91,7 +91,7 @@ struct ReadCheckView: View {
         message = nil
         guard let project = model.project, let id = model.selection else { return }
         let panel = NSOpenPanel()
-        panel.title = tr("Sequenzierdatei (.ab1) wählen")
+        panel.title = tr("Choose sequencing file (.ab1)")
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
@@ -114,10 +114,10 @@ struct DiffRow: Identifiable {
     var id: Int { index }
 }
 
-/// Vier Farbkanäle mit den Basenaufrufen darunter; niedrige Qualität wird blasser gezeichnet.
+/// Four color channels with the base calls below; low quality is drawn paler.
 struct TraceCanvas: View {
     let trace: TraceDto
-    /// Horizontale Vergrößerung (1 = 3 Messpunkte je Pixel) und Höhe der Peaks.
+    /// Horizontal zoom (1 = 3 data points per pixel) and height of the peaks.
     @State private var zoom = 1.0
     @State private var height = 1.0
     @State private var pinchStart: Double?
@@ -130,19 +130,19 @@ struct TraceCanvas: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Button { zoomBy(1 / 1.5) } label: { Image(systemName: "minus.magnifyingglass") }
-                    .accessibilityLabel(tr("Herauszoomen"))
+                    .accessibilityLabel(tr("Zoom out"))
                 Slider(value: Binding(get: { log2(zoom) }, set: { zoom = pow(2, $0) }), in: -2...4).frame(width: 140)
                 Button { zoomBy(1.5) } label: { Image(systemName: "plus.magnifyingglass") }
-                    .accessibilityLabel(tr("Hineinzoomen"))
+                    .accessibilityLabel(tr("Zoom in"))
                 Text(String(format: "%.0f %%", zoom * 100)).font(.caption).foregroundStyle(.secondary).frame(width: 48, alignment: .leading)
-                Button(tr("Anpassen")) { zoom = max(0.25, Double(viewWidth / baseWidth)) }
-                    .help(tr("Die ganze Spur ins Fenster einpassen"))
+                Button(tr("Fit")) { zoom = max(0.25, Double(viewWidth / baseWidth)) }
+                    .help(tr("Fit the whole trace into the window"))
                 Button("1:1") { zoom = 1 }
                 Divider().frame(height: 14)
-                Image(systemName: "arrow.up.and.down").foregroundStyle(.secondary).accessibilityLabel(tr("Höhe der Peaks"))
+                Image(systemName: "arrow.up.and.down").foregroundStyle(.secondary).accessibilityLabel(tr("Peak height"))
                 Slider(value: $height, in: 0.5...6).frame(width: 90)
                 Spacer()
-                Text(tr("Zoomen auch mit zwei Fingern")).font(.caption).foregroundStyle(.secondary)
+                Text(tr("Zoom also with two fingers")).font(.caption).foregroundStyle(.secondary)
             }
             .buttonStyle(.borderless)
             ScrollView(.horizontal) {
@@ -182,7 +182,7 @@ struct TraceCanvas: View {
                 ctx.draw(Text(String(bases[i])).font(.system(size: 11, design: .monospaced))
                             .foregroundStyle((colors[String(bases[i])] ?? .primary).opacity(q < 20 ? 0.35 : 1)),
                          at: CGPoint(x: x, y: size.height - 8), anchor: .center)
-                // alle zehn Basen die Nummer, sobald genug Platz ist
+                // number every ten bases once there is enough space
                 if (i + 1) % 10 == 0 && size.width / n * 30 > 2 {
                     ctx.draw(Text("\(i + 1)").font(.system(size: 8)).foregroundStyle(.secondary), at: CGPoint(x: x, y: 6), anchor: .center)
                 }

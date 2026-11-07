@@ -1,8 +1,8 @@
-//! Spalten eines Alignments auswählen und entfernen (Maske für „Spalten entfernen“).
+//! Select and remove alignment columns (mask for "remove columns").
 
-/// Spalten, deren Lückenanteil mindestens `min_gap_fraction` beträgt (Lücke = `-` oder `.`). Rückgabe: je Spalte `true`, wenn
-/// sie ausgewählt ist. Zeilen sind gleich lang (sonst zählt die Länge der ersten Zeile; fehlende Zeichen zählen als Lücke).
-/// Keine Zeilen → leerer Vektor. Beispiel: Zeilen `A-C`, `A-C`, `AGC`, Schwelle 0.5 → `[false, true, false]`.
+/// Columns whose gap fraction is at least `min_gap_fraction` (gap = `-` or `.`). Returns `true` per column if
+/// it is selected. Rows are of equal length (otherwise the length of the first row counts; missing characters count as gaps).
+/// No rows → empty vector. Example: rows `A-C`, `A-C`, `AGC`, threshold 0.5 → `[false, true, false]`.
 pub fn columns_by_gaps(rows: &[String], min_gap_fraction: f64) -> Vec<bool> {
     let Some(first) = rows.first() else {
         return Vec::new();
@@ -22,8 +22,8 @@ pub fn columns_by_gaps(rows: &[String], min_gap_fraction: f64) -> Vec<bool> {
         .collect()
 }
 
-/// Spalten ohne Lücke, in denen alle Zeilen dieselbe Base haben (Groß-/Kleinschreibung egal). Zeilen und Länge wie bei
-/// `columns_by_gaps`. Beispiel: `ACG`, `ATG` → `[true, false, true]`.
+/// Gap-free columns in which all rows have the same base (case-insensitive). Rows and length as in
+/// `columns_by_gaps`. Example: `ACG`, `ATG` → `[true, false, true]`.
 pub fn columns_constant(rows: &[String]) -> Vec<bool> {
     let Some(first) = rows.first() else {
         return Vec::new();
@@ -41,16 +41,16 @@ pub fn columns_constant(rows: &[String]) -> Vec<bool> {
         .collect()
 }
 
-/// Spalten einer Codonposition: `true` für jede Spalte `col >= start` mit `(col - start) % 3 == codon_position` (0, 1 oder 2),
-/// sonst `false`; Länge `len`. Beispiel: `len 7`, `start 1`, `codon_position 0` → `[false, true, false, false, true, false, false]`.
+/// Columns of one codon position: `true` for every column `col >= start` with `(col - start) % 3 == codon_position` (0, 1 or 2),
+/// otherwise `false`; length `len`. Example: `len 7`, `start 1`, `codon_position 0` → `[false, true, false, false, true, false, false]`.
 pub fn columns_codon_position(len: usize, start: usize, codon_position: usize) -> Vec<bool> {
     (0..len)
         .map(|col| col >= start && (col - start) % 3 == codon_position)
         .collect()
 }
 
-/// Entfernt alle Spalten, bei denen `remove[col]` wahr ist (fehlende Einträge in `remove` zählen als `false`).
-/// Beispiel: Zeilen `ACGT`, `A-GT`, Maske `[false, true, false, false]` → `AGT`, `AGT`.
+/// Removes all columns where `remove[col]` is true (missing entries in `remove` count as `false`).
+/// Example: rows `ACGT`, `A-GT`, mask `[false, true, false, false]` → `AGT`, `AGT`.
 pub fn remove_columns(rows: &[String], remove: &[bool]) -> Vec<String> {
     rows.iter()
         .map(|r| {

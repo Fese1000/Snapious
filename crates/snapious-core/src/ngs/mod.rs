@@ -1,4 +1,4 @@
-//! NGS-Grundlagen: FASTQ streamen, FASTA-Index, Qualitätsbericht, Trimming, BAM lesen, Varianten, Mapping- und Assembly-Aufrufe.
+//! NGS basics: stream FASTQ, FASTA index, quality report, trimming, read BAM, variants, mapping and assembly calls.
 
 pub mod bam;
 pub mod barcode;

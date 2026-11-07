@@ -1,9 +1,9 @@
-//! Statistik für Expressionsdaten: Normalisierung und Korrektur für Mehrfachtests.
+//! Statistics for expression data: normalization and correction for multiple testing.
 
-/// Benjamini-Hochberg-Korrektur (angepasste p-Werte, FDR). Gültige Werte sind die ohne NaN; mit `n` = Zahl der gültigen Werte und
-/// Rang `r` (1 = kleinster p-Wert; bei gleichen p-Werten zählt die Reihenfolge in der Eingabe) ist der Rohwert `p * n / r`; der angepasste Wert ist
-/// das Minimum der Rohwerte aller Ränge ab `r` bis zum größten Rang, höchstens `1.0`. NaN bleibt NaN. Ergebnis in der Reihenfolge der Eingabe.
-/// Beispiel `[0.01, 0.04, 0.03, 0.005]` → `[0.02, 0.04, 0.04, 0.02]`.
+/// Benjamini-Hochberg correction (adjusted p-values, FDR). Valid values are those without NaN; with `n` = number of valid values and
+/// rank `r` (1 = smallest p-value; for equal p-values the order in the input counts) the raw value is `p * n / r`; the adjusted value is
+/// the minimum of the raw values of all ranks from `r` up to the largest rank, at most `1.0`. NaN stays NaN. Result in input order.
+/// Example `[0.01, 0.04, 0.03, 0.005]` → `[0.02, 0.04, 0.04, 0.02]`.
 pub fn benjamini_hochberg(p: &[f64]) -> Vec<f64> {
     let mut order: Vec<usize> = (0..p.len()).filter(|&i| !p[i].is_nan()).collect();
     order.sort_by(|&a, &b| p[a].total_cmp(&p[b]).then(a.cmp(&b)));
@@ -18,12 +18,12 @@ pub fn benjamini_hochberg(p: &[f64]) -> Vec<f64> {
     out
 }
 
-/// Größenfaktoren nach der Methode „Median der Verhältnisse“. `counts[gene][probe]` sind Zählwerte (alle Gene haben gleich viele
-/// Proben, sonst zählt die Zahl der Proben des ersten Gens und kürzere Gene werden übersprungen). Nur Gene, bei denen **alle** Proben
-/// größer als 0 sind, zählen. Je Gen ist der Referenzwert das geometrische Mittel (`exp(Mittel der ln-Werte)`); je Probe ist der
-/// Größenfaktor der Median (bei gerader Zahl der Mittelwert der beiden mittleren Werte) von `Zählwert / Referenzwert` über diese Gene.
-/// Keine Gene oder keine verwendbaren Gene → alle Faktoren `1.0` (Länge = Zahl der Proben, bei keinen Genen leer).
-/// Beispiel `[[10,20],[100,200],[0,5]]` → `[0.7071…, 1.4142…]` (das dritte Gen hat eine 0 und zählt nicht).
+/// Size factors by the "median of ratios" method. `counts[gene][sample]` are count values (all genes have the same number of
+/// samples, otherwise the number of samples of the first gene counts and shorter genes are skipped). Only genes where **all** samples
+/// are greater than 0 count. For each gene the reference value is the geometric mean (`exp(mean of the ln values)`); for each sample the
+/// size factor is the median (for an even count the mean of the two middle values) of `count / reference` over these genes.
+/// No genes or no usable genes → all factors `1.0` (length = number of samples, empty if there are no genes).
+/// Example `[[10,20],[100,200],[0,5]]` → `[0.7071…, 1.4142…]` (the third gene has a 0 and does not count).
 pub fn median_of_ratios(counts: &[Vec<f64>]) -> Vec<f64> {
     let Some(first) = counts.first() else {
         return Vec::new();

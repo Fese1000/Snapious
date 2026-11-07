@@ -1,5 +1,5 @@
-//! Analyse-Operationen für Registry und Workflows: Primer entwerfen, CRISPR-Guides suchen, Sequenzierung prüfen.
-//! Sie liefern keine neuen Dokumente, sondern einen Ergebnistext in `summary` (mehrere Zeilen, getrennt durch `\n`).
+//! Analysis operations for registry and workflows: design primers, search CRISPR guides, check sequencing.
+//! They produce no new documents, but a result text in `summary` (several lines separated by `\n`).
 
 use crate::crispr::{find_guides, PamSpec};
 use crate::error::{Error, Result};
@@ -8,7 +8,7 @@ use crate::ops::operation::{required_usize, Operation, OperationContext, Operati
 use crate::primer::picker::{pick_pairs, PrimerConstraints};
 use crate::seqcheck::{DifferenceType, SequencingCheck};
 
-/// Genau ein Sequenzdokument aus den Eingaben; sonst `Error::Operation("Exactly one sequence expected")`.
+/// Exactly one sequence document from the inputs; otherwise `Error::Operation("Exactly one sequence expected")`.
 fn single(inputs: &[Document]) -> Result<&SequenceDocument> {
     match inputs {
         [Document::Sequence(d)] => Ok(d),
@@ -18,10 +18,10 @@ fn single(inputs: &[Document]) -> Result<&SequenceDocument> {
     }
 }
 
-/// `primer.pick`: Primerpaare für einen Zielbereich. Eingabe: eine Sequenz. Parameter: `start` und `end` (Pflicht, 0-basiert, `end` exklusiv, über
-/// `required_usize`), optional `max_results` (Standard 3). Aufruf `pick_pairs(bases, start, end, &PrimerConstraints::standard(), max_results)`; Fehler als
-/// `Error::Operation` mit dem Text. `outputs` leer. `summary`: ist die Liste leer, `"No matching primer pairs"`; sonst je Paar eine Zeile
-/// `"{i}. {forward} / {reverse} · Produkt {product_size} bp"` (`i` ab 1; die Felder des Rückgabetyps `PickedPair` selbst nachsehen: Sequenzen beider Primer und Produktgröße).
+/// `primer.pick`: primer pairs for a target region. Input: one sequence. Parameters: `start` and `end` (required, 0-based, `end` exclusive, via
+/// `required_usize`), optional `max_results` (default 3). Calls `pick_pairs(bases, start, end, &PrimerConstraints::standard(), max_results)`; errors as
+/// `Error::Operation` with the text. `outputs` empty. `summary`: if the list is empty, `"No matching primer pairs"`; otherwise one line per pair
+/// `"{i}. {forward} / {reverse} · Produkt {product_size} bp"` (`i` from 1; look up the fields of the return type `PickedPair` itself: sequences of both primers and product size).
 pub struct PrimerPickOperation;
 
 impl Operation for PrimerPickOperation {
@@ -81,10 +81,10 @@ impl Operation for PrimerPickOperation {
     }
 }
 
-/// `crispr.find`: Guide-RNAs suchen. Eingabe: eine Sequenz. Parameter: optional `nuclease` (`spcas9` Standard, `sacas9`, `cas12a`; Groß-/Kleinschreibung egal,
-/// anderes → `Error::Operation`). Aufruf `find_guides(&spec, bases, 0, Länge, circular)` mit `circular` aus der Topologie. `outputs` leer.
-/// `summary`: erste Zeile `"{n} Guides ({Name der Nuklease})"` (`PamSpec::name`), danach für die ersten 10 Guides je Zeile
-/// `"{start+1}–{end} {+|−} {protospacer} {pam} · Wertung {score:.0}"` (`+` bei `forward`, `−` sonst).
+/// `crispr.find`: search guide RNAs. Input: one sequence. Parameters: optional `nuclease` (`spcas9` default, `sacas9`, `cas12a`; case-insensitive,
+/// anything else → `Error::Operation`). Calls `find_guides(&spec, bases, 0, length, circular)` with `circular` from the topology. `outputs` empty.
+/// `summary`: first line `"{n} Guides ({name of the nuclease})"` (`PamSpec::name`), then for the first 10 guides one line each
+/// `"{start+1}–{end} {+|−} {protospacer} {pam} · Wertung {score:.0}"` (`+` when `forward`, `−` otherwise).
 pub struct CrisprFindOperation;
 
 impl Operation for CrisprFindOperation {
@@ -139,11 +139,11 @@ impl Operation for CrisprFindOperation {
     }
 }
 
-/// `seq.check`: Sequenzierung gegen eine Referenz prüfen. Eingaben: zuerst die Referenz, dann mindestens ein Read (Sequenzdokumente, Qualität unbekannt),
-/// sonst `Error::Operation`. Parameter: optional `min_quality` (Standard 20, ganze Zahl 0 bis 93, sonst `Error::Operation`; wirkt nur mit Qualitäten, hier leer).
-/// Je Read `SequencingCheck::new(min_quality).check(referenz_bases, circular, name, read_bases, &[])` (circular aus der Referenz-Topologie); Fehler als `Error::Operation`.
-/// `outputs` leer. `summary`: je Read eine Zeile `"{Name}: {identity:.1} % Identität, {k} Unterschied(e){, revers}"` (`, revers` nur bei `reversed`; `k` = Zahl der
-/// Einträge in `differences` ohne `LowQuality`; Typ `DifferenceType` aus `crate::seqcheck`).
+/// `seq.check`: check sequencing against a reference. Inputs: first the reference, then at least one read (sequence documents, quality unknown),
+/// otherwise `Error::Operation`. Parameters: optional `min_quality` (default 20, integer 0 to 93, otherwise `Error::Operation`; only effective with qualities, empty here).
+/// Per read `SequencingCheck::new(min_quality).check(reference_bases, circular, name, read_bases, &[])` (circular from the reference topology); errors as `Error::Operation`.
+/// `outputs` empty. `summary`: one line per read `"{Name}: {identity:.1} % Identität, {k} Unterschied(e){, revers}"` (`, revers` only when `reversed`; `k` = number of
+/// entries in `differences` without `LowQuality`; type `DifferenceType` from `crate::seqcheck`).
 pub struct SeqCheckOperation;
 
 impl Operation for SeqCheckOperation {
@@ -268,7 +268,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(one.summary.lines().count(), 1);
-        // GC-reich: keine Paare
+        // GC-rich: no pairs
         let gc = doc("g", &"GC".repeat(200), Topology::Linear);
         let none = run(
             &PrimerPickOperation,
@@ -277,7 +277,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(none.summary, "No matching primer pairs");
-        // Fehler
+        // errors
         assert!(run(
             &PrimerPickOperation,
             std::slice::from_ref(&d),

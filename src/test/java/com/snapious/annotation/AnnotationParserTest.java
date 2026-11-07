@@ -90,7 +90,7 @@ class AnnotationParserTest {
         String summary = AnnotationParser.generateAnnotationSummary(features);
 
         assertNotNull(summary);
-        assertTrue(summary.contains("Annotations-Zusammenfassung"));
+        assertTrue(summary.contains("Annotation Summary"));
     }
 
     @Test
@@ -108,7 +108,7 @@ class AnnotationParserTest {
     @Test
     void testUngueltigeGFF3Zeile() {
         String gff3 = "##gff-version 3\n" +
-            "chr1\tRefSeq\tgene\t100\t500\n";  // Nur 5 Spalten
+            "chr1\tRefSeq\tgene\t100\t500\n";  // only 5 columns
 
         var features = AnnotationParser.parseGFF3(gff3);
 

@@ -1,8 +1,8 @@
-//! Plugins als externe Programme. Jedes Plugin ist ein Ordner mit einer Datei `plugin.json`:
+//! Plugins as external programs. Each plugin is a folder with a file `plugin.json`:
 //! `{"name": "hello", "version": "1.0", "operations": [{"id": "hello.upper", "label": "Uppercase", "command": "run.sh", "args": ["--x"]}]}`.
-//! Eine Plugin-Operation startet `command` (Pfad relativ zum Plugin-Ordner), schreibt die Eingabesequenzen als FASTA auf die Standardeingabe,
-//! übergibt die Parameter als JSON-Objekt in der Umgebungsvariablen `SNAPIOUS_PARAMS` und liest FASTA von der Standardausgabe.
-//! Plugins laufen ohne Schutzraum (Sandbox) mit den Rechten des Programms.
+//! A plugin operation starts `command` (path relative to the plugin folder), writes the input sequences as FASTA to standard input,
+//! passes the parameters as a JSON object in the environment variable `SNAPIOUS_PARAMS` and reads FASTA from standard output.
+//! Plugins run without a sandbox, with the privileges of the program.
 
 use std::path::{Path, PathBuf};
 
@@ -11,7 +11,7 @@ use crate::model::document::Document;
 use crate::ops::operation::{Operation, OperationContext, OperationResult, Params};
 use crate::ops::registry::OperationRegistry;
 
-/// Beschreibung einer Operation im Manifest.
+/// Description of an operation in the manifest.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PluginOperationSpec {
     pub id: String,
@@ -20,19 +20,19 @@ pub struct PluginOperationSpec {
     pub args: Vec<String>,
 }
 
-/// Ein geladenes Plugin.
+/// A loaded plugin.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Plugin {
     pub name: String,
     pub version: String,
-    /// Ordner des Plugins.
+    /// Folder of the plugin.
     pub dir: PathBuf,
     pub operations: Vec<PluginOperationSpec>,
 }
 
-/// Liest ein Manifest (JSON-Text) für das Plugin im Ordner `dir`. Pflicht: `name` (nicht leerer Text) und `operations` (Liste, darf leer sein);
-/// `version` darf fehlen (dann `""`). Jede Operation braucht nicht leere Texte `id`, `command`; `label` fehlt → gleich `id`; `args` fehlt → leer.
-/// Fehler `Error::InvalidInput` mit verständlicher Meldung bei ungültigem JSON oder fehlenden Pflichtfeldern.
+/// Reads a manifest (JSON text) for the plugin in folder `dir`. Required: `name` (non-empty text) and `operations` (list, may be empty);
+/// `version` may be missing (then `""`). Each operation needs non-empty texts `id`, `command`; `label` missing → same as `id`; `args` missing → empty.
+/// Error `Error::InvalidInput` with an understandable message for invalid JSON or missing required fields.
 pub fn parse_manifest(json: &str, dir: &Path) -> Result<Plugin> {
     let bad = |m: &str| Error::InvalidInput(m.to_string());
     let v: serde_json::Value = serde_json::from_str(json)
@@ -93,8 +93,8 @@ pub fn parse_manifest(json: &str, dir: &Path) -> Result<Plugin> {
     })
 }
 
-/// Sucht in `directory` alle direkten Unterordner mit einer Datei `plugin.json` (alphabetisch nach Ordnername) und liest sie.
-/// Fehlerhafte Plugins werden übersprungen und als Warnung `"{ordnername}: {fehlertext}"` gemeldet; ein fehlender Ordner ergibt keine Plugins und keine Warnung.
+/// Finds all direct subfolders of `directory` containing a file `plugin.json` (alphabetical by folder name) and reads them.
+/// Faulty plugins are skipped and reported as warning `"{folder name}: {error text}"`; a missing folder yields no plugins and no warning.
 pub fn discover(directory: &Path) -> (Vec<Plugin>, Vec<String>) {
     let mut plugins = Vec::new();
     let mut warnings = Vec::new();
@@ -122,7 +122,7 @@ pub fn discover(directory: &Path) -> (Vec<Plugin>, Vec<String>) {
     (plugins, warnings)
 }
 
-/// Eine Operation, die ein Plugin-Programm aufruft.
+/// An operation that calls a plugin program.
 pub struct PluginOperation {
     pub spec: PluginOperationSpec,
     pub dir: PathBuf,
@@ -137,11 +137,11 @@ impl Operation for PluginOperation {
         &self.spec.label
     }
 
-    /// Eingaben müssen Sequenzdokumente sein (sonst `Error::Operation`). Starte `dir.join(command)` mit den `args`, Arbeitsordner = `dir`,
-    /// Umgebungsvariable `SNAPIOUS_PARAMS` = JSON-Objekt der Parameter, Standardeingabe = alle Eingaben als FASTA
-    /// (`crate::io::fasta::format`, Namen und Basen der Sequenzen), Standardausgabe und -fehler aufgefangen. Exitcode ≠ 0 →
-    /// `Error::Operation` mit den ersten 300 Zeichen der Fehlerausgabe; Programm nicht startbar → `Error::Operation`. Die Standardausgabe wird mit
-    /// `crate::io::fasta::parse` gelesen; jede Sequenz wird ein Dokument (`SequenceDocument::of`), leere Ausgabe → keine Ausgabedokumente.
+    /// Inputs must be sequence documents (otherwise `Error::Operation`). Starts `dir.join(command)` with the `args`, working folder = `dir`,
+    /// environment variable `SNAPIOUS_PARAMS` = JSON object of the parameters, standard input = all inputs as FASTA
+    /// (`crate::io::fasta::format`, names and bases of the sequences), standard output and error captured. Exit code ≠ 0 →
+    /// `Error::Operation` with the first 300 characters of the error output; program cannot be started → `Error::Operation`. The standard output is read with
+    /// `crate::io::fasta::parse`; each sequence becomes a document (`SequenceDocument::of`), empty output → no output documents.
     /// `summary` = `"{label}: {n} Sequenz(en)"`.
     fn run(
         &self,
@@ -179,7 +179,7 @@ impl Operation for PluginOperation {
             })?;
         let fasta = crate::io::fasta::format(&seqs);
         if let Some(mut stdin) = child.stdin.take() {
-            // Schreibfehler (Programm liest nichts) werden ignoriert; der Exitcode entscheidet
+            // write errors (program reads nothing) are ignored; the exit code decides
             let _ = stdin.write_all(fasta.as_bytes());
         }
         let out = child
@@ -211,8 +211,8 @@ impl Operation for PluginOperation {
     }
 }
 
-/// Trägt die Operationen aller Plugins in die Registry ein. Doppelte IDs (schon vorhanden) werden übersprungen und als Warnung
-/// `"Operation {id} aus Plugin {name} übersprungen: ID already taken"` gemeldet.
+/// Registers the operations of all plugins in the registry. Duplicate IDs (already present) are skipped and reported as warning
+/// `"Operation {id} aus Plugin {name} übersprungen: ID already taken"`.
 pub fn register_plugins(registry: &mut OperationRegistry, plugins: &[Plugin]) -> Vec<String> {
     let mut warnings = Vec::new();
     for p in plugins {
@@ -351,7 +351,7 @@ mod tests {
     #[test]
     fn parameter_und_fehler() {
         let d = dir("par");
-        // gibt die Parameter als Name einer Sequenz aus
+        // prints the parameters as the name of a sequence
         script(&d, "cat > /dev/null; echo \">$SNAPIOUS_PARAMS\"; echo ACGT");
         let mk = |d: &PathBuf| PluginOperation {
             spec: PluginOperationSpec {

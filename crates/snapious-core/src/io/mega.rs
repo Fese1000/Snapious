@@ -1,13 +1,13 @@
-//! MEGA-Alignmentdateien (`#mega`) lesen und schreiben.
+//! Read and write MEGA alignment files (`#mega`).
 
 use crate::error::{Error, Result};
 
-/// Liest ein MEGA-Alignment. Die erste nicht leere Zeile muss `#mega` sein (Groß-/Kleinschreibung egal), sonst
-/// `Error::InvalidInput`. Danach: leere Zeilen und Zeilen, die mit `!` beginnen (Kommentare/Titel), werden übersprungen;
-/// eine Zeile, die mit `#` beginnt, nennt einen Namen (Rest der Zeile, getrimmt) und beginnt oder setzt fort (bei gleichem Namen,
-/// z. B. in verschachtelten Blöcken) den Eintrag; alle anderen Zeilen sind Sequenzzeilen, aus denen Leerraum entfernt und
-/// die an den Eintrag angehängt werden (alle anderen Zeichen bleiben, auch `-`). Eine Sequence line before the first name ist ein
-/// Fehler. Ergebnis `(Name, Sequenz)` in der Reihenfolge des ersten Auftretens; ohne Einträge → Fehler.
+/// Reads a MEGA alignment. The first non-empty line must be `#mega` (case-insensitive), otherwise
+/// `Error::InvalidInput`. After that: empty lines and lines starting with `!` (comments/titles) are skipped;
+/// a line starting with `#` names an entry (rest of the line, trimmed) and starts it or continues it (for the same name,
+/// e.g. in nested blocks); all other lines are sequence lines, from which whitespace is removed and
+/// which are appended to the entry (all other characters stay, including `-`). A sequence line before the first name is an
+/// error. Result `(name, sequence)` in order of first appearance; without entries -> error.
 pub fn parse_mega(text: &str) -> Result<Vec<(String, String)>> {
     let mut lines = text.lines().map(str::trim).filter(|l| !l.is_empty());
     match lines.next() {
@@ -52,7 +52,7 @@ pub fn parse_mega(text: &str) -> Result<Vec<(String, String)>> {
     Ok(rows)
 }
 
-/// Schreibt MEGA: `"#mega\n!Title Snapious;\n\n"`, danach je Eintrag `"#{Name}\n{Sequenz}\n\n"`.
+/// Writes MEGA: `"#mega\n!Title Snapious;\n\n"`, then per entry `"#{name}\n{sequence}\n\n"`.
 pub fn write_mega(rows: &[(String, String)]) -> String {
     let mut out = String::from("#mega\n!Title Snapious;\n\n");
     for (name, seq) in rows {

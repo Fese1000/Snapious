@@ -1,7 +1,7 @@
 # Phase 5: NGS Basics (optional)
 
-> **Implementation note:** The signatures in this document are written in Java notation. Implementation is in **Rust** (mapping: `08-RUST-KERN-SWIFT-APP.md`, table "Mapping Java guide → Rust").
-> Tasks that mention JavaFX/Maven/JDBC/`jpackage` are **replaced** (Swift tasks S.x or `rusqlite`, `cargo`); they are marked "→ replaced" below. Read `00-ARBEITSANWEISUNG.md` first.
+> **Implementation note:** The signatures in this document are written in Java notation. Implementation is in **Rust** (mapping: `08-RUST-CORE-SWIFT-APP.md`, table "Mapping Java guide → Rust").
+> Tasks that mention JavaFX/Maven/JDBC/`jpackage` are **replaced** (Swift tasks S.x or `rusqlite`, `cargo`); they are marked "→ replaced" below. Read `00-WORKING-INSTRUCTIONS.md` first.
 
 
 Goal: quality report, trimming, mapping via external programs, reading BAM/SAM, coverage view, simple variants, assembly invocation, streaming large files.

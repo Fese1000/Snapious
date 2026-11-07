@@ -8,7 +8,7 @@
     <artifactId>snapious-biotools</artifactId>
     <version>1.0.0</version>
     <name>Snapious BioTools</name>
-    <description>Bioinformatik-Suite (Swing) ohne externe Laufzeit-Abhängigkeiten</description>
+    <description>Bioinformatics suite (Swing) without external runtime dependencies</description>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -38,7 +38,7 @@
                 <version>3.2.2</version>
             </plugin>
 
-            <!-- Lauffähiges JAR: java -jar target/snapious-biotools-1.0.0.jar -->
+            <!-- Runnable JAR: java -jar target/snapious-biotools-1.0.0.jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

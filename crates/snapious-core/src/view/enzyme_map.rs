@@ -1,31 +1,31 @@
-//! Enzymliste für die Kartenansicht: welche Enzyme schneiden wo, gefiltert nach Schnitthäufigkeit.
+//! Enzyme list for the map view: which enzymes cut where, filtered by cut frequency.
 
 use crate::cloning::enzymes::{CutSite, EnzymeDb};
 use crate::model::document::SequenceDocument;
 
-/// Filter nach Anzahl der Schnittstellen.
+/// Filter by number of cut sites.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnzymeFilter {
-    /// Alle Enzyme mit mindestens einer Schnittstelle.
+    /// All enzymes with at least one cut site.
     All,
-    /// Genau eine Schnittstelle.
+    /// Exactly one cut site.
     UniqueCutters,
-    /// Genau zwei Schnittstellen.
+    /// Exactly two cut sites.
     DoubleCutters,
-    /// Enzyme der Datenbank ohne Schnittstelle.
+    /// Enzymes of the database without a cut site.
     NonCutters,
 }
 
-/// Ein Enzym mit seinen Schnittstellen.
+/// An enzyme with its cut sites.
 #[derive(Clone, Debug, PartialEq)]
 pub struct EnzymeMapEntry {
     pub enzyme: String,
     pub count: usize,
-    /// Beginn der Erkennungssequenz je Schnittstelle, aufsteigend sortiert; bei `NonCutters` leer.
+    /// Start of the recognition sequence per cut site, sorted ascending; empty for `NonCutters`.
     pub positions: Vec<usize>,
 }
 
-/// Ergebnis der Enzymsuche für ein Dokument, bereits gefiltert.
+/// Result of the enzyme search for a document, already filtered.
 #[derive(Clone, Debug, PartialEq)]
 pub struct EnzymeMapModel {
     entries: Vec<EnzymeMapEntry>,
@@ -33,15 +33,15 @@ pub struct EnzymeMapModel {
 }
 
 impl EnzymeMapModel {
-    /// Sucht mit `EnzymeDb::find_in_document` und gruppiert nach Enzymname.
-    /// - `entries` ist nach Enzymname aufsteigend sortiert.
-    /// - `sites` enthält nur die Schnittstellen der Enzyme, die der Filter durchlässt, in der Reihenfolge von
-    ///   `find_in_document`; bei `NonCutters` ist sie leer.
-    /// - `NonCutters`: ein Eintrag je Enzym der Datenbank ohne Schnittstelle, `count 0`, `positions` leer.
+    /// Searches with `EnzymeDb::find_in_document` and groups by enzyme name.
+    /// - `entries` is sorted ascending by enzyme name.
+    /// - `sites` contains only the cut sites of the enzymes that pass the filter, in the order of
+    ///   `find_in_document`; for `NonCutters` it is empty.
+    /// - `NonCutters`: one entry per database enzyme without a cut site, `count 0`, `positions` empty.
     pub fn new(db: &EnzymeDb, doc: &SequenceDocument, filter: EnzymeFilter) -> Self {
         let all_sites = db.find_in_document(doc);
 
-        // Gruppiere nach Enzymname.
+        // Group by enzyme name.
         let mut enzyme_map: std::collections::BTreeMap<String, Vec<CutSite>> =
             std::collections::BTreeMap::new();
 
@@ -52,7 +52,7 @@ impl EnzymeMapModel {
                 .push(site.clone());
         }
 
-        // Baue entries basierend auf Filter.
+        // Build entries based on the filter.
         let mut entries: Vec<EnzymeMapEntry> = Vec::new();
         let mut sites: Vec<CutSite> = Vec::new();
 
@@ -78,12 +78,12 @@ impl EnzymeMapModel {
                 }
             }
             EnzymeFilter::NonCutters => {
-                // Finde alle Enzyme, die in diesem Dokument schneiden.
+                // Find all enzymes that cut in this document.
                 let cutting_sites = db.find_in_document(doc);
                 let cutting_names: std::collections::BTreeSet<String> =
                     cutting_sites.iter().map(|s| s.enzyme.clone()).collect();
 
-                // Alle Enzyme aus der Datenbank, die nicht schneiden.
+                // All enzymes from the database that do not cut.
                 for enzyme in db.all() {
                     if !cutting_names.contains(enzyme.name()) {
                         entries.push(EnzymeMapEntry {
@@ -99,17 +99,17 @@ impl EnzymeMapModel {
         EnzymeMapModel { entries, sites }
     }
 
-    /// Die gefilterten Einträge.
+    /// The filtered entries.
     pub fn entries(&self) -> &[EnzymeMapEntry] {
         &self.entries
     }
 
-    /// Die gefilterten Schnittstellen.
+    /// The filtered cut sites.
     pub fn sites(&self) -> &[CutSite] {
         &self.sites
     }
 
-    /// Eintrag zu einem Enzymnamen (exakter Vergleich).
+    /// Entry for an enzyme name (exact comparison).
     pub fn entry(&self, enzyme: &str) -> Option<&EnzymeMapEntry> {
         self.entries.iter().find(|e| e.enzyme == enzyme)
     }
@@ -121,7 +121,7 @@ mod tests {
     use crate::model::document::Topology;
     use crate::model::sequence::{Sequence, SequenceType};
 
-    // EcoRI (GAATTC) zweimal bei 0 und 10, BamHI (GGATCC) einmal bei 16.
+    // EcoRI (GAATTC) twice at 0 and 10, BamHI (GGATCC) once at 16.
     const BASES: &str = "GAATTCAAAAGAATTCGGATCC";
 
     fn doc(topology: Topology) -> SequenceDocument {
@@ -202,8 +202,8 @@ mod tests {
 
     #[test]
     fn zirkulaer_findet_ueber_den_nullpunkt() {
-        // Zirkulär umfasst GAATTC auch über das Ende hinweg: "…GGATCC" + "GAATTC…" enthält CCGAAT, kein neuer Treffer;
-        // die Zahl der EcoRI-Treffer bleibt 2.
+        // Circular: GAATTC also spans the end: "…GGATCC" + "GAATTC…" contains CCGAAT, no new hit;
+        // the number of EcoRI hits stays 2.
         let db = EnzymeDb::standard();
         let m = EnzymeMapModel::new(&db, &doc(Topology::Circular), EnzymeFilter::All);
         assert_eq!(m.entry("EcoRI").unwrap().count, 2);

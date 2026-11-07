@@ -1,8 +1,8 @@
-//! Häufigkeitsverteilung von Längen (z. B. Read- oder Contig-Längen).
+//! Frequency distribution of lengths (e.g. read or contig lengths).
 
-/// Zählt `values` in Klassen der Breite `bin_width` (0 gilt als 1): Klasse `k` umfasst `[k*w, (k+1)*w)`. Ergebnis: alle Klassen
-/// von 0 bis zur größten belegten als `(Beginn der Klasse, Anzahl)`, auch leere. Keine Werte → leerer Vektor.
-/// Bei mehr als einer Million Klassen werden nur die belegten Klassen (aufsteigend) zurückgegeben.
+/// Counts `values` into bins of width `bin_width` (0 counts as 1): bin `k` covers `[k*w, (k+1)*w)`. Result: all bins
+/// from 0 up to the largest occupied one as `(start of the bin, count)`, including empty ones. No values → empty vector.
+/// With more than one million bins only the occupied bins (ascending) are returned.
 pub fn histogram(values: &[usize], bin_width: usize) -> Vec<(usize, usize)> {
     if values.is_empty() {
         return vec![];
@@ -10,13 +10,13 @@ pub fn histogram(values: &[usize], bin_width: usize) -> Vec<(usize, usize)> {
 
     let width = if bin_width == 0 { 1 } else { bin_width };
 
-    // Finde den maximalen Wert, um die Größe des Zählers zu bestimmen
+    // Find the maximum value to determine the size of the counter
     let max_val = *values.iter().max().unwrap_or(&0);
 
-    // Anzahl der benötigten Buckets: max_val / width + 1
+    // Number of buckets needed: max_val / width + 1
     let num_buckets = (max_val / width).saturating_add(1);
 
-    // Sehr weit gestreute Werte: nur belegte Klassen zurückgeben, damit der Speicher nicht explodiert
+    // Very widely scattered values: return only occupied bins so that memory does not explode
     if num_buckets > 1_000_000 {
         let mut map = std::collections::BTreeMap::new();
         for &val in values {
@@ -25,18 +25,18 @@ pub fn histogram(values: &[usize], bin_width: usize) -> Vec<(usize, usize)> {
         return map.into_iter().collect();
     }
 
-    // Vektor der Größe max+1 (bzw. num_buckets) initialisieren mit 0
+    // Initialize a vector of size max+1 (or num_buckets) with 0
     let mut counts = vec![0usize; num_buckets];
 
-    // Werte in die entsprechenden Buckets zählen
+    // Count values into the corresponding buckets
     for &val in values {
         let bucket_index = val / width;
-        // Da wir num_buckets basierend auf max_val berechnet haben,
-        // ist bucket_index immer gültig.
+        // Since we computed num_buckets based on max_val,
+        // bucket_index is always valid.
         counts[bucket_index] += 1;
     }
 
-    // Ergebnis als Vec<(usize, usize)> aufbauen: (Startwert der Klasse, Anzahl)
+    // Build the result as Vec<(usize, usize)>: (start value of the bin, count)
     counts
         .into_iter()
         .enumerate()

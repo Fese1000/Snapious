@@ -1,4 +1,4 @@
-//! Überlappungs-Zusammenbau (Gibson, In-Fusion, SLIC): Fragmente über gleiche Enden verbinden.
+//! Overlap assembly (Gibson, In-Fusion, SLIC): join fragments via identical ends.
 
 use std::collections::BTreeMap;
 
@@ -8,18 +8,18 @@ use crate::model::feature::{Feature, Interval, Location};
 use crate::model::sequence::{Sequence, SequenceType};
 use crate::primer::tm::nearest_neighbor;
 
-/// Ein gefundener Überlapp zwischen zwei Fragmenten.
+/// An overlap found between two fragments.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Overlap {
-    /// Index des Fragments, an dessen Ende der Überlapp steht, und des Fragments, an dessen Anfang er steht.
+    /// Index of the fragment at whose end the overlap lies, and of the fragment at whose start it lies.
     pub from_index: usize,
     pub to_index: usize,
     pub length: usize,
-    /// Schmelztemperatur des Überlapps in °C (`nearest_neighbor(seq, 250.0, 50.0)`).
+    /// Melting temperature of the overlap in °C (`nearest_neighbor(seq, 250.0, 50.0)`).
     pub tm: f64,
 }
 
-/// Ergebnis eines Zusammenbaus.
+/// Result of an assembly.
 #[derive(Clone, Debug, PartialEq)]
 pub struct AssemblyResult {
     pub construct: SequenceDocument,
@@ -27,7 +27,7 @@ pub struct AssemblyResult {
     pub warnings: Vec<String>,
 }
 
-/// Einstellungen: erlaubte Überlapplängen (beide Grenzen eingeschlossen).
+/// Settings: allowed overlap lengths (both bounds inclusive).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OverlapAssembly {
     pub min_overlap: usize,
@@ -42,24 +42,24 @@ impl OverlapAssembly {
         }
     }
 
-    /// 15 bis 40.
+    /// 15 to 40.
     pub fn gibson() -> OverlapAssembly {
         Self::new(15, 40)
     }
 
-    /// 15 bis 20.
+    /// 15 to 20.
     pub fn in_fusion() -> OverlapAssembly {
         Self::new(15, 20)
     }
 
-    /// 25 bis 80.
+    /// 25 to 80.
     pub fn slic() -> OverlapAssembly {
         Self::new(25, 80)
     }
 
-    /// Längster Überlapp `k` mit `min_overlap <= k <= max_overlap` (und `k <=` Länge beider Texte), bei dem die letzten
-    /// `k` Basen von `left` gleich den ersten `k` Basen von `right` sind (Uppercase, `U` wie `T`).
-    /// `None`, wenn es keinen gibt.
+    /// Longest overlap `k` with `min_overlap <= k <= max_overlap` (and `k <=` length of both texts) for which the last
+    /// `k` bases of `left` equal the first `k` bases of `right` (uppercase, `U` as `T`).
+    /// `None` if there is none.
     pub fn find_overlap(&self, left: &str, right: &str) -> Option<usize> {
         let l = left.len();
         let r = right.len();
@@ -84,7 +84,7 @@ impl OverlapAssembly {
         })
     }
 
-    /// Setzt `fragments` in der gegebenen Reihenfolge zusammen.
+    /// Assembles `fragments` in the given order.
     pub fn assemble(
         &self,
         fragments: &[SequenceDocument],
@@ -103,7 +103,7 @@ impl OverlapAssembly {
             if n > 1 {
                 pairs.push((n - 1, 0));
             } else if n == 1 {
-                pairs.push((0, 0)); // Selbstüberlappung für einzelnes zirkuläres Fragment
+                pairs.push((0, 0)); // self-overlap for a single circular fragment
             }
         }
 
@@ -341,19 +341,19 @@ mod tests {
             a.find_overlap(&format!("TT{}", O1), &format!("{}GG", O1)),
             Some(20)
         );
-        // längster Überlapp gewinnt, auch wenn kürzere (periodische) passen
+        // longest overlap wins, even if shorter (periodic) ones fit
         assert_eq!(
             a.find_overlap(&format!("A{}", O1), &format!("{}C", O1)),
             Some(20)
         );
         assert_eq!(a.find_overlap("AAAA", "CCCC"), None);
-        // zu kurz für min_overlap 15
+        // too short for min_overlap 15
         assert_eq!(a.find_overlap("TTTTGATTACAGGT", "GATTACAGGTCCCC"), None);
         assert_eq!(
             OverlapAssembly::new(8, 40).find_overlap("TTTTGATTACAGGT", "GATTACAGGTCCCC"),
             Some(10)
         );
-        // Schreibweise und U
+        // case and U
         assert_eq!(
             a.find_overlap(
                 &format!("tt{}", O1.to_lowercase()),
@@ -361,7 +361,7 @@ mod tests {
             ),
             Some(20)
         );
-        // obere Grenze
+        // upper bound
         assert_eq!(
             OverlapAssembly::new(15, 20)
                 .find_overlap(&format!("T{}{}", O3, O3), &format!("{}{}", O3, O3)),
@@ -479,8 +479,8 @@ mod tests {
             .map(|f| f.location().start())
             .collect();
         starts.sort();
-        // A endet bei 70, B beginnt im Konstrukt bei 70 − 20 = 50: Feature 0..20 von B ist dasselbe wie 50..70 von A und entfällt,
-        // Feature 25..30 von B liegt bei 75..80
+        // A ends at 70, B starts in the construct at 70 − 20 = 50: feature 0..20 of B is the same as 50..70 of A and is dropped,
+        // feature 25..30 of B lies at 75..80
         assert_eq!(starts, vec![50, 75]);
     }
 }

@@ -1,41 +1,41 @@
-//! Ausgabe von `hmmscan --domtblout` (Proteindomänen, z. B. Pfam) lesen.
+//! Read the output of `hmmscan --domtblout` (protein domains, e.g. Pfam).
 
 use crate::error::{Error, Result};
 use std::str::FromStr;
 
-/// Ein Domänentreffer.
+/// A domain hit.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DomainHit {
-    /// Name der Domäne (Spalte 1, `target name`).
+    /// Name of the domain (column 1, `target name`).
     pub domain: String,
-    /// Zugangsnummer der Domäne (Spalte 2, `-` → leer).
+    /// Accession of the domain (column 2, `-` -> empty).
     pub accession: String,
-    /// Name der Abfragesequenz (Spalte 4, `query name`).
+    /// Name of the query sequence (column 4, `query name`).
     pub query: String,
-    /// E-Wert dieser Domäne (Spalte 13, `i-Evalue`).
+    /// E-value of this domain (column 13, `i-Evalue`).
     pub evalue: f64,
-    /// Wert (Score) dieser Domäne (Spalte 14).
+    /// Score of this domain (column 14).
     pub score: f64,
-    /// Beginn und Ende des Alignments in der Abfrage, 1-basiert (Spalten 18 und 19, `ali from`, `ali to`).
+    /// Start and end of the alignment in the query, 1-based (columns 18 and 19, `ali from`, `ali to`).
     pub ali_from: usize,
     pub ali_to: usize,
 }
 
-/// Liest die Domänentabelle. Zeilen, die mit `#` beginnen, und leere Zeilen werden übersprungen. Jede andere Zeile hat mindestens
-/// 22 durch Leerraum getrennte Felder (der Beschreibungstext am Ende darf Leerzeichen enthalten und wird nicht gelesen).
-/// Fehler `Error::InvalidInput`: weniger als 22 Felder oder eine nicht lesbare Zahl (Zeilennummer 1-basiert in der Meldung).
+/// Reads the domain table. Lines starting with `#` and empty lines are skipped. Every other line has at least
+/// 22 whitespace-separated fields (the description text at the end may contain spaces and is not read).
+/// `Error::InvalidInput`: fewer than 22 fields or an unreadable number (line number 1-based in the message).
 pub fn parse_domtblout(text: &str) -> Result<Vec<DomainHit>> {
     let mut hits = Vec::new();
 
     for (line_idx, line) in text.lines().enumerate() {
         let current_line = line_idx + 1;
 
-        // Leere Zeilen oder Kommentare überspringen
+        // Skip empty lines or comments
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
 
-        // Zeilen nach Index lesen, nie direkt indexieren ohne Längenprüfung.
+        // Read lines by index, never index directly without a length check.
         let fields: Vec<&str> = line.split_whitespace().collect();
 
         if fields.len() < 22 {
@@ -46,32 +46,32 @@ pub fn parse_domtblout(text: &str) -> Result<Vec<DomainHit>> {
             )));
         }
 
-        // Spalte 1: target name (domain)
+        // Column 1: target name (domain)
         let domain = fields[0].to_string();
 
-        // Spalte 2: accession (kann '-' sein -> leer)
+        // Column 2: accession (may be '-' -> empty)
         let accession = if fields[1] == "-" {
             String::new()
         } else {
             fields[1].to_string()
         };
 
-        // Spalte 4: query name (0-basiert Index 3)
+        // Column 4: query name (0-based index 3)
         let query = fields[3].to_string();
 
-        // Spalte 13: i-Evalue (0-basiert Index 12)
+        // Column 13: i-Evalue (0-based index 12)
         let evalue_str = fields[12];
         let evalue = parse_evalue(evalue_str, current_line)?;
 
-        // Spalte 14: score (0-basiert Index 13)
+        // Column 14: score (0-based index 13)
         let score_str = fields[13];
         let score = parse_float(score_str, "Score", current_line)?;
 
-        // Spalte 18: ali from (0-basiert Index 17)
+        // Column 18: ali from (0-based index 17)
         let ali_from_str = fields[17];
         let ali_from = parse_usize(ali_from_str, "ali from", current_line)?;
 
-        // Spalte 19: ali to (0-basiert Index 18)
+        // Column 19: ali to (0-based index 18)
         let ali_to_str = fields[18];
         let ali_to = parse_usize(ali_to_str, "ali to", current_line)?;
 
@@ -89,10 +89,10 @@ pub fn parse_domtblout(text: &str) -> Result<Vec<DomainHit>> {
     Ok(hits)
 }
 
-/// Hilfstfunktion zum Parsen von E-Werten (kann wissenschaftliche Notation enthalten).
+/// Helper function for parsing E-values (may contain scientific notation).
 fn parse_evalue(s: &str, line: usize) -> Result<f64> {
-    // Hmmer E-Werte können z.B. "1.2e-50" sein.
-    // std::str::FromStr für f64 unterstützt das standardmäßig.
+    // Hmmer E-values can be e.g. "1.2e-50".
+    // std::str::FromStr for f64 supports this by default.
     f64::from_str(s).map_err(|_| {
         Error::InvalidInput(format!(
             "Line {}: Could not parse E-value '{}'.",
@@ -101,7 +101,7 @@ fn parse_evalue(s: &str, line: usize) -> Result<f64> {
     })
 }
 
-/// Hilfstfunktion zum Parsen von Floats (Score).
+/// Helper function for parsing floats (score).
 fn parse_float(s: &str, field_name: &str, line: usize) -> Result<f64> {
     f64::from_str(s).map_err(|_| {
         Error::InvalidInput(format!(
@@ -111,7 +111,7 @@ fn parse_float(s: &str, field_name: &str, line: usize) -> Result<f64> {
     })
 }
 
-/// Hilfstfunktion zum Parsen von usize (Indices).
+/// Helper function for parsing usize (indices).
 fn parse_usize(s: &str, field_name: &str, line: usize) -> Result<usize> {
     s.parse::<usize>().map_err(|_| {
         Error::InvalidInput(format!(

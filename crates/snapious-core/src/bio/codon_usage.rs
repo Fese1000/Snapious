@@ -1,16 +1,16 @@
-//! Codon-Nutzung: Zählung, RSCU, GC3 und Codon Adaptation Index (CAI).
+//! Codon usage: counting, RSCU, GC3 and Codon Adaptation Index (CAI).
 
 use std::collections::BTreeMap;
 
 use crate::error::{Error, Result};
 use crate::model::sequence::amino_acid_for;
 
-/// Anzahl je Codon (Uppercase, `T` statt `U`), aufsteigend nach Codon sortiert.
+/// Count per codon (uppercase, `T` instead of `U`), sorted ascending by codon.
 pub type CodonCounts = BTreeMap<String, usize>;
 
-/// Zählt die Codons im Leseraster ab Position 0 in Dreierschritten.
-/// Schreibweise egal, `U` zählt wie `T`. Codons mit anderen Zeichen als A, C, G, T werden übersprungen
-/// (das Raster läuft trotzdem weiter), ein unvollständiges Schluss-Codon entfällt. Stopcodons werden mitgezählt.
+/// Counts the codons in reading frame from position 0 in steps of three.
+/// Case-insensitive, `U` counts as `T`. Codons with characters other than A, C, G, T are skipped
+/// (the frame keeps advancing), an incomplete final codon is dropped. Stop codons are counted.
 pub fn count_codons(bases: &str) -> CodonCounts {
     let mut counts = CodonCounts::new();
     for codon in valid_codons(bases) {
@@ -19,7 +19,7 @@ pub fn count_codons(bases: &str) -> CodonCounts {
     counts
 }
 
-/// Alle vollständigen Codons aus A, C, G, T im Raster ab Position 0.
+/// All complete codons of A, C, G, T in the frame from position 0.
 fn valid_codons(bases: &str) -> Vec<String> {
     let text = bases.to_ascii_uppercase().replace('U', "T");
     text.as_bytes()
@@ -29,7 +29,7 @@ fn valid_codons(bases: &str) -> Vec<String> {
         .collect()
 }
 
-/// Alle 64 Codons des Standardcodes nach Aminosäure (Stopp = `*`) gruppiert, Codons alphabetisch.
+/// All 64 codons of the standard code grouped by amino acid (stop = `*`), codons alphabetical.
 pub fn codon_families() -> BTreeMap<char, Vec<String>> {
     let letters = ['A', 'C', 'G', 'T'];
     let mut map: BTreeMap<char, Vec<String>> = BTreeMap::new();
@@ -45,11 +45,11 @@ pub fn codon_families() -> BTreeMap<char, Vec<String>> {
     map
 }
 
-/// Relative Synonymous Codon Usage: `anzahl / mittlere Anzahl der synonymen Codons`.
-/// Synonym heißt: gleiche Aminosäure laut `amino_acid_for` (Stopcodons bilden die Familie `*`).
-/// Die Familie hat alle ihre Codons des Standardcodes (nicht nur die in `counts`); fehlende zählen 0.
-/// Familien, deren Summe 0 ist, fehlen im Ergebnis ganz. Ein Codon mit Anzahl 0 in einer Familie mit Summe > 0
-/// erscheint mit Wert 0.0. Familien mit nur einem Codon (M, W) haben den Wert 1.0.
+/// Relative Synonymous Codon Usage: `count / mean count of the synonymous codons`.
+/// Synonymous means: same amino acid according to `amino_acid_for` (stop codons form the family `*`).
+/// The family has all its codons of the standard code (not just those in `counts`); missing ones count 0.
+/// Families whose sum is 0 are omitted from the result entirely. A codon with count 0 in a family with sum > 0
+/// appears with value 0.0. Families with only one codon (M, W) have the value 1.0.
 pub fn rscu(counts: &CodonCounts) -> BTreeMap<String, f64> {
     let mut result = BTreeMap::new();
     for codons in codon_families().values() {
@@ -69,8 +69,8 @@ pub fn rscu(counts: &CodonCounts) -> BTreeMap<String, f64> {
     result
 }
 
-/// Anteil von G oder C an der dritten Position der vollständigen, gültigen Codons in Prozent (0 bis 100).
-/// Gültig wie bei `count_codons`. Ohne Codons: 0.0.
+/// Fraction of G or C at the third position of the complete, valid codons in percent (0 to 100).
+/// Valid as in `count_codons`. Without codons: 0.0.
 pub fn gc3_percent(bases: &str) -> f64 {
     let codons = valid_codons(bases);
     if codons.is_empty() {
@@ -80,12 +80,12 @@ pub fn gc3_percent(bases: &str) -> f64 {
     gc as f64 * 100.0 / codons.len() as f64
 }
 
-/// Codon Adaptation Index nach Sharp & Li (1987): geometrisches Mittel der Gewichte `w` aller Codons der Sequenz.
-/// - `w = max(anzahl, 0.5) / größte Anzahl in der Familie` mit den Anzahlen aus `reference`.
-/// - Nicht berücksichtigt werden: ATG, TGG, Stopcodons und Codons, deren Familie in `reference` Summe 0 hat.
-/// - Berechnung über die Summe der Logarithmen (`ln`), am Ende `exp(summe / n)`.
+/// Codon Adaptation Index after Sharp & Li (1987): geometric mean of the weights `w` of all codons of the sequence.
+/// - `w = max(count, 0.5) / largest count in the family` with the counts from `reference`.
+/// - Not considered: ATG, TGG, stop codons and codons whose family has sum 0 in `reference`.
+/// - Computed via the sum of logarithms (`ln`), finally `exp(sum / n)`.
 ///
-/// Fehler `Error::InvalidInput`, wenn kein Codon berücksichtigt wurde.
+/// Error `Error::InvalidInput` if no codon was considered.
 pub fn codon_adaptation_index(bases: &str, reference: &CodonCounts) -> Result<f64> {
     let mut max_per_codon: BTreeMap<String, usize> = BTreeMap::new();
     for codons in codon_families().values() {
@@ -140,9 +140,9 @@ mod tests {
 
     #[test]
     fn zaehlen_sonderfaelle() {
-        // klein, U, unvollständiger Rest
+        // lowercase, U, incomplete remainder
         assert_eq!(count_codons("augaaaGC"), counts(&[("ATG", 1), ("AAA", 1)]));
-        // ungültiges Codon in der Mitte wird übersprungen, Raster bleibt
+        // invalid codon in the middle is skipped, frame stays
         assert_eq!(count_codons("ATGNNNAAA"), counts(&[("ATG", 1), ("AAA", 1)]));
         assert!(count_codons("").is_empty());
         assert!(count_codons("AT").is_empty());
@@ -165,7 +165,7 @@ mod tests {
         let r = rscu(&counts(&[("AAA", 3), ("AAG", 1), ("TAA", 2)]));
         assert!(close(r["AAA"], 1.5));
         assert!(close(r["AAG"], 0.5));
-        // Familie * hat 3 Codons, Summe 2 → Mittel 2/3
+        // Family * has 3 codons, sum 2 → mean 2/3
         assert!(close(r["TAA"], 3.0));
         assert!(close(r["TAG"], 0.0));
         assert!(close(r["TGA"], 0.0));
@@ -193,19 +193,19 @@ mod tests {
             codon_adaptation_index("GCTGCC", &r).unwrap(),
             (1.0f64 / 3.0).sqrt()
         ));
-        // Codon mit Anzahl 0 bekommt 0.5 / 3
+        // Codon with count 0 gets 0.5 / 3
         assert!(close(codon_adaptation_index("GCA", &r).unwrap(), 0.5 / 3.0));
     }
 
     #[test]
     fn cai_ausnahmen() {
         let r = counts(&[("GCT", 3), ("GCC", 1)]);
-        // ATG, TGG und Stopp zählen nicht
+        // ATG, TGG and stop do not count
         assert!(close(
             codon_adaptation_index("ATGTGGGCTTAA", &r).unwrap(),
             1.0
         ));
-        // Familie K fehlt in der Referenz → AAA wird übersprungen
+        // Family K is missing in the reference → AAA is skipped
         assert!(close(codon_adaptation_index("AAAGCT", &r).unwrap(), 1.0));
         assert!(matches!(
             codon_adaptation_index("ATGTGGTAA", &r),

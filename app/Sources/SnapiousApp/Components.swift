@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Fläche mit Rand und abgerundeten Ecken.
+/// Surface with border and rounded corners.
 struct Card<Content: View>: View {
     var padding: CGFloat = Theme.pad
     @ViewBuilder var content: Content
@@ -14,7 +14,7 @@ struct Card<Content: View>: View {
     }
 }
 
-/// Überschrift eines Abschnitts mit kleinem Farbbalken.
+/// Section heading with a small color bar.
 struct SectionHeader: View {
     let text: String
     var detail: String?
@@ -28,7 +28,7 @@ struct SectionHeader: View {
     }
 }
 
-/// Kennzahl mit Beschriftung.
+/// Metric with label.
 struct StatTile: View {
     let title: String
     let value: String
@@ -47,7 +47,7 @@ struct StatTile: View {
     }
 }
 
-/// Kleines Etikett.
+/// Small label.
 struct Chip: View {
     let text: String
     var tint: Color = Theme.accent
@@ -61,7 +61,7 @@ struct Chip: View {
     }
 }
 
-/// Knopf in Kapselform; `prominent` füllt mit der Akzentfarbe.
+/// Capsule-shaped button; `prominent` fills with the accent color.
 struct PillButtonStyle: ButtonStyle {
     var prominent = false
 
@@ -75,7 +75,7 @@ struct PillButtonStyle: ButtonStyle {
     }
 }
 
-/// Leerer Zustand mit Hinweis und optionalem Knopf.
+/// Empty state with hint and optional button.
 struct EmptyState: View {
     let icon: String
     let title: String
@@ -102,7 +102,7 @@ struct EmptyState: View {
     }
 }
 
-/// Einheitlicher Stil für alle `GroupBox`-Felder.
+/// Uniform style for all `GroupBox` fields.
 struct PanelGroupBoxStyle: GroupBoxStyle {
     func makeBody(configuration: Configuration) -> some View {
         VStack(alignment: .leading, spacing: 8) {

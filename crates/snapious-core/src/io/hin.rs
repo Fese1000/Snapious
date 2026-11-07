@@ -1,11 +1,11 @@
-//! HyperChem-Moleküldateien (HIN) lesen: Atome und Bindungen.
+//! Read HyperChem molecule files (HIN): atoms and bonds.
 
 use crate::error::{Error, Result};
 
-/// Ein Atom.
+/// An atom.
 #[derive(Clone, Debug, PartialEq)]
 pub struct HinAtom {
-    /// Atomnummer aus der Datei.
+    /// Atom number from the file.
     pub number: usize,
     pub element: String,
     pub x: f64,
@@ -13,21 +13,21 @@ pub struct HinAtom {
     pub z: f64,
 }
 
-/// Eine Bindung zwischen zwei Atomen (Indizes in der Atomliste, 0-basiert).
+/// A bond between two atoms (indices into the atom list, 0-based).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HinBond {
     pub from: usize,
     pub to: usize,
-    /// Ordnung: `s` einfach = 1, `d` doppelt = 2, `t` dreifach = 3, `a` aromatisch = 1.
+    /// Order: `s` single = 1, `d` double = 2, `t` triple = 3, `a` aromatic = 1.
     pub order: u8,
 }
 
-/// Liest alle Zeilen, die mit `atom ` beginnen (andere Zeilen werden ignoriert), im Aufbau
-/// `atom <nummer> - <element> <typ> - <x> <y> <z> <anzahl> <nachbar1> <ordnung1> <nachbar2> <ordnung2> …`
-/// (Felder durch Leerraum getrennt: Index 1 Nummer, 3 Element, 6/7/8 Koordinaten, 9 Zahl der Bindungen, danach Paare). Eine Bindung
-/// wird nur einmal angelegt: bei der Zeile des Atoms mit der kleineren Nummer (also wenn die Nachbarnummer größer ist als die eigene).
-/// Die Nachbarnummern werden in Indizes der Atomliste umgerechnet. Fehler `Error::InvalidInput`: too few fields, nicht lesbare
-/// Zahlen, ein Nachbar, den es nicht gibt, eine unbekannte Ordnung (nicht `s`, `d`, `t`, `a`) oder keine Atome.
+/// Reads all lines that start with `atom ` (other lines are ignored), with the layout
+/// `atom <number> - <element> <type> - <x> <y> <z> <count> <neighbor1> <order1> <neighbor2> <order2> ...`
+/// (whitespace-separated fields: index 1 number, 3 element, 6/7/8 coordinates, 9 number of bonds, then pairs). A bond
+/// is created only once: on the line of the atom with the smaller number (i.e. when the neighbor number is greater than its own).
+/// Neighbor numbers are converted into indices of the atom list. `Error::InvalidInput`: too few fields, unreadable
+/// numbers, a neighbor that does not exist, an unknown order (not `s`, `d`, `t`, `a`) or no atoms.
 pub fn parse_hin(text: &str) -> Result<(Vec<HinAtom>, Vec<HinBond>)> {
     struct Raw {
         number: usize,

@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Haupt-Controller für Snapious BioTools UI.
- * Verbindet alle Analyse-Module mit der Benutzeroberfläche (Swing).
+ * Main controller for the Snapious BioTools UI.
+ * Connects all analysis modules to the user interface (Swing).
  */
 public class MainViewController implements ClipboardOwner {
 
@@ -81,7 +81,7 @@ public class MainViewController implements ClipboardOwner {
         mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         mainPanel.setBackground(new Color(30, 41, 59));
 
-        // === LEFT PANEL (Sequenzen verwalten) ===
+        // === LEFT PANEL (manage sequences) ===
         JPanel leftPanel = new JPanel(new BorderLayout(10, 10));
         leftPanel.setBackground(new Color(30, 41, 59));
 
@@ -100,16 +100,16 @@ public class MainViewController implements ClipboardOwner {
         JScrollPane listScrollPane = new JScrollPane(sequenceList);
         listScrollPane.setPreferredSize(new Dimension(300, 250));
 
-        // Neue Sequenz erstellen
+        // Create new sequence
         JPanel newSeqPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         newSeqNameField = new JTextField(15);
-        JButton newSeqBtn = new JButton("Neue Sequenz");
+        JButton newSeqBtn = new JButton("New sequence");
         newSeqBtn.addActionListener(e -> handleNewSequence());
 
-        importBtn = new JButton("Importieren");
+        importBtn = new JButton("Import");
         importBtn.addActionListener(e -> handleImport());
 
-        saveBtn = new JButton("Speichern");
+        saveBtn = new JButton("Save");
         saveBtn.addActionListener(e -> handleSave());
 
         newSeqPanel.add(new JLabel("Name:"));
@@ -121,7 +121,7 @@ public class MainViewController implements ClipboardOwner {
         leftPanel.add(listScrollPane, BorderLayout.CENTER);
         leftPanel.add(newSeqPanel, BorderLayout.NORTH);
 
-        // Detail-Panel (unten links)
+        // Detail panel (bottom left)
         JPanel detailPanel = new JPanel(new GridLayout(5, 2, 10, 5));
         detailPanel.setBackground(new Color(30, 41, 59));
 
@@ -139,11 +139,11 @@ public class MainViewController implements ClipboardOwner {
         detailPanel.add(detailIdLabel);
         detailPanel.add(new JLabel("Typ:"));
         detailPanel.add(detailTypeLabel);
-        detailPanel.add(new JLabel("Länge:"));
+        detailPanel.add(new JLabel("Length:"));
         detailPanel.add(detailLengthLabel);
-        detailPanel.add(new JLabel("GC-Gehalt:"));
+        detailPanel.add(new JLabel("GC content:"));
         detailPanel.add(detailGCLabel);
-        detailPanel.add(new JLabel("GC-Fortschritt:"));
+        detailPanel.add(new JLabel("GC progress:"));
         detailPanel.add(gcProgressBar);
 
         leftPanel.add(detailPanel, BorderLayout.SOUTH);
@@ -153,7 +153,7 @@ public class MainViewController implements ClipboardOwner {
         tabbedPane.setBackground(new Color(30, 41, 59));
         tabbedPane.setForeground(Color.WHITE);
 
-        // Dashboard-Tab
+        // Dashboard tab
         JPanel dashboardPanel = new JPanel(new BorderLayout(10, 10));
         dashboardPanel.setBackground(new Color(30, 41, 59));
 
@@ -164,7 +164,7 @@ public class MainViewController implements ClipboardOwner {
         quickSeqInput.setLineWrap(true);
         quickSeqInput.setWrapStyleWord(true);
 
-        analyzeBtn = new JButton("Analysieren");
+        analyzeBtn = new JButton("Analyze");
         analyzeBtn.addActionListener(e -> handleQuickAnalysis());
 
         JPanel inputPanel = new JPanel(new BorderLayout());
@@ -182,7 +182,7 @@ public class MainViewController implements ClipboardOwner {
 
         tabbedPane.addTab("Dashboard", dashboardPanel);
 
-        // Alignment-Tab
+        // Alignment tab
         JPanel alignPanel = new JPanel(new BorderLayout(10, 10));
         alignPanel.setBackground(new Color(30, 41, 59));
 
@@ -206,7 +206,7 @@ public class MainViewController implements ClipboardOwner {
 
         tabbedPane.addTab("Alignment", alignPanel);
 
-        // Tree-Tab
+        // Tree tab
         JPanel treePanel = new JPanel(new BorderLayout(10, 10));
         treePanel.setBackground(new Color(30, 41, 59));
 
@@ -217,7 +217,7 @@ public class MainViewController implements ClipboardOwner {
         treeOutput.setForeground(Color.WHITE);
 
         JPanel treeBtnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton buildTreeBtn = new JButton("Baum erstellen");
+        JButton buildTreeBtn = new JButton("Build tree");
         buildTreeBtn.addActionListener(e -> handleParsimonyTree());
 
         treeMethodCombo = new JComboBox<>(new String[]{"Neighbor-Joining", "UPGMA", "Maximum Parsimony"});
@@ -228,16 +228,16 @@ public class MainViewController implements ClipboardOwner {
         treePanel.add(new JScrollPane(treeOutput), BorderLayout.CENTER);
         treePanel.add(treeBtnPanel, BorderLayout.SOUTH);
 
-        tabbedPane.addTab("Phylogenie", treePanel);
+        tabbedPane.addTab("Phylogeny", treePanel);
 
         mainPanel.add(leftPanel, BorderLayout.WEST);
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
-        // === RIGHT PANEL (Tools) ===
+        // === RIGHT PANEL (tools) ===
         JPanel rightPanel = new JPanel(new BorderLayout(10, 10));
         rightPanel.setBackground(new Color(30, 41, 59));
 
-        // Align-Parameter
+        // Alignment parameters
         JPanel paramPanel = new JPanel(new GridLayout(3, 2, 10, 5));
         paramPanel.setBackground(new Color(30, 41, 59));
 
@@ -258,31 +258,31 @@ public class MainViewController implements ClipboardOwner {
         JTabbedPane toolsTabs = new JTabbedPane();
         toolsTabs.setBackground(new Color(30, 41, 59));
 
-        // ORF-Tab
+        // ORF tab
         JPanel orfPanel = new JPanel(new BorderLayout());
         orfModel = new DefaultListModel<>();
         orfList = new JList<>(orfModel);
         orfPanel.add(new JScrollPane(orfList), BorderLayout.CENTER);
 
-        JButton findOrfBtn = new JButton("ORF finden");
+        JButton findOrfBtn = new JButton("Find ORFs");
         findOrfBtn.addActionListener(e -> handleOrfFinder());
         orfPanel.add(findOrfBtn, BorderLayout.SOUTH);
 
         toolsTabs.addTab("ORF-Finder", orfPanel);
 
-        // Restriktionsenzyme-Tab
+        // Restriction enzymes tab
         JPanel restrPanel = new JPanel(new BorderLayout());
         restrictionModel = new DefaultListModel<>();
         restrictionList = new JList<>(restrictionModel);
         restrPanel.add(new JScrollPane(restrictionList), BorderLayout.CENTER);
 
-        JButton restrBtn = new JButton("Restriktionsstellen");
+        JButton restrBtn = new JButton("Restriction sites");
         restrBtn.addActionListener(e -> handleRestrictionEnzymes());
         restrPanel.add(restrBtn, BorderLayout.SOUTH);
 
-        toolsTabs.addTab("Restriktionsenzyme", restrPanel);
+        toolsTabs.addTab("Restriction enzymes", restrPanel);
 
-        // Distance Matrix-Tab
+        // Distance matrix tab
         JPanel matrixPanel = new JPanel(new BorderLayout());
         distanceMatrixOutput = new JTextArea();
         distanceMatrixOutput.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -290,13 +290,13 @@ public class MainViewController implements ClipboardOwner {
         distanceMatrixOutput.setBackground(new Color(15, 23, 42));
         distanceMatrixOutput.setForeground(Color.WHITE);
 
-        JButton matrixBtn = new JButton("Distanzmatrix");
+        JButton matrixBtn = new JButton("Distance matrix");
         matrixBtn.addActionListener(e -> handleDistanceMatrix());
 
         matrixPanel.add(new JScrollPane(distanceMatrixOutput), BorderLayout.CENTER);
         matrixPanel.add(matrixBtn, BorderLayout.SOUTH);
 
-        toolsTabs.addTab("Distanzmatrix", matrixPanel);
+        toolsTabs.addTab("Distance matrix", matrixPanel);
 
         rightPanel.add(toolsTabs, BorderLayout.CENTER);
         mainPanel.add(rightPanel, BorderLayout.EAST);
@@ -305,11 +305,11 @@ public class MainViewController implements ClipboardOwner {
         JPanel statusBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         statusBar.setBackground(new Color(15, 23, 42));
 
-        statusTextLabel = new JLabel("Bereit");
-        statusSeqCountLabel = new JLabel("Sequenzen: 0");
+        statusTextLabel = new JLabel("Ready");
+        statusSeqCountLabel = new JLabel("Sequences: 0");
 
         helpBtn = new JButton("Hilfe");
-        aboutBtn = new JButton("Über");
+        aboutBtn = new JButton("About");
 
         helpBtn.addActionListener(e -> handleHelp());
         aboutBtn.addActionListener(e -> handleAbout());
@@ -329,32 +329,32 @@ public class MainViewController implements ClipboardOwner {
 
     private JButton importBtn, saveBtn, analyzeBtn, helpBtn, aboutBtn;
 
-    // ======== INITIALISIERUNG ========
+    // ======== INITIALIZATION ========
 
     public void initialize() {
         updateStats();
         updateStatus();
 
-        // Align-Parameter initialisieren
+        // Initialize alignment parameters
         try {
             matchScore = Integer.parseInt(matchScoreField.getText());
             mismatchPenalty = Integer.parseInt(mismatchPenaltyField.getText());
             gapPenalty = Integer.parseInt(gapPenaltyField.getText());
         } catch (NumberFormatException e) {
-            // Defaults verwenden
+            // Use defaults
         }
 
         treeMethodCombo.setSelectedItem("Neighbor-Joining");
     }
 
-    // ======== DATEI-OPERATIONEN ========
+    // ======== FILE OPERATIONS ========
 
     private void handleNewSequence() {
         String name = newSeqNameField.getText().trim();
-        if (name.isEmpty()) name = "Sequenz_" + (sequenceMap.size() + 1);
+        if (name.isEmpty()) name = "Sequence_" + (sequenceMap.size() + 1);
 
         String seqStr = JOptionPane.showInputDialog(mainFrame,
-            "Sequenz eingeben (ATCG):", "Neue Sequenz erstellen", JOptionPane.QUESTION_MESSAGE);
+            "Enter sequence (ATCG):", "Create new sequence", JOptionPane.QUESTION_MESSAGE);
 
         if (seqStr != null) {
             try {
@@ -366,7 +366,7 @@ public class MainViewController implements ClipboardOwner {
                 );
                 addSequence(seq);
             } catch (IllegalArgumentException e) {
-                showError("Ungültige Sequenz: " + e.getMessage());
+                showError("Invalid sequence: " + e.getMessage());
             }
         }
 
@@ -376,9 +376,9 @@ public class MainViewController implements ClipboardOwner {
     private void handleImport() {
         try {
             JFileChooser fileChooser = new JFileChooser();
-            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("FASTA Dateien", "fasta", "fa"));
-            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("FASTQ Dateien", "fastq", "fq"));
-            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("GenBank Dateien", "gb", "genbank"));
+            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("FASTA files", "fasta", "fa"));
+            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("FASTQ files", "fastq", "fq"));
+            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("GenBank files", "gb", "genbank"));
 
             int result = fileChooser.showOpenDialog(mainFrame);
             if (result == JFileChooser.APPROVE_OPTION) {
@@ -393,10 +393,10 @@ public class MainViewController implements ClipboardOwner {
                     addSequence(seq);
                 }
 
-                statusTextLabel.setText("✓ " + loaded.size() + " Sequenz(en) importiert: " + file.getName());
+                statusTextLabel.setText("✓ " + loaded.size() + " sequence(s) imported: " + file.getName());
             }
         } catch (Exception e) {
-            showError("Import fehlgeschlagen: " + e.getMessage());
+            showError("Import failed: " + e.getMessage());
         }
     }
 
@@ -405,20 +405,20 @@ public class MainViewController implements ClipboardOwner {
 
         try {
             JFileChooser fileChooser = new JFileChooser();
-            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("FASTA Dateien", "fasta"));
+            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("FASTA files", "fasta"));
 
             int result = fileChooser.showSaveDialog(mainFrame);
             if (result == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();
                 FileIO.writeFASTA(new ArrayList<>(sequenceMap.values()), file.toPath());
-                statusTextLabel.setText("✓ Gespeichert: " + file.getName());
+                statusTextLabel.setText("✓ Saved: " + file.getName());
             }
         } catch (Exception e) {
-            showError("Speichern fehlgeschlagen: " + e.getMessage());
+            showError("Save failed: " + e.getMessage());
         }
     }
 
-    // ======== SEQUENZ-OPERATIONEN ========
+    // ======== SEQUENCE OPERATIONS ========
 
     private void addSequence(Sequence seq) {
         sequenceMap.put(seq.getId(), seq);
@@ -439,45 +439,45 @@ public class MainViewController implements ClipboardOwner {
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             StringSelection content = new StringSelection(Sequence.toFASTA(seq));
             clipboard.setContents(content, this);
-            statusTextLabel.setText("✓ Sequenz in Zwischenablage kopiert");
+            statusTextLabel.setText("✓ Sequence copied to clipboard");
         }
     }
 
-    // ======== SEQUENZ-ANALYSEN ========
+    // ======== SEQUENCE ANALYSES ========
 
     private void handleQuickAnalysis() {
         String seqStr = quickSeqInput.getText().trim().toUpperCase();
         if (seqStr.isEmpty()) {
-            quickAnalysisOutput.setText("Bitte Sequenz eingeben");
+            quickAnalysisOutput.setText("Please enter a sequence");
             return;
         }
 
         try {
-            Sequence seq = new Sequence("quick", "Schnellanalyse", seqStr, Sequence.SequenceType.DNA);
+            Sequence seq = new Sequence("quick", "Quick analysis", seqStr, Sequence.SequenceType.DNA);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("=== Schnellanalyse ===\n\n");
-            sb.append("Länge: ").append(seq.length()).append("\n");
-            sb.append("GC-Gehalt: ").append(String.format("%.1f%%", seq.gcContent() * 100)).append("\n");
-            sb.append("AT-Gehalt: ").append(String.format("%.1f%%", seq.atContent() * 100)).append("\n\n");
+            sb.append("=== Quick analysis ===\n\n");
+            sb.append("Length: ").append(seq.length()).append("\n");
+            sb.append("GC content: ").append(String.format("%.1f%%", seq.gcContent() * 100)).append("\n");
+            sb.append("AT content: ").append(String.format("%.1f%%", seq.atContent() * 100)).append("\n\n");
 
-            // Basen-Verteilung
-            sb.append("Basen-Verteilung:\n");
+            // Base distribution
+            sb.append("Base distribution:\n");
             for (Map.Entry<Character, Double> entry : seq.baseFrequencies().entrySet()) {
                 sb.append("  ").append(entry.getKey()).append(": ")
                   .append(String.format("%.1f%%", entry.getValue() * 100)).append("\n");
             }
 
-            // ORFs finden
+            // Find ORFs
             List<Sequence> orfs = seq.findORFs(30);
-            sb.append("\nGefundene ORFs: ").append(orfs.size()).append("\n");
+            sb.append("\nORFs found: ").append(orfs.size()).append("\n");
             for (Sequence orf : orfs) {
                 sb.append("  ").append(orf.getName()).append(": ").append(orf.length()).append(" bp\n");
             }
 
             quickAnalysisOutput.setText(sb.toString());
         } catch (Exception e) {
-            quickAnalysisOutput.setText("Analyse fehlgeschlagen: " + e.getMessage());
+            quickAnalysisOutput.setText("Analysis failed: " + e.getMessage());
         }
     }
 
@@ -487,14 +487,14 @@ public class MainViewController implements ClipboardOwner {
         Sequence seq = sequenceMap.get(selectedSequenceId);
         if (seq == null) return;
 
-        List<Sequence> orfs = seq.findORFs(30);  // Mindestlänge 10 Aminosäuren
+        List<Sequence> orfs = seq.findORFs(30);  // minimum length 10 amino acids
 
         orfModel.removeAllElements();
         for (Sequence orf : orfs) {
-            orfModel.addElement(orf.getName() + " (Länge: " + orf.length() + ")");
+            orfModel.addElement(orf.getName() + " (Length: " + orf.length() + ")");
         }
 
-        statusTextLabel.setText(String.format("✓ %d ORFs gefunden", orfs.size()));
+        statusTextLabel.setText(String.format("✓ %d ORFs found", orfs.size()));
     }
 
     private void handleRestrictionEnzymes() {
@@ -503,7 +503,7 @@ public class MainViewController implements ClipboardOwner {
         Sequence seq = sequenceMap.get(selectedSequenceId);
         if (seq == null) return;
 
-        // Häufige Restriktionsenzyme
+        // Common restriction enzymes
         String[] enzymes = {
             "GAATTC",  // EcoRI
             "GGCC",    // BamHI
@@ -518,20 +518,20 @@ public class MainViewController implements ClipboardOwner {
             List<Integer> sites = seq.findRestrictionSites(enzyme);
             if (!sites.isEmpty()) {
                 restrictionModel.addElement(
-                    enzyme + ": " + sites.size() + " Stellen [" + String.join(", ",
+                    enzyme + ": " + sites.size() + " sites [" + String.join(", ",
                         sites.stream().map(String::valueOf).collect(Collectors.toList())) + "]"
                 );
             }
         }
 
-        statusTextLabel.setText("✓ Restriktionsstellen analysiert");
+        statusTextLabel.setText("✓ Restriction sites analyzed");
     }
 
     // ======== ALIGNMENT ========
 
     private void handleGlobalAlign() {
         if (sequenceMap.size() < 2) {
-            showError("Zwei Sequenzen für Alignment nötig");
+            showError("Two sequences required for alignment");
             return;
         }
 
@@ -543,15 +543,15 @@ public class MainViewController implements ClipboardOwner {
                     seqs.get(0).getBases(), seqs.get(1).getBases());
 
             alignmentOutput.setText(result.format());
-            statusTextLabel.setText(String.format("✓ Global Alignment: Score=%.1f", result.getScore()));
+            statusTextLabel.setText(String.format("✓ Global alignment: Score=%.1f", result.getScore()));
         } catch (Exception e) {
-            showError("Alignment fehlgeschlagen: " + e.getMessage());
+            showError("Alignment failed: " + e.getMessage());
         }
     }
 
     private void handleLocalAlign() {
         if (sequenceMap.size() < 2) {
-            showError("Zwei Sequenzen für Alignment nötig");
+            showError("Two sequences required for alignment");
             return;
         }
 
@@ -563,17 +563,17 @@ public class MainViewController implements ClipboardOwner {
                     seqs.get(0).getBases(), seqs.get(1).getBases());
 
             alignmentOutput.setText(result.format());
-            statusTextLabel.setText(String.format("✓ Lokal Alignment: Score=%.1f", result.getScore()));
+            statusTextLabel.setText(String.format("✓ Local alignment: Score=%.1f", result.getScore()));
         } catch (Exception e) {
-            showError("Alignment fehlgeschlagen: " + e.getMessage());
+            showError("Alignment failed: " + e.getMessage());
         }
     }
 
-    // ======== PHYLOGENIE ========
+    // ======== PHYLOGENY ========
 
     private void handleParsimonyTree() {
         if (sequenceMap.size() < 3) {
-            showError("Mindestens drei Sequenzen für Phylogenie nötig");
+            showError("At least three sequences required for phylogeny");
             return;
         }
 
@@ -581,13 +581,13 @@ public class MainViewController implements ClipboardOwner {
             List<Sequence> seqs = new ArrayList<>(sequenceMap.values());
             Phylogeny.TreeNode tree = Phylogeny.neighborJoining(seqs);
 
-            // Newick-String generieren
+            // Generate Newick string
             String treeText = tree.toNewick() + ";";
 
             treeOutput.setText(treeText);
-            statusTextLabel.setText("✓ Phylogenetischer Baum erstellt");
+            statusTextLabel.setText("✓ Phylogenetic tree built");
         } catch (Exception e) {
-            showError("Baum-Erstellung fehlgeschlagen: " + e.getMessage());
+            showError("Tree building failed: " + e.getMessage());
         }
     }
 
@@ -620,35 +620,35 @@ public class MainViewController implements ClipboardOwner {
         distanceMatrixOutput.setText(matrix.toString());
     }
 
-    // ======== INFORMATION & HILFE ========
+    // ======== INFORMATION & HELP ========
 
     private void handleHelp() {
         String content = """
-            Funktionen:
+            Features:
 
-            • Sequenz-Erstellung & Import (FASTA, FASTQ, GenBank)
-            • Basale Operationen: Komplementär, Transkription, Translation
-            • ORF-Finder & Restriktionsstellen-Analyse
+            • Sequence creation & import (FASTA, FASTQ, GenBank)
+            • Basic operations: complement, transcription, translation
+            • ORF finder & restriction site analysis
             • Pairwise-Alignment (Needleman-Wunsch, Smith-Waterman)
-            • Phylogenetische Bäume (Neighbor-Joining)
-            • Konsensus-Sequenz-Erstellung
+            • Phylogenetic trees (Neighbor-Joining)
+            • Consensus sequence generation
 
             Navigation:
-            • Linkes Panel: Sequenzen verwalten
-            • Zentrale Area: Tabs für verschiedene Ansichten
-            • Rechtes Panel: Kontext-sensitive Werkzeuge""";
+            • Left panel: manage sequences
+            • Central area: tabs for different views
+            • Right panel: context-sensitive tools""";
 
-        JOptionPane.showMessageDialog(mainFrame, content, "Hilfe - Snapious BioTools", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(mainFrame, content, "Help - Snapious BioTools", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void handleAbout() {
         JOptionPane.showMessageDialog(mainFrame,
             "Snapious BioTools v1.0\n" +
-            "Komplette Bioinformatik-Suite\n\n" +
-            "Entwickelt als vereinfachte, moderne Alternative zu Geneious Prime.\n" +
+            "Complete bioinformatics suite\n\n" +
+            "Developed as a simplified, modern alternative to Geneious Prime.\n" +
             "Java 21 (Swing)\n\n" +
             "© 2026 Snapious",
-            "Über Snapious BioTools",
+            "About Snapious BioTools",
             JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -675,7 +675,7 @@ public class MainViewController implements ClipboardOwner {
         detailGCLabel.setText(String.format("%.1f%%", gc * 100));
         gcProgressBar.setValue((int) (gc * 100));
 
-        // Basen-Verteilung
+        // Base distribution
         StringBuilder baseDist = new StringBuilder();
         for (Map.Entry<Character, Double> entry : seq.baseFrequencies().entrySet()) {
             baseDist.append(entry.getKey()).append("=")
@@ -690,19 +690,19 @@ public class MainViewController implements ClipboardOwner {
                 .mapToLong(Sequence::length)
                 .sum();
 
-        statusSeqCountLabel.setText("Sequenzen: " + totalSeqs);
+        statusSeqCountLabel.setText("Sequences: " + totalSeqs);
     }
 
     private void updateStatus() {
-        statusTextLabel.setText("Bereit");
-        statusSeqCountLabel.setText("Sequenzen: " + sequenceMap.size());
+        statusTextLabel.setText("Ready");
+        statusSeqCountLabel.setText("Sequences: " + sequenceMap.size());
     }
 
     // ======== UTILITY METHODS ========
 
     private void showError(String message) {
-        JOptionPane.showMessageDialog(mainFrame, message, "Fehler", JOptionPane.ERROR_MESSAGE);
-        statusTextLabel.setText("Fehler: " + message);
+        JOptionPane.showMessageDialog(mainFrame, message, "Error", JOptionPane.ERROR_MESSAGE);
+        statusTextLabel.setText("Error: " + message);
     }
 
     // ClipboardOwner interface (required for clipboard operations)
@@ -715,7 +715,7 @@ public class MainViewController implements ClipboardOwner {
      * Creates and shows the main application window.
      */
     public JFrame createMainWindow() {
-        mainFrame = new JFrame("Snapious BioTools - Komplette Bioinformatik-Suite");
+        mainFrame = new JFrame("Snapious BioTools - Complete Bioinformatics Suite");
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainFrame.setSize(1400, 900);
 

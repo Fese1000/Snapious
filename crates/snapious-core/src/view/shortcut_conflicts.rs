@@ -1,16 +1,16 @@
-//! Tastenkürzel vereinheitlichen und Doppelbelegungen finden (Kürzel-Übersicht, ⌘/).
+//! Normalize keyboard shortcuts and find double assignments (shortcut overview, ⌘/).
 
-/// Ein Kürzel mit Kennung und Tastenangabe wie `"cmd+shift+k"`.
+/// A shortcut with an identifier and a key specification such as `"cmd+shift+k"`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Shortcut {
     pub id: String,
     pub keys: String,
 }
 
-/// Vereinheitlicht eine Tastenangabe: Kleinschreibung, Teile an `+` trennen und trimmen. Modifikatoren (`cmd`/`command`,
-/// `ctrl`/`control`, `alt`/`opt`/`option`, `shift`) werden zu `cmd`, `ctrl`, `alt`, `shift` vereinheitlicht, doppelte
-/// zusammengefasst und in dieser Reihenfolge (cmd, ctrl, alt, shift) vor die Taste gesetzt; Ergebnis mit `+` verbunden.
-/// Es muss genau eine Nicht-Modifikator-Taste (nicht leer) geben, sonst `None` (auch bei leerer Eingabe oder leeren Teilen).
+/// Normalizes a key specification: lowercase, split parts at `+` and trim. Modifiers (`cmd`/`command`,
+/// `ctrl`/`control`, `alt`/`opt`/`option`, `shift`) are unified to `cmd`, `ctrl`, `alt`, `shift`, duplicates are
+/// merged and placed in this order (cmd, ctrl, alt, shift) before the key; result joined with `+`.
+/// There must be exactly one non-modifier key (non-empty), otherwise `None` (also for empty input or empty parts).
 pub fn normalize_keys(keys: &str) -> Option<String> {
     let parts: Vec<&str> = keys.split('+').collect();
     for part in &parts {
@@ -69,8 +69,8 @@ pub fn normalize_keys(keys: &str) -> Option<String> {
     Some(result.join("+"))
 }
 
-/// Alle Paare `(i, j)` mit `i < j`, deren vereinheitlichte Tasten gleich sind (ungültige Angaben zählen nicht),
-/// sortiert nach `i`, dann `j`.
+/// All pairs `(i, j)` with `i < j` whose normalized keys are equal (invalid specifications do not count),
+/// sorted by `i`, then `j`.
 pub fn find_conflicts(shortcuts: &[Shortcut]) -> Vec<(usize, usize)> {
     let mut conflicts = Vec::new();
     for (i, shortcut) in shortcuts.iter().enumerate() {

@@ -1,14 +1,14 @@
-//! ABIF-Dateien (Sanger-Sequenzierung, `.ab1`) lesen: Basen, Qualitäten, Peakpositionen und Spuren.
+//! Read ABIF files (Sanger sequencing, `.ab1`): bases, qualities, peak positions and traces.
 //!
-//! Aufbau (alle Zahlen Big-Endian): Bytes 0–3 `ABIF`, Bytes 4–5 Version. Ab Byte 6 steht der Verzeichniseintrag des Verzeichnisses selbst
-//! (28 Bytes). Jeder Eintrag: Name (4 Bytes Text), Nummer (i32), Elementtyp (i16), Elementgröße (i16), Elementzahl (i32),
-//! Datengröße (i32), Datenort (i32), Datenhandle (i32). Ist die Datengröße höchstens 4, stehen die Daten selbst in den vier Bytes
-//! des Datenorts (linksbündig); sonst ist der Datenort der Beginn der Daten in der Datei. Beim Verzeichniseintrag zeigt der Datenort
-//! auf die Liste der Einträge (Elementzahl Einträge zu je 28 Bytes).
+//! Layout (all numbers big-endian): bytes 0-3 `ABIF`, bytes 4-5 version. From byte 6 comes the directory entry of the directory itself
+//! (28 bytes). Each entry: name (4 bytes text), number (i32), element type (i16), element size (i16), element count (i32),
+//! data size (i32), data offset (i32), data handle (i32). If the data size is at most 4, the data itself is in the four bytes
+//! of the data offset (left-aligned); otherwise the data offset is the start of the data in the file. For the directory entry the data offset points
+//! to the list of entries (element-count entries of 28 bytes each).
 
 use crate::error::{Error, Result};
 
-/// Ein Eintrag des Verzeichnisses.
+/// An entry of the directory.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DirEntry {
     pub name: String,
@@ -20,17 +20,17 @@ pub struct DirEntry {
     pub data_offset: i32,
 }
 
-/// Inhalt einer Sequenzierspur.
+/// Content of a sequencing trace.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Chromatogram {
-    /// Basen (Tag `PBAS`, Nummer 1; bei fehlender Nummer 1 die Nummer 2), Uppercase.
+    /// Bases (tag `PBAS`, number 1; if number 1 is missing, number 2), uppercase.
     pub bases: String,
-    /// Qualitäten (Tag `PCON`, Nummer 1, sonst 2), je Base ein Byte; leer, wenn der Tag fehlt.
+    /// Qualities (tag `PCON`, number 1, otherwise 2), one byte per base; empty if the tag is missing.
     pub quality: Vec<u8>,
-    /// Peakpositionen in Messpunkten (Tag `PLOC`, Nummer 1, sonst 2), als i16-Werte gelesen und als nicht negative Zahlen; leer, wenn fehlend.
+    /// Peak positions in sample points (tag `PLOC`, number 1, otherwise 2), read as i16 values and as non-negative numbers; empty if missing.
     pub peak_positions: Vec<usize>,
-    /// Spuren je Farbkanal: Buchstabe (aus Tag `FWO_`, Nummer 1, vier Zeichen, z. B. `GATC`) und Messwerte aus `DATA9`, `DATA10`,
-    /// `DATA11`, `DATA12` in dieser Reihenfolge. Fehlt `FWO_`, gilt `GATC`. Fehlende `DATA`-Tags lassen den Kanal weg.
+    /// Traces per color channel: letter (from tag `FWO_`, number 1, four characters, e.g. `GATC`) and sample values from `DATA9`, `DATA10`,
+    /// `DATA11`, `DATA12` in this order. If `FWO_` is missing, `GATC` applies. Missing `DATA` tags omit the channel.
     pub channels: Vec<(char, Vec<i16>)>,
 }
 
@@ -49,8 +49,8 @@ fn be_i32(bytes: &[u8], at: usize) -> Option<i32> {
     ]))
 }
 
-/// Liest die Verzeichniseinträge. Fehler `Error::InvalidInput`: weniger als 34 Bytes, falsche Kennung (nicht `ABIF`), Verzeichnis oder
-/// ein Eintrag liegt außerhalb der Datei, negative Zahlen für Elementzahl oder Datenort.
+/// Reads the directory entries. `Error::InvalidInput`: fewer than 34 bytes, wrong signature (not `ABIF`), directory or
+/// an entry lies outside the file, negative numbers for element count or data offset.
 pub fn read_directory(bytes: &[u8]) -> Result<Vec<DirEntry>> {
     if bytes.len() < 34 {
         return Err(Error::InvalidInput(
@@ -93,10 +93,10 @@ pub fn read_directory(bytes: &[u8]) -> Result<Vec<DirEntry>> {
     Ok(entries)
 }
 
-/// Die Daten eines Eintrags (Bytes): bei `data_size <= 4` die ersten `data_size` Bytes des Datenort-Feldes (Bytes 20–23 des Eintrags
-/// stehen als `data_offset` in `DirEntry`, für die Inline-Daten sind deren vier Bytes gemeint: `data_offset` als Big-Endian-i32 in
-/// Bytes zerlegen), sonst `bytes[data_offset .. data_offset + data_size]`. Liegt der Bereich außerhalb der Datei oder ist
-/// `data_size` negativ, `Error::InvalidInput`.
+/// The data of an entry (bytes): for `data_size <= 4` the first `data_size` bytes of the data offset field (bytes 20-23 of the entry
+/// are stored as `data_offset` in `DirEntry`; for the inline data its four bytes are meant: split `data_offset` as a big-endian i32 into
+/// bytes), otherwise `bytes[data_offset .. data_offset + data_size]`. If the range lies outside the file or
+/// `data_size` is negative, `Error::InvalidInput`.
 pub fn entry_data(bytes: &[u8], entry: &DirEntry) -> Result<Vec<u8>> {
     if entry.data_size < 0 {
         return Err(Error::InvalidInput(format!(
@@ -126,7 +126,7 @@ pub fn entry_data(bytes: &[u8], entry: &DirEntry) -> Result<Vec<u8>> {
         })
 }
 
-/// Liest die Spur. Fehler `Error::InvalidInput`, wenn `PBAS` (Nummer 1 oder 2) fehlt oder die Datei fehlerhaft ist (siehe `read_directory`).
+/// Reads the trace. `Error::InvalidInput` if `PBAS` (number 1 or 2) is missing or the file is malformed (see `read_directory`).
 pub fn parse_abif(bytes: &[u8]) -> Result<Chromatogram> {
     let dir = read_directory(bytes)?;
     let find = |name: &str, numbers: &[i32]| -> Option<&DirEntry> {
@@ -182,7 +182,7 @@ pub fn parse_abif(bytes: &[u8]) -> Result<Chromatogram> {
 mod tests {
     use super::*;
 
-    /// Baut eine ABIF-Datei: Kopf (6 Bytes), Verzeichniseintrag (28 Bytes), Daten ab Byte 128, danach die Eintragsliste.
+    /// Builds an ABIF file: header (6 bytes), directory entry (28 bytes), data from byte 128, then the entry list.
     fn build(entries: &[(&str, i32, i16, i16, Vec<u8>)]) -> Vec<u8> {
         let mut data_area: Vec<u8> = Vec::new();
         let mut rows: Vec<Vec<u8>> = Vec::new();
@@ -214,7 +214,7 @@ mod tests {
         let mut file = vec![0u8; 128];
         file[..4].copy_from_slice(b"ABIF");
         file[4..6].copy_from_slice(&101i16.to_be_bytes());
-        // Verzeichniseintrag des Verzeichnisses
+        // Directory entry of the directory
         file[6..10].copy_from_slice(b"tdir");
         file[10..14].copy_from_slice(&1i32.to_be_bytes());
         file[14..16].copy_from_slice(&1023i16.to_be_bytes());
@@ -266,7 +266,7 @@ mod tests {
         assert_eq!(d[4].name, "DATA");
         assert_eq!(d[4].number, 9);
         assert_eq!(entry_data(&f, &d[0]).unwrap(), b"acgtn".to_vec());
-        // kurzer Eintrag steht inline
+        // short entry is stored inline
         assert_eq!(entry_data(&f, &d[3]).unwrap(), b"ACGT".to_vec());
     }
 
@@ -288,7 +288,7 @@ mod tests {
         let c = parse_abif(&f).unwrap();
         assert_eq!(c.bases, "GGAC");
         assert!(c.quality.is_empty() && c.peak_positions.is_empty() && c.channels.is_empty());
-        // FWO_ fehlt: Standard GATC
+        // FWO_ missing: default GATC
         let g = build(&[
             ("PBAS", 1, 2, 1, b"A".to_vec()),
             ("DATA", 9, 4, 2, shorts(&[5])),
@@ -308,14 +308,14 @@ mod tests {
         let mut f = beispiel();
         f[0] = b'X';
         assert!(matches!(parse_abif(&f), Err(Error::InvalidInput(_))));
-        // Verzeichnis zeigt hinter das Dateiende
+        // Directory points past the end of the file
         let mut g = beispiel();
         g[26..30].copy_from_slice(&100000i32.to_be_bytes());
         assert!(matches!(parse_abif(&g), Err(Error::InvalidInput(_))));
-        // ohne Basen
+        // without bases
         let h = build(&[("PCON", 1, 1, 1, vec![1, 2, 3, 4, 5])]);
         assert!(matches!(parse_abif(&h), Err(Error::InvalidInput(_))));
-        // abgeschnittene Datei
+        // truncated file
         let kurz = beispiel()[..140].to_vec();
         assert!(matches!(parse_abif(&kurz), Err(Error::InvalidInput(_))));
     }

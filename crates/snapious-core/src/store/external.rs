@@ -1,4 +1,4 @@
-//! Verknüpfte externe Dateien (SAM/BAM, FASTQ, VCF …): Pfade werden im Projekt vermerkt, die Dateien selbst nicht kopiert.
+//! Linked external files (SAM/BAM, FASTQ, VCF ...): paths are recorded in the project, the files themselves are not copied.
 
 use rusqlite::{params, OptionalExtension};
 
@@ -6,28 +6,28 @@ use crate::error::{Error, Result};
 use crate::store::project_store::ProjectStore;
 use crate::util::{new_id, now_secs};
 
-/// Eine verknüpfte Datei.
+/// A linked file.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExternalFile {
     pub id: String,
-    /// Pfad wie angegeben.
+    /// Path as given.
     pub path: String,
-    /// Art, z. B. `sam`, `bam`, `fastq`, `vcf`.
+    /// Kind, e.g. `sam`, `bam`, `fastq`, `vcf`.
     pub kind: String,
-    /// Dokument (Referenzsequenz), zu dem die Datei gehört; leer, wenn keins.
+    /// Document (reference sequence) the file belongs to; empty if none.
     pub doc_id: String,
-    /// Anzeigename.
+    /// Display name.
     pub label: String,
-    /// Zeitpunkt des Eintrags (Sekunden seit 1970).
+    /// Time of the entry (seconds since 1970).
     pub added: i64,
 }
 
 impl ProjectStore {
-    /// Trägt eine Datei in die Tabelle `external_files` ein (Spalten `id`, `path`, `kind`, `doc_id`, `label`, `added`).
-    /// Neue ID (`new_id()`), `added = now_secs()`. Ein leerer `path` oder `kind` → `Error::InvalidInput`. Ist `label` leer, wird der
-    /// letzte Teil des Pfades (nach dem letzten `/` oder `\\`) als Name genommen. Gleicher `path` mit gleichem `kind` und `doc_id` existiert schon:
-    /// keine zweite Zeile, sondern der vorhandene Eintrag wird zurückgegeben (und `label` aktualisiert, wenn eines angegeben war).
-    /// Rückgabe: der Eintrag.
+    /// Adds a file to the table `external_files` (columns `id`, `path`, `kind`, `doc_id`, `label`, `added`).
+    /// New ID (`new_id()`), `added = now_secs()`. An empty `path` or `kind` -> `Error::InvalidInput`. If `label` is empty, the
+    /// last part of the path (after the last `/` or `\\`) is used as the name. If the same `path` with the same `kind` and `doc_id` already exists:
+    /// no second row; the existing entry is returned instead (and `label` updated if one was given).
+    /// Returns: the entry.
     pub fn add_external_file(
         &mut self,
         path: &str,
@@ -79,7 +79,7 @@ impl ProjectStore {
         Ok(f)
     }
 
-    /// Alle Einträge, sortiert nach `added`, dann nach `id`. Ist `doc_id` nicht leer, nur die Einträge dieses Dokuments.
+    /// All entries, sorted by `added`, then by `id`. If `doc_id` is non-empty, only the entries of that document.
     pub fn external_files(&self, doc_id: &str) -> Result<Vec<ExternalFile>> {
         let mut out = Vec::new();
         if doc_id.is_empty() {
@@ -101,7 +101,7 @@ impl ProjectStore {
         Ok(out)
     }
 
-    /// Entfernt den Eintrag mit dieser ID (die Datei selbst bleibt). Unbekannte ID → `Error::InvalidInput`.
+    /// Removes the entry with this ID (the file itself stays). Unknown ID -> `Error::InvalidInput`.
     pub fn remove_external_file(&mut self, id: &str) -> Result<()> {
         let n = self
             .conn
@@ -170,7 +170,7 @@ mod tests {
         assert_eq!(b.label, "Neu");
         assert_eq!(s.external_files("").unwrap().len(), 1);
         assert_eq!(s.external_files("").unwrap()[0].label, "Neu");
-        // anderer Typ oder anderes Dokument ist ein neuer Eintrag
+        // a different kind or a different document is a new entry
         let c = s.add_external_file("/a/x.sam", "bam", "d", "").unwrap();
         assert_ne!(a.id, c.id);
         let d = s.add_external_file("/a/x.sam", "sam", "e", "").unwrap();

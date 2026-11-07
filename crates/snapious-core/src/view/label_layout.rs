@@ -1,28 +1,28 @@
-//! Etiketten ohne Überlappung auf Zeilen verteilen (Enzymnamen an der Karte, Beschriftungen an Spuren).
+//! Distribute labels onto rows without overlap (enzyme names on the map, captions on lanes).
 
-/// Gewünschte Etikette: Mitte und Breite in beliebiger gleicher Einheit.
+/// Requested label: center and width in any common unit.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct LabelRequest {
     pub center: f64,
     pub width: f64,
 }
 
-/// Platzierte Etikette.
+/// Placed label.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PlacedLabel {
-    /// Index in der übergebenen Liste.
+    /// Index in the passed list.
     pub index: usize,
-    /// Zeile (0 = nächste an der Achse).
+    /// Row (0 = closest to the axis).
     pub row: usize,
-    /// Linke Kante (`center - width / 2`).
+    /// Left edge (`center - width / 2`).
     pub left: f64,
 }
 
-/// Verteilt Etiketten auf Zeilen. Regeln:
-/// 1. Bearbeitet wird nach `center` aufsteigend, bei Gleichstand nach Index (`f64::total_cmp`).
-/// 2. Jede Etikette bekommt die kleinste Zeile, deren zuletzt platzierte Etikette (rechte Kante `left + width`)
-///    mindestens `gap` links von `left` endet, also `rechte_kante + gap <= left`. Eine leere Zeile passt immer.
-/// 3. Ergebnis: eine `PlacedLabel` je Etikette, sortiert nach `index`.
+/// Distributes labels onto rows. Rules:
+/// 1. Processing is by `center` ascending, ties by index (`f64::total_cmp`).
+/// 2. Each label gets the smallest row whose most recently placed label (right edge `left + width`)
+///    ends at least `gap` to the left of `left`, i.e. `right_edge + gap <= left`. An empty row always fits.
+/// 3. Result: one `PlacedLabel` per label, sorted by `index`.
 pub fn place_labels(labels: &[LabelRequest], gap: f64) -> Vec<PlacedLabel> {
     if labels.is_empty() {
         return Vec::new();
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn beruehrung_und_reihenfolge() {
-        // 0..10 und 10..20 mit gap 0: gleiche Zeile; Eingabe unsortiert
+        // 0..10 and 10..20 with gap 0: same row; input unsorted
         let placed = place_labels(&[req(15.0, 10.0), req(5.0, 10.0)], 0.0);
         assert_eq!(
             placed,
@@ -117,7 +117,7 @@ mod tests {
                 },
             ]
         );
-        // mit gap 1 reicht die Berührung nicht mehr
+        // with gap 1 touching is no longer enough
         let placed = place_labels(&[req(15.0, 10.0), req(5.0, 10.0)], 1.0);
         assert_eq!(placed[0].row, 1);
         assert_eq!(placed[1].row, 0);

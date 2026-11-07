@@ -1,6 +1,6 @@
-//! Aufruf externer Programme (MAFFT, BLAST+, Primer3, …) mit Zeitlimit.
+//! Calling external programs (MAFFT, BLAST+, Primer3, …) with a time limit.
 //!
-//! Plattformneutral: Suche im `PATH` und in üblichen Installationsordnern, unter Windows auch mit `.exe`.
+//! Platform-neutral: search in `PATH` and in common install folders, on Windows also with `.exe`.
 
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
@@ -11,10 +11,10 @@ use std::time::{Duration, Instant};
 
 use crate::error::{Error, Result};
 
-/// Ergebnis eines Programmlaufs.
+/// Result of a program run.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ToolResult {
-    /// Exitcode (-1, wenn das Programm durch ein Signal beendet wurde).
+    /// Exit code (-1 if the program was terminated by a signal).
     pub exit_code: i32,
     pub stdout: String,
     pub stderr: String,
@@ -27,7 +27,7 @@ impl ToolResult {
     }
 }
 
-/// Verwaltet die Fundorte externer Programme.
+/// Manages the locations of external programs.
 #[derive(Clone, Debug, Default)]
 pub struct ToolRegistry {
     overrides: BTreeMap<String, PathBuf>,
@@ -35,7 +35,7 @@ pub struct ToolRegistry {
 }
 
 impl ToolRegistry {
-    /// Suche im `PATH` und in `/opt/homebrew/bin`, `/usr/local/bin`.
+    /// Search in `PATH` and in `/opt/homebrew/bin`, `/usr/local/bin`.
     pub fn defaults() -> Self {
         Self {
             overrides: BTreeMap::new(),
@@ -46,7 +46,7 @@ impl ToolRegistry {
         }
     }
 
-    /// Registry, die nur die angegebenen Ordner durchsucht (für Tests).
+    /// Registry that searches only the given folders (for tests).
     pub fn with_search_dirs(dirs: Vec<PathBuf>) -> Self {
         Self {
             overrides: BTreeMap::new(),
@@ -54,14 +54,14 @@ impl ToolRegistry {
         }
     }
 
-    /// Kopie mit fest eingetragenem Pfad für ein Programm.
+    /// Copy with a fixed path entered for one program.
     pub fn with_executable(&self, tool: &str, path: &Path) -> Self {
         let mut copy = self.clone();
         copy.overrides.insert(tool.to_string(), path.to_path_buf());
         copy
     }
 
-    /// Pfad des Programms, falls gefunden.
+    /// Path of the program, if found.
     pub fn executable(&self, tool: &str) -> Option<PathBuf> {
         if let Some(p) = self.overrides.get(tool) {
             return if is_executable(p) {
@@ -89,7 +89,7 @@ impl ToolRegistry {
         self.executable(tool).is_some()
     }
 
-    /// Startet das Programm, wartet höchstens `timeout` und liefert Ausgabe und Exitcode.
+    /// Starts the program, waits at most `timeout` and returns output and exit code.
     pub fn run(
         &self,
         tool: &str,
@@ -122,7 +122,7 @@ impl ToolRegistry {
             (Some(text), Some(mut pipe)) => {
                 let data = text.as_bytes().to_vec();
                 Some(thread::spawn(move || {
-                    let _ = pipe.write_all(&data); // Programm darf Eingabe früher schließen
+                    let _ = pipe.write_all(&data); // program may close its input early
                 }))
             }
             _ => None,
@@ -171,7 +171,7 @@ impl ToolRegistry {
     }
 }
 
-/// Kurzform: ist das Programm mit den Standardsuchpfaden auffindbar?
+/// Shorthand: can the program be found with the default search paths?
 pub fn is_available(tool: &str) -> bool {
     ToolRegistry::defaults().is_available(tool)
 }

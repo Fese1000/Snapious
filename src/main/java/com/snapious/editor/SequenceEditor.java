@@ -6,19 +6,19 @@ import java.util.*;
 import java.util.stream.*;
 
 /**
- * Sequence Editor für manuelle Sequenz-Manipulation.
- * Unterstützt: SNP (Point Mutation), Insertion, Deletion, Substitution, Reverse Complement.
+ * Sequence editor for manual sequence manipulation.
+ * Supports: SNP (point mutation), insertion, deletion, substitution, reverse complement.
  */
 public class SequenceEditor {
 
     // ======== EDIT OPERATION TYPES ==========
 
     public enum EditType {
-        SNP("Point Mutation (SNP)", "Einzelner Basen-Austausch"),
-        INSERTION("Insertion", "Basen-Einfügung an Position"),
-        DELETION("Deletion", "Basen-Entfernung aus Sequenz"),
-        SUBSTITUTION("Substitution", "Bereichs-Ersatz durch neue Sequenz"),
-        REVERSE_COMPLEMENT("Reverse Komplement", "Sequenz umkehren und komplementieren");
+        SNP("Point Mutation (SNP)", "Single base substitution"),
+        INSERTION("Insertion", "Base insertion at a position"),
+        DELETION("Deletion", "Base removal from the sequence"),
+        SUBSTITUTION("Substitution", "Range replacement with a new sequence"),
+        REVERSE_COMPLEMENT("Reverse Complement", "Reverse and complement the sequence");
 
         private final String displayName;
         private final String description;
@@ -34,14 +34,14 @@ public class SequenceEditor {
 
     // ======== EDIT RESULT ==========
 
-    /** Repräsentiert eine Sequenz-Editierung mit Metadaten */
+    /** Represents a sequence edit with metadata */
     public static class EditResult {
-        private String editedSequence;  // Editierte Sequenz-Basen
-        private EditType editType;      // Art der Editierung
-        private int position;           // Start-Position (0-basiert)
-        private int originalLength;     // Länge des Original-Bereichs
-        private int newLength;          // Länge des neuen Bereichs
-        private String description;     // Beschreibung der Änderung
+        private String editedSequence;  // edited sequence bases
+        private EditType editType;      // type of edit
+        private int position;           // start position (0-based)
+        private int originalLength;     // length of the original range
+        private int newLength;          // length of the new range
+        private String description;     // description of the change
 
         public EditResult(String editedSequence, EditType editType, int position,
                          int originalLength, int newLength, String description) {
@@ -60,10 +60,10 @@ public class SequenceEditor {
         public int getNewLength() { return newLength; }
         public String getDescription() { return description; }
 
-        /** Länge-Differenz (positiv = Insertion, negativ = Deletion) */
+        /** Length difference (positive = insertion, negative = deletion) */
         public int lengthDifference() { return newLength - originalLength; }
 
-        /** Formatierter Edit-Report */
+        /** Formatted edit report */
         public String format() {
             return String.format("%s at position %d: %s (len %d → %d)",
                 editType.getDisplayName(), position, description,
@@ -77,85 +77,85 @@ public class SequenceEditor {
     // ======== SNP (Point Mutation) ==========
 
     /**
-     * Führe einen Single-Nucleotide Polymorphismus (SNP) durch.
-     * @param sequence Original-Sequenz
-     * @param position 0-basierte Position der Mutation
-     * @param newBase Neue Base (A, T, G, C)
-     * @return EditResult mit mutation-Details
+     * Perform a single-nucleotide polymorphism (SNP).
+     * @param sequence original sequence
+     * @param position 0-based position of the mutation
+     * @param newBase new base (A, T, G, C)
+     * @return EditResult with mutation details
      */
     public static EditResult performSNP(Sequence sequence, int position, char newBase) {
         String seq = sequence.getBases().toUpperCase();
         newBase = Character.toUpperCase(newBase);
 
         if (position < 0 || position >= seq.length()) {
-            throw new IndexOutOfBoundsException("SNP-Position " + position + " außerhalb der Sequenz-Länge " + seq.length());
+            throw new IndexOutOfBoundsException("SNP position " + position + " outside the sequence length " + seq.length());
         }
 
         char oldBase = seq.charAt(position);
 
         requireValidBases(sequence, String.valueOf(newBase));
 
-        // Erzeuge editierte Sequenz
+        // Create the edited sequence
         StringBuilder sb = new StringBuilder(seq);
         sb.setCharAt(position, newBase);
         String editedSeq = sb.toString();
 
-        // Bestimme Mutation-Typ (Transitions vs Transversionen)
+        // Determine the mutation type (transitions vs. transversions)
         String mutationType = classifyMutation(oldBase, newBase);
 
         return new EditResult(
             editedSeq,
             EditType.SNP,
             position,
-            1,  // Eine Base entfernt
-            1,  // Eine Base eingefügt
+            1,  // one base removed
+            1,  // one base inserted
             String.format("%c%d%s (%s)", oldBase, position + 1, newBase, mutationType)
         );
     }
 
-    /** Prüft, dass alle Zeichen im Alphabet des Sequenztyps liegen (bei DNA/RNA zusätzlich N). */
+    /** Checks that all characters are in the alphabet of the sequence type (for DNA/RNA additionally N). */
     private static void requireValidBases(Sequence sequence, String bases) {
         String allowed = sequence.getType().getAllowedChars();
         boolean nucleotide = sequence.getType() != Sequence.SequenceType.PROTEIN;
         for (char c : bases.toCharArray()) {
             if (allowed.indexOf(c) < 0 && !(nucleotide && c == 'N')) {
-                throw new IllegalArgumentException("Ungültige Base '" + c + "' für " + sequence.getType()
-                        + ". Erlaubt: " + allowed + (nucleotide ? "N" : ""));
+                throw new IllegalArgumentException("Invalid base '" + c + "' for " + sequence.getType()
+                        + ". Allowed: " + allowed + (nucleotide ? "N" : ""));
             }
         }
     }
 
-    /** Klassifiziere Mutation als Transition oder Transversion */
+    /** Classify the mutation as transition or transversion */
     private static String classifyMutation(char oldBase, char newBase) {
         boolean isPurine = (oldBase == 'A' || oldBase == 'G');
         boolean isPurineNew = (newBase == 'A' || newBase == 'G');
 
         if (isPurine == isPurineNew) {
-            return "Transition";  // Purin → Purin oder Pyrimidin → Pyrimidin
+            return "Transition";  // purine → purine or pyrimidine → pyrimidine
         } else {
-            return "Transversion";  // Purin ↔ Pyrimidin
+            return "Transversion";  // purine ↔ pyrimidine
         }
     }
 
     // ======== INSERTION ==========
 
     /**
-     * Führe eine Insertion (Basen-Einfügung) durch.
+     * Perform an insertion (base insertion).
      */
     public static EditResult performInsertion(Sequence sequence, int position, String insertedBases) {
         String seq = sequence.getBases().toUpperCase();
         String bases = insertedBases.toUpperCase();
 
         if (position < 0 || position > seq.length()) {
-            throw new IndexOutOfBoundsException("Insertion-Position " + position + " außerhalb der Sequenz-Länge " + seq.length());
+            throw new IndexOutOfBoundsException("Insertion position " + position + " outside the sequence length " + seq.length());
         }
 
         if (bases.isEmpty()) {
-            throw new IllegalArgumentException("Insertion darf nicht leer sein");
+            throw new IllegalArgumentException("Insertion must not be empty");
         }
         requireValidBases(sequence, bases);
 
-        // Erzeuge editierte Sequenz (Einfügen an Position)
+        // Create the edited sequence (insert at position)
         StringBuilder sb = new StringBuilder(seq);
         sb.insert(position, bases);
         String editedSeq = sb.toString();
@@ -164,28 +164,28 @@ public class SequenceEditor {
             editedSeq,
             EditType.INSERTION,
             position,
-            0,  // Keine Basen entfernt
-            bases.length(),  // Neue Basen eingefügt
-            String.format("+%d Basen: %s", bases.length(), bases)
+            0,  // no bases removed
+            bases.length(),  // new bases inserted
+            String.format("+%d bases: %s", bases.length(), bases)
         );
     }
 
     // ======== DELETION ==========
 
     /**
-     * Führe eine Deletion (Basen-Entfernung) durch.
+     * Perform a deletion (base removal).
      */
     public static EditResult performDeletion(Sequence sequence, int startPosition, int endPosition) {
         String seq = sequence.getBases().toUpperCase();
 
         if (startPosition < 0 || endPosition > seq.length() || startPosition >= endPosition) {
-            throw new IndexOutOfBoundsException("Deletion-Range ungültig: " + startPosition + "-" + endPosition);
+            throw new IndexOutOfBoundsException("Deletion range invalid: " + startPosition + "-" + endPosition);
         }
 
         String deletedBases = seq.substring(startPosition, endPosition);
         int deletionLength = endPosition - startPosition;
 
-        // Erzeuge editierte Sequenz (Entfernen des Bereichs)
+        // Create the edited sequence (remove the range)
         StringBuilder sb = new StringBuilder(seq);
         sb.delete(startPosition, endPosition);
         String editedSeq = sb.toString();
@@ -194,8 +194,8 @@ public class SequenceEditor {
             editedSeq,
             EditType.DELETION,
             startPosition,
-            deletionLength,  // Basen entfernt
-            0,  // Keine neuen Basen
+            deletionLength,  // bases removed
+            0,  // no new bases
             String.format("-%d bp: %s", deletionLength, deletedBases)
         );
     }
@@ -203,14 +203,14 @@ public class SequenceEditor {
     // ======== SUBSTITUTION ==========
 
     /**
-     * Führe eine Substitution (Bereichs-Ersatz) durch.
+     * Perform a substitution (range replacement).
      */
     public static EditResult performSubstitution(Sequence sequence, int startPosition, int endPosition, String replacement) {
         String seq = sequence.getBases().toUpperCase();
         String repl = replacement.toUpperCase();
 
         if (startPosition < 0 || endPosition > seq.length() || startPosition >= endPosition) {
-            throw new IndexOutOfBoundsException("Substitution-Range ungültig: " + startPosition + "-" + endPosition);
+            throw new IndexOutOfBoundsException("Substitution range invalid: " + startPosition + "-" + endPosition);
         }
 
         requireValidBases(sequence, repl);
@@ -218,7 +218,7 @@ public class SequenceEditor {
         String replacedBases = seq.substring(startPosition, endPosition);
         int originalLength = endPosition - startPosition;
 
-        // Erzeuge editierte Sequenz (Bereich ersetzen)
+        // Create the edited sequence (replace the range)
         StringBuilder sb = new StringBuilder(seq);
         sb.replace(startPosition, endPosition, repl);
         String editedSeq = sb.toString();
@@ -227,8 +227,8 @@ public class SequenceEditor {
             editedSeq,
             EditType.SUBSTITUTION,
             startPosition,
-            originalLength,  // Alte Basen entfernt
-            repl.length(),   // Neue Basen eingefügt
+            originalLength,  // old bases removed
+            repl.length(),   // new bases inserted
             String.format("%s → %s", replacedBases, repl)
         );
     }
@@ -236,7 +236,7 @@ public class SequenceEditor {
     // ======== REVERSE COMPLEMENT ==========
 
     /**
-     * Berechne Reverse-Komplement einer Sequenz.
+     * Compute the reverse complement of a sequence.
      */
     public static EditResult performReverseComplement(Sequence sequence) {
         Sequence revComp = sequence.reverseComplement();
@@ -244,19 +244,19 @@ public class SequenceEditor {
         return new EditResult(
             revComp.getBases(),
             EditType.REVERSE_COMPLEMENT,
-            0,  // Keine spezifische Position
-            sequence.getBases().length(),  // Original-Länge
-            revComp.getBases().length(),   // Neue Länge (identisch)
-            "Reverse-Komplement berechnet"
+            0,  // no specific position
+            sequence.getBases().length(),  // original length
+            revComp.getBases().length(),   // new length (identical)
+            "Reverse complement computed"
         );
     }
 
     // ======== BATCH EDIT ==========
 
     /**
-     * Wende mehrere Editierungen in der übergebenen Reihenfolge an. Positionen jeder Operation
-     * beziehen sich auf die Sequenz nach den vorherigen Operationen. Fehlgeschlagene Operationen
-     * werden als EditResult mit "Fehler: ..." protokolliert und die Sequenz bleibt unverändert.
+     * Apply several edits in the given order. Positions of each operation
+     * refer to the sequence after the previous operations. Failed operations
+     * are logged as an EditResult with "Error: ..." and the sequence remains unchanged.
      */
     public static List<EditResult> batchEdits(Sequence sequence, List<EditOperation> operations) {
         String currentSeq = sequence.getBases().toUpperCase();
@@ -276,7 +276,7 @@ public class SequenceEditor {
                     op.getType(),
                     op.getPosition(),
                     0, 0,
-                    "Fehler: " + e.getMessage()
+                    "Error: " + e.getMessage()
                 ));
             }
         }
@@ -286,12 +286,12 @@ public class SequenceEditor {
 
     // ======== EDIT OPERATION (FLUENT API) ==========
 
-    /** Repräsentiert eine Editier-Operation für fluent API */
+    /** Represents an edit operation for the fluent API */
     public static class EditOperation {
         private EditType type;
         private int position;
-        private String bases;  // Für Insertion/Substitution
-        private int endPosition;  // Für Deletion/Substitution
+        private String bases;  // for insertion/substitution
+        private int endPosition;  // for deletion/substitution
 
         public static EditOperation snp(int position, char newBase) {
             EditOperation op = new EditOperation();
@@ -332,26 +332,26 @@ public class SequenceEditor {
                 case INSERTION: return performInsertion(sequence, position, bases);
                 case DELETION: return performDeletion(sequence, position, endPosition);
                 case SUBSTITUTION: return performSubstitution(sequence, position, endPosition, bases);
-                default: throw new IllegalArgumentException("Unbekannter EditType: " + type);
+                default: throw new IllegalArgumentException("Unknown EditType: " + type);
             }
         }
 
         public EditType getType() { return type; }
         public int getPosition() { return position; }
 
-        /** Erzeuge EditResult aus Sequence */
+        /** Create an EditResult from a Sequence */
         public String describe() {
             return type.getDisplayName() + " @ pos=" + position;
         }
     }
 
-    // ======== HISTORIE ==========
+    // ======== HISTORY ==========
 
-    /** Repräsentiert einen Schritt in der Editier-Historie */
+    /** Represents a step in the edit history */
     public static class EditHistoryEntry {
         private String sequenceName;
-        private String basesBefore;  // Vorheriger Zustand
-        private String basesAfter;   // Nachheriger Zustand
+        private String basesBefore;  // previous state
+        private String basesAfter;   // subsequent state
         private EditResult editResult;
 
         public EditHistoryEntry(String sequenceName, String basesBefore, String basesAfter, EditResult editResult) {
@@ -372,98 +372,98 @@ public class SequenceEditor {
         }
     }
 
-    // ======== HAUPTFUNKTIONEN FÜR UI ==========
+    // ======== MAIN FUNCTIONS FOR UI ==========
 
-    /** Generiere Editier-Vorschläge für eine Sequenz */
+    /** Generate editing suggestions for a sequence */
     public static List<String> getEditingSuggestions(Sequence sequence) {
         List<String> suggestions = new ArrayList<>();
 
         String seq = sequence.getBases().toUpperCase();
         int len = seq.length();
 
-        // Prüfe auf häufige Editier-Ziele
-        suggestions.add("=== Sequenz-Analyse für Editing ===");
-        suggestions.add(String.format("Länge: %d bp", len));
+        // Check for common editing targets
+        suggestions.add("=== Sequence analysis for editing ===");
+        suggestions.add(String.format("Length: %d bp", len));
 
-        // Finde Restriction Sites (häufig Editier-Ziel)
-        // Verwende ein häufiges Restriktionsenzym-Motif als Beispiel (4-cutter EcoRI: GAATTC)
+        // Find restriction sites (common editing target)
+        // Use a common restriction enzyme motif as an example (4-cutter EcoRI: GAATTC)
         List<Integer> sites = sequence.findRestrictionSites("GAATTC");
 
         if (!sites.isEmpty()) {
-            suggestions.add(String.format("\nEcoRI Restriktions Sites (%d gefunden):", sites.size()));
+            suggestions.add(String.format("\nEcoRI Restriction sites (%d found):", sites.size()));
 
             for (int i = 0; i < Math.min(5, sites.size()); i++) {
                 suggestions.add(String.format("  Position %d", sites.get(i)));
             }
 
-            suggestions.add("  → Diese Sites können durch SNP entfernt oder eingefügt werden");
+            suggestions.add("  → These sites can be removed or introduced by SNP");
         }
 
-        // Finde ORFs (häufig Editier-Ziel, minimiale Länge 30 Codons = 90 bp)
+        // Find ORFs (common editing target, minimum length 30 codons = 90 bp)
         List<Sequence> orfs = sequence.findORFs(30);
 
         if (!orfs.isEmpty()) {
-            suggestions.add(String.format("\nOffene Leserahmen (%d gefunden, min. 90 bp):", orfs.size()));
+            suggestions.add(String.format("\nOpen reading frames (%d found, min. 90 bp):", orfs.size()));
 
             for (int i = 0; i < Math.min(3, orfs.size()); i++) {
                 Sequence orf = orfs.get(i);
                 suggestions.add(String.format("  ORF #%d: %d bp", i + 1, orf.getBases().length()));
             }
 
-            suggestions.add("  → ORFs können durch Mutation verlängert oder verkürzt werden");
+            suggestions.add("  → ORFs can be extended or shortened by mutation");
         }
 
-        // Prüfe auf häufige Mutations-Signaturen (CpG-Stellen)
+        // Check for common mutation signatures (CpG sites)
         long cpgSites = 0;
         for (int i = seq.indexOf("CG"); i >= 0; i = seq.indexOf("CG", i + 1)) cpgSites++;
-        suggestions.add(String.format("\nCpG-Stellen: %d", cpgSites));
+        suggestions.add(String.format("\nCpG sites: %d", cpgSites));
 
         if (cpgSites > len * 0.05) {
-            suggestions.add("  → Hohe CpG-Dichte: Methylierung könnte Editing beeinflussen");
+            suggestions.add("  → High CpG density: methylation could affect editing");
         }
 
         return suggestions;
     }
 
-    /** Generiere vollständigen Editier-Bericht */
+    /** Generate the full editing report */
     public static String generateEditReport(Sequence sequence, List<EditResult> edits) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(String.format("=== Editier-Bericht für: %s ===\n\n", sequence.getName()));
-        sb.append(String.format("Original-Länge: %d bp\n", sequence.getBases().length()));
-        sb.append(String.format("Anzahl Editierungen: %d\n", edits.size()));
+        sb.append(String.format("=== Editing Report for: %s ===\n\n", sequence.getName()));
+        sb.append(String.format("Original length: %d bp\n", sequence.getBases().length()));
+        sb.append(String.format("Number of edits: %d\n", edits.size()));
 
-        // Zusammenfassung der Änderungen
+        // Summary of the changes
         long insertions = edits.stream().filter(e -> e.lengthDifference() > 0).count();
         long deletions = edits.stream().filter(e -> e.lengthDifference() < 0).count();
         long snps = edits.stream().filter(e -> e.getEditType() == EditType.SNP).count();
 
         sb.append(String.format("  SNPs: %d\n", snps));
-        sb.append(String.format("  Insertionen: %d\n", insertions));
-        sb.append(String.format("  Deletionen: %d\n", deletions));
+        sb.append(String.format("  Insertions: %d\n", insertions));
+        sb.append(String.format("  Deletions: %d\n", deletions));
 
-        // Detaillierte Liste
-        sb.append("\nEditierungen:\n");
+        // Detailed list
+        sb.append("\nEdits:\n");
 
         for (int i = 0; i < edits.size(); i++) {
             EditResult edit = edits.get(i);
             sb.append(String.format("%d. %s\n", i + 1, edit.format()));
         }
 
-        // Finale Sequenz-Statistik
+        // Final sequence statistics
         String finalSeq = edits.isEmpty() ? sequence.getBases() : edits.get(edits.size() - 1).getEditedSequence();
         int diff = edits.stream().mapToInt(EditResult::lengthDifference).sum();
-        sb.append(String.format("\nFinale Länge: %d bp (Differenz: %+d)\n", finalSeq.length(), diff));
+        sb.append(String.format("\nFinal length: %d bp (difference: %+d)\n", finalSeq.length(), diff));
 
         return sb.toString();
     }
 
-    /** Undo letzte Editierung (vereinfachte Implementierung) */
+    /** Undo the last edit (simplified implementation) */
     public static Sequence undoEdit(Sequence edited, String previousBases) {
         return new Sequence(edited.getId(), edited.getName(), previousBases, edited.getType());
     }
 
-    /** Redo nächste Editierung (vereinfachte Implementierung) */
+    /** Redo the next edit (simplified implementation) */
     public static Sequence redoEdit(Sequence undone, String nextBases) {
         return new Sequence(undone.getId(), undone.getName(), nextBases, undone.getType());
     }

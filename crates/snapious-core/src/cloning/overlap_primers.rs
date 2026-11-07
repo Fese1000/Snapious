@@ -1,25 +1,25 @@
-//! Primer für den Überlappungs-Zusammenbau: Überhang zum Vektor plus bindender Teil am Insert.
+//! Primers for overlap assembly: overhang to the vector plus a binding part on the insert.
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::error::{Error, Result};
 use crate::primer::tm::nearest_neighbor;
 
-/// Ein Primerpaar mit Überhängen.
+/// A primer pair with overhangs.
 #[derive(Clone, Debug, PartialEq)]
 pub struct OverlapPrimers {
-    /// Vorwärtsprimer 5'→3': Vektorüberhang + bindender Teil.
+    /// Forward primer 5'→3': vector overhang + binding part.
     pub forward: String,
-    /// Rückwärtsprimer 5'→3': Reverse-Komplement des Vektorüberhangs rechts der Schnittstelle + bindender Teil.
+    /// Reverse primer 5'→3': reverse complement of the vector overhang to the right of the cut site + binding part.
     pub reverse: String,
     pub overlap_length: usize,
-    /// Länge des bindenden Teils des Vorwärtsprimers und des Rückwärtsprimers.
+    /// Length of the binding part of the forward primer and of the reverse primer.
     pub forward_binding_length: usize,
     pub reverse_binding_length: usize,
 }
 
-/// Wählt die Länge `L` (18 bis 30) eines bindenden Teils. `tm_of(L)` liefert die Schmelztemperatur der Länge `L`
-/// (`None`, wenn nicht berechenbar; solche Längen zählen nicht). Gewählt wird die kleinste Länge mit `58.0 <= tm <= 62.0`;
-/// gibt es keine, die Länge mit dem kleinsten `|tm − 60|` (bei Gleichstand die kleinere). Gibt es gar keine berechenbare Länge: `None`.
+/// Chooses the length `L` (18 to 30) of a binding part. `tm_of(L)` returns the melting temperature for length `L`
+/// (`None` if not computable; such lengths do not count). The smallest length with `58.0 <= tm <= 62.0` is chosen;
+/// if there is none, the length with the smallest `|tm − 60|` (ties: the smaller one). If no length is computable at all: `None`.
 pub fn choose_binding_length(tm_of: &dyn Fn(usize) -> Option<f64>) -> Option<usize> {
     let mut best_len: Option<usize> = None;
     let mut min_diff = f64::MAX;
@@ -39,20 +39,20 @@ pub fn choose_binding_length(tm_of: &dyn Fn(usize) -> Option<f64>) -> Option<usi
     best_len
 }
 
-/// Entwirft Primer, damit `insert[insert_start..insert_end]` an der Stelle `cut_position` (zwischen Basen des Vektors) eingebaut werden kann.
+/// Designs primers so that `insert[insert_start..insert_end]` can be inserted at `cut_position` (between bases of the vector).
 ///
-/// - Alle Texte werden in Uppercase mit `T` statt `U` gelesen.
-/// - Vorwärtsprimer = `vector[cut − overlap_length .. cut]` + `insert[insert_start .. insert_start + L]`, wobei `L` mit
-///   `choose_binding_length` aus der Tm (`nearest_neighbor(teil, 250.0, 50.0)`) des Insertanfangs gewählt wird.
-/// - Rückwärtsprimer = `iupac_reverse_complement(vector[cut .. cut + overlap_length])` + `iupac_reverse_complement(insert[insert_end − L' .. insert_end])`,
-///   `L'` ebenfalls mit `choose_binding_length` (Tm des bindenden Teils des Rückwärtsprimers, also des Reverse-Komplements des Insertendes).
-///   Dadurch endet `iupac_reverse_complement(reverse)` mit `vector[cut .. cut + overlap_length]`.
-/// - Fehler `Error::InvalidInput`: `overlap_length == 0`; `overlap_length > cut_position`; `cut_position + overlap_length > vector.len()`;
-///   `insert_start >= insert_end` oder `insert_end > insert.len()`; Insertbereich kürzer als 30 Basen (sonst kann `L` nicht frei gewählt
-///   werden); keine berechenbare Länge für einen der beiden bindenden Teile.
+/// - All texts are read in uppercase with `T` instead of `U`.
+/// - Forward primer = `vector[cut − overlap_length .. cut]` + `insert[insert_start .. insert_start + L]`, where `L` is chosen with
+///   `choose_binding_length` from the Tm (`nearest_neighbor(part, 250.0, 50.0)`) of the insert start.
+/// - Reverse primer = `iupac_reverse_complement(vector[cut .. cut + overlap_length])` + `iupac_reverse_complement(insert[insert_end − L' .. insert_end])`,
+///   `L'` likewise with `choose_binding_length` (Tm of the binding part of the reverse primer, i.e. of the reverse complement of the insert end).
+///   As a result `iupac_reverse_complement(reverse)` ends with `vector[cut .. cut + overlap_length]`.
+/// - Errors `Error::InvalidInput`: `overlap_length == 0`; `overlap_length > cut_position`; `cut_position + overlap_length > vector.len()`;
+///   `insert_start >= insert_end` or `insert_end > insert.len()`; insert range shorter than 30 bases (otherwise `L` cannot be chosen freely);
+///   no computable length for one of the two binding parts.
 ///
-/// Beispiel: Vektor `…ACGT|TTGG…` mit `cut_position` zwischen `T` und `T`, `overlap_length 4`: Vorwärtsprimer beginnt mit `ACGT`
-/// und setzt sich mit dem Insertanfang fort; Rückwärtsprimer beginnt mit `CCAA` (Reverse-Komplement von `TTGG`).
+/// Example: vector `…ACGT|TTGG…` with `cut_position` between `T` and `T`, `overlap_length 4`: forward primer starts with `ACGT`
+/// and continues with the insert start; reverse primer starts with `CCAA` (reverse complement of `TTGG`).
 pub fn design_overlap_primers(
     insert: &str,
     insert_start: usize,
@@ -96,7 +96,7 @@ pub fn design_overlap_primers(
 
     let forward_overlap = &vector[cut_position - overlap_length..cut_position];
 
-    // Hilfsfunktion, um die Länge für einen Sequenzabschnitt zu finden
+    // Helper function to find the length for a sequence section
     let find_binding_length = |seq: &str| -> Option<usize> {
         let tm_of = |l: usize| nearest_neighbor(&seq[..l], 250.0, 50.0).ok();
         choose_binding_length(&tm_of)
@@ -138,7 +138,7 @@ pub fn design_overlap_primers(
 mod tests {
     use super::*;
 
-    /// Deterministische Testfolge mit gemischter Zusammensetzung.
+    /// Deterministic test sequence with mixed composition.
     fn seq(n: usize, seed: u64) -> String {
         let mut s = seed;
         (0..n)
@@ -157,18 +157,18 @@ mod tests {
 
     #[test]
     fn laengenwahl() {
-        // Tm steigt mit der Länge: 18 → 50, +1.0 je Base → 58 bei L = 26
+        // Tm rises with length: 18 → 50, +1.0 per base → 58 at L = 26
         let f = |l: usize| Some(50.0 + (l as f64 - 18.0));
         assert_eq!(choose_binding_length(&f), Some(26));
-        // nie im Fenster, immer zu kalt → nächste an 60 ist die längste
+        // never in the window, always too cold → closest to 60 is the longest
         let kalt = |l: usize| Some(30.0 + 0.1 * l as f64);
         assert_eq!(choose_binding_length(&kalt), Some(30));
-        // immer zu heiß → kürzeste
+        // always too hot → shortest
         let heiss = |l: usize| Some(80.0 + 0.1 * l as f64);
         assert_eq!(choose_binding_length(&heiss), Some(18));
-        // nicht berechenbar für alle
+        // not computable for any
         assert_eq!(choose_binding_length(&|_| None), None);
-        // nur einzelne Längen berechenbar
+        // only some lengths computable
         let teils = |l: usize| if l == 20 { Some(59.0) } else { None };
         assert_eq!(choose_binding_length(&teils), Some(20));
     }
@@ -213,7 +213,7 @@ mod tests {
     #[test]
     fn kleines_beispiel_aus_der_doku() {
         let vector = format!("{}ACGTTTGG{}", "GATTACA".repeat(2), "CAGT".repeat(5));
-        let cut = 14 + 4; // zwischen ACGT und TTGG
+        let cut = 14 + 4; // between ACGT and TTGG
         let insert = seq(60, 5);
         let p = design_overlap_primers(&insert, 0, 60, &vector, cut, 4).unwrap();
         assert!(p.forward.starts_with("ACGT"));

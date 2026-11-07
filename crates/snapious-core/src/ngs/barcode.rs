@@ -1,18 +1,18 @@
-//! Reads nach Barcode (MID) am Anfang aufteilen.
+//! Split reads by barcode (MID) at the start.
 
-/// Ergebnis für einen Read.
+/// Result for one read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BarcodeHit {
-    /// Index des passenden Barcodes in der Barcodeliste, `None` ohne Treffer.
+    /// Index of the matching barcode in the barcode list, `None` if no match.
     pub barcode: Option<usize>,
-    /// Der Read ohne Barcode (bei Treffer), sonst der unveränderte Read.
+    /// The read without barcode (on a match), otherwise the unchanged read.
     pub trimmed: String,
 }
 
-/// Prüft jeden Read gegen die Barcodes `(Name, Sequenz)`. Ein Barcode der Länge `L` passt, wenn der Read mindestens `L` Zeichen hat
-/// und sich die ersten `L` Zeichen in höchstens `max_mismatch` Stellen vom Barcode unterscheiden (Groß-/Kleinschreibung egal).
-/// Gewählt wird der Barcode mit den wenigsten Unterschieden, bei Gleichstand der mit dem kleineren Index. Leere Barcodes passen nie.
-/// Das Ergebnis hat so viele Einträge wie `reads`.
+/// Checks each read against the barcodes `(name, sequence)`. A barcode of length `L` matches if the read has at least `L` characters
+/// and the first `L` characters differ from the barcode in at most `max_mismatch` positions (case-insensitive).
+/// The barcode with the fewest differences is chosen, on a tie the one with the smaller index. Empty barcodes never match.
+/// The result has as many entries as `reads`.
 pub fn assign_barcodes(
     reads: &[String],
     barcodes: &[(String, String)],
@@ -22,7 +22,7 @@ pub fn assign_barcodes(
         .iter()
         .map(|read| {
             let r = read.as_bytes();
-            let mut best: Option<(usize, usize)> = None; // (Unterschiede, Index)
+            let mut best: Option<(usize, usize)> = None; // (differences, index)
             for (i, (_, code)) in barcodes.iter().enumerate() {
                 let b = code.as_bytes();
                 if b.is_empty() || r.len() < b.len() {
@@ -117,8 +117,8 @@ mod tests {
             ("leer".to_string(), String::new()),
         ];
         let r = assign_barcodes(&v(&["AAACGG", "AAATGG"]), &b, 1);
-        assert_eq!(r[0].barcode, Some(0)); // beide 1 Unterschied
-        assert_eq!(r[1].barcode, Some(1)); // b genau (0), a hat 1
+        assert_eq!(r[0].barcode, Some(0)); // both 1 difference
+        assert_eq!(r[1].barcode, Some(1)); // b exact (0), a has 1
         assert!(assign_barcodes(&[], &b, 1).is_empty());
     }
 }

@@ -1,4 +1,4 @@
-//! Mapping mit dem echten minimap2 (nur wenn installiert): Reads aus einer Zufallsreferenz müssen an ihrer Herkunft landen.
+//! Mapping with the real minimap2 (only if installed): reads from a random reference must land at their origin.
 
 use snapious_core::io::sam;
 use snapious_core::ngs::mapper::{minimap2_args, run_to_file};
@@ -23,7 +23,7 @@ fn reads_landen_an_der_herkunft() {
     for i in 0..200 {
         let start = rng.below(5000 - 100);
         let mut read: Vec<char> = reference[start..start + 100].chars().collect();
-        // etwa 1 % Fehler
+        // about 1 % errors
         for c in read.iter_mut() {
             if rng.below(100) == 0 {
                 *c = if *c == 'A' { 'C' } else { 'A' };

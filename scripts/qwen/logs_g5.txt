@@ -1,3 +1,0 @@
-=== apply_variants.rs Versuch 1
-[171s {'prompt_tokens': 4539, 'completion_tokens': 7996, 'total_tokens': 12535, 'completion_tokens_details': {'reasoning_tokens': 7233}}]
-ERGEBNIS apply_variants.rs: GRÜN (2 Tests) nach 1 Versuch(en)

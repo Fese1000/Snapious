@@ -1,35 +1,35 @@
-//! SDF-Dateien (mehrere Moleküle) lesen.
+//! Read SDF files (multiple molecules).
 
 use crate::error::{Error, Result};
 use crate::io::mol::{parse_mol, MolAtom, MolBond};
 
-/// Ein Molekül mit Namen.
+/// A molecule with a name.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SdfMolecule {
-    /// Erste Zeile des Blocks (getrimmt), kann leer sein.
+    /// First line of the block (trimmed), may be empty.
     pub name: String,
     pub atoms: Vec<MolAtom>,
     pub bonds: Vec<MolBond>,
 }
 
-/// Teilt den Text an Zeilen, die (getrimmt) genau `$$$$` lauten, und liest jeden nicht leeren Block mit `parse_mol`. Blöcke, die
-/// nur Leerraum enthalten, entfallen. Daten nach `M  END` (Felder `> <…>`) werden von `parse_mol` nicht beachtet. Fehler aus `parse_mol` werden
-/// weitergegeben, mit der Nummer des Moleküls (1-basiert) vorangestellt: `Molekül 2: …` (als `Error::InvalidInput`). Keine Moleküle → Fehler.
+/// Splits the text at lines that are exactly `$$$$` (trimmed) and reads each non-empty block with `parse_mol`. Blocks that
+/// contain only whitespace are dropped. Data after `M  END` (fields `> <...>`) is ignored by `parse_mol`. Errors from `parse_mol` are
+/// passed on, prefixed with the number of the molecule (1-based): `Molekül 2: ...` (as `Error::InvalidInput`). No molecules -> error.
 pub fn parse_sdf(text: &str) -> Result<Vec<SdfMolecule>> {
     let mut molecules = Vec::new();
 
-    // Zeilenweise durchgehen und Blöcke an `$$$$` trennen
+    // Go through line by line and split blocks at `$$$$`
     let mut current_block: Vec<&str> = Vec::new();
 
     for line in text.lines() {
         if line.trim() == "$$$$" {
-            // Blockende erreicht
+            // Block end reached
             let block_text = current_block.join("\n");
 
             if !block_text.is_empty() {
                 match parse_mol(&block_text) {
                     Ok((atoms, bonds)) => {
-                        // Name ist die erste Zeile des Blocks (oder leer)
+                        // Name is the first line of the block (or empty)
                         let name = current_block
                             .first()
                             .map(|s| s.trim())
@@ -38,13 +38,13 @@ pub fn parse_sdf(text: &str) -> Result<Vec<SdfMolecule>> {
                         molecules.push(SdfMolecule { name, atoms, bonds });
                     }
                     Err(e) => {
-                        // Fehler mit Molekül-Nummer (1-basiert, nur für erfolgreiche oder fehlerhafte Blöcke zählen wir intern weiter)
-                        // Da parse_mol nur erfolgreiche Blöcke zurückgibt, müssen wir hier die Nummer des aktuellen Blocks ermitteln.
-                        // Wir zählen einfach alle Blöcke, die auf `$$$$` folgen (auch leere), um die Nummer korrekt zu bestimmen?
-                        // Die Aufgabe sagt: "Fehler aus parse_mol werden weitergegeben, mit der Nummer des Moleküls (1-basiert) vorangestellt".
-                        // Wenn parse_mol fehlschlägt, ist es das aktuelle Molekül.
-                        // Wir müssen also wissen, welches Molekül wir gerade verarbeiten.
-                        let mol_num = molecules.len() + 1; // Da erfolgreiche Moleküle schon addiert wurden
+                        // Error with molecule number (1-based; we keep counting internally for successful or failed blocks)
+                        // Since parse_mol only returns successful blocks, we have to determine the number of the current block here.
+                        // Do we simply count all blocks following `$$$$` (including empty ones) to determine the number correctly?
+                        // The task says: "Errors from parse_mol are passed on, prefixed with the number of the molecule (1-based)".
+                        // If parse_mol fails, it is the current molecule.
+                        // So we need to know which molecule we are currently processing.
+                        let mol_num = molecules.len() + 1; // Since successful molecules were already added
                         let wrapped_error =
                             Error::InvalidInput(format!("Molecule {}: {}", mol_num, e));
                         return Err(wrapped_error);
@@ -52,25 +52,25 @@ pub fn parse_sdf(text: &str) -> Result<Vec<SdfMolecule>> {
                 }
             }
 
-            // Block zurücksetzen für den nächsten
+            // Reset block for the next one
             current_block.clear();
         } else {
             current_block.push(line);
         }
     }
 
-    // Wenn der Text nicht mit $$$$ endet, haben wir noch einen Block im Speicher.
-    // In SDF muss ein Block mit $$$$ enden. Wenn er fehlt, ist es oft ungültig oder unvollständig.
-    // Die Aufgabe sagt: "Teilt den Text an Zeilen, die (getrimmt) genau $$$$ lauten".
-    // Wenn kein abschließendes $$$$ da ist, ignorieren wir den Rest oder behandeln ihn als Fehler?
-    // Standard SDF erwartet $$$$ am Ende. Wenn es fehlt, ist der letzte Block unvollständig.
-    // Wir prüfen: Wenn current_block nicht leer ist, haben wir einen Block ohne Abschluss.
-    // Da parse_mol eine vollständige Struktur erwartet (inklusive M END), wird er wahrscheinlich fehlschlagen.
-    // Aber wir müssen ihn trotzdem versuchen, falls parse_mol tolerant ist? Nein, parse_mol erwartet M END.
-    // Also: Wenn current_block nicht leer ist, fügen wir ihn als letzten Block hinzu (ohne abschließendes $$$$).
+    // If the text does not end with $$$$, we still have a block in memory.
+    // In SDF a block must end with $$$$. If it is missing, it is often invalid or incomplete.
+    // The task says: "Splits the text at lines that are exactly $$$$ (trimmed)".
+    // If there is no terminating $$$$, do we ignore the rest or treat it as an error?
+    // Standard SDF expects $$$$ at the end. If it is missing, the last block is incomplete.
+    // We check: if current_block is not empty, we have a block without a terminator.
+    // Since parse_mol expects a complete structure (including M END), it will probably fail.
+    // But should we try anyway, in case parse_mol is tolerant? No, parse_mol expects M END.
+    // So: if current_block is not empty, we add it as the last block (without a terminating $$$$).
     if !current_block.is_empty() {
         let block_text = current_block.join("\n");
-        // Dieser Block hat keine Nummer im Sinne von "abgeschlossenen Blöcken", aber er ist das nächste Molekül.
+        // This block has no number in the sense of "completed blocks", but it is the next molecule.
         let mol_num = molecules.len() + 1;
 
         match parse_mol(&block_text) {

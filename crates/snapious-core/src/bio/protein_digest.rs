@@ -1,41 +1,41 @@
-//! Proteolytischer Verdau: Peptide mit Massen aus einer Proteinsequenz.
+//! Proteolytic digest: peptides with masses from a protein sequence.
 
 use crate::bio::protein::molecular_weight;
 use crate::error::{Error, Result};
 
-/// Spaltregel einer Protease.
+/// Cleavage rule of a protease.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Protease {
-    /// Nach K oder R, nicht vor P.
+    /// After K or R, not before P.
     Trypsin,
-    /// Nach K.
+    /// After K.
     LysC,
-    /// Nach R, nicht vor P.
+    /// After R, not before P.
     ArgC,
-    /// Nach E.
+    /// After E.
     GluC,
-    /// Nach F, W oder Y, nicht vor P.
+    /// After F, W or Y, not before P.
     Chymotrypsin,
-    /// Nach M (Bromcyan).
+    /// After M (cyanogen bromide).
     CyanogenBromide,
 }
 
-/// Ein Peptid.
+/// A peptide.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Peptide {
     pub sequence: String,
-    /// Bereich im Protein `[start, end)`, 0-basiert.
+    /// Range in the protein `[start, end)`, 0-based.
     pub start: usize,
     pub end: usize,
-    /// Zahl der ausgelassenen Schnittstellen im Peptid.
+    /// Number of missed cleavage sites in the peptide.
     pub missed_cleavages: usize,
-    /// Durchschnittliche Masse in Da (`molecular_weight`).
+    /// Average mass in Da (`molecular_weight`).
     pub mass: f64,
 }
 
-/// Positionen, nach denen gespalten wird: Index `i` bedeutet „zwischen Zeichen `i − 1` und `i`` (`1 <= i < Länge`).
-/// Die Regel prüft das Zeichen davor und das Zeichen danach (Uppercase): z. B. Trypsin: davor K oder R und danach nicht P.
-/// Eine Spaltstelle am Ende (nach dem letzten Zeichen) gehört nicht dazu.
+/// Positions after which cleavage happens: index `i` means "between characters `i − 1` and `i`" (`1 <= i < length`).
+/// The rule checks the character before and the character after (uppercase): e.g. trypsin: before K or R and after not P.
+/// A cleavage site at the end (after the last character) is not included.
 pub fn cleavage_sites(protein: &str, protease: Protease) -> Vec<usize> {
     let upper = protein.to_ascii_uppercase();
     let chars: Vec<char> = upper.chars().collect();
@@ -65,18 +65,18 @@ pub fn cleavage_sites(protein: &str, protease: Protease) -> Vec<usize> {
     sites
 }
 
-/// Verdaut `protein` (Schreibweise egal; Stopp `*` am Ende wird abgeschnitten). Ohne Spaltstelle ergibt sich das ganze Protein.
-/// Zerlegt man an den Spaltstellen in Grundpeptide `p1, p2, …`, entstehen alle Peptide aus 1 bis `missed_cleavages + 1`
-/// aufeinanderfolgenden Grundpeptiden (`missed_cleavages` des Peptids = Zahl der verbundenen Grundpeptide − 1).
-/// Sortierung: nach `start`, dann nach `end`. `min_length` (mindestens 1) filtert Peptide, die kürzer sind.
-/// Fehler `Error::InvalidInput` bei leerem Protein oder Zeichen, die keine Buchstaben sind.
+/// Digests `protein` (case-insensitive; a trailing stop `*` is cut off). Without a cleavage site the whole protein results.
+/// Splitting at the cleavage sites into base peptides `p1, p2, …` yields all peptides made of 1 to `missed_cleavages + 1`
+/// consecutive base peptides (`missed_cleavages` of the peptide = number of joined base peptides − 1).
+/// Sorting: by `start`, then by `end`. `min_length` (at least 1) filters out peptides that are shorter.
+/// Error `Error::InvalidInput` for an empty protein or characters that are not letters.
 pub fn digest_protein(
     protein: &str,
     protease: Protease,
     missed_cleavages: usize,
     min_length: usize,
 ) -> Result<Vec<Peptide>> {
-    // Scoping der Mutation, um Clippy-Warnung „variable does not need to be mutable" zu vermeiden.
+    // Scope the mutation to avoid the Clippy warning "variable does not need to be mutable".
     let clean = {
         let mut s = protein.to_ascii_uppercase();
         if s.ends_with('*') {
@@ -85,7 +85,7 @@ pub fn digest_protein(
         s
     };
 
-    // Validierung nach dem Entfernen von '*' durchführen, damit "aakpr*" gültig ist.
+    // Validate after removing '*' so that "aakpr*" is valid.
     if clean.is_empty() || clean.chars().any(|c| !c.is_ascii_alphabetic()) {
         return Err(Error::InvalidInput(
             "Protein sequence must not be empty and may only contain letters".into(),

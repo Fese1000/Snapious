@@ -1,24 +1,24 @@
-//! XYZ-Moleküldateien lesen.
+//! Read XYZ molecule files.
 
 use crate::error::{Error, Result};
 
-/// Ein Atom.
+/// An atom.
 #[derive(Clone, Debug, PartialEq)]
 pub struct XyzAtom {
-    /// Elementsymbol: erster Buchstabe groß, Rest klein (`o` → `O`, `CL` → `Cl`).
+    /// Element symbol: first letter uppercase, rest lowercase (`o` -> `O`, `CL` -> `Cl`).
     pub element: String,
     pub x: f64,
     pub y: f64,
     pub z: f64,
 }
 
-/// Liest XYZ: Zeile 1 = Atomzahl `n`, Zeile 2 = Kommentar (beliebig), danach `n` Zeilen `Element x y z` (durch Leerraum getrennt,
-/// weitere Spalten werden ignoriert). Fehler `Error::InvalidInput`: `n` keine Zahl, weniger als `n` Atomzeilen, eine Atomzeile mit
-/// weniger als vier Feldern oder Koordinaten, die keine Zahlen sind. Mehr Zeilen als `n` werden ignoriert.
+/// Reads XYZ: line 1 = atom count `n`, line 2 = comment (arbitrary), then `n` lines `element x y z` (whitespace-separated,
+/// further columns are ignored). `Error::InvalidInput`: `n` not a number, fewer than `n` atom lines, an atom line with
+/// fewer than four fields, or coordinates that are not numbers. Lines beyond `n` are ignored.
 pub fn parse_xyz(text: &str) -> Result<Vec<XyzAtom>> {
     let mut lines = text.lines();
 
-    // Zeile 1: Atomzahl
+    // Line 1: atom count
     let atom_count_line = lines
         .next()
         .ok_or_else(|| Error::InvalidInput("File is empty".to_string()))?;
@@ -27,11 +27,11 @@ pub fn parse_xyz(text: &str) -> Result<Vec<XyzAtom>> {
         Error::InvalidInput(format!("Invalid atom count: '{}'", atom_count_line.trim()))
     })?;
 
-    // Zeile 2: Kommentar (wird ignoriert, muss aber existieren wenn n > 0 oder Datei nicht leer ist)
-    // Laut Spezifikation: "Zeile 1 = Atomzahl n, Zeile 2 = Kommentar".
-    // Wenn die Datei nur eine Zeile hat und n > 0, fehlt der Kommentar und die Atome.
-    // Wenn n == 0, könnte es theoretisch nur eine Zeile geben, aber Standard XYZ hat meist mindestens 2 Zeilen.
-    // Wir lesen die Kommentarzeile, falls vorhanden.
+    // Line 2: comment (ignored, but must exist if n > 0 or the file is not empty)
+    // According to the specification: "line 1 = atom count n, line 2 = comment".
+    // If the file has only one line and n > 0, the comment and the atoms are missing.
+    // If n == 0 there could theoretically be only one line, but standard XYZ usually has at least 2 lines.
+    // We read the comment line if present.
     let _comment_line = lines.next();
 
     let mut atoms = Vec::with_capacity(n);
@@ -56,7 +56,7 @@ pub fn parse_xyz(text: &str) -> Result<Vec<XyzAtom>> {
 
         let element_raw = parts[0];
 
-        // Elementsymbol formatieren: Erster Buchstabe groß, Rest klein.
+        // Format element symbol: first letter uppercase, rest lowercase.
         let mut element_chars = element_raw.chars();
         let first_char = element_chars
             .next()
@@ -67,9 +67,9 @@ pub fn parse_xyz(text: &str) -> Result<Vec<XyzAtom>> {
             let rest: String = element_chars.map(|c| c.to_ascii_lowercase()).collect();
             format!("{}{}", upper_first, rest)
         } else {
-            // Wenn das erste Zeichen kein Buchstabe ist (z.B. Zahl oder Symbol),
-            // versuchen wir es trotzdem zu parsen, aber das ist unüblich für Elemente.
-            // Die Aufgabe sagt "Elementsymbol", also gehen wir von Buchstaben aus.
+            // If the first character is not a letter (e.g. a digit or symbol),
+            // we try to parse it anyway, but that is unusual for elements.
+            // The task says "element symbol", so we assume letters.
             element_raw.to_string()
         };
 

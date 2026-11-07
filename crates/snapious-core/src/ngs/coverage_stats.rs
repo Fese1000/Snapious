@@ -1,19 +1,19 @@
-//! Kennzahlen der Abdeckung (Tiefe je Position).
+//! Coverage metrics (depth per position).
 
-/// Kennzahlen.
+/// Metrics.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CoverageStats {
     pub mean: f64,
-    /// Median (bei gerader Zahl der Mittelwert der beiden mittleren Werte).
+    /// Median (for an even count the mean of the two middle values).
     pub median: f64,
     pub min: u32,
     pub max: u32,
-    /// Je Schwelle der Anteil der Positionen mit Tiefe `>= Schwelle` (0.0–1.0), in der Reihenfolge von `thresholds`.
+    /// For each threshold the fraction of positions with depth `>= threshold` (0.0–1.0), in the order of `thresholds`.
     pub fractions: Vec<f64>,
 }
 
-/// Berechnet die Kennzahlen. Keine Positionen → `mean 0.0`, `median 0.0`, `min 0`, `max 0` und `fractions` mit `0.0` je Schwelle.
-/// Beispiel `[0, 0, 5, 10, 10, 20]` mit Schwellen `[1, 10]` → Mittel 7.5, Median 7.5, min 0, max 20, Anteile `[4/6, 3/6]`.
+/// Computes the metrics. No positions → `mean 0.0`, `median 0.0`, `min 0`, `max 0` and `fractions` with `0.0` per threshold.
+/// Example `[0, 0, 5, 10, 10, 20]` with thresholds `[1, 10]` → mean 7.5, median 7.5, min 0, max 20, fractions `[4/6, 3/6]`.
 pub fn coverage_stats(depth: &[u32], thresholds: &[u32]) -> CoverageStats {
     let n = depth.len();
 
@@ -27,15 +27,15 @@ pub fn coverage_stats(depth: &[u32], thresholds: &[u32]) -> CoverageStats {
         };
     }
 
-    // Mittelwert berechnen
+    // Compute the mean
     let sum: u64 = depth.iter().map(|&d| d as u64).sum();
     let mean = sum as f64 / n as f64;
 
-    // Min und Max finden (sicher durch n > 0)
+    // Find min and max (safe because n > 0)
     let min = depth.iter().min().copied().unwrap_or(0);
     let max = depth.iter().max().copied().unwrap_or(0);
 
-    // Median berechnen (sortierte Kopie)
+    // Compute the median (sorted copy)
     let mut sorted = depth.to_vec();
     sorted.sort_unstable();
 
@@ -47,7 +47,7 @@ pub fn coverage_stats(depth: &[u32], thresholds: &[u32]) -> CoverageStats {
         (mid1 + mid2) / 2.0
     };
 
-    // Anteile berechnen (fractions)
+    // Compute the fractions
     let fractions: Vec<f64> = thresholds
         .iter()
         .map(|&t| {

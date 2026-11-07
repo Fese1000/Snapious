@@ -1,25 +1,25 @@
-//! GFF3-Annotationen lesen und in Features umwandeln.
+//! Read GFF3 annotations and convert them to features.
 
 use crate::error::{Error, Result};
 use crate::model::feature::{Feature, Interval, Location, Strand};
 
-/// Eine Zeile einer GFF3-Datei.
+/// A line of a GFF3 file.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Gff3Record {
     pub seqid: String,
     pub source: String,
     pub feature_type: String,
-    /// 1-basiert, beide Grenzen eingeschlossen (wie in der Datei).
+    /// 1-based, both bounds inclusive (as in the file).
     pub start: usize,
     pub end: usize,
     pub score: Option<f64>,
     pub strand: Strand,
     pub phase: Option<u8>,
-    /// Attribute in Dateireihenfolge, Werte prozentdekodiert.
+    /// Attributes in file order, values percent-decoded.
     pub attributes: Vec<(String, String)>,
 }
 
-/// Dekodiert `%XX`-Folgen (UTF-8). Ungültige Folgen (`%` ohne zwei Hexziffern) bleiben unverändert stehen.
+/// Decodes `%XX` sequences (UTF-8). Invalid sequences (`%` without two hex digits) are left unchanged.
 pub fn percent_decode(text: &str) -> String {
     let mut out = Vec::with_capacity(text.len());
     let bytes = text.as_bytes();
@@ -57,18 +57,18 @@ fn hex_val(b: u8) -> u8 {
     }
 }
 
-/// Liest GFF3-Text.
-/// - Leere Zeilen und Zeilen, die mit `#` beginnen, werden übersprungen; eine Zeile `##FASTA` beendet das Lesen.
-/// - Jede andere Zeile muss genau 9 durch Tabulatoren getrennte Spalten haben, sonst
-///   `Error::InvalidInput` mit der 1-basierten Zeilennummer im Text.
-/// - Spalte 4 und 5 sind ganze Zahlen mit `start >= 1` und `end >= start`, sonst `Error::InvalidInput`.
-/// - `.` in Score, Strang und Phase bedeutet „keine Angabe“ (Score/Phase: `None`, Strang: `Strand::None`).
-///   Strang `+` = `Forward`, `-` = `Reverse`, `?` = `None`; anderes → `Error::InvalidInput`.
-///   Phase ist 0, 1 oder 2, sonst `Error::InvalidInput`.
-/// - Spalte 9 besteht aus `Schlüssel=Wert`-Paaren, getrennt durch `;`. Leere Teile werden übersprungen, ein
-///   Teil ohne `=` ergibt `Error::InvalidInput`. Schlüssel und Wert werden mit `percent_decode` dekodiert;
-///   `.` als ganze Spalte 9 bedeutet keine Attribute.
-/// - Zeilenenden `\n` und `\r\n` sind erlaubt.
+/// Reads GFF3 text.
+/// - Empty lines and lines starting with `#` are skipped; a line `##FASTA` ends reading.
+/// - Every other line must have exactly 9 tab-separated columns, otherwise
+///   `Error::InvalidInput` with the 1-based line number in the text.
+/// - Columns 4 and 5 are integers with `start >= 1` and `end >= start`, otherwise `Error::InvalidInput`.
+/// - `.` in score, strand and phase means "not given" (score/phase: `None`, strand: `Strand::None`).
+///   Strand `+` = `Forward`, `-` = `Reverse`, `?` = `None`; anything else -> `Error::InvalidInput`.
+///   Phase is 0, 1 or 2, otherwise `Error::InvalidInput`.
+/// - Column 9 consists of `key=value` pairs separated by `;`. Empty parts are skipped, a
+///   part without `=` yields `Error::InvalidInput`. Key and value are decoded with `percent_decode`;
+///   `.` as the whole of column 9 means no attributes.
+/// - Line endings `\n` and `\r\n` are allowed.
 pub fn parse_gff3(text: &str) -> Result<Vec<Gff3Record>> {
     let mut records = Vec::new();
     for (line_num, line) in text.lines().enumerate() {
@@ -203,11 +203,11 @@ fn parse_attributes(s: &str, line: usize) -> Result<Vec<(String, String)>> {
     Ok(attrs)
 }
 
-/// Wandelt die Zeilen mit `seqid == seqid` in Features um (Reihenfolge wie in der Eingabe).
-/// - Intervall 0-basiert mit exklusivem Ende: `start - 1 .. end`.
-/// - Typ = `feature_type`; Name = Attribut `Name`, sonst `ID`, sonst der Typ.
-/// - Qualifier: alle Attribute in Dateireihenfolge, jeweils `(schlüssel, vec![wert])`, ausgenommen `Name`.
-///   Hat die Zeile eine Quelle ungleich `.` und nicht leer, kommt als erster Qualifier `("source", [quelle])` dazu.
+/// Converts the lines with `seqid == seqid` into features (order as in the input).
+/// - Interval 0-based with exclusive end: `start - 1 .. end`.
+/// - Type = `feature_type`; name = attribute `Name`, otherwise `ID`, otherwise the type.
+/// - Qualifiers: all attributes in file order, each `(key, vec![value])`, except `Name`.
+///   If the line has a source other than `.` and non-empty, `("source", [source])` is added as the first qualifier.
 pub fn gff3_to_features(records: &[Gff3Record], seqid: &str) -> Result<Vec<Feature>> {
     let mut features = Vec::new();
     for rec in records.iter() {

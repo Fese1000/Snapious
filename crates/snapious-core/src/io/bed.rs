@@ -1,13 +1,13 @@
-//! BED-Dateien lesen und als Features verwenden.
+//! Read BED files and use them as features.
 
 use crate::error::{Error, Result};
 use crate::model::feature::{Feature, Interval, Location, Strand};
 
-/// Eine BED-Zeile (mindestens drei Spalten).
+/// A BED line (at least three columns).
 #[derive(Clone, Debug, PartialEq)]
 pub struct BedRecord {
     pub chrom: String,
-    /// 0-basiert, Ende ausgeschlossen (wie in der Datei).
+    /// 0-based, end excluded (as in the file).
     pub start: usize,
     pub end: usize,
     pub name: Option<String>,
@@ -15,10 +15,10 @@ pub struct BedRecord {
     pub strand: Strand,
 }
 
-/// Liest BED-Text. Spalten sind durch Tabulatoren oder Leerzeichen getrennt. Leere Zeilen und Zeilen, die mit `#`, `track` oder `browser` beginnen,
-/// werden übersprungen. Jede andere Zeile braucht mindestens 3 Spalten (`chrom`, `start`, `end`, ganze Zahlen mit `start <= end`), sonst
-/// `Error::InvalidInput` mit der 1-basierten Zeilennummer. Optional: Spalte 4 Name (`.` = keiner), Spalte 5 Score (Zahl; `.` = keiner),
-/// Spalte 6 Strang (`+`, `-`, `.`; anderes → Fehler); weitere Spalten werden ignoriert. Zeilenenden `\n` und `\r\n`.
+/// Reads BED text. Columns are separated by tabs or spaces. Empty lines and lines starting with `#`, `track` or `browser`
+/// are skipped. Every other line needs at least 3 columns (`chrom`, `start`, `end`, integers with `start <= end`), otherwise
+/// `Error::InvalidInput` with the 1-based line number. Optional: column 4 name (`.` = none), column 5 score (number; `.` = none),
+/// column 6 strand (`+`, `-`, `.`; anything else -> error); further columns are ignored. Line endings `\n` and `\r\n`.
 pub fn parse_bed(text: &str) -> Result<Vec<BedRecord>> {
     let mut out = Vec::new();
     for (i, raw) in text.lines().enumerate() {
@@ -64,9 +64,9 @@ pub fn parse_bed(text: &str) -> Result<Vec<BedRecord>> {
     Ok(out)
 }
 
-/// Features für `chrom`: Typ `misc_feature`, Name = Name der Zeile (sonst `{chrom}:{start+1}-{end}`), Intervall `[start, end)`, Strang aus der Zeile.
-/// Hat die Zeile einen Score, kommt der Qualifier `("score", [score])` dazu (Text mit `{}`). Zeilen mit `start == end` werden übersprungen.
-/// Reihenfolge wie in der Eingabe.
+/// Features for `chrom`: type `misc_feature`, name = name of the line (otherwise `{chrom}:{start+1}-{end}`), interval `[start, end)`, strand from the line.
+/// If the line has a score, the qualifier `("score", [score])` is added (text with `{}`). Lines with `start == end` are skipped.
+/// Order as in the input.
 pub fn bed_to_features(records: &[BedRecord], chrom: &str) -> Result<Vec<Feature>> {
     let mut features = Vec::new();
     for r in records

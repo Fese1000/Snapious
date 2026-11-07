@@ -1,10 +1,10 @@
-//! GCG-Sequenzdateien (einzelne Sequenz) lesen.
+//! Read GCG sequence files (single sequence).
 
 use crate::error::{Error, Result};
 
-/// Liest eine GCG-Sequenz. Gesucht wird die erste Zeile, die (getrimmt) mit `..` endet; der Name ist ihr erstes durch Leerraum
-/// getrenntes Wort. Alle Zeilen danach sind Sequenz: nur Buchstaben bleiben (Zeilennummern, Leerraum usw. entfallen), in
-/// Uppercase. Ergebnis `(Name, Sequenz)`. Fehler `Error::InvalidInput`, wenn es keine solche Zeile gibt oder die Sequenz leer ist.
+/// Reads a GCG sequence. Looks for the first line that ends (trimmed) with `..`; the name is its first whitespace-separated
+/// word. All lines after it are sequence: only letters are kept (line numbers, whitespace etc. are dropped), in
+/// uppercase. Result `(name, sequence)`. `Error::InvalidInput` if there is no such line or the sequence is empty.
 pub fn parse_gcg(text: &str) -> Result<(String, String)> {
     let mut found_marker = false;
     let mut name = String::new();
@@ -14,7 +14,7 @@ pub fn parse_gcg(text: &str) -> Result<(String, String)> {
         if !found_marker {
             let trimmed = line.trim();
             if trimmed.ends_with("..") {
-                // Name ist das erste durch Leerraum getrennte Wort
+                // Name is the first whitespace-separated word
                 if let Some(first_word) = trimmed.split_whitespace().next() {
                     name = first_word.to_string();
                 } else {
@@ -23,7 +23,7 @@ pub fn parse_gcg(text: &str) -> Result<(String, String)> {
                 found_marker = true;
             }
         } else {
-            // Nur Buchstaben behalten, alles andere ignorieren (Zahlen, Leerzeichen etc.)
+            // Keep only letters, ignore everything else (digits, spaces etc.)
             for c in line.chars() {
                 if c.is_ascii_alphabetic() {
                     sequence.push(c.to_ascii_uppercase());

@@ -1,17 +1,17 @@
-//! Genetische Codes (NCBI-Tabellen 1, 2, 4, 5 und 11) und Translation.
+//! Genetic codes (NCBI tables 1, 2, 4, 5 and 11) and translation.
 
 use crate::model::sequence::amino_acid_for;
 
-/// Ein genetischer Code: Nummer, Name und Abweichungen vom Standardcode.
+/// A genetic code: number, name and deviations from the standard code.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GeneticCode {
     pub id: u8,
     pub name: String,
-    /// Abweichungen vom Standardcode: Codon (Uppercase, `T` statt `U`) und Aminosäure (`*` für Stopp).
+    /// Deviations from the standard code: codon (uppercase, `T` instead of `U`) and amino acid (`*` for stop).
     pub changes: Vec<(String, char)>,
 }
 
-/// Liste der unterstützten Codes `(Nummer, Name)`, aufsteigend nach Nummer:
+/// List of supported codes `(number, name)`, ascending by number:
 /// 1 `Standard`, 2 `Vertebrate Mitochondrial`, 4 `Mold, Protozoan and Coelenterate Mitochondrial`,
 /// 5 `Invertebrate Mitochondrial`, 11 `Bacterial, Archaeal and Plant Plastid`.
 pub fn available_codes() -> Vec<(u8, String)> {
@@ -27,8 +27,8 @@ pub fn available_codes() -> Vec<(u8, String)> {
     ]
 }
 
-/// Der Code mit der Nummer `id` oder `None`. Abweichungen vom Standardcode (`amino_acid_for`):
-/// - 1 und 11: keine;
+/// The code with number `id`, or `None`. Deviations from the standard code (`amino_acid_for`):
+/// - 1 and 11: none;
 /// - 2: `AGA` → `*`, `AGG` → `*`, `ATA` → `M`, `TGA` → `W`;
 /// - 4: `TGA` → `W`;
 /// - 5: `AGA` → `S`, `AGG` → `S`, `ATA` → `M`, `TGA` → `W`.
@@ -74,8 +74,8 @@ pub fn code_by_id(id: u8) -> Option<GeneticCode> {
 }
 
 impl GeneticCode {
-    /// Aminosäure für ein Codon (drei Basen; Schreibweise egal, `U` wie `T`): erst die Abweichungen dieses Codes, sonst
-    /// `amino_acid_for`. Codons mit anderen Zeichen als A, C, G, T/U oder mit falscher Länge ergeben `X`.
+    /// Amino acid for a codon (three bases; case-insensitive, `U` as `T`): first the deviations of this code, otherwise
+    /// `amino_acid_for`. Codons with characters other than A, C, G, T/U or with the wrong length give `X`.
     pub fn amino_acid(&self, codon: &str) -> char {
         if codon.len() != 3 {
             return 'X';
@@ -101,7 +101,7 @@ impl GeneticCode {
         amino_acid_for(&normalized) as char
     }
 
-    /// Übersetzt `bases` im Leseraster ab Position 0 in Dreierschritten; ein unvollständiges Schluss-Codon entfällt.
+    /// Translates `bases` in the reading frame from position 0 in steps of three; an incomplete final codon is dropped.
     pub fn translate(&self, bases: &str) -> String {
         let mut result = String::new();
         let len = bases.len();

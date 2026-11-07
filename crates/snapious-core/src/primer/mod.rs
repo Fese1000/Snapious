@@ -1,4 +1,4 @@
-//! Primer: Schmelztemperatur, Qualitätsprüfungen und Primer-Auswahl.
+//! Primer: melting temperature, quality checks and primer selection.
 
 pub mod annotate;
 pub mod checks;

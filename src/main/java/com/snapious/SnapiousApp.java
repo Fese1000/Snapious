@@ -5,13 +5,13 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Hauptanwendung - Snapious BioTools Suite.
- * Komplette Bioinformatik-Suite mit Sequenzanalyse, Alignment,
- * Phylogenie und visueller Darstellung.
+ * Main application - Snapious BioTools suite.
+ * Complete bioinformatics suite with sequence analysis, alignment,
+ * phylogeny and visual display.
  */
 public class SnapiousApp {
 
-    private static final String APP_TITLE = "Snapious BioTools - Komplette Bioinformatik-Suite";
+    private static final String APP_TITLE = "Snapious BioTools - Complete Bioinformatics Suite";
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -25,18 +25,18 @@ public class SnapiousApp {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1400, 900);
 
-            // Hauptpanel laden
+            // Load main panel
             try {
                 MainViewController controller = new MainViewController();
                 frame.setContentPane(controller.getPanel());
             } catch (Exception e) {
-                System.err.println("Fehler beim Laden der Benutzeroberfläche: " + e.getMessage());
+                System.err.println("Error loading the user interface: " + e.getMessage());
                 e.printStackTrace();
 
-                // Fallback: Error-Panel
-                JFrame errorFrame = new JFrame("Fehler");
+                // Fallback: error panel
+                JFrame errorFrame = new JFrame("Error");
                 JTextArea errorText = new JTextArea(
-                    "Die Benutzeroberfläche konnte nicht geladen werden.\n\n" + e.getMessage()
+                    "The user interface could not be loaded.\n\n" + e.getMessage()
                 );
                 errorText.setEditable(false);
                 errorFrame.add(errorText);

@@ -1,11 +1,11 @@
-//! Doppelsträngige Fragmente und virtueller Restriktionsverdau.
+//! Double-stranded fragments and virtual restriction digest.
 
 use crate::cloning::enzymes::{iupac_reverse_complement, CutSite, EnzymeDb};
 use crate::error::{Error, Result};
 use crate::model::document::{SequenceDocument, Topology};
 use crate::model::feature::{Feature, Interval, Location};
 
-/// Art eines Fragmentendes.
+/// Kind of a fragment end.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum EndType {
     Blunt,
@@ -13,7 +13,7 @@ pub enum EndType {
     ThreePrime,
 }
 
-/// Ein Ende eines Fragments. `overhang` steht in Oberstrang-Schreibweise (5'→3' des Oberstrangs); bei `Blunt` leer.
+/// An end of a fragment. `overhang` is in top-strand notation (5'→3' of the top strand); empty for `Blunt`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct End {
     pub end_type: EndType,
@@ -21,7 +21,7 @@ pub struct End {
 }
 
 impl End {
-    /// Stumpfes Ende.
+    /// Blunt end.
     pub fn blunt() -> End {
         End {
             end_type: EndType::Blunt,
@@ -29,7 +29,7 @@ impl End {
         }
     }
 
-    /// Ende mit Typ und Überhang. Ist der Überhang leer, entsteht ein stumpfes Ende (egal welcher Typ).
+    /// End with type and overhang. If the overhang is empty, a blunt end results (regardless of type).
     pub fn new(end_type: EndType, overhang: &str) -> End {
         if overhang.is_empty() {
             End {
@@ -44,17 +44,17 @@ impl End {
         }
     }
 
-    /// Gleicher Typ, Überhang mit `iupac_reverse_complement` umgekehrt komplementiert.
+    /// Same type, overhang reverse-complemented with `iupac_reverse_complement`.
     pub fn reverse_complement(&self) -> End {
         End::new(self.end_type, &iupac_reverse_complement(&self.overhang))
     }
 
-    /// Wahr, wenn das Ende stumpf ist.
+    /// True if the end is blunt.
     pub fn is_blunt(&self) -> bool {
         self.end_type == EndType::Blunt
     }
 
-    /// Wahr, wenn beide stumpf sind oder beide denselben Typ (`FivePrime`/`ThreePrime`) und denselben Überhang haben.
+    /// True if both are blunt or both have the same type (`FivePrime`/`ThreePrime`) and the same overhang.
     pub fn pairs_with(&self, other: &End) -> bool {
         if self.end_type == EndType::Blunt && other.end_type == EndType::Blunt {
             return true;
@@ -63,10 +63,10 @@ impl End {
     }
 }
 
-/// Doppelsträngiges Fragment. `top` ist der Oberstrang von seinem 5'-Ende bis zum 3'-Ende (nur die Basen zwischen
-/// den beiden Oberstrang-Schnitten). `features` liegen in Fragmentkoordinaten (0-basiert).
-/// `source_start`/`source_end` sind die Schnittpositionen im Quelldokument; bei einem Fragment über den Nullpunkt
-/// einer zirkulären Quelle ist `source_end < source_start`.
+/// Double-stranded fragment. `top` is the top strand from its 5' end to the 3' end (only the bases between
+/// the two top-strand cuts). `features` lie in fragment coordinates (0-based).
+/// `source_start`/`source_end` are the cut positions in the source document; for a fragment across the origin
+/// of a circular source, `source_end < source_start`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Fragment {
     pub top: String,
@@ -79,17 +79,17 @@ pub struct Fragment {
 }
 
 impl Fragment {
-    /// Länge des Oberstrangs.
+    /// Length of the top strand.
     pub fn length(&self) -> usize {
         self.top.len()
     }
 
-    /// Das Fragment von der anderen Seite gelesen: `top` reverse-komplementiert (`iupac_reverse_complement`),
-    /// linkes Ende = reverse-komplementiertes altes rechtes Ende und umgekehrt, Features gespiegelt
-    /// (Intervall `[s, e)` wird zu `[len − e, len − s)`, Reihenfolge der Intervalle umgekehrt,
-    /// Strang mit `Strand::flipped()` gedreht, `partial_start`/`partial_end` getauscht).
-    /// `source_name`, `source_start` und `source_end` bleiben. Zweimal angewendet ergibt das Original.
-    /// Fehler (`Error`) nur, wenn ein Feature nicht gespiegelt werden kann.
+    /// The fragment read from the other side: `top` reverse-complemented (`iupac_reverse_complement`),
+    /// left end = reverse-complemented old right end and vice versa, features mirrored
+    /// (interval `[s, e)` becomes `[len − e, len − s)`, order of the intervals reversed,
+    /// strand flipped with `Strand::flipped()`, `partial_start`/`partial_end` swapped).
+    /// `source_name`, `source_start` and `source_end` stay. Applied twice it yields the original.
+    /// Error (`Error`) only if a feature cannot be mirrored.
     pub fn reverse_complement(&self) -> Result<Fragment> {
         let len = self.length();
         let new_top = iupac_reverse_complement(&self.top);
@@ -107,7 +107,7 @@ impl Fragment {
                 let s = interval.start();
                 let e = interval.end();
                 // Check bounds: len - e could be negative? No, s >= 0, e <= len.
-                // But if e > len, it's invalid? The spec says "Fehler nur, wenn ein Feature nicht gespiegelt werden kann."
+                // But if e > len, it's invalid? The spec says "Error only if a feature cannot be mirrored."
                 // Assuming features are within fragment bounds.
                 let new_s = len.saturating_sub(e);
                 let new_e = len.saturating_sub(s);
@@ -119,7 +119,7 @@ impl Fragment {
                 new_intervals.push(Interval::new(new_s, new_e)?);
             }
 
-            // Reverse order of intervals? The spec says "Reihenfolge der Intervalle umgekehrt".
+            // Reverse order of intervals? The spec says "order of the intervals reversed".
             new_intervals.reverse();
 
             let new_loc = Location::new(
@@ -143,33 +143,33 @@ impl Fragment {
         })
     }
 
-    /// Wahr, wenn dieses Fragment rechts an `next` passt: `self.right.pairs_with(&next.left)`.
+    /// True if this fragment fits `next` on its right: `self.right.pairs_with(&next.left)`.
     pub fn can_join(&self, next: &Fragment) -> bool {
         self.right.pairs_with(&next.left)
     }
 }
 
-/// Virtueller Verdau von `doc` mit den Enzymen `enzyme_names` aus `db`.
+/// Virtual digest of `doc` with the enzymes `enzyme_names` from `db`.
 ///
-/// 1. Jeder Name muss in `db` vorkommen, sonst `Error::InvalidInput`. Schnittstellen kommen aus
-///    `db.find_in_document(doc)`, behalten werden nur die der gewählten Enzyme.
-/// 2. Schnitte sind die Paare `(cut_top, cut_bottom)` der Schnittstellen. Mehrere Schnitte mit gleichem `cut_top` zählen
-///    einmal (der erste in der Reihenfolge der Schnittstellenliste gilt).
-/// 3. Ende am Schnitt: `cut_bottom > cut_top` → `FivePrime`, kleiner → `ThreePrime`, gleich → `Blunt`; der Überhang ist
-///    `CutSite::overhang` (bei leerem Überhang `Blunt`). Das rechte Ende des Fragments links vom Schnitt und das linke Ende
-///    des Fragments rechts vom Schnitt bekommen dasselbe Ende (gleiche Werte).
-/// 4. Linear: Schnitte mit `cut_top <= 0` oder `cut_top >= Länge` werden ignoriert. Mit den sortierten Schnitten
-///    `c1 < … < ck` entstehen die Fragmente `[0,c1)`, `[c1,c2)`, …, `[ck,Länge)`; das linke Ende des ersten und das rechte
-///    des letzten Fragments sind stumpf. Ohne Schnitt: ein Fragment mit der ganzen Sequenz, beide Enden stumpf.
-/// 5. Zirkulär: ohne Schnitt ein Fragment (ganze Sequenz, beide Enden stumpf, `source_start 0`, `source_end Länge`).
-///    Mit `k >= 1` verschiedenen Schnitten `c1 < … < ck` (die `cut_top` der Schnittstellen liegen schon in `0..Länge`) entstehen
-///    `k` Fragmente `[c1,c2)`, …, `[ck,Länge)+[0,c1)` (das letzte läuft über den Nullpunkt). Bei `k == 1` ist das die um
-///    `c1` gedrehte ganze Sequenz, beide Enden gleich dem Ende des einen Schnitts.
-/// 6. Features: nur solche, deren Hülle (`location().start()` bis `location().end()`) ganz im Fragment liegt, werden
-///    übernommen und um den Fragmentanfang verschoben (alle Intervalle, Strang und Partial-Flags bleiben). Bei dem Fragment
-///    über den Nullpunkt gilt: Hülle ganz in `[ck, Länge)` → um `ck` verschieben; ganz in `[0, c1)` → um `Länge − ck`
-///    nach rechts verschieben. Alle anderen Features entfallen. Bei `k == 1` zirkulär gilt dasselbe mit `ck = c1`.
-/// 7. `source_name` ist der Name des Dokuments; `source_start`/`source_end` sind die Schnittpositionen (Linear: 0 und Länge an den Rändern).
+/// 1. Every name must occur in `db`, otherwise `Error::InvalidInput`. Cut sites come from
+///    `db.find_in_document(doc)`, only those of the chosen enzymes are kept.
+/// 2. Cuts are the pairs `(cut_top, cut_bottom)` of the cut sites. Several cuts with the same `cut_top` count
+///    once (the first in the order of the cut site list applies).
+/// 3. End at the cut: `cut_bottom > cut_top` → `FivePrime`, smaller → `ThreePrime`, equal → `Blunt`; the overhang is
+///    `CutSite::overhang` (with an empty overhang `Blunt`). The right end of the fragment left of the cut and the left end
+///    of the fragment right of the cut get the same end (equal values).
+/// 4. Linear: cuts with `cut_top <= 0` or `cut_top >= length` are ignored. With the sorted cuts
+///    `c1 < … < ck` the fragments `[0,c1)`, `[c1,c2)`, …, `[ck,length)` arise; the left end of the first and the right end
+///    of the last fragment are blunt. Without a cut: one fragment with the whole sequence, both ends blunt.
+/// 5. Circular: without a cut one fragment (whole sequence, both ends blunt, `source_start 0`, `source_end length`).
+///    With `k >= 1` distinct cuts `c1 < … < ck` (the `cut_top` of the cut sites already lie in `0..length`)
+///    `k` fragments arise: `[c1,c2)`, …, `[ck,length)+[0,c1)` (the last one runs across the origin). For `k == 1` this is the whole sequence
+///    rotated by `c1`, both ends equal to the end of the one cut.
+/// 6. Features: only those whose envelope (`location().start()` to `location().end()`) lies entirely within the fragment are
+///    kept and shifted by the fragment start (all intervals, strand and partial flags stay). For the fragment
+///    across the origin: envelope entirely in `[ck, length)` → shift by `ck`; entirely in `[0, c1)` → shift by `length − ck`
+///    to the right. All other features are dropped. For circular `k == 1` the same applies with `ck = c1`.
+/// 7. `source_name` is the name of the document; `source_start`/`source_end` are the cut positions (linear: 0 and length at the edges).
 pub fn digest(
     doc: &SequenceDocument,
     db: &EnzymeDb,
@@ -184,7 +184,7 @@ pub fn digest(
     let len = bases.len();
     let circular = doc.topology() == Topology::Circular;
 
-    // Schnitte: (cut_top, Ende), je cut_top einmal, aufsteigend sortiert
+    // Cuts: (cut_top, end), each cut_top once, sorted ascending
     let mut cuts: Vec<(usize, End)> = Vec::new();
     for site in db.find_in_document(doc) {
         if !enzyme_names.contains(&site.enzyme.as_str()) || site.cut_top < 0 {
@@ -202,7 +202,7 @@ pub fn digest(
     }
     cuts.sort_by_key(|c| c.0);
 
-    // Fragmente als (Anfang, Ende, linkes Ende, rechtes Ende)
+    // Fragments as (start, end, left end, right end)
     let mut spans: Vec<(usize, usize, End, End)> = Vec::new();
     if cuts.is_empty() {
         spans.push((0, len, End::blunt(), End::blunt()));
@@ -250,7 +250,7 @@ pub fn digest(
     Ok(fragments)
 }
 
-/// Ende an einem Schnitt aus den Schnittpositionen der Schnittstelle.
+/// End at a cut from the cut positions of the cut site.
 fn cut_end(site: &CutSite) -> End {
     let kind = match site.cut_bottom.cmp(&site.cut_top) {
         std::cmp::Ordering::Greater => EndType::FivePrime,
@@ -260,8 +260,8 @@ fn cut_end(site: &CutSite) -> End {
     End::new(kind, &site.overhang)
 }
 
-/// Features, deren Hülle ganz im Fragment liegt, in Fragmentkoordinaten.
-/// Bei einem Fragment über den Nullpunkt (`wraps`) zählt die Hülle ganz in `[start, len)` oder ganz in `[0, end)`.
+/// Features whose envelope lies entirely within the fragment, in fragment coordinates.
+/// For a fragment across the origin (`wraps`) the envelope counts if entirely in `[start, len)` or entirely in `[0, end)`.
 fn fragment_features(
     features: &[Feature],
     start: usize,
@@ -429,7 +429,7 @@ mod tests {
         assert_eq!(f.len(), 1);
         assert_eq!(f[0].top, "AAAAAAAA");
         assert_eq!((f[0].source_start, f[0].source_end), (0, 8));
-        // EcoRI-Stelle ganz am Anfang: Schnitt bei 1, kein leeres Fragment
+        // EcoRI site right at the start: cut at 1, no empty fragment
         let g = digest(
             &doc("GAATTCAAAA", Topology::Linear),
             &EnzymeDb::standard(),
@@ -460,7 +460,7 @@ mod tests {
         let f = digest(&base, &EnzymeDb::standard(), &["EcoRI"]).unwrap();
         assert_eq!(f[0].features.len(), 1);
         assert_eq!(f[0].features[0].location().start(), 0);
-        // das Feature 2..6 überspannt den Schnitt bei 4 und entfällt
+        // the feature 2..6 spans the cut at 4 and is dropped
         assert_eq!(f[1].features.len(), 1);
         assert_eq!(f[1].features[0].location().start(), 6);
         assert_eq!(f[1].features[0].location().end(), 10);
@@ -476,7 +476,7 @@ mod tests {
         ]);
         let f = digest(&base, &EnzymeDb::standard(), &["EcoRI"]).unwrap();
         assert_eq!(f.len(), 1);
-        // Schnitt bei 101, Fragment beginnt dort: 990 → 889, 5 → 5 + (1000 − 101) = 904
+        // Cut at 101, fragment starts there: 990 → 889, 5 → 5 + (1000 − 101) = 904
         let mut starts: Vec<usize> = f[0].features.iter().map(|x| x.location().start()).collect();
         starts.sort();
         assert_eq!(starts, vec![889, 904]);

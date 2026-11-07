@@ -1,21 +1,21 @@
-//! Automatische Feature-Erkennung: bekannte Sequenzmotive und offene Leserahmen (ORFs).
+//! Automatic feature detection: known sequence motifs and open reading frames (ORFs).
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::error::Result;
 use crate::model::feature::{Feature, Interval, Location, Strand};
 
-/// Eine bekannte Sequenz, die in Dokumenten gesucht wird.
+/// A known sequence that is searched for in documents.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FeatureTemplate {
     pub name: String,
     pub feature_type: String,
-    /// Basen in Uppercase (`A`, `C`, `G`, `T`).
+    /// Bases in uppercase (`A`, `C`, `G`, `T`).
     pub bases: String,
 }
 
-/// Eingebaute Vorlagen aus `standard-features.json` (Name, Typ, Sequenz), in der Reihenfolge der Datei:
-/// Promotoren (T7, T3, SP6, lac), Primerstellen (M13), Tags (6xHis, FLAG, HA), lac-Operator, T7-Terminator, loxP, attB1/attB2
-/// sowie aus dem pUC19-Eintrag L09137 AmpR (861 bp), ori (589 bp) und lacZα (324 bp).
+/// Built-in templates from `standard-features.json` (name, type, sequence), in file order:
+/// promoters (T7, T3, SP6, lac), primer sites (M13), tags (6xHis, FLAG, HA), lac operator, T7 terminator, loxP, attB1/attB2
+/// and, from the pUC19 entry L09137, AmpR (861 bp), ori (589 bp) and lacZα (324 bp).
 pub fn common_templates() -> Vec<FeatureTemplate> {
     #[derive(serde::Deserialize)]
     struct Entry {
@@ -36,7 +36,7 @@ pub fn common_templates() -> Vec<FeatureTemplate> {
         .collect()
 }
 
-/// Uppercase, `U` wird zu `T`.
+/// Uppercase, `U` becomes `T`.
 fn normalize(bases: &str) -> String {
     bases.to_ascii_uppercase().replace('U', "T")
 }
@@ -53,16 +53,16 @@ fn make_feature(
     Ok(Feature::new(kind, name, location, qualifiers))
 }
 
-/// Sucht jede Vorlage exakt (Groß-/Kleinschreibung egal, `U` zählt wie `T`) auf beiden Strängen.
-/// - Treffer auf dem Vorwärtsstrang: `Strand::Forward`; Treffer des Reverse-Komplements der Vorlage:
-///   `Strand::Reverse`, jeweils mit dem Intervall auf dem Vorwärtsstrang.
-/// - Ist die Vorlage ihr eigenes Reverse-Komplement (Palindrom), wird jeder Ort nur einmal gemeldet
-///   (als `Forward`).
-/// - Überlappende Treffer werden alle gemeldet. Vorlagen mit leeren `bases` werden übersprungen.
-/// - Feature: `feature_type` und `name` der Vorlage, Qualifier leer.
-/// - Ergebnis sortiert nach Start, dann Ende, dann Name, dann Forward vor Reverse.
+/// Searches each template exactly (case-insensitive, `U` counts as `T`) on both strands.
+/// - Hits on the forward strand: `Strand::Forward`; hits of the template's reverse complement:
+///   `Strand::Reverse`, each with the interval on the forward strand.
+/// - If the template is its own reverse complement (palindrome), each location is reported only once
+///   (as `Forward`).
+/// - Overlapping hits are all reported. Templates with empty `bases` are skipped.
+/// - Feature: `feature_type` and `name` of the template, qualifiers empty.
+/// - Result sorted by start, then end, then name, then Forward before Reverse.
 ///
-/// Eine zirkuläre Suche über den Nullpunkt gibt es nicht.
+/// There is no circular search across the origin.
 pub fn detect_features(bases: &str, templates: &[FeatureTemplate]) -> Result<Vec<Feature>> {
     let text = normalize(bases);
     let mut hits: Vec<(usize, usize, String, bool, Feature)> = Vec::new();
@@ -106,7 +106,7 @@ pub fn detect_features(bases: &str, templates: &[FeatureTemplate]) -> Result<Vec
     Ok(hits.into_iter().map(|h| h.4).collect())
 }
 
-/// ORFs auf einem Strang: `(start, end)` in Koordinaten dieses Strangs.
+/// ORFs on one strand: `(start, end)` in coordinates of that strand.
 fn orfs_on(text: &str, min_codons: usize) -> Vec<(usize, usize)> {
     let bytes = text.as_bytes();
     let mut found = Vec::new();
@@ -131,16 +131,16 @@ fn orfs_on(text: &str, min_codons: usize) -> Vec<(usize, usize)> {
     found
 }
 
-/// Findet offene Leserahmen auf beiden Strängen als `CDS`-Features.
-/// - Ein ORF beginnt mit `ATG` und endet mit dem ersten In-Frame-Stopcodon (`TAA`, `TAG`, `TGA`), das Stopcodon
-///   gehört dazu. Ohne Stopcodon bis zum Sequenzende gibt es keinen ORF.
-/// - Pro Stopcodon zählt nur der längste ORF (das erste `ATG` davor im selben Rahmen ohne Stopp dazwischen).
-/// - Mindestlänge: `min_codons` Codons OHNE das Stopcodon (`min_codons` 0 wird wie 1 behandelt).
-/// - Reverse-Strang: auf dem Reverse-Komplement suchen und das Intervall zurückrechnen; `Strand::Reverse`,
-///   Intervall in Koordinaten der Vorwärtssequenz.
-/// - Name: `ORF {start+1}..{end} (+)` bzw. `(-)` mit den 1-basierten Grenzen des Intervalls auf dem Vorwärtsstrang.
-/// - Qualifier: `("note", ["{n} amino acids"])` mit n = Codons ohne Stopcodon.
-/// - Ergebnis sortiert nach Start, dann Ende, dann Forward vor Reverse. `U` zählt wie `T`, Schreibweise egal.
+/// Finds open reading frames on both strands as `CDS` features.
+/// - An ORF starts with `ATG` and ends with the first in-frame stop codon (`TAA`, `TAG`, `TGA`); the stop codon
+///   is part of it. Without a stop codon up to the end of the sequence there is no ORF.
+/// - Per stop codon only the longest ORF counts (the first `ATG` before it in the same frame with no stop in between).
+/// - Minimum length: `min_codons` codons WITHOUT the stop codon (`min_codons` 0 is treated as 1).
+/// - Reverse strand: search on the reverse complement and convert the interval back; `Strand::Reverse`,
+///   interval in coordinates of the forward sequence.
+/// - Name: `ORF {start+1}..{end} (+)` or `(-)` with the 1-based bounds of the interval on the forward strand.
+/// - Qualifier: `("note", ["{n} amino acids"])` with n = codons without the stop codon.
+/// - Result sorted by start, then end, then Forward before Reverse. `U` counts as `T`, case is ignored.
 pub fn find_orf_features(bases: &str, min_codons: usize) -> Result<Vec<Feature>> {
     let min_codons = min_codons.max(1);
     let text = normalize(bases);
@@ -271,7 +271,7 @@ mod tests {
 
     #[test]
     fn orf_rueckwaerts() {
-        // Reverse-Komplement von ATGAAATAG
+        // Reverse complement of ATGAAATAG
         let f = find_orf_features("CTATTTCAT", 2).unwrap();
         assert_eq!(f.len(), 1);
         assert_eq!(f[0].name(), "ORF 1..9 (-)");
@@ -311,7 +311,7 @@ mod tests {
 
     #[test]
     fn orf_sortierung() {
-        // vorwärts ATGAAATAG bei 0..9, rückwärts (Reverse-Komplement von ATGCCCTAG = CTAGGGCAT) bei 9..18
+        // forward ATGAAATAG at 0..9, reverse (reverse complement of ATGCCCTAG = CTAGGGCAT) at 9..18
         let f = find_orf_features("ATGAAATAGCTAGGGCAT", 2).unwrap();
         let s: Vec<_> = f.iter().map(span).collect();
         assert_eq!(s, vec![(0, 9, Strand::Forward), (9, 18, Strand::Reverse)]);

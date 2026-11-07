@@ -1,3 +1,0 @@
-=== calc.rs Versuch 1
-[136s {'prompt_tokens': 2892, 'completion_tokens': 5882, 'total_tokens': 8774, 'completion_tokens_details': {'reasoning_tokens': 4609}}]
-ERGEBNIS calc.rs: GRÜN (4 Tests) nach 1 Versuch(en)

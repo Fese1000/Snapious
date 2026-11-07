@@ -1,8 +1,8 @@
-//! Annotationen: Strang, Intervalle, Positionen und Features (alles 0-basiert, Ende exklusiv).
+//! Annotations: strand, intervals, locations and features (all 0-based, end exclusive).
 
 use crate::error::{Error, Result};
 
-/// Strang eines Features.
+/// Strand of a feature.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Strand {
     Forward,
@@ -11,7 +11,7 @@ pub enum Strand {
 }
 
 impl Strand {
-    /// Gegenstrang (`None` bleibt `None`).
+    /// Opposite strand (`None` stays `None`).
     pub fn flipped(self) -> Strand {
         match self {
             Strand::Forward => Strand::Reverse,
@@ -21,7 +21,7 @@ impl Strand {
     }
 }
 
-/// Zusammenhängender Bereich `[start, end)`.
+/// Contiguous range `[start, end)`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Interval {
     start: usize,
@@ -29,7 +29,7 @@ pub struct Interval {
 }
 
 impl Interval {
-    /// Neues Intervall; `end < start` ist ungültig.
+    /// New interval; `end < start` is invalid.
     pub fn new(start: usize, end: usize) -> Result<Self> {
         if end < start {
             return Err(Error::InvalidInput(format!(
@@ -52,13 +52,13 @@ impl Interval {
         self.end - self.start
     }
 
-    /// Überlappen sich zwei Intervalle (mindestens eine gemeinsame Base)?
+    /// Do two intervals overlap (at least one shared base)?
     pub fn overlaps(&self, other: &Interval) -> bool {
         self.start < other.end && other.start < self.end
     }
 }
 
-/// Position eines Features: ein oder mehrere Intervalle (Join) auf einem Strang.
+/// Location of a feature: one or more intervals (join) on one strand.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Location {
     intervals: Vec<Interval>,
@@ -68,7 +68,7 @@ pub struct Location {
 }
 
 impl Location {
-    /// Neue Position; mindestens ein Intervall nötig.
+    /// New location; at least one interval required.
     pub fn new(
         intervals: Vec<Interval>,
         strand: Strand,
@@ -88,7 +88,7 @@ impl Location {
         })
     }
 
-    /// Einfache Position `[start, end)`.
+    /// Simple location `[start, end)`.
     pub fn of(start: usize, end: usize, strand: Strand) -> Result<Self> {
         Self::new(vec![Interval::new(start, end)?], strand, false, false)
     }
@@ -109,29 +109,29 @@ impl Location {
         self.partial_end
     }
 
-    /// Kleinster Start aller Intervalle.
+    /// Smallest start of all intervals.
     pub fn start(&self) -> usize {
         self.intervals.iter().map(|i| i.start).min().unwrap_or(0)
     }
 
-    /// Größtes Ende aller Intervalle.
+    /// Largest end of all intervals.
     pub fn end(&self) -> usize {
         self.intervals.iter().map(|i| i.end).max().unwrap_or(0)
     }
 
-    /// Summe der Intervall-Längen.
+    /// Sum of the interval lengths.
     pub fn length(&self) -> usize {
         self.intervals.iter().map(|i| i.length()).sum()
     }
 
-    /// Liegt die Position (Basenindex) in einem der Intervalle?
+    /// Is the position (base index) in one of the intervals?
     pub fn contains(&self, position: usize) -> bool {
         self.intervals
             .iter()
             .any(|i| position >= i.start && position < i.end)
     }
 
-    /// Alle Intervalle um `delta` verschieben (Ergebnis darf nicht negativ werden).
+    /// Shift all intervals by `delta` (the result must not become negative).
     pub fn shifted(&self, delta: isize) -> Result<Location> {
         let mut out = Vec::with_capacity(self.intervals.len());
         for i in &self.intervals {
@@ -148,12 +148,12 @@ impl Location {
         Location::new(out, self.strand, self.partial_start, self.partial_end)
     }
 
-    /// Kopie mit anderen Intervallen (Strang und Teilmarkierungen bleiben).
+    /// Copy with different intervals (strand and partial markers stay).
     pub fn with_intervals(&self, intervals: Vec<Interval>) -> Result<Location> {
         Location::new(intervals, self.strand, self.partial_start, self.partial_end)
     }
 
-    /// Kopie mit anderem Strang und Teilmarkierungen.
+    /// Copy with a different strand and partial markers.
     pub fn with_strand_and_partials(
         &self,
         strand: Strand,
@@ -169,7 +169,7 @@ impl Location {
     }
 }
 
-/// Eine Annotation (Gen, CDS, Promotor, …) mit Qualifiern in Eingabereihenfolge.
+/// An annotation (gene, CDS, promoter, …) with qualifiers in input order.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Feature {
     feature_type: String,
@@ -193,7 +193,7 @@ impl Feature {
         }
     }
 
-    /// Typ, z. B. `CDS`, `gene`, `promoter`.
+    /// Type, e.g. `CDS`, `gene`, `promoter`.
     pub fn feature_type(&self) -> &str {
         &self.feature_type
     }
@@ -210,7 +210,7 @@ impl Feature {
         &self.qualifiers
     }
 
-    /// Erster Wert des Qualifiers `key`, falls vorhanden.
+    /// First value of the qualifier `key`, if present.
     pub fn qualifier(&self, key: &str) -> Option<&str> {
         self.qualifiers
             .iter()
@@ -219,7 +219,7 @@ impl Feature {
             .map(|s| s.as_str())
     }
 
-    /// Kopie mit neuer Position.
+    /// Copy with a new location.
     pub fn with_location(&self, location: Location) -> Feature {
         Feature {
             location,
@@ -227,7 +227,7 @@ impl Feature {
         }
     }
 
-    /// Kopie mit anderem Namen.
+    /// Copy with a different name.
     pub fn with_name(&self, name: &str) -> Feature {
         Feature {
             name: name.to_string(),

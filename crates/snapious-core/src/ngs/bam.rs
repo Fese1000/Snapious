@@ -1,34 +1,34 @@
-//! BAM-Dateien lesen. BAM besteht aus aneinandergehängten gzip-Blöcken (BGZF); das Entpacken übernimmt das Programm `gzip -dc`,
-//! das Zerlegen der entpackten Bytes ist reine Rechnung (`parse_bam`) und lässt sich ohne Datei testen.
+//! Read BAM files. BAM consists of concatenated gzip blocks (BGZF); decompression is done by the `gzip -dc` program,
+//! parsing the decompressed bytes is pure computation (`parse_bam`) and can be tested without a file.
 
 use std::path::Path;
 
 use crate::error::{Error, Result};
 use crate::io::sam::SamRecord;
 
-/// Ein gelesenes BAM.
+/// A BAM that has been read.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BamFile {
-    /// Kopftext (SAM-Kopfzeilen).
+    /// Header text (SAM header lines).
     pub header_text: String,
-    /// Referenzen `(Name, Länge)` in Dateireihenfolge.
+    /// References `(name, length)` in file order.
     pub references: Vec<(String, u32)>,
-    /// Alle Datensätze als `SamRecord` (gleiche Konventionen wie bei `io::sam`: `position` 1-basiert, 0 = nicht ausgerichtet).
+    /// All records as `SamRecord` (same conventions as in `io::sam`: `position` 1-based, 0 = not aligned).
     pub records: Vec<SamRecord>,
 }
 
-/// Zerlegt die entpackten BAM-Bytes (alle Zahlen little-endian).
-/// Kopf: Magic `BAM\x01`; `l_text` (i32) und der Kopftext (UTF-8, ein NUL-Zeichen am Ende wird abgeschnitten); `n_ref` (i32); je Referenz
-/// `l_name` (i32), der Name (`l_name` Bytes einschließlich NUL, das NUL wird entfernt) und `l_ref` (i32).
-/// Datensatz: `block_size` (i32) und danach genau `block_size` Bytes: `refID` (i32), `pos` (i32, 0-basiert), `l_read_name` (u8), `mapq` (u8),
+/// Parses the decompressed BAM bytes (all numbers little-endian).
+/// Header: magic `BAM\x01`; `l_text` (i32) and the header text (UTF-8, one trailing NUL character is cut off); `n_ref` (i32); per reference
+/// `l_name` (i32), the name (`l_name` bytes including NUL, the NUL is removed) and `l_ref` (i32).
+/// Record: `block_size` (i32) and then exactly `block_size` bytes: `refID` (i32), `pos` (i32, 0-based), `l_read_name` (u8), `mapq` (u8),
 /// `bin` (u16), `n_cigar_op` (u16), `flag` (u16), `l_seq` (i32), `next_refID` (i32), `next_pos` (i32), `tlen` (i32), `read_name`
-/// (`l_read_name` Bytes einschließlich NUL), `cigar` (`n_cigar_op` Werte u32: Länge = `x >> 4`, Operation = `"MIDNSHP=X"` an Stelle `x & 0xf`),
-/// `seq` (`(l_seq + 1) / 2` Bytes, je 4 Bit, hohes Halbbyte zuerst, Zeichen `"=ACMGRSVTWYHKDBN"`), `qual` (`l_seq` Bytes Phred ohne Offset;
-/// `0xFF` am ersten Byte = Qualität fehlt). Rest des Blocks (optionale Felder) wird übersprungen.
-/// Abbildung auf `SamRecord`: `reference` = Name zu `refID` oder `*` bei −1 (oder unbekannter Nummer); `position = pos + 1` (bei `pos == −1` → 0);
-/// `cigar` als Text (`4M2D`), `*` ohne Operationen; `mate_reference` = `=`, wenn `next_refID == refID` und nicht −1, sonst Name oder `*`;
-/// `mate_position = next_pos + 1` (bei −1 → 0); `template_length = tlen`; `sequence` leer → `*`; `quality` = Zeichen `Phred + 33`, `*` wenn fehlend oder `l_seq == 0`.
-/// Fehler `Error::InvalidInput`: falsches Magic, abgeschnittene Daten (Zugriff hinter das Ende), unbekannte Operation.
+/// (`l_read_name` bytes including NUL), `cigar` (`n_cigar_op` u32 values: length = `x >> 4`, operation = `"MIDNSHP=X"` at index `x & 0xf`),
+/// `seq` (`(l_seq + 1) / 2` bytes, 4 bits each, high nibble first, characters `"=ACMGRSVTWYHKDBN"`), `qual` (`l_seq` bytes Phred without offset;
+/// `0xFF` at the first byte = quality missing). The rest of the block (optional fields) is skipped.
+/// Mapping to `SamRecord`: `reference` = name for `refID`, or `*` for −1 (or an unknown number); `position = pos + 1` (for `pos == −1` → 0);
+/// `cigar` as text (`4M2D`), `*` without operations; `mate_reference` = `=` if `next_refID == refID` and not −1, otherwise name or `*`;
+/// `mate_position = next_pos + 1` (for −1 → 0); `template_length = tlen`; empty `sequence` → `*`; `quality` = characters `Phred + 33`, `*` if missing or `l_seq == 0`.
+/// Errors `Error::InvalidInput`: wrong magic, truncated data (access past the end), unknown operation.
 pub fn parse_bam(data: &[u8]) -> Result<BamFile> {
     let bad = |m: &str| Error::InvalidInput(m.to_string());
     let mut cur = Cursor { data, pos: 0 };
@@ -141,7 +141,7 @@ pub fn parse_bam(data: &[u8]) -> Result<BamFile> {
     })
 }
 
-/// Entpackt `path` mit `gzip -dc` und ruft `parse_bam` auf. Fehler beim Start oder Exitcode ≠ 0 → `Error::Io` mit dem Text von `gzip`.
+/// Decompresses `path` with `gzip -dc` and calls `parse_bam`. Error on start or exit code ≠ 0 → `Error::Io` with the text from `gzip`.
 pub fn read_bam(path: &Path) -> Result<BamFile> {
     let out = std::process::Command::new("gzip")
         .arg("-dc")
@@ -157,7 +157,7 @@ pub fn read_bam(path: &Path) -> Result<BamFile> {
     parse_bam(&out.stdout)
 }
 
-/// Lesezeiger über einen Bytebereich mit Längenprüfung.
+/// Read cursor over a byte range with length checking.
 struct Cursor<'a> {
     data: &'a [u8],
     pos: usize,
@@ -202,7 +202,7 @@ mod tests {
         v.to_le_bytes().to_vec()
     }
 
-    /// Baut einen BAM-Datensatz für den Test.
+    /// Builds a BAM record for the test.
     #[allow(clippy::too_many_arguments)]
     fn record(
         ref_id: i32,
@@ -243,7 +243,7 @@ mod tests {
             Some(q) => b.extend_from_slice(q),
             None => b.extend(std::iter::repeat_n(0xFFu8, seq.len())),
         }
-        // optionales Feld, das übersprungen werden muss: NM:C:1
+        // optional field that must be skipped: NM:C:1
         b.extend(b"NMC\x01");
         let mut out = le32(b.len() as i32);
         out.extend(b);
@@ -371,7 +371,7 @@ mod tests {
         assert!(parse_bam(&[]).is_err());
         let only_header = parse_bam(&header()).unwrap();
         assert!(only_header.records.is_empty());
-        // gzip-Datei: nur wenn gzip vorhanden ist
+        // gzip file: only if gzip is available
         let dir = std::env::temp_dir().join(format!("snapious-bam-{}", crate::util::new_id()));
         std::fs::create_dir_all(&dir).unwrap();
         let raw = dir.join("x.bam.raw");

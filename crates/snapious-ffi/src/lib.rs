@@ -1,8 +1,8 @@
-//! UniFFI-Schnittstelle des Snapious-Kerns für die Swift-App.
+//! UniFFI interface of the Snapious core for the Swift app.
 //!
-//! Leitlinien: kleine, stabile Oberfläche; einfache Typen (Zahlen, Text, Listen, Records); Daten in
-//! Blöcken statt zeichenweise; Fehler als [`ApiError`] (in Swift `throws`). Keine Fachlogik hier:
-//! alles Rechnen steckt in `snapious-core`.
+//! Guidelines: small, stable surface; simple types (numbers, text, lists, records); data in
+//! blocks rather than character by character; errors as [`ApiError`] (`throws` in Swift). No domain logic here:
+//! all computation lives in `snapious-core`.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -134,7 +134,7 @@ use snapious_core::view::translation::{
 
 uniffi::setup_scaffolding!();
 
-/// Fehler für die Oberfläche (die Meldung ist deutsch und für Nutzer gedacht).
+/// Error for the UI (the message is German and meant for users).
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum ApiError {
     #[error("{message}")]
@@ -159,61 +159,61 @@ impl From<snapious_core::Error> for ApiError {
     }
 }
 
-/// Kurzinfo zu einem Dokument im Projekt.
+/// Short info about a document in the project.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct DocumentInfoDto {
     pub id: String,
     pub name: String,
     pub doc_type: String,
-    /// Erstellungszeit, Sekunden seit 1970 (UTC).
+    /// Creation time, seconds since 1970 (UTC).
     pub created: i64,
 }
 
-/// Eckdaten eines Sequenzdokuments.
+/// Key facts of a sequence document.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct DocumentSummary {
     pub id: String,
     pub name: String,
     pub doc_type: String,
     pub length: u64,
-    /// `LINEAR` oder `CIRCULAR`.
+    /// `LINEAR` or `CIRCULAR`.
     pub topology: String,
-    /// `DNA`, `RNA` oder `PROTEIN`.
+    /// `DNA`, `RNA` or `PROTEIN`.
     pub seq_type: String,
     pub feature_count: u64,
-    /// GC-Anteil in Prozent.
+    /// GC fraction in percent.
     pub gc_percent: f64,
     pub description: String,
     pub accession: String,
     pub organism: String,
 }
 
-/// Ein Feature (Annotation) mit Gesamtbereich `[start, end)`.
+/// A feature (annotation) with overall range `[start, end)`.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct FeatureInfo {
     pub feature_type: String,
     pub name: String,
     pub start: u64,
     pub end: u64,
-    /// `FORWARD`, `REVERSE` oder `NONE`.
+    /// `FORWARD`, `REVERSE` or `NONE`.
     pub strand: String,
 }
 
-/// Ein Teilstück eines Features mit Spur (für die Annotationsleisten unter der Sequenz).
+/// A part of a feature with a track (for the annotation bars below the sequence).
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct PlacedFeatureDto {
-    /// Index in der Liste von `features`.
+    /// Index into the list of `features`.
     pub feature_index: u64,
     pub feature_type: String,
     pub name: String,
     pub start: u64,
     pub end: u64,
-    /// `FORWARD`, `REVERSE` oder `NONE`.
+    /// `FORWARD`, `REVERSE` or `NONE`.
     pub strand: String,
     pub lane: u32,
 }
 
-/// Kennzahlen einer Auswahl.
+/// Key figures of a selection.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct SelectionStatsDto {
     pub length: u64,
@@ -221,7 +221,7 @@ pub struct SelectionStatsDto {
     pub tm_celsius: f64,
 }
 
-/// Ein Enzym mit seinen Schnittstellen.
+/// An enzyme with its cut sites.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct EnzymeEntryDto {
     pub enzyme: String,
@@ -229,26 +229,26 @@ pub struct EnzymeEntryDto {
     pub positions: Vec<u64>,
 }
 
-/// Eine mögliche stille Änderung in einem CDS-Feature (Position im Dokument, 0-basiert).
+/// A possible silent change in a CDS feature (position in the document, 0-based).
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct SilentChangeDto {
     pub position: u64,
     pub from: String,
     pub to: String,
-    /// Nummer des Codons im CDS (1-basiert).
+    /// Number of the codon in the CDS (1-based).
     pub codon: u64,
 }
 
-/// Ein Enzymset.
+/// An enzyme set.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct EnzymeSetDto {
     pub name: String,
     pub enzymes: Vec<String>,
-    /// `true` bei den eingebauten Sets (nicht löschbar).
+    /// `true` for the built-in sets (cannot be deleted).
     pub builtin: bool,
 }
 
-/// Ergebnis des Vergleichs der Annotationen zweier Sequenzen (Indizes in der Feature-Liste des jeweiligen Dokuments).
+/// Result of comparing the annotations of two sequences (indices into the feature list of the respective document).
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct AnnotationComparisonDto {
     pub only_a: Vec<u64>,
@@ -257,24 +257,24 @@ pub struct AnnotationComparisonDto {
     pub common_b: Vec<u64>,
 }
 
-/// Eine Gruppe aus der Aufteilung nach Barcodes.
+/// A group from the split by barcodes.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct BarcodeGroupDto {
     pub name: String,
     pub count: u64,
-    /// Ausgabedatei (FASTQ).
+    /// Output file (FASTQ).
     pub path: String,
 }
 
-/// Ein Read-Paar und die ungepaarten Reads.
+/// A read pair and the unpaired reads.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct PairReportDto {
-    /// Je Paar `[Vorwärtsread, Rückwärtsread]`.
+    /// Per pair `[forward read, reverse read]`.
     pub pairs: Vec<Vec<String>>,
     pub unpaired: Vec<String>,
 }
 
-/// Expressionswerte einer Referenz.
+/// Expression values of a reference.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct ExpressionRowDto {
     pub reference: String,
@@ -284,14 +284,14 @@ pub struct ExpressionRowDto {
     pub tpm: f64,
 }
 
-/// Eine Klasse eines Häufigkeitsdiagramms.
+/// A class of a frequency chart.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct HistogramBinDto {
     pub start: u64,
     pub count: u64,
 }
 
-/// Ein Treffer der Feature-Suche nach Ähnlichkeit.
+/// A hit of the feature search by similarity.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct FeatureMatchDto {
     pub start: u64,
@@ -300,21 +300,21 @@ pub struct FeatureMatchDto {
     pub mismatches: u64,
 }
 
-/// Ein Eintrag der Befehlspalette.
+/// An entry of the command palette.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct CommandItemDto {
     pub title: String,
     pub keywords: Vec<String>,
 }
 
-/// Titel und Lösungsvorschlag zu einer Fehlermeldung.
+/// Title and suggested solution for an error message.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct ErrorHelpDto {
     pub title: String,
     pub hint: String,
 }
 
-/// Eine Schwachstelle in einem Protein.
+/// A liability in a protein.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct LiabilityDto {
     pub position: u64,
@@ -323,47 +323,47 @@ pub struct LiabilityDto {
     pub motif: String,
 }
 
-/// Kennzahlen der Abdeckung einer SAM/BAM-Datei gegen eine Referenz.
+/// Coverage figures of a SAM/BAM file against a reference.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct CoverageReportDto {
     pub mean: f64,
     pub median: f64,
     pub min: u64,
     pub max: u64,
-    /// Anteil der Positionen mit Tiefe ≥ 1, ≥ 10 und ≥ 30 (in dieser Reihenfolge).
+    /// Fraction of positions with depth ≥ 1, ≥ 10 and ≥ 30 (in this order).
     pub fractions: Vec<f64>,
-    /// Zugeordnete Reads, davon Duplikate (gleiche Referenz, Position und Richtung).
+    /// Mapped reads, of which duplicates (same reference, position and orientation).
     pub mapped_reads: u64,
     pub duplicate_reads: u64,
 }
 
-/// Fragmentlängen gepaarter Reads.
+/// Fragment lengths of paired reads.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct InsertReportDto {
     pub count: u64,
     pub mean: f64,
     pub median: f64,
     pub std_dev: f64,
-    /// Häufigkeit in Klassen der Breite 25 bp (Beginn der Klasse, Anzahl).
+    /// Frequency in classes of width 25 bp (class start, count).
     pub bins: Vec<HistogramBinDto>,
 }
 
-/// Ein k-mer mit Häufigkeit.
+/// A k-mer with frequency.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct KmerDto {
     pub kmer: String,
     pub count: u64,
 }
 
-/// Ergebnis der einfachen Faltung.
+/// Result of the simple folding.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct SimpleFoldDto {
     pub pairs: u64,
-    /// Punkt-Klammer-Schreibweise.
+    /// Dot-bracket notation.
     pub structure: String,
 }
 
-/// Eine att-Stelle für Gateway: Name, Kern und die vier Arme (`attB = links_b + kern + rechts_b`, `attP = links_p + kern + rechts_p`).
+/// An att site for Gateway: name, core and the four arms (`attB = left_b + core + right_b`, `attP = left_p + core + right_p`).
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct GatewaySiteDto {
     pub name: String,
@@ -374,7 +374,7 @@ pub struct GatewaySiteDto {
     pub right_arm_p: String,
 }
 
-/// Eine Aminosäure unter der Sequenz.
+/// An amino acid below the sequence.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct AminoAcidDto {
     pub base_position: u64,
@@ -383,19 +383,19 @@ pub struct AminoAcidDto {
     pub is_stop: bool,
 }
 
-/// Ein Fragment eines virtuellen Verdaus.
+/// A fragment of a virtual digest.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct FragmentDto {
     pub length: u64,
-    /// Schnittpositionen in der Quelle; bei einem Fragment über den Nullpunkt ist `end < start`.
+    /// Cut positions in the source; for a fragment across the origin, `end < start`.
     pub start: u64,
     pub end: u64,
-    /// Textform der Enden, z. B. `stumpf`, `5' AATT`, `3' TGCA`.
+    /// Text form of the ends, e.g. `stumpf`, `5' AATT`, `3' TGCA`.
     pub left_end: String,
     pub right_end: String,
 }
 
-/// Ein Enzym der Standarddatenbank.
+/// An enzyme of the standard database.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct EnzymeInfoDto {
     pub name: String,
@@ -403,7 +403,7 @@ pub struct EnzymeInfoDto {
     pub sticky: bool,
 }
 
-/// Eine Gelbande: `mobility` 0 = oben, 1 = unten; `intensity` 0 bis 1.
+/// A gel band: `mobility` 0 = top, 1 = bottom; `intensity` 0 to 1.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct GelBandDto {
     pub size_bp: u64,
@@ -411,7 +411,7 @@ pub struct GelBandDto {
     pub intensity: f64,
 }
 
-/// Eine gRNA-Stelle.
+/// A gRNA site.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct GuideDto {
     pub protospacer: String,
@@ -424,7 +424,7 @@ pub struct GuideDto {
     pub warnings: Vec<String>,
 }
 
-/// Ein mögliches Klonierungsprodukt (Restriktionsklonierung).
+/// A possible cloning product (restriction cloning).
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct CandidateDto {
     pub construct_length: u64,
@@ -435,7 +435,7 @@ pub struct CandidateDto {
     pub warnings: Vec<String>,
 }
 
-/// Ein Primerpaar für ein Zielfragment.
+/// A primer pair for a target fragment.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct PrimerPairDto {
     pub forward_sequence: String,
@@ -450,7 +450,7 @@ pub struct PrimerPairDto {
     pub penalty: f64,
 }
 
-/// Ein Alignment zur Anzeige.
+/// An alignment for display.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct AlignmentDto {
     pub id: String,
@@ -458,37 +458,37 @@ pub struct AlignmentDto {
     pub seq_type: String,
     pub row_names: Vec<String>,
     pub rows: Vec<String>,
-    /// Konsens (Schwelle 0.5) und Identität je Spalte (0 bis 1).
+    /// Consensus (threshold 0.5) and identity per column (0 to 1).
     pub consensus: String,
     pub identity: Vec<f64>,
 }
 
-/// Ergebnis eines Zusammenbaus (Gibson oder Golden Gate): das neue Dokument und Hinweise.
+/// Result of an assembly (Gibson or Golden Gate): the new document and notes.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct AssemblyDto {
     pub document: DocumentInfoDto,
     pub warnings: Vec<String>,
 }
 
-/// Ein NCBI-Treffer.
+/// An NCBI hit.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct NcbiRecordDto {
     pub id: String,
     pub accession: String,
     pub title: String,
     pub organism: String,
-    /// Länge in Basen, 0 wenn unbekannt.
+    /// Length in bases, 0 if unknown.
     pub length: u64,
 }
 
-/// Ergebnis einer NCBI-Suche.
+/// Result of an NCBI search.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct NcbiSearchDto {
     pub total: u64,
     pub records: Vec<NcbiRecordDto>,
 }
 
-/// Eigenschaften eines Proteins.
+/// Properties of a protein.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct ProteinPropsDto {
     pub length: u64,
@@ -498,11 +498,11 @@ pub struct ProteinPropsDto {
     pub extinction_280: f64,
     pub aromaticity: f64,
     pub aliphatic_index: f64,
-    /// Mittlere Hydrophobie nach Kyte-Doolittle (GRAVY).
+    /// Mean hydropathy by Kyte-Doolittle (GRAVY).
     pub gravy: f64,
 }
 
-/// Ein Peptid aus einem Verdau.
+/// A peptide from a digest.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct PeptideDto {
     pub sequence: String,
@@ -512,29 +512,29 @@ pub struct PeptideDto {
     pub mass: f64,
 }
 
-/// GC-Anteil eines Fensters.
+/// GC fraction of a window.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct GcPointDto {
     pub position: u64,
     pub percent: f64,
 }
 
-/// Ein Bereich `[start, end)`.
+/// A range `[start, end)`.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct RegionDto {
     pub start: u64,
     pub end: u64,
 }
 
-/// Ein Farbkanal einer Sequenzierspur.
+/// A color channel of a sequencing trace.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct TraceChannelDto {
-    /// Base des Kanals (`A`, `C`, `G`, `T`).
+    /// Base of the channel (`A`, `C`, `G`, `T`).
     pub base: String,
     pub values: Vec<i32>,
 }
 
-/// Eine gelesene Sequenzierspur (`.ab1`).
+/// A sequencing trace that was read (`.ab1`).
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct TraceDto {
     pub bases: String,
@@ -543,10 +543,10 @@ pub struct TraceDto {
     pub channels: Vec<TraceChannelDto>,
 }
 
-/// Ein Unterschied zwischen Read und Referenz.
+/// A difference between read and reference.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct DifferenceDto {
-    /// `MISMATCH`, `INSERTION`, `DELETION` oder `LOW_QUALITY`.
+    /// `MISMATCH`, `INSERTION`, `DELETION` or `LOW_QUALITY`.
     pub kind: String,
     pub reference_position: u64,
     pub read_position: u64,
@@ -555,7 +555,7 @@ pub struct DifferenceDto {
     pub quality: u8,
 }
 
-/// Ergebnis des Abgleichs eines Reads mit einer Referenz.
+/// Result of checking a read against a reference.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct ReadCheckDto {
     pub read_name: String,
@@ -568,7 +568,7 @@ pub struct ReadCheckDto {
     pub aligned_reference: String,
 }
 
-/// Ein BLAST-Treffer.
+/// A BLAST hit.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct BlastHitDto {
     pub subject: String,
@@ -583,14 +583,14 @@ pub struct BlastHitDto {
     pub bit_score: f64,
 }
 
-/// Ein Basenpaar einer RNA-Struktur (0-basiert, `first < second`).
+/// A base pair of an RNA structure (0-based, `first < second`).
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct BasePairDto {
     pub first: u64,
     pub second: u64,
 }
 
-/// Ergebnis einer RNA-Faltung.
+/// Result of an RNA folding.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct RnaFoldDto {
     pub sequence: String,
@@ -599,7 +599,7 @@ pub struct RnaFoldDto {
     pub pairs: Vec<BasePairDto>,
 }
 
-/// Primerpaar für gezielte Mutagenese.
+/// Primer pair for site-directed mutagenesis.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct MutagenesisDto {
     pub forward: String,
@@ -609,7 +609,7 @@ pub struct MutagenesisDto {
     pub tm: f64,
 }
 
-/// Eine Wiederholung (`kind`: `tandem` oder `inverted`); `detail` beschreibt Einheit/Arme.
+/// A repeat (`kind`: `tandem` or `inverted`); `detail` describes unit/arms.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct RepeatDto {
     pub kind: String,
@@ -618,7 +618,7 @@ pub struct RepeatDto {
     pub detail: String,
 }
 
-/// Eine Variante aus einem Alignment.
+/// A variant from an alignment.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct VariantDto {
     pub column: u64,
@@ -629,7 +629,7 @@ pub struct VariantDto {
     pub kind: String,
 }
 
-/// Abbildung eines Reads auf eine Referenz.
+/// Mapping of a read onto a reference.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct ReadMapDto {
     pub name: String,
@@ -639,7 +639,7 @@ pub struct ReadMapDto {
     pub mismatches: u64,
 }
 
-/// Diagonale eines Dotplots.
+/// Diagonal of a dot plot.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct DiagonalDto {
     pub start_a: u64,
@@ -647,13 +647,13 @@ pub struct DiagonalDto {
     pub length: u64,
 }
 
-/// Ng → pmol für dsDNA.
+/// ng → pmol for dsDNA.
 #[uniffi::export]
 pub fn calc_ng_to_pmol(ng: f64, bp: u64) -> Result<f64, ApiError> {
     Ok(calc::ng_to_pmol(ng, bp as usize)?)
 }
 
-/// Benötigte Insert-Menge in ng für ein molares Verhältnis.
+/// Required insert amount in ng for a molar ratio.
 #[uniffi::export]
 pub fn calc_ligation_insert_ng(
     vector_ng: f64,
@@ -669,33 +669,33 @@ pub fn calc_ligation_insert_ng(
     )?)
 }
 
-/// Volumen der Stammlösung für eine Verdünnung.
+/// Volume of the stock solution for a dilution.
 #[uniffi::export]
 pub fn calc_dilution_volume(c_stock: f64, c_final: f64, v_final: f64) -> Result<f64, ApiError> {
     Ok(calc::dilution_volume(c_stock, c_final, v_final)?)
 }
 
-/// Kopienzahl von dsDNA.
+/// Copy number of dsDNA.
 #[uniffi::export]
 pub fn calc_copy_number(ng: f64, bp: u64) -> Result<f64, ApiError> {
     Ok(calc::copy_number(ng, bp as usize)?)
 }
 
-/// Paarweise Identität (Prozent) aller Zeilen eines Alignments; `values` zeilenweise (`names.len()²` Werte).
+/// Pairwise identity (percent) of all rows of an alignment; `values` row by row (`names.len()²` values).
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct IdentityMatrixDto {
     pub names: Vec<String>,
     pub values: Vec<f64>,
 }
 
-/// Eine Spalte des Sequenzlogos: Symbole aufsteigend nach Höhe, `heights` in Bit.
+/// A column of the sequence logo: symbols ascending by height, `heights` in bits.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct LogoColumnDto {
     pub symbols: Vec<String>,
     pub heights: Vec<f64>,
 }
 
-/// Ein Fundort einer Motivsuche.
+/// A location of a motif search.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct MotifHitDto {
     pub start: u64,
@@ -703,28 +703,28 @@ pub struct MotifHitDto {
     pub reverse: bool,
 }
 
-/// Eine verfügbare Operation (für Workflows).
+/// An available operation (for workflows).
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct OperationInfoDto {
     pub id: String,
     pub label: String,
 }
 
-/// Ein gespeicherter Workflow.
+/// A saved workflow.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct WorkflowDto {
     pub name: String,
     pub json: String,
-    /// Zahl der Eingabedokumente, die der Workflow braucht (0, wenn das JSON ungültig ist).
+    /// Number of input documents the workflow needs (0 if the JSON is invalid).
     pub input_count: u64,
     pub step_count: u64,
 }
 
-/// Ergebnis eines Workflow-Laufs.
+/// Result of a workflow run.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct WorkflowRunDto {
     pub documents: Vec<DocumentInfoDto>,
-    /// Fehlermeldungen je Lauf (leer bei Erfolg).
+    /// Error messages per run (empty on success).
     pub errors: Vec<String>,
 }
 
@@ -745,12 +745,12 @@ fn strand_text(s: Strand) -> String {
     .to_string()
 }
 
-/// Eine geöffnete Projektdatei.
+/// An opened project file.
 #[derive(uniffi::Object)]
 pub struct Project {
     store: Mutex<ProjectStore>,
     path: String,
-    /// Bearbeitungssitzungen (Undo/Redo) je Dokument-ID; jede Änderung wird sofort gespeichert.
+    /// Editing sessions (undo/redo) per document ID; every change is saved immediately.
     sessions: Mutex<BTreeMap<String, EditSession>>,
 }
 
@@ -781,7 +781,7 @@ impl Project {
         )?)
     }
 
-    /// Führt eine Änderung in der Bearbeitungssitzung des Dokuments aus und speichert das Ergebnis.
+    /// Applies a change in the document's editing session and saves the result.
     fn edit<F>(&self, id: &str, change: F) -> Result<(), ApiError>
     where
         F: FnOnce(&mut EditSession) -> snapious_core::error::Result<()>,
@@ -799,7 +799,7 @@ impl Project {
         change(session)?;
         let doc = Document::Sequence(session.document().clone());
         let mut store = self.lock()?;
-        // Eine Version höchstens alle 30 Sekunden, damit Tipp-Bearbeitungen den Speicher nicht füllen
+        // At most one version every 30 seconds, so typing edits do not fill up storage
         let recent = store
             .versions(id)?
             .first()
@@ -812,7 +812,7 @@ impl Project {
         Ok(())
     }
 
-    /// Vergisst die Bearbeitungssitzung eines Dokuments (z. B. nach dem Wiederherstellen einer Version).
+    /// Forgets the editing session of a document (e.g. after restoring a version).
     fn edit_sessions_clear(&self, id: &str) {
         if let Ok(mut s) = self.sessions.lock() {
             s.remove(id);
@@ -870,8 +870,8 @@ impl Project {
             .collect()
     }
 
-    /// Qualitätswerte einer Sequenz aus der verknüpften Sequenzierdatei (`.ab1`/`.scf`), auf denselben Bereich gekürzt wie beim Import;
-    /// ohne passende Datei gilt für jede Base der Wert 20.
+    /// Quality values of a sequence from the linked sequencing file (`.ab1`/`.scf`), trimmed to the same range as at import;
+    /// without a matching file every base gets the value 20.
     fn read_qualities(&self, id: &str, len: usize) -> Vec<u8> {
         let files = match self.lock() {
             Ok(store) => store.external_files(id).unwrap_or_default(),
@@ -900,7 +900,7 @@ impl Project {
         vec![20; len]
     }
 
-    /// Echter Pfad zu einer gespeicherten Dateiangabe: Dateien im Ordner `<Projekt>.dateien` wandern mit dem Projekt mit.
+    /// Real path of a stored file reference: files in the folder `<project>.dateien` move along with the project.
     fn resolve_stored_path(&self, stored: &str) -> String {
         resolve_portable(Path::new(&self.path), stored, &|p| p.exists())
             .map(|p| p.to_string_lossy().to_string())
@@ -926,7 +926,7 @@ impl Project {
 
 #[uniffi::export]
 impl Project {
-    /// Öffnet die Projektdatei oder legt sie neu an.
+    /// Opens the project file or creates it anew.
     #[uniffi::constructor]
     pub fn open(path: String) -> Result<Arc<Self>, ApiError> {
         let store = ProjectStore::open(Path::new(&path))?;
@@ -941,7 +941,7 @@ impl Project {
         self.path.clone()
     }
 
-    /// Alle Dokumente, nach Erstellungszeit sortiert.
+    /// All documents, sorted by creation time.
     pub fn documents(&self) -> Result<Vec<DocumentInfoDto>, ApiError> {
         Ok(self
             .lock()?
@@ -956,8 +956,8 @@ impl Project {
             .collect())
     }
 
-    /// Rückübersetzung eines Protein-Dokuments in ein neues DNA-Dokument. `mode`: `preferred` (häufigste E.-coli-Codons)
-    /// oder `degenerate` (IUPAC-Mehrdeutigkeitscodes).
+    /// Back-translation of a protein document into a new DNA document. `mode`: `preferred` (most frequent E. coli codons)
+    /// or `degenerate` (IUPAC ambiguity codes).
     pub fn back_translate_document(
         &self,
         id: String,
@@ -985,8 +985,8 @@ impl Project {
         )
     }
 
-    /// Mögliche stille Einzelbasenänderungen im CDS-Feature `feature_index` (nur Vorwärtsstrang). `site` ist leer (alle),
-    /// eine DNA-Folge oder der Name eines Enzyms; `mode` ist `all`, `create` (erzeugt die Stelle) oder `remove` (zerstört sie).
+    /// Possible silent single-base changes in the CDS feature `feature_index` (forward strand only). `site` is empty (all),
+    /// a DNA sequence or the name of an enzyme; `mode` is `all`, `create` (creates the site) or `remove` (destroys it).
     pub fn silent_changes(
         &self,
         id: String,
@@ -1051,7 +1051,7 @@ impl Project {
             .collect())
     }
 
-    /// Fügt Sequenzdokumente in der gegebenen Reihenfolge zu einer neuen Sequenz zusammen (Features wandern mit).
+    /// Joins sequence documents in the given order into a new sequence (features move along).
     pub fn concatenate_documents(
         &self,
         ids: Vec<String>,
@@ -1068,8 +1068,8 @@ impl Project {
         )
     }
 
-    /// Vergleicht die Features zweier Sequenzen. `mode` ist `exact` (Typ, Beginn und Ende gleich) oder `overlap`
-    /// (gleicher Typ, überlappend).
+    /// Compares the features of two sequences. `mode` is `exact` (type, start and end equal) or `overlap`
+    /// (same type, overlapping).
     pub fn compare_annotations(
         &self,
         id_a: String,
@@ -1103,9 +1103,9 @@ impl Project {
         })
     }
 
-    /// Entfernt Spalten aus einem Alignment und legt das Ergebnis als neues Alignment an. `kind`: `gaps` (Lückenanteil
-    /// mindestens `param`, 0–1), `constant` (Spalten ohne Lücke, in denen alle gleich sind) oder `codon` (Codonposition
-    /// `param` = 1, 2 oder 3, ab Spalte `start`, 0-basiert).
+    /// Removes columns from an alignment and stores the result as a new alignment. `kind`: `gaps` (gap fraction
+    /// at least `param`, 0–1), `constant` (columns without a gap in which all are equal) or `codon` (codon position
+    /// `param` = 1, 2 or 3, from column `start`, 0-based).
     pub fn strip_alignment_columns(
         &self,
         id: String,
@@ -1156,8 +1156,8 @@ impl Project {
         )
     }
 
-    /// Erzeugt aus einem Alignment eine neue Sequenz: die Referenzzeile (ohne Lücken) mit allen Varianten der Zeile `row`
-    /// gegenüber der Zeile `reference`.
+    /// Creates a new sequence from an alignment: the reference row (without gaps) with all variants of row `row`
+    /// relative to row `reference`.
     pub fn sequence_with_variants(
         &self,
         id: String,
@@ -1200,8 +1200,8 @@ impl Project {
         )
     }
 
-    /// Mittlere paarweise Identität je Alignment-Spalte (0–1), mit einem zentrierten Fenster der Breite `window` geglättet
-    /// (0 oder 1 = ungeglättet).
+    /// Mean pairwise identity per alignment column (0–1), smoothed with a centered window of width `window`
+    /// (0 or 1 = unsmoothed).
     pub fn alignment_similarity(&self, id: String, window: u64) -> Result<Vec<f64>, ApiError> {
         let a = self.alignment_doc(&id)?;
         Ok(window_mean(
@@ -1210,8 +1210,8 @@ impl Project {
         ))
     }
 
-    /// Legt aus allen Features des Typs `feature_type` (leer = alle) je eine neue Sequenz an (mit `flank` Basen Rand, Gegenstrang
-    /// revers-komplementiert). Höchstens 1000 Features.
+    /// Creates one new sequence from each feature of type `feature_type` (empty = all) (with `flank` bases of margin, reverse strand
+    /// reverse-complemented). At most 1000 features.
     pub fn extract_features(
         &self,
         id: String,
@@ -1265,8 +1265,8 @@ impl Project {
         Ok(out)
     }
 
-    /// Sucht die kurze Sequenz `reference` mit höchstens `max_mismatch` Unterschieden auf beiden Strängen (Feature-Finder
-    /// nach Ähnlichkeit). Höchstens 5000 Treffer.
+    /// Searches the short sequence `reference` with at most `max_mismatch` differences on both strands (feature finder
+    /// by similarity). At most 5000 hits.
     pub fn find_similar_features(
         &self,
         id: String,
@@ -1289,7 +1289,7 @@ impl Project {
         )
     }
 
-    /// Schwachstellen eines Proteins (N-Glykosylierung, Deamidierung, Isomerisierung, Oxidation, freies Cystein).
+    /// Liabilities of a protein (N-glycosylation, deamidation, isomerization, oxidation, free cysteine).
     pub fn protein_liabilities(&self, id: String) -> Result<Vec<LiabilityDto>, ApiError> {
         let d = self.sequence_doc(&id)?;
         Ok(find_liabilities(d.bases())
@@ -1303,9 +1303,9 @@ impl Project {
             .collect())
     }
 
-    /// Liest eine Domänentabelle (`hmmscan --domtblout` oder InterProScan-TSV; `format` = `hmmer` oder `interpro`) und trägt die
-    /// Treffer für dieses Protein als Features vom Typ `domain` ein. Gehört mehr als ein Name zur Datei, zählen nur Treffer, deren
-    /// Name mit dem Dokumentnamen beginnt (sonst alle). Gibt die Zahl der eingetragenen Features zurück.
+    /// Reads a domain table (`hmmscan --domtblout` or InterProScan TSV; `format` = `hmmer` or `interpro`) and adds the
+    /// hits for this protein as features of type `domain`. If more than one name belongs to the file, only hits whose
+    /// name begins with the document name count (otherwise all). Returns the number of features added.
     pub fn import_domain_table(
         &self,
         id: String,
@@ -1371,8 +1371,8 @@ impl Project {
         Ok(n)
     }
 
-    /// Einfache Faltung nach Nussinov für `[start, end)` (Ende 0 = bis zum Ende; höchstens 2000 Basen): größte Zahl
-    /// nicht kreuzender Basenpaare, ohne Energiemodell. Auch für DNA.
+    /// Simple folding after Nussinov for `[start, end)` (end 0 = to the end; at most 2000 bases): largest number
+    /// of non-crossing base pairs, without an energy model. Also for DNA.
     pub fn simple_fold(&self, id: String, start: u64, end: u64) -> Result<SimpleFoldDto, ApiError> {
         let d = self.sequence_doc(&id)?;
         let len = d.len();
@@ -1397,7 +1397,7 @@ impl Project {
         })
     }
 
-    /// Kennzahlen der Abdeckung und der Duplikate aus einer SAM/BAM-Datei gegen die gewählte Referenz.
+    /// Coverage and duplicate figures from a SAM/BAM file against the chosen reference.
     pub fn coverage_report(
         &self,
         reference_id: String,
@@ -1439,7 +1439,7 @@ impl Project {
         })
     }
 
-    /// TA-Klonierung: setzt das PCR-Produkt in beide Orientierungen in den linearen T-Vektor (zwei neue zirkuläre Dokumente).
+    /// TA cloning: inserts the PCR product in both orientations into the linear T vector (two new circular documents).
     pub fn clone_ta(
         &self,
         t_vector_id: String,
@@ -1460,7 +1460,7 @@ impl Project {
         Ok(out)
     }
 
-    /// Gerichtetes TOPO-Klonieren: das Insert muss mit `CACC` beginnen und wird hinter den linearen TOPO-Vektor gesetzt.
+    /// Directional TOPO cloning: the insert must begin with `CACC` and is placed after the linear TOPO vector.
     pub fn clone_topo(
         &self,
         vector_id: String,
@@ -1477,9 +1477,9 @@ impl Project {
         )
     }
 
-    /// Gateway-Reaktion. `kind` ist `bp` (erstes Dokument: lineares Produkt mit attB1/attB2, zweites: zirkulärer Spendervektor mit
-    /// attP1/attP2) oder `lr` (erstes: zirkulärer Entry-Klon mit attL1/attL2, zweites: zirkulärer Zielvektor mit attR1/attR2).
-    /// Die att-Stellen kommen aus dem Handbuch des verwendeten Kits.
+    /// Gateway reaction. `kind` is `bp` (first document: linear product with attB1/attB2, second: circular donor vector with
+    /// attP1/attP2) or `lr` (first: circular entry clone with attL1/attL2, second: circular destination vector with attR1/attR2).
+    /// The att sites come from the manual of the kit used.
     pub fn clone_gateway(
         &self,
         kind: String,
@@ -1522,9 +1522,9 @@ impl Project {
         )
     }
 
-    /// Konsens aus mehreren Sequenzierungen (Sanger-Reads): Reads, die besser als Gegenstrang zum ersten passen (gemeinsame 8-mer), werden
-    /// revers-komplementiert (samt Qualitäten), alle werden ausgerichtet; die Konsensbase je Spalte wählt die Summe der Qualitäten. Legt das
-    /// Alignment der Reads und die Konsenssequenz als neue Dokumente an und gibt die Konsenssequenz zurück. `min_quality`: Basen darunter zählen nicht.
+    /// Consensus from several sequencing runs (Sanger reads): reads that fit the first one better as the opposite strand (shared 8-mer) are
+    /// reverse-complemented (with their qualities), all are aligned; the consensus base per column is chosen by the sum of qualities. Creates the
+    /// alignment of the reads and the consensus sequence as new documents and returns the consensus sequence. `min_quality`: bases below it do not count.
     pub fn consensus_from_reads(
         &self,
         ids: Vec<String>,
@@ -1571,7 +1571,7 @@ impl Project {
         let rows_named = align_with(AlignBackend::Builtin, &seqs)?;
         let rows: Vec<String> = rows_named.iter().map(|r| r.1.clone()).collect();
         let names: Vec<String> = rows_named.iter().map(|r| r.0.clone()).collect();
-        // Qualitäten in der Reihenfolge der Zeilen (align_with behält die Reihenfolge der Eingabe)
+        // qualities in row order (align_with keeps the input order)
         let cons = quality_consensus(&rows, &quals, min_quality);
         if cons.bases.is_empty() {
             return Err(ApiError::InvalidInput {
@@ -1611,9 +1611,9 @@ impl Project {
         )
     }
 
-    /// Legt Sequenzen aus eingefügtem Text an (roher Text, FASTA oder mit Zeilennummern). `kind` ist `DNA`, `RNA`,
-    /// `PROTEIN` oder `AUTO` (Erkennung). Ein leerer `name` nimmt den Namen aus der FASTA-Kopfzeile; bei mehreren Einträgen
-    /// wird bei gegebenem Namen durchnummeriert. `circular` gilt nur für Nukleotide.
+    /// Creates sequences from pasted text (raw text, FASTA or with line numbers). `kind` is `DNA`, `RNA`,
+    /// `PROTEIN` or `AUTO` (detection). An empty `name` takes the name from the FASTA header line; with several entries
+    /// a given name is numbered consecutively. `circular` applies to nucleotides only.
     pub fn create_sequence(
         &self,
         name: String,
@@ -1684,8 +1684,8 @@ impl Project {
         Ok(infos)
     }
 
-    /// Aminosäuren im Leserahmen `frame`: 1, 2, 3 auf dem Vorwärtsstrang, −1, −2, −3 auf dem Gegenstrang (0 gilt nicht).
-    /// `base_position` ist immer die kleinste Koordinate des Codons im Dokument (auch auf dem Gegenstrang).
+    /// Amino acids in reading frame `frame`: 1, 2, 3 on the forward strand, −1, −2, −3 on the reverse strand (0 is not valid).
+    /// `base_position` is always the smallest coordinate of the codon in the document (also on the reverse strand).
     pub fn translate_frame(&self, id: String, frame: i32) -> Result<Vec<AminoAcidDto>, ApiError> {
         if frame == 0 || frame.abs() > 3 {
             return Err(ApiError::InvalidInput {
@@ -1717,8 +1717,8 @@ impl Project {
             .collect())
     }
 
-    /// Importiert eine Datei und legt die Dokumente an: FASTA, FASTQ, GenBank, EMBL, SnapGene, PIR, GCG (Sequenzen) sowie
-    /// MEGA, NEXUS, Clustal und PHYLIP (Alignments). Liefert die neu angelegten Dokumente.
+    /// Imports a file and creates the documents: FASTA, FASTQ, GenBank, EMBL, SnapGene, PIR, GCG (sequences) as well as
+    /// MEGA, NEXUS, Clustal and PHYLIP (alignments). Returns the newly created documents.
     pub fn import_file(&self, path: String) -> Result<Vec<DocumentInfoDto>, ApiError> {
         let docs = io::read_documents(Path::new(&path))?;
         if docs.is_empty() {
@@ -1739,7 +1739,7 @@ impl Project {
                 created: doc.created(),
             });
         }
-        // Sanger-Sequenzierung (.ab1, .scf): die Originaldatei wird im Ordner `<Projekt>.dateien` abgelegt und mit der Sequenz verknüpft
+        // Sanger sequencing (.ab1, .scf): the original file is stored in the folder `<project>.dateien` and linked to the sequence
         let trace_kind = std::fs::read(&path).ok().and_then(|b| {
             if b.starts_with(b"ABIF") {
                 Some("ab1")
@@ -1797,7 +1797,7 @@ impl Project {
         Ok(infos)
     }
 
-    /// Legt Sequenzen aus einer Tabelle (CSV/TSV) an. `sep` ist `,`, `;` oder `\t`; `name_col` und `seq_col` zählen ab 0.
+    /// Creates sequences from a table (CSV/TSV). `sep` is `,`, `;` or `\t`; `name_col` and `seq_col` count from 0.
     #[allow(clippy::too_many_arguments)]
     pub fn import_table(
         &self,
@@ -1826,7 +1826,7 @@ impl Project {
         self.create_sequence(String::new(), fasta, kind, circular)
     }
 
-    /// Länge der gewählten Sequenzen als Häufigkeitsverteilung (Klassenbreite `bin_width`, 0 gilt als 1).
+    /// Length of the chosen sequences as a frequency distribution (class width `bin_width`, 0 counts as 1).
     pub fn length_histogram(
         &self,
         ids: Vec<String>,
@@ -1842,7 +1842,7 @@ impl Project {
             .collect())
     }
 
-    /// Ordnet die gewählten Reads anhand der Namen (`/1`, `/2` oder `1:`, `2:`) zu Paaren.
+    /// Pairs the chosen reads by name (`/1`, `/2` or `1:`, `2:`).
     pub fn pair_reads_report(&self, ids: Vec<String>) -> Result<PairReportDto, ApiError> {
         let docs = self.sequence_docs(&ids)?;
         let names: Vec<String> = docs.iter().map(|d| d.name().to_string()).collect();
@@ -1857,8 +1857,8 @@ impl Project {
         })
     }
 
-    /// Fragmente, wenn die Sequenz an den Anfängen und/oder Enden aller Features des Typs `feature_type` (leer = alle Typen)
-    /// geschnitten wird. Bei zirkulären Dokumenten umläuft das letzte Fragment den Nullpunkt.
+    /// Fragments if the sequence is cut at the starts and/or ends of all features of type `feature_type` (empty = all types)
+    /// For circular documents the last fragment wraps around the origin.
     pub fn fragments_by_annotation(
         &self,
         id: String,
@@ -1894,7 +1894,7 @@ impl Project {
             .collect())
     }
 
-    /// Eckdaten eines Dokuments.
+    /// Key facts of a document.
     pub fn summary(&self, id: String) -> Result<DocumentSummary, ApiError> {
         let d = self.sequence_doc(&id)?;
         let meta = |k: &str| d.metadata().get(k).cloned().unwrap_or_default();
@@ -1917,7 +1917,7 @@ impl Project {
         })
     }
 
-    /// Alle Features eines Dokuments.
+    /// All features of a document.
     pub fn features(&self, id: String) -> Result<Vec<FeatureInfo>, ApiError> {
         let d = self.sequence_doc(&id)?;
         Ok(d.features()
@@ -1937,7 +1937,7 @@ impl Project {
             .collect())
     }
 
-    /// Basen `[start, end)`; ein Ende hinter der Sequenz wird auf die Länge begrenzt.
+    /// Bases `[start, end)`; an end beyond the sequence is capped at the length.
     pub fn bases(&self, id: String, start: u64, end: u64) -> Result<String, ApiError> {
         let d = self.sequence_doc(&id)?;
         let (s, e) = (start as usize, (end as usize).min(d.len()));
@@ -1949,7 +1949,7 @@ impl Project {
         Ok(d.bases()[s..e].to_string())
     }
 
-    /// Teilstücke aller Features mit Spurnummer.
+    /// Parts of all features with track number.
     pub fn feature_lanes(&self, id: String) -> Result<Vec<PlacedFeatureDto>, ApiError> {
         let d = self.sequence_doc(&id)?;
         let features = d.features();
@@ -1970,7 +1970,7 @@ impl Project {
             .collect())
     }
 
-    /// Kennzahlen der Auswahl `[start, end)`.
+    /// Key figures of the selection `[start, end)`.
     pub fn selection_stats(
         &self,
         id: String,
@@ -1986,7 +1986,7 @@ impl Project {
         })
     }
 
-    /// Text der Auswahl für die Zwischenablage: `format` ist `bases`, `fasta` oder `reverse_complement`.
+    /// Text of the selection for the clipboard: `format` is `bases`, `fasta` or `reverse_complement`.
     pub fn selection_text(
         &self,
         id: String,
@@ -2006,7 +2006,7 @@ impl Project {
         }
     }
 
-    /// Enzyme der Standarddatenbank; `filter` ist `all`, `unique`, `double` oder `none`.
+    /// Enzymes of the standard database; `filter` is `all`, `unique`, `double` or `none`.
     pub fn enzyme_sites(
         &self,
         id: String,
@@ -2036,7 +2036,7 @@ impl Project {
             .collect())
     }
 
-    /// Aminosäuren eines Features (z. B. CDS) in Leserichtung des Features.
+    /// Amino acids of a feature (e.g. CDS) in the feature's reading direction.
     pub fn translate_feature(
         &self,
         id: String,
@@ -2061,7 +2061,7 @@ impl Project {
             .collect())
     }
 
-    /// Alle Enzyme der Standarddatenbank.
+    /// All enzymes of the standard database.
     pub fn enzyme_list(&self) -> Vec<EnzymeInfoDto> {
         EnzymeDb::standard()
             .all()
@@ -2074,7 +2074,7 @@ impl Project {
             .collect()
     }
 
-    /// Virtueller Verdau mit den genannten Enzymen.
+    /// Virtual digest with the given enzymes.
     pub fn digest_document(
         &self,
         id: String,
@@ -2095,7 +2095,7 @@ impl Project {
             .collect())
     }
 
-    /// gRNA-Stellen auf beiden Strängen; `nuclease` ist `spcas9`, `sacas9` oder `cas12a`.
+    /// gRNA sites on both strands; `nuclease` is `spcas9`, `sacas9` or `cas12a`.
     pub fn find_guides(&self, id: String, nuclease: String) -> Result<Vec<GuideDto>, ApiError> {
         let d = self.sequence_doc(&id)?;
         let spec = match nuclease.as_str() {
@@ -2124,7 +2124,7 @@ impl Project {
             .collect())
     }
 
-    /// Mögliche Produkte der Restriktionsklonierung von Insert in Vektor.
+    /// Possible products of restriction cloning of an insert into a vector.
     pub fn restriction_candidates(
         &self,
         vector_id: String,
@@ -2146,7 +2146,7 @@ impl Project {
             .collect())
     }
 
-    /// Speichert das Produkt mit Nummer `index` (aus `restriction_candidates`) als neues Dokument.
+    /// Saves the product with number `index` (from `restriction_candidates`) as a new document.
     pub fn save_candidate(
         &self,
         vector_id: String,
@@ -2193,7 +2193,7 @@ impl Project {
         })
     }
 
-    /// Bis zu `max_results` Primerpaare, deren Produkt `[target_start, target_end)` einschließt (Standardvorgaben).
+    /// Up to `max_results` primer pairs whose product encloses `[target_start, target_end)` (default settings).
     pub fn pick_primers(
         &self,
         id: String,
@@ -2226,17 +2226,17 @@ impl Project {
             .collect())
     }
 
-    /// Fügt Basen vor Position `position` ein (Rückgängig möglich).
+    /// Inserts bases before position `position` (undoable).
     pub fn edit_insert(&self, id: String, position: u64, bases: String) -> Result<(), ApiError> {
         self.edit(&id, |s| s.insert(position as usize, &bases))
     }
 
-    /// Löscht `[start, end)` (Rückgängig möglich).
+    /// Deletes `[start, end)` (undoable).
     pub fn edit_delete(&self, id: String, start: u64, end: u64) -> Result<(), ApiError> {
         self.edit(&id, |s| s.delete(start as usize, end as usize))
     }
 
-    /// Ersetzt `[start, end)` durch `bases` (Rückgängig möglich).
+    /// Replaces `[start, end)` with `bases` (undoable).
     pub fn edit_replace(
         &self,
         id: String,
@@ -2247,7 +2247,7 @@ impl Project {
         self.edit(&id, |s| s.replace(start as usize, end as usize, &bases))
     }
 
-    /// Macht die letzte Änderung rückgängig; `false`, wenn nichts zurückzunehmen ist.
+    /// Undoes the last change; `false` if there is nothing to undo.
     pub fn edit_undo(&self, id: String) -> Result<bool, ApiError> {
         let mut did = false;
         self.edit(&id, |s| {
@@ -2257,7 +2257,7 @@ impl Project {
         Ok(did)
     }
 
-    /// Stellt die zuletzt zurückgenommene Änderung wieder her.
+    /// Restores the most recently undone change.
     pub fn edit_redo(&self, id: String) -> Result<bool, ApiError> {
         let mut did = false;
         self.edit(&id, |s| {
@@ -2267,7 +2267,7 @@ impl Project {
         Ok(did)
     }
 
-    /// Zahl der möglichen Rückgängig- und Wiederholen-Schritte `(undo, redo)`.
+    /// Number of possible undo and redo steps `(undo, redo)`.
     pub fn edit_state(&self, id: String) -> Result<Vec<u64>, ApiError> {
         let sessions = self.sessions.lock().map_err(|_| ApiError::Internal {
             message: "Editing sessions are locked (previous error)".to_string(),
@@ -2278,7 +2278,7 @@ impl Project {
         })
     }
 
-    /// Richtet mindestens zwei Sequenzdokumente aus und speichert das Alignment. `backend` ist `builtin`, `mafft`, `muscle` oder `clustalo`.
+    /// Aligns at least two sequence documents and saves the alignment. `backend` is `builtin`, `mafft`, `muscle` or `clustalo`.
     pub fn align_documents(
         &self,
         ids: Vec<String>,
@@ -2319,7 +2319,7 @@ impl Project {
         )
     }
 
-    /// Alignment zur Anzeige.
+    /// Alignment for display.
     pub fn alignment(&self, id: String) -> Result<AlignmentDto, ApiError> {
         let d = self.alignment_doc(&id)?;
         Ok(AlignmentDto {
@@ -2333,8 +2333,8 @@ impl Project {
         })
     }
 
-    /// Gibson-/Überlappungs-Zusammenbau der Sequenzdokumente in der gegebenen Reihenfolge.
-    /// `method` ist `gibson`, `infusion` oder `slic`.
+    /// Gibson/overlap assembly of the sequence documents in the given order.
+    /// `method` is `gibson`, `infusion` or `slic`.
     pub fn assemble_overlap(
         &self,
         ids: Vec<String>,
@@ -2365,7 +2365,7 @@ impl Project {
         })
     }
 
-    /// Golden-Gate-Zusammenbau mit dem Enzym `enzyme` (z. B. `BsaI`).
+    /// Golden Gate assembly with the enzyme `enzyme` (e.g. `BsaI`).
     pub fn assemble_golden_gate(
         &self,
         ids: Vec<String>,
@@ -2386,7 +2386,7 @@ impl Project {
         })
     }
 
-    /// Offene Leserahmen (ORFs) mit mindestens `min_codons` Codons auf beiden Strängen (noch nicht ins Dokument eingetragen).
+    /// Open reading frames (ORFs) with at least `min_codons` codons on both strands (not yet added to the document).
     pub fn find_orfs(&self, id: String, min_codons: u64) -> Result<Vec<FeatureInfo>, ApiError> {
         let d = self.sequence_doc(&id)?;
         Ok(Self::feature_infos(find_orf_features(
@@ -2395,7 +2395,7 @@ impl Project {
         )?))
     }
 
-    /// Bekannte Sequenzmotive (Promotoren, Primerstellen, Tags …) auf beiden Strängen (noch nicht ins Dokument eingetragen).
+    /// Known sequence motifs (promoters, primer sites, tags …) on both strands (not yet added to the document).
     pub fn detect_common_features(&self, id: String) -> Result<Vec<FeatureInfo>, ApiError> {
         let d = self.sequence_doc(&id)?;
         Ok(Self::feature_infos(detect_features(
@@ -2404,7 +2404,7 @@ impl Project {
         )?))
     }
 
-    /// Trägt Features ins Dokument ein (als ein Rückgängig-Schritt je Feature).
+    /// Adds features to the document (one undo step per feature).
     pub fn add_features(&self, id: String, features: Vec<FeatureInfo>) -> Result<(), ApiError> {
         for f in features {
             let strand = match f.strand.as_str() {
@@ -2425,12 +2425,12 @@ impl Project {
         Ok(())
     }
 
-    /// Entfernt das Feature mit diesem Index (Rückgängig möglich).
+    /// Removes the feature with this index (undoable).
     pub fn remove_feature(&self, id: String, index: u64) -> Result<(), ApiError> {
         self.edit(&id, |s| s.remove_feature(index as usize))
     }
 
-    /// Sucht in NCBI Nucleotide (`nuccore`) und liefert Kurzinfos (braucht Internet und `curl`).
+    /// Searches NCBI Nucleotide (`nuccore`) and returns short info (needs internet and `curl`).
     pub fn ncbi_search(&self, term: String, max_results: u64) -> Result<NcbiSearchDto, ApiError> {
         let client = NcbiClient::new(cached_http());
         let (total, records) = client.search("nuccore", &term, max_results as usize)?;
@@ -2449,7 +2449,7 @@ impl Project {
         })
     }
 
-    /// Lädt einen NCBI-Datensatz (Kennung aus `ncbi_search`) als GenBank und legt ihn im Projekt an.
+    /// Loads an NCBI record (identifier from `ncbi_search`) as GenBank and creates it in the project.
     pub fn ncbi_import(&self, id: String) -> Result<Vec<DocumentInfoDto>, ApiError> {
         let text = NcbiClient::new(cached_http()).fetch_genbank(&id)?;
         let docs = io::genbank::parse(&text)?;
@@ -2484,7 +2484,7 @@ impl Project {
         Ok(infos)
     }
 
-    /// Das Protein, das ein Feature (z. B. CDS) codiert; ein abschließendes Stopp-Zeichen wird weggelassen.
+    /// The protein encoded by a feature (e.g. CDS); a trailing stop character is omitted.
     pub fn protein_of_feature(&self, id: String, feature_index: u64) -> Result<String, ApiError> {
         let cells = self.translate_feature(id, feature_index)?;
         let mut protein: String = cells.iter().map(|c| c.amino_acid.clone()).collect();
@@ -2494,7 +2494,7 @@ impl Project {
         Ok(protein)
     }
 
-    /// Eigenschaften einer Proteinsequenz.
+    /// Properties of a protein sequence.
     pub fn protein_properties(&self, protein: String) -> ProteinPropsDto {
         ProteinPropsDto {
             length: protein.chars().filter(|c| c.is_ascii_alphabetic()).count() as u64,
@@ -2508,7 +2508,7 @@ impl Project {
         }
     }
 
-    /// Verdau eines Proteins; `protease` ist `trypsin`, `lysc`, `argc`, `gluc`, `chymotrypsin` oder `cnbr`.
+    /// Digest of a protein; `protease` is `trypsin`, `lysc`, `argc`, `gluc`, `chymotrypsin` or `cnbr`.
     pub fn protein_digest(
         &self,
         protein: String,
@@ -2540,7 +2540,7 @@ impl Project {
             .collect())
     }
 
-    /// GC-Verlauf in Prozent mit Fenster `window` und Schritt `step`.
+    /// GC profile in percent with window `window` and step `step`.
     pub fn gc_profile(
         &self,
         id: String,
@@ -2557,7 +2557,7 @@ impl Project {
             .collect())
     }
 
-    /// CpG-Inseln nach Gardiner-Garden/Frommer (Fenster 200, GC ≥ 50 %, beobachtet/erwartet ≥ 0,6).
+    /// CpG islands after Gardiner-Garden/Frommer (window 200, GC ≥ 50 %, observed/expected ≥ 0.6).
     pub fn cpg_island_regions(&self, id: String) -> Result<Vec<RegionDto>, ApiError> {
         let d = self.sequence_doc(&id)?;
         Ok(cpg_islands(d.bases(), 200, 0.5, 0.6)?
@@ -2569,8 +2569,8 @@ impl Project {
             .collect())
     }
 
-    /// Schreibt ein Dokument in eine Datei. `format`: Sequenz `genbank`, `fasta`, `gff3` oder `svg` (Karte); Alignment `clustal`, `phylip` oder `fasta`;
-    /// Baum `newick` oder `svg`.
+    /// Writes a document to a file. `format`: sequence `genbank`, `fasta`, `gff3` or `svg` (map); alignment `clustal`, `phylip` or `fasta`;
+    /// tree `newick` or `svg`.
     pub fn export_document(
         &self,
         id: String,
@@ -2588,7 +2588,7 @@ impl Project {
             (Document::Sequence(d), "embl") => io::embl::format(d),
             (Document::Sequence(d), "gff3") => write_gff3(d),
             (Document::Sequence(d), "svg") => {
-                // Einzelschneider als Enzymstellen
+                // single cutters as enzyme sites
                 let model =
                     EnzymeMapModel::new(&EnzymeDb::standard(), d, EnzymeFilter::UniqueCutters);
                 let mut sites: Vec<(String, usize)> = model
@@ -2658,7 +2658,7 @@ impl Project {
         Ok(())
     }
 
-    /// Gleicht eine Sequenzierdatei (`.ab1`) mit der Sequenz des Dokuments ab (Qualität unter 20 wird gemeldet).
+    /// Checks a sequencing file (`.ab1`) against the document's sequence (quality below 20 is reported).
     pub fn check_read_file(&self, id: String, path: String) -> Result<ReadCheckDto, ApiError> {
         let d = self.sequence_doc(&id)?;
         let trace = read_trace(path.clone())?;
@@ -2702,8 +2702,8 @@ impl Project {
         })
     }
 
-    /// Sucht in UniProt (braucht Internet und `curl`); die Treffer kommen im gleichen Format wie bei NCBI (`accession` = UniProt-Zugang,
-    /// `id` = dieselbe Zugangsnummer, `organism`, `title` = Proteinname, `length` in Aminosäuren).
+    /// Searches UniProt (needs internet and `curl`); the hits come in the same format as for NCBI (`accession` = UniProt accession,
+    /// `id` = the same accession number, `organism`, `title` = protein name, `length` in amino acids).
     pub fn uniprot_search(
         &self,
         query: String,
@@ -2726,7 +2726,7 @@ impl Project {
         })
     }
 
-    /// Lädt einen UniProt-Eintrag als Proteinsequenz und legt ihn im Projekt an.
+    /// Loads a UniProt entry as a protein sequence and creates it in the project.
     pub fn uniprot_import(&self, accession: String) -> Result<Vec<DocumentInfoDto>, ApiError> {
         let json = cached_http().get(&entry_url(&accession))?;
         let entry = parse_entry(&json)?;
@@ -2752,7 +2752,7 @@ impl Project {
         Ok(infos)
     }
 
-    /// Lokale BLAST-Suche: die Sequenz `query_id` gegen die Sequenzen `subject_ids`; `program` ist `blastn` oder `blastp`.
+    /// Local BLAST search: the sequence `query_id` against the sequences `subject_ids`; `program` is `blastn` or `blastp`.
     pub fn blast_search(
         &self,
         query_id: String,
@@ -2782,7 +2782,7 @@ impl Project {
             .collect())
     }
 
-    /// BLAST über NCBI (`blastn`/`blastp`/…, Datenbank z. B. `nt`, `nr`). Dauert meist Minuten; blockiert bis zum Ergebnis.
+    /// BLAST via NCBI (`blastn`/`blastp`/…, database e.g. `nt`, `nr`). Usually takes minutes; blocks until the result.
     pub fn blast_remote(
         &self,
         query_id: String,
@@ -2808,8 +2808,8 @@ impl Project {
             .collect())
     }
 
-    /// Erkennt Einzelbasenvarianten: Reads aus einer SAM- oder BAM-Datei gegen die gewählte Sequenz (Standardwerte).
-    /// Schreibt die Varianten zusätzlich als VCF nach `vcf_path` (leer = nicht schreiben).
+    /// Detects single-base variants: reads from a SAM or BAM file against the chosen sequence (default values).
+    /// Additionally writes the variants as VCF to `vcf_path` (empty = do not write).
     pub fn call_variants(
         &self,
         reference_id: String,
@@ -2822,7 +2822,7 @@ impl Project {
         } else {
             io::sam::read(std::path::Path::new(&alignment_path))?.records
         };
-        // Referenzname: der erste Datensatz, der auf eine Referenz zeigt, sonst der Dokumentname
+        // reference name: the first record pointing to a reference, otherwise the document name
         let name = records
             .iter()
             .find(|r| r.reference != "*")
@@ -2845,7 +2845,7 @@ impl Project {
             .collect())
     }
 
-    /// Verknüpfte externe Dateien (leere `doc_id` = alle).
+    /// Linked external files (empty `doc_id` = all).
     pub fn external_files(&self, doc_id: String) -> Result<Vec<ExternalFileDto>, ApiError> {
         let files = self.lock()?.external_files(&doc_id)?;
         Ok(files
@@ -2857,7 +2857,7 @@ impl Project {
             .collect())
     }
 
-    /// Verknüpft eine Datei mit dem Projekt (Pfad wird nur vermerkt, die Datei nicht kopiert).
+    /// Links a file to the project (the path is only noted, the file is not copied).
     pub fn add_external_file(
         &self,
         path: String,
@@ -2871,13 +2871,13 @@ impl Project {
         ))
     }
 
-    /// Entfernt eine Verknüpfung (die Datei bleibt).
+    /// Removes a link (the file remains).
     pub fn remove_external_file(&self, id: String) -> Result<(), ApiError> {
         Ok(self.lock()?.remove_external_file(&id)?)
     }
 
-    /// Bildet Reads (FASTQ-Dateien, eine oder zwei) mit `minimap2` oder `bwa` auf die gewählte Sequenz ab. Die Referenz wird als FASTA
-    /// in `output_dir` geschrieben, das Ergebnis als SAM daneben und mit dem Dokument verknüpft.
+    /// Maps reads (FASTQ files, one or two) onto the chosen sequence with `minimap2` or `bwa`. The reference is written as FASTA
+    /// to `output_dir`, the result as SAM next to it and linked to the document.
     pub fn map_reads_to_reference(
         &self,
         reference_id: String,
@@ -2958,7 +2958,7 @@ impl Project {
         )?))
     }
 
-    /// Lesetiefe entlang der gewählten Sequenz aus einer SAM- oder BAM-Datei, auf höchstens `bins` Werte gemittelt.
+    /// Read depth along the chosen sequence from a SAM or BAM file, averaged to at most `bins` values.
     pub fn coverage_depth(
         &self,
         reference_id: String,
@@ -2994,7 +2994,7 @@ impl Project {
         Ok(out)
     }
 
-    /// Alle Ordner.
+    /// All folders.
     pub fn folders(&self) -> Result<Vec<FolderDto>, ApiError> {
         Ok(self
             .lock()?
@@ -3025,7 +3025,7 @@ impl Project {
         Ok(self.lock()?.delete_folder(&id, delete_contents)?)
     }
 
-    /// Verschiebt ein Dokument in einen Ordner (leer = Wurzel).
+    /// Moves a document into a folder (empty = root).
     pub fn move_document(&self, doc_id: String, folder_id: String) -> Result<(), ApiError> {
         Ok(self.lock()?.move_document(&doc_id, &folder_id)?)
     }
@@ -3064,7 +3064,7 @@ impl Project {
             .collect())
     }
 
-    /// Suche: `kind` ist `name`, `type`, `feature`, `metadata` (`text` = Schlüssel, `text2` = Wert) oder `motif`.
+    /// Search: `kind` is `name`, `type`, `feature`, `metadata` (`text` = key, `text2` = value) or `motif`.
     pub fn search_documents(
         &self,
         kind: String,
@@ -3087,7 +3087,7 @@ impl Project {
         Ok(found.into_iter().map(info_dto).collect())
     }
 
-    /// Gruppen von Sequenzdokumenten mit gleicher Sequenz (Dubletten).
+    /// Groups of sequence documents with identical sequence (duplicates).
     pub fn find_duplicates(&self) -> Result<Vec<Vec<DocumentInfoDto>>, ApiError> {
         Ok(project_search::find_sequence_duplicates(&*self.lock()?)?
             .into_iter()
@@ -3095,7 +3095,7 @@ impl Project {
             .collect())
     }
 
-    /// Neue Namen nach einem Muster (`{name}`, `{n}`, `{n:03}`, `{type}`) für die gewählten Dokumente anwenden.
+    /// Apply new names following a pattern (`{name}`, `{n}`, `{n:03}`, `{type}`) to the chosen documents.
     pub fn batch_rename(&self, ids: Vec<String>, pattern: String) -> Result<u64, ApiError> {
         let mut store = self.lock()?;
         let infos: Vec<snapious_core::store::DocumentInfo> = store
@@ -3118,7 +3118,7 @@ impl Project {
         Ok(n)
     }
 
-    /// Gespeicherte Versionen eines Dokuments, neueste zuerst.
+    /// Saved versions of a document, newest first.
     pub fn versions(&self, doc_id: String) -> Result<Vec<VersionDto>, ApiError> {
         Ok(self
             .lock()?
@@ -3137,7 +3137,7 @@ impl Project {
         Ok(self.lock()?.restore_version(&doc_id, version)?)
     }
 
-    /// Zeichnet aus dem Verlauf eines Dokuments einen Workflow auf und speichert ihn unter `name`. Rückgabe: Zahl der Schritte.
+    /// Records a workflow from a document's history and saves it under `name`. Returns: number of steps.
     pub fn record_workflow(&self, doc_id: String, name: String) -> Result<u64, ApiError> {
         let mut store = self.lock()?;
         let history = store.history_for(&doc_id)?;
@@ -3147,7 +3147,7 @@ impl Project {
         Ok(wf.steps.len() as u64)
     }
 
-    /// Text- und Berichtsexport einer Sequenz: `kind` ist `text` (Positionen, Features) oder `report` (Markdown).
+    /// Text and report export of a sequence: `kind` is `text` (positions, features) or `report` (Markdown).
     pub fn export_text(&self, id: String, kind: String) -> Result<String, ApiError> {
         let d = self.sequence_doc(&id)?;
         match kind.as_str() {
@@ -3190,7 +3190,7 @@ impl Project {
         }
     }
 
-    /// Faltet den Bereich `[start, end)` (Ende 0 = bis zum Ende) mit ViennaRNA (`RNAfold`); höchstens 5000 Basen.
+    /// Folds the range `[start, end)` (end 0 = to the end) with ViennaRNA (`RNAfold`); at most 5000 bases.
     pub fn fold_region(&self, id: String, start: u64, end: u64) -> Result<RnaFoldDto, ApiError> {
         let d = self.sequence_doc(&id)?;
         let len = d.len();
@@ -3229,7 +3229,7 @@ impl Project {
         })
     }
 
-    /// Sucht ein Motiv (IUPAC-Codes erlaubt) auf beiden Strängen; bei zirkulären Sequenzen auch über den Nullpunkt.
+    /// Searches a motif (IUPAC codes allowed) on both strands; for circular sequences also across the origin.
     pub fn find_motif_hits(&self, id: String, motif: String) -> Result<Vec<MotifHitDto>, ApiError> {
         let d = self.sequence_doc(&id)?;
         let circular = d.topology() == Topology::Circular;
@@ -3243,7 +3243,7 @@ impl Project {
             .collect())
     }
 
-    /// Entfernt Spalten mit Lückenanteil `>= threshold` (nur Spalten mit mindestens einer Lücke) und speichert das Ergebnis als neues Alignment.
+    /// Removes columns with gap fraction `>= threshold` (only columns with at least one gap) and saves the result as a new alignment.
     pub fn alignment_strip(&self, id: String, threshold: f64) -> Result<DocumentInfoDto, ApiError> {
         let a = self.alignment_doc(&id)?;
         let rows = strip_columns(a.rows(), threshold)?;
@@ -3261,7 +3261,7 @@ impl Project {
         )
     }
 
-    /// Mutagenese-Primer: ersetzt `[start, end)` durch `replacement` (leer = Deletion, `start == end` = Einfügung).
+    /// Mutagenesis primers: replaces `[start, end)` with `replacement` (empty = deletion, `start == end` = insertion).
     #[allow(clippy::too_many_arguments)]
     pub fn mutagenesis_primers(
         &self,
@@ -3292,7 +3292,7 @@ impl Project {
         })
     }
 
-    /// Tandem- und invertierte Wiederholungen einer Sequenz.
+    /// Tandem and inverted repeats of a sequence.
     pub fn find_repeats(
         &self,
         id: String,
@@ -3331,7 +3331,7 @@ impl Project {
         Ok(out)
     }
 
-    /// Varianten aller Alignment-Zeilen gegenüber der Zeile `reference`.
+    /// Variants of all alignment rows relative to row `reference`.
     pub fn alignment_variants(
         &self,
         id: String,
@@ -3357,7 +3357,7 @@ impl Project {
             .collect())
     }
 
-    /// Setzt Sequenzdokumente zu Contigs zusammen und speichert jeden Contig als neues Dokument.
+    /// Assembles sequence documents into contigs and saves each contig as a new document.
     pub fn assemble_reads(
         &self,
         ids: Vec<String>,
@@ -3388,7 +3388,7 @@ impl Project {
         Ok(out)
     }
 
-    /// Bildet Reads (Sequenzdokumente) lückenlos auf die Referenz ab.
+    /// Maps reads (sequence documents) onto the reference without gaps.
     pub fn map_reads_to(
         &self,
         reference_id: String,
@@ -3412,7 +3412,7 @@ impl Project {
             .collect())
     }
 
-    /// Dotplot zweier Sequenzen als Diagonalen (Punkte werden zu Linien zusammengefasst).
+    /// Dot plot of two sequences as diagonals (points are merged into lines).
     pub fn dotplot(
         &self,
         id_a: String,
@@ -3440,7 +3440,7 @@ impl Project {
             .collect())
     }
 
-    /// Identitätsmatrix (Prozent) der Zeilen eines Alignments.
+    /// Identity matrix (percent) of the rows of an alignment.
     pub fn alignment_identity_matrix(&self, id: String) -> Result<IdentityMatrixDto, ApiError> {
         let a = self.alignment_doc(&id)?;
         let m = identity_matrix_percent(a.rows())?;
@@ -3450,7 +3450,7 @@ impl Project {
         })
     }
 
-    /// Sequenzlogo eines Alignments (Schneider & Stephens, mit Kleinprobenkorrektur).
+    /// Sequence logo of an alignment (Schneider & Stephens, with small-sample correction).
     pub fn alignment_logo(&self, id: String) -> Result<Vec<LogoColumnDto>, ApiError> {
         let a = self.alignment_doc(&id)?;
         let protein = format!("{:?}", a.seq_type()) == "Protein";
@@ -3463,7 +3463,7 @@ impl Project {
             .collect())
     }
 
-    /// Konsenssequenz eines Alignments (Schwelle 0,5, Lücken ohne Gaps) als neues Sequenzdokument.
+    /// Consensus sequence of an alignment (threshold 0.5, gaps ignored) as a new sequence document.
     pub fn alignment_consensus(&self, id: String) -> Result<DocumentInfoDto, ApiError> {
         let a = self.alignment_doc(&id)?;
         let text: String = consensus(a.rows(), 0.5, true)?
@@ -3485,7 +3485,7 @@ impl Project {
         )
     }
 
-    /// Alle Operationen, die in Workflows vorkommen dürfen.
+    /// All operations that may occur in workflows.
     pub fn operation_list(&self) -> Vec<OperationInfoDto> {
         registry_with_plugins()
             .all()
@@ -3497,7 +3497,7 @@ impl Project {
             .collect()
     }
 
-    /// Alle gespeicherten Workflows.
+    /// All saved workflows.
     pub fn workflow_list(&self) -> Result<Vec<WorkflowDto>, ApiError> {
         Ok(self
             .lock()?
@@ -3515,7 +3515,7 @@ impl Project {
             .collect())
     }
 
-    /// Prüft und speichert einen Workflow (JSON); der Name kommt aus dem JSON.
+    /// Validates and saves a workflow (JSON); the name comes from the JSON.
     pub fn workflow_save(&self, json: String) -> Result<String, ApiError> {
         let wf = Workflow::from_json(&json)?;
         wf.validate(&registry_with_plugins())?;
@@ -3528,8 +3528,8 @@ impl Project {
         Ok(())
     }
 
-    /// Führt einen gespeicherten Workflow aus. Braucht der Workflow eine Eingabe, läuft er für jedes der `input_ids` einzeln
-    /// (Stapel); sonst bilden alle `input_ids` zusammen die Eingaben eines einzigen Laufs. Ergebnisse werden als neue Dokumente gespeichert.
+    /// Runs a saved workflow. If the workflow needs one input, it runs individually for each of the `input_ids`
+    /// (batch); otherwise all `input_ids` together form the inputs of a single run. Results are saved as new documents.
     pub fn workflow_run(
         &self,
         name: String,
@@ -3591,9 +3591,9 @@ impl Project {
         })
     }
 
-    /// Liest Annotationen (GFF3 oder BED, nach der Dateiendung `.gff`, `.gff3`, `.bed`) und trägt sie als Features ins Dokument ein.
-    /// Die Kennung der Datei (`seqid`/`chrom`) muss dem Dokumentnamen (Leerzeichen als `_`) oder dem Accession-Metadatum entsprechen;
-    /// gibt es nur eine Kennung in der Datei, wird sie genommen. Rückgabe: Zahl der eingetragenen Features.
+    /// Reads annotations (GFF3 or BED, by file extension `.gff`, `.gff3`, `.bed`) and adds them as features to the document.
+    /// The file's identifier (`seqid`/`chrom`) must match the document name (spaces as `_`) or the accession metadata;
+    /// if there is only one identifier in the file, it is used. Returns: number of features added.
     pub fn import_annotations(&self, id: String, path: String) -> Result<u64, ApiError> {
         let d = self.sequence_doc(&id)?;
         let text = std::fs::read_to_string(&path).map_err(|e| ApiError::Io {
@@ -3660,7 +3660,7 @@ impl Project {
     }
 }
 
-/// Banden einer Gelspur für Fragmentgrößen.
+/// Bands of a gel lane for fragment sizes.
 #[uniffi::export]
 pub fn gel_lane(sizes: Vec<u64>, agarose_percent: f64, mass_ng: f64) -> Vec<GelBandDto> {
     let sizes: Vec<usize> = sizes.iter().map(|s| *s as usize).collect();
@@ -3676,7 +3676,7 @@ pub fn gel_lane(sizes: Vec<u64>, agarose_percent: f64, mass_ng: f64) -> Vec<GelB
         .collect()
 }
 
-/// Abruf mit Zwischenspeicher (24 Stunden) unter `~/.snapious/cache` (sonst im Temp-Ordner).
+/// Retrieval with cache (24 hours) under `~/.snapious/cache` (otherwise in the temp folder).
 fn cached_http() -> CachingHttp<CurlClient, SystemClock> {
     let dir = std::env::var_os("HOME")
         .map(|h| std::path::PathBuf::from(h).join(".snapious").join("cache"))
@@ -3684,7 +3684,7 @@ fn cached_http() -> CachingHttp<CurlClient, SystemClock> {
     CachingHttp::new(CurlClient, dir, 24 * 3600, SystemClock)
 }
 
-/// BLAST-Transport über `curl`.
+/// BLAST transport via `curl`.
 struct CurlTransport;
 
 impl BlastTransport for CurlTransport {
@@ -3716,7 +3716,7 @@ impl BlastTransport for CurlTransport {
     }
 }
 
-/// Wartet wirklich.
+/// Really waits.
 struct ThreadSleeper;
 
 impl Sleeper for ThreadSleeper {
@@ -3725,7 +3725,7 @@ impl Sleeper for ThreadSleeper {
     }
 }
 
-/// Eine Kette einer PDB-Struktur: Sequenz und C-alpha-Koordinaten (`ca` = x, y, z hintereinander).
+/// A chain of a PDB structure: sequence and C-alpha coordinates (`ca` = x, y, z consecutively).
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct PdbChainDto {
     pub id: String,
@@ -3733,20 +3733,20 @@ pub struct PdbChainDto {
     pub ca: Vec<f64>,
 }
 
-/// Eine eingelesene PDB-Datei.
+/// A parsed PDB file.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct PdbDto {
     pub atom_count: u64,
     pub chains: Vec<PdbChainDto>,
-    /// Alle Atome als x, y, z (nur bei Molekülen aus XYZ/MOL; bei PDB leer).
+    /// All atoms as x, y, z (only for molecules from XYZ/MOL; empty for PDB).
     pub atoms: Vec<f64>,
-    /// Elementsymbole zu `atoms` (ein Eintrag je Atom).
+    /// Element symbols for `atoms` (one entry per atom).
     pub elements: Vec<String>,
-    /// Bindungen als Paare von Atomindizes (0-basiert) in `atoms`.
+    /// Bonds as pairs of atom indices (0-based) into `atoms`.
     pub bonds: Vec<u64>,
 }
 
-/// Liest eine PDB-Datei (Ketten, Sequenzen, C-alpha-Spur) für die 3D-Ansicht.
+/// Reads a PDB file (chains, sequences, C-alpha trace) for the 3D view.
 #[uniffi::export]
 pub fn pdb_open(path: String) -> Result<PdbDto, ApiError> {
     let text = std::fs::read_to_string(&path).map_err(|e| ApiError::Io {
@@ -3785,7 +3785,7 @@ pub fn pdb_open(path: String) -> Result<PdbDto, ApiError> {
     })
 }
 
-/// Öffnet eine Struktur- oder Moleküldatei für die 3D-Ansicht: `.pdb`, `.xyz` oder `.mol`/`.sdf` (erstes Molekül).
+/// Opens a structure or molecule file for the 3D view: `.pdb`, `.xyz` or `.mol`/`.sdf` (first molecule).
 #[uniffi::export]
 pub fn structure_open(path: String) -> Result<PdbDto, ApiError> {
     let lower = path.to_lowercase();
@@ -3859,7 +3859,7 @@ pub fn structure_open(path: String) -> Result<PdbDto, ApiError> {
     })
 }
 
-/// Ordner im Projekt.
+/// Folder in the project.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct FolderDto {
     pub id: String,
@@ -3867,7 +3867,7 @@ pub struct FolderDto {
     pub parent_id: String,
 }
 
-/// Eine gespeicherte Version eines Dokuments.
+/// A saved version of a document.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct VersionDto {
     pub version: i64,
@@ -3875,7 +3875,7 @@ pub struct VersionDto {
     pub summary: String,
 }
 
-/// Programmeinstellungen (Schlüssel wird in Meldungen nie ausgegeben).
+/// Program settings (the key is never printed in messages).
 #[derive(Clone, PartialEq, uniffi::Record)]
 pub struct SettingsDto {
     pub ncbi_email: String,
@@ -3900,7 +3900,7 @@ fn data_dir() -> std::path::PathBuf {
         .unwrap_or_else(|| std::env::temp_dir().join("snapious"))
 }
 
-/// Alle eingebauten Operationen plus die Operationen der Plugins unter `~/.snapious/plugins`.
+/// All built-in operations plus the operations of the plugins under `~/.snapious/plugins`.
 fn registry_with_plugins() -> OperationRegistry {
     let mut r = OperationRegistry::with_builtins();
     let (plugins, _warnings) = discover(&data_dir().join("plugins"));
@@ -3908,7 +3908,7 @@ fn registry_with_plugins() -> OperationRegistry {
     r
 }
 
-/// Rückübersetzung eines Proteintextes: `preferred` (häufigste E.-coli-Codons) oder `degenerate` (IUPAC-Codes).
+/// Back-translation of a protein text: `preferred` (most frequent E. coli codons) or `degenerate` (IUPAC codes).
 #[uniffi::export]
 pub fn back_translate(protein: String, mode: String) -> Result<String, ApiError> {
     Ok(match mode.as_str() {
@@ -3921,7 +3921,7 @@ fn enzyme_sets_path() -> std::path::PathBuf {
     data_dir().join("enzyme_sets.json")
 }
 
-/// Alle Enzymsets: eingebaute und eigene (aus `~/.snapious/enzyme_sets.json`).
+/// All enzyme sets: built-in and custom (from `~/.snapious/enzyme_sets.json`).
 #[uniffi::export]
 pub fn enzyme_sets() -> Vec<EnzymeSetDto> {
     let mut out: Vec<EnzymeSetDto> = builtin_sets()
@@ -3946,8 +3946,8 @@ pub fn enzyme_sets() -> Vec<EnzymeSetDto> {
     out
 }
 
-/// Speichert ein eigenes Enzymset (Name und Enzyme als Text, getrennt durch Komma, Semikolon oder Leerzeichen).
-/// Ein vorhandenes eigenes Set gleichen Namens wird ersetzt; eingebaute Namen sind nicht erlaubt.
+/// Saves a custom enzyme set (name and enzymes as text, separated by comma, semicolon or space).
+/// An existing custom set of the same name is replaced; built-in names are not allowed.
 #[uniffi::export]
 pub fn enzyme_set_save(name: String, enzymes: String) -> Result<(), ApiError> {
     let name = name.trim().to_string();
@@ -3987,7 +3987,7 @@ pub fn enzyme_set_save(name: String, enzymes: String) -> Result<(), ApiError> {
     Ok(())
 }
 
-/// Löscht ein eigenes Enzymset (eingebaute lassen sich nicht löschen).
+/// Deletes a custom enzyme set (built-in ones cannot be deleted).
 #[uniffi::export]
 pub fn enzyme_set_delete(name: String) -> Result<(), ApiError> {
     let path = enzyme_sets_path();
@@ -4006,7 +4006,7 @@ pub fn enzyme_set_delete(name: String) -> Result<(), ApiError> {
     Ok(())
 }
 
-/// Erste Zeilen einer Tabelle (CSV/TSV) zur Vorschau.
+/// First lines of a table (CSV/TSV) for preview.
 #[uniffi::export]
 pub fn table_preview(
     path: String,
@@ -4022,9 +4022,9 @@ pub fn table_preview(
         .collect())
 }
 
-/// Teilt eine FASTQ-Datei nach Barcodes am Anfang der Reads. `barcodes` enthält je Zeile `Name,Sequenz` (oder mit Leerzeichen/Tab
-/// getrennt; Zeilen mit `#` und leere Zeilen werden übersprungen). Je Barcode entsteht `<ordner>/<name>.fastq` (Read ohne
-/// Barcode samt gekürzter Qualität), nicht zugeordnete Reads landen in `unassigned.fastq`.
+/// Splits a FASTQ file by barcodes at the start of the reads. `barcodes` contains one `name,sequence` per line (or separated by space/tab;
+/// lines with `#` and empty lines are skipped). Each barcode yields `<folder>/<name>.fastq` (read without the
+/// barcode, with correspondingly trimmed quality), unassigned reads end up in `unassigned.fastq`.
 #[uniffi::export]
 pub fn split_fastq_by_barcode(
     path: String,
@@ -4137,7 +4137,7 @@ pub fn split_fastq_by_barcode(
     Ok(out)
 }
 
-/// Wandelt eine FASTQ-Datei in FASTA und QUAL (Phred+33) um. Gibt die Zahl der Reads zurück.
+/// Converts a FASTQ file to FASTA and QUAL (Phred+33). Returns the number of reads.
 #[uniffi::export]
 pub fn fastq_to_fasta_qual(
     path: String,
@@ -4162,7 +4162,7 @@ pub fn fastq_to_fasta_qual(
     Ok(quals.len() as u64)
 }
 
-/// Expressionswerte aus einer SAM- oder BAM-Datei: Reads je Referenz (nur zugeordnete, keine sekundären), RPKM und TPM.
+/// Expression values from a SAM or BAM file: reads per reference (mapped only, no secondary), RPKM and TPM.
 #[uniffi::export]
 pub fn expression_from_alignment(path: String) -> Result<Vec<ExpressionRowDto>, ApiError> {
     let p = Path::new(&path);
@@ -4211,7 +4211,7 @@ pub fn expression_from_alignment(path: String) -> Result<Vec<ExpressionRowDto>, 
         .collect())
 }
 
-/// Sortiert die Befehle nach Treffer für `query` (unscharfe Suche über Titel und Stichwörter) und gibt die Indizes zurück.
+/// Sorts the commands by match for `query` (fuzzy search over title and keywords) and returns the indices.
 #[uniffi::export]
 pub fn command_rank(items: Vec<CommandItemDto>, query: String) -> Vec<u64> {
     let commands: Vec<Command> = items
@@ -4228,7 +4228,7 @@ pub fn command_rank(items: Vec<CommandItemDto>, query: String) -> Vec<u64> {
         .collect()
 }
 
-/// Übersetzt eine technische Fehlermeldung in Titel und Lösungsvorschlag.
+/// Translates a technical error message into a title and suggested solution.
 #[uniffi::export]
 pub fn friendly_error(message: String) -> ErrorHelpDto {
     let h = core_friendly_error(&message);
@@ -4238,13 +4238,13 @@ pub fn friendly_error(message: String) -> ErrorHelpDto {
     }
 }
 
-/// Setzt `path` an den Anfang der Liste der zuletzt geöffneten Projekte (höchstens `max` Einträge).
+/// Puts `path` at the front of the list of recently opened projects (at most `max` entries).
 #[uniffi::export]
 pub fn recent_add(list: Vec<String>, path: String, max: u64) -> Vec<String> {
     add_recent(&list, &path, max as usize)
 }
 
-/// Doppelt belegte Tastenkürzel: Paare von Indizes in `keys` (Tastenangaben wie `cmd+shift+k`).
+/// Duplicate keyboard shortcuts: pairs of indices into `keys` (key notations like `cmd+shift+k`).
 #[uniffi::export]
 pub fn shortcut_conflict_pairs(keys: Vec<String>) -> Vec<Vec<u64>> {
     let list: Vec<Shortcut> = keys
@@ -4260,7 +4260,7 @@ pub fn shortcut_conflict_pairs(keys: Vec<String>) -> Vec<Vec<u64>> {
         .collect()
 }
 
-/// Schwachstellen eines Proteintextes (z. B. aus einem CDS-Feature übersetzt).
+/// Liabilities of a protein text (e.g. translated from a CDS feature).
 #[uniffi::export]
 pub fn protein_liabilities_text(protein: String) -> Vec<LiabilityDto> {
     find_liabilities(&protein)
@@ -4274,13 +4274,13 @@ pub fn protein_liabilities_text(protein: String) -> Vec<LiabilityDto> {
         .collect()
 }
 
-/// Wandelt `cmd+shift+k` in die Schreibweise `⇧⌘K` um.
+/// Converts `cmd+shift+k` into the notation `⇧⌘K`.
 #[uniffi::export]
 pub fn format_shortcut(keys: String) -> String {
     core_format_shortcut(&keys)
 }
 
-/// Liest eine BLAST-Tabelle (`-outfmt 6`) für die Anzeige.
+/// Reads a BLAST table (`-outfmt 6`) for display.
 #[uniffi::export]
 pub fn blast_table_open(path: String) -> Result<Vec<BlastHitDto>, ApiError> {
     let text = std::fs::read_to_string(&path).map_err(|e| ApiError::Io {
@@ -4303,19 +4303,19 @@ pub fn blast_table_open(path: String) -> Result<Vec<BlastHitDto>, ApiError> {
         .collect())
 }
 
-/// Angepasste p-Werte nach Benjamini-Hochberg (Mehrfachtest-Korrektur).
+/// Adjusted p-values by Benjamini-Hochberg (multiple-testing correction).
 #[uniffi::export]
 pub fn p_adjust_bh(p: Vec<f64>) -> Vec<f64> {
     benjamini_hochberg(&p)
 }
 
-/// Größenfaktoren (Median der Verhältnisse) für `counts[gen][probe]`.
+/// Size factors (median of ratios) for `counts[gene][sample]`.
 #[uniffi::export]
 pub fn size_factors(counts: Vec<Vec<f64>>) -> Vec<f64> {
     median_of_ratios(&counts)
 }
 
-/// Fragmentlängen gepaarter Reads aus einer SAM/BAM-Datei.
+/// Fragment lengths of paired reads from a SAM/BAM file.
 #[uniffi::export]
 pub fn insert_size_report(path: String) -> Result<InsertReportDto, ApiError> {
     let p = Path::new(&path);
@@ -4342,7 +4342,7 @@ pub fn insert_size_report(path: String) -> Result<InsertReportDto, ApiError> {
     })
 }
 
-/// Häufigste k-mer der ersten `max_reads` Reads einer FASTQ-Datei (zum Erkennen von Adaptern und Verunreinigungen).
+/// Most frequent k-mers of the first `max_reads` reads of a FASTQ file (for detecting adapters and contaminants).
 #[uniffi::export]
 pub fn fastq_top_kmers(
     path: String,
@@ -4364,8 +4364,8 @@ pub fn fastq_top_kmers(
         .collect())
 }
 
-/// Reihenfolge der Zeilen der Feature-Tabelle nach Filter und Sortierung. `type_filter` leer = alle Typen, `text` = Teil des Namens.
-/// `column`: `type`, `name`, `start`, `end` oder `length`.
+/// Order of the rows of the feature table after filtering and sorting. `type_filter` empty = all types, `text` = part of the name.
+/// `column`: `type`, `name`, `start`, `end` or `length`.
 #[uniffi::export]
 pub fn feature_table_order(
     features: Vec<FeatureInfo>,
@@ -4397,7 +4397,7 @@ pub fn feature_table_order(
         .collect()
 }
 
-/// Liest die Einstellungen aus `~/.snapious/settings.json`.
+/// Reads the settings from `~/.snapious/settings.json`.
 #[uniffi::export]
 pub fn settings_load() -> SettingsDto {
     let s = load_settings(&data_dir().join("settings.json"));
@@ -4410,7 +4410,7 @@ pub fn settings_load() -> SettingsDto {
     }
 }
 
-/// Speichert die Einstellungen (Datei nur für den Besitzer lesbar).
+/// Saves the settings (file readable by the owner only).
 #[uniffi::export]
 pub fn settings_save(s: SettingsDto) -> Result<(), ApiError> {
     let path = data_dir().join("settings.json");
@@ -4423,7 +4423,7 @@ pub fn settings_save(s: SettingsDto) -> Result<(), ApiError> {
     Ok(save_settings(&path, &current)?)
 }
 
-/// Namen der gefundenen Plugins mit ihren Operationen und die Warnungen des Ladens.
+/// Names of the plugins found with their operations, and the warnings from loading.
 #[uniffi::export]
 pub fn plugins_list() -> Vec<String> {
     let (plugins, warnings) = discover(&data_dir().join("plugins"));
@@ -4446,7 +4446,7 @@ pub fn plugins_list() -> Vec<String> {
     out
 }
 
-/// Ordner der Plugins (wird bei Bedarf angelegt).
+/// Folder of the plugins (created if needed).
 #[uniffi::export]
 pub fn plugins_directory() -> String {
     let d = data_dir().join("plugins");
@@ -4454,7 +4454,7 @@ pub fn plugins_directory() -> String {
     d.to_string_lossy().to_string()
 }
 
-/// Eine mit dem Projekt verknüpfte externe Datei.
+/// An external file linked to the project.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct ExternalFileDto {
     pub id: String,
@@ -4474,7 +4474,7 @@ fn external_dto(f: snapious_core::store::ExternalFile) -> ExternalFileDto {
     }
 }
 
-/// Ergebnis des Qualitätsberichts einer FASTQ-Datei.
+/// Result of the quality report of a FASTQ file.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct QcDto {
     pub reads: u64,
@@ -4491,7 +4491,7 @@ pub struct QcDto {
     pub overrepresented: Vec<String>,
 }
 
-/// Statistik eines Trimming-Laufs.
+/// Statistics of a trimming run.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct TrimStatsDto {
     pub input_reads: u64,
@@ -4500,7 +4500,7 @@ pub struct TrimStatsDto {
     pub adapters_found: u64,
 }
 
-/// Eine erkannte Einzelbasenvariante.
+/// A detected single-base variant.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct SnvDto {
     pub position: u64,
@@ -4511,7 +4511,7 @@ pub struct SnvDto {
     pub quality: f64,
 }
 
-/// Qualitätsbericht einer FASTQ-Datei (auch `.gz`). Liest höchstens `max_reads` Reads (0 = alle).
+/// Quality report of a FASTQ file (also `.gz`). Reads at most `max_reads` reads (0 = all).
 #[uniffi::export]
 pub fn qc_fastq(path: String, max_reads: u64) -> Result<QcDto, ApiError> {
     let reader = open_fastq(std::path::Path::new(&path))?;
@@ -4543,7 +4543,7 @@ pub fn qc_fastq(path: String, max_reads: u64) -> Result<QcDto, ApiError> {
     })
 }
 
-/// Trimmt eine FASTQ-Datei (Standardeinstellungen) und schreibt das Ergebnis nach `output` (Klartext-FASTQ).
+/// Trims a FASTQ file (default settings) and writes the result to `output` (plain-text FASTQ).
 #[uniffi::export]
 pub fn trim_fastq(input: String, output: String) -> Result<TrimStatsDto, ApiError> {
     let mut reads = Vec::new();
@@ -4560,7 +4560,7 @@ pub fn trim_fastq(input: String, output: String) -> Result<TrimStatsDto, ApiErro
     })
 }
 
-/// Banden eines Größenstandards: `generic_1kb` oder `generic_100bp`.
+/// Bands of a size standard: `generic_1kb` or `generic_100bp`.
 #[uniffi::export]
 pub fn gel_ladder(name: String, agarose_percent: f64) -> Result<Vec<GelBandDto>, ApiError> {
     let ladder = match name.as_str() {
@@ -4584,7 +4584,7 @@ pub fn gel_ladder(name: String, agarose_percent: f64) -> Result<Vec<GelBandDto>,
         .collect())
 }
 
-/// Liest eine Sequenzierdatei (`.ab1` im ABIF-Format oder `.scf` Version 3): Basen, Qualitäten, Peakpositionen und Spuren.
+/// Reads a sequencing file (`.ab1` in ABIF format or `.scf` version 3): bases, qualities, peak positions and traces.
 #[uniffi::export]
 pub fn read_trace(path: String) -> Result<TraceDto, ApiError> {
     let bytes = std::fs::read(&path).map_err(|e| ApiError::Io {
@@ -4623,7 +4623,7 @@ pub fn read_trace(path: String) -> Result<TraceDto, ApiError> {
     })
 }
 
-/// Version des Kerns (zum Prüfen, ob die Bibliothek geladen ist).
+/// Version of the core (to check whether the library is loaded).
 #[uniffi::export]
 pub fn core_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
@@ -5004,7 +5004,7 @@ mod tests {
             .concatenate_documents(vec![a[0].id.clone(), prot[0].id.clone()], "x".into(), false)
             .is_err());
 
-        // Stille Änderungen im CDS CTGAAA (Leu Lys)
+        // silent changes in the CDS CTGAAA (Leu Lys)
         let s = p
             .create_sequence("cds".into(), "GAGTTC".into(), "DNA".into(), false)
             .unwrap();
@@ -5047,7 +5047,7 @@ mod tests {
             .unwrap()
             .is_empty());
 
-        // Annotationen vergleichen
+        // compare annotations
         p.add_features(
             a[0].id.clone(),
             vec![FeatureInfo {
@@ -5082,7 +5082,7 @@ mod tests {
             .unwrap();
         assert_eq!((ov.common_a, ov.common_b), (vec![0], vec![0]));
 
-        // Alignment: Spalten entfernen und Varianten anwenden
+        // alignment: remove columns and apply variants
         let x = p
             .create_sequence("x".into(), "ACGTAC".into(), "DNA".into(), false)
             .unwrap();
@@ -5116,7 +5116,7 @@ mod tests {
     fn formate_tabellen_und_ngs() {
         let (dir, p) = projekt();
         let d = dir.path();
-        // MEGA und PIR importieren
+        // import MEGA and PIR
         std::fs::write(d.join("a.meg"), "#mega\n!Title t;\n#a\nACGT\n#b\nAC-T\n").unwrap();
         let al = p
             .import_file(d.join("a.meg").to_string_lossy().to_string())
@@ -5136,7 +5136,7 @@ mod tests {
             .unwrap();
         assert_eq!(p.summary(pi[0].id.clone()).unwrap().seq_type, "PROTEIN");
 
-        // Tabelle
+        // table
         std::fs::write(d.join("t.csv"), "Name,Seq\na,ACGT\n\"b c\",ttgg\n").unwrap();
         let prev =
             table_preview(d.join("t.csv").to_string_lossy().to_string(), ",".into(), 2).unwrap();
@@ -5177,7 +5177,7 @@ mod tests {
             ]
         );
 
-        // Features als CSV
+        // features as CSV
         p.add_features(
             t[0].id.clone(),
             vec![FeatureInfo {
@@ -5194,13 +5194,13 @@ mod tests {
                 .unwrap(),
             "Typ,Name,Start,Ende,Strang,Länge\ngene,g,1,3,+,3\n"
         );
-        // Schnitt nach Annotation
+        // cut by annotation
         let fr = p
             .fragments_by_annotation(t[0].id.clone(), "gene".into(), true, true)
             .unwrap();
         assert_eq!(fr.iter().map(|f| f.length).collect::<Vec<_>>(), vec![3, 1]);
 
-        // Reads paaren
+        // pair reads
         let r1 = p
             .create_sequence("r1/1".into(), "ACGT".into(), "DNA".into(), false)
             .unwrap();
@@ -5216,7 +5216,7 @@ mod tests {
         );
         assert_eq!(rep.unpaired, vec!["a".to_string()]);
 
-        // Barcodes und QUAL
+        // barcodes and QUAL
         let fq = d.join("r.fastq");
         std::fs::write(
             &fq,
@@ -5256,13 +5256,13 @@ mod tests {
             .unwrap()
             .starts_with(">x1\n40 40 40 40 41 41 41 41\n"));
 
-        // Expression
+        // expression
         std::fs::write(d.join("e.sam"), "@SQ\tSN:g1\tLN:1000\n@SQ\tSN:g2\tLN:2000\nq1\t0\tg1\t1\t60\t4M\t*\t0\t0\tACGT\tIIII\nq2\t0\tg2\t1\t60\t4M\t*\t0\t0\tACGT\tIIII\nq3\t0\tg2\t5\t60\t4M\t*\t0\t0\tACGT\tIIII\nq4\t4\t*\t0\t0\t*\t*\t0\t0\tACGT\tIIII\n").unwrap();
         let ex = expression_from_alignment(d.join("e.sam").to_string_lossy().to_string()).unwrap();
         assert_eq!((ex[0].count, ex[1].count), (1, 2));
         assert!((ex[0].tpm + ex[1].tpm - 1e6).abs() < 1e-3);
 
-        // Struktur
+        // structure
         std::fs::write(
             d.join("w.xyz"),
             "3\nwater\nO 0 0 0\nH 0.757 0.586 0\nH -0.757 0.586 0\n",
@@ -5279,7 +5279,7 @@ mod tests {
     fn auswertungen_und_neue_formate() {
         let (dir, p) = projekt();
         let d = dir.path();
-        // Import: csfasta
+        // import: csfasta
         std::fs::write(d.join("a.csfasta"), "# x\n>r1\nT0123\n").unwrap();
         let c = p
             .import_file(d.join("a.csfasta").to_string_lossy().to_string())
@@ -5290,7 +5290,7 @@ mod tests {
         let st = structure_open(d.join("w.cml").to_string_lossy().to_string()).unwrap();
         assert_eq!((st.elements.len(), st.bonds.len()), (2, 2));
 
-        // Alignment: Ähnlichkeit und Chimäre
+        // alignment: similarity and chimera
         let eltern_a = p
             .create_sequence("A".into(), "AAAAAAAA".into(), "DNA".into(), false)
             .unwrap();
@@ -5314,7 +5314,7 @@ mod tests {
         let ident = p.alignment_similarity(aln.id.clone(), 1).unwrap();
         assert_eq!(ident.len(), 8);
 
-        // Extrahieren und Feature-Suche
+        // extract and feature search
         let s = p
             .create_sequence("s".into(), "AACCGGTTAACC".into(), "DNA".into(), false)
             .unwrap();
@@ -5349,7 +5349,7 @@ mod tests {
     fn runde_vier_funktionen() {
         let (dir, p) = projekt();
         let d = dir.path();
-        // Schwachstellen und Proteinwerte
+        // liabilities and protein values
         let pr = p
             .create_sequence("P1".into(), "ANSTGDSMWC".into(), "PROTEIN".into(), false)
             .unwrap();
@@ -5361,7 +5361,7 @@ mod tests {
         );
         let props = p.protein_properties("AVIL".into());
         assert!((props.aliphatic_index - 292.5).abs() < 1e-9);
-        // Domänentabelle
+        // domain table
         std::fs::write(
             d.join("h.tbl"),
             "# x\nPkinase PF00069.28 264 P1 - 10 1.2e-50 170.5 0.1 1 1 2.3e-54 4.5e-50 160.2 0.0 1 262 2 8 1 10 0.95 Protein kinase domain\n",
@@ -5387,13 +5387,13 @@ mod tests {
                 "interpro".into()
             )
             .is_err());
-        // einfache Faltung
+        // simple folding
         let rna = p
             .create_sequence("r".into(), "GGGAAACCC".into(), "DNA".into(), false)
             .unwrap();
         let f = p.simple_fold(rna[0].id.clone(), 0, 0).unwrap();
         assert_eq!((f.pairs, f.structure.as_str()), (3, "(((...)))"));
-        // BLAST-Tabelle, Kürzel, Statistik
+        // BLAST table, shortcuts, statistics
         std::fs::write(
             d.join("b.tsv"),
             "q1\ts1\t99.5\t200\t1\t0\t1\t200\t1000\t1199\t1e-100\t350.5\n",
@@ -5408,7 +5408,7 @@ mod tests {
         );
         let sf = size_factors(vec![vec![10.0, 20.0], vec![100.0, 200.0]]);
         assert!((sf[0] - 0.5_f64.sqrt()).abs() < 1e-9);
-        // Abdeckung, Duplikate, Fragmentlängen
+        // coverage, duplicates, fragment lengths
         let refseq = p
             .create_sequence("chr".into(), "ACGTACGTAC".repeat(3), "DNA".into(), false)
             .unwrap();
@@ -5436,7 +5436,7 @@ mod tests {
         let km =
             fastq_top_kmers(d.join("k.fastq").to_string_lossy().to_string(), 4, 1, 100).unwrap();
         assert_eq!((km[0].kmer.as_str(), km[0].count), ("ACGT", 3));
-        // Feature-Tabelle
+        // feature table
         let feats = vec![
             FeatureInfo {
                 feature_type: "gene".into(),
@@ -5467,7 +5467,7 @@ mod tests {
             feature_table_order(feats, "gene".into(), String::new(), "start".into(), true),
             vec![0]
         );
-        // Struktur aus HIN
+        // structure from HIN
         std::fs::write(d.join("w.hin"), "forcefield mm+\nmol 1\natom 1 - O ** - 0.0 0.0 0.0 2 2 s 3 s\natom 2 - H ** - 0.757 0.586 0.0 1 1 s\natom 3 - H ** - -0.757 0.586 0.0 1 1 s\nendmol 1\n").unwrap();
         let st = structure_open(d.join("w.hin").to_string_lossy().to_string()).unwrap();
         assert_eq!((st.elements.len(), st.bonds.len()), (3, 4));
@@ -5493,7 +5493,7 @@ mod tests {
         let tp = p.clone_topo(v[0].id.clone(), cacc[0].id.clone()).unwrap();
         assert_eq!(p.bases(tp.id, 0, 100).unwrap(), "GGGGTTTTCACCATG");
 
-        // Gateway BP mit frei erfundenen Teststellen (nur zum Prüfen des Ablaufs)
+        // Gateway BP with made-up test sites (only to check the flow)
         let site = |n: &str, core: &str| GatewaySiteDto {
             name: n.into(),
             left_arm_b: "AAA".into(),
@@ -5551,7 +5551,7 @@ mod tests {
     #[test]
     fn ab1_wird_als_eigene_datei_abgelegt() {
         let (dir, p) = projekt();
-        // minimale ABIF-Datei mit PBAS und PCON, aufgebaut wie in den Kerntests
+        // minimal ABIF file with PBAS and PCON, built as in the core tests
         let bases = b"ACGTACGTACGTACGTACGTACGTACGTAC";
         let qual = vec![40u8; bases.len()];
         let mut file = vec![0u8; 128];
@@ -5574,7 +5574,7 @@ mod tests {
         }
         let dir_offset = file.len() as i32;
         file.extend_from_slice(&dir_bytes);
-        // Verzeichniseintrag des Verzeichnisses (Bytes 6..34)
+        // directory entry of the directory (bytes 6..34)
         let mut head = Vec::new();
         head.extend_from_slice(b"tdir");
         head.extend_from_slice(&1i32.to_be_bytes());
@@ -5600,7 +5600,7 @@ mod tests {
         assert!(std::path::Path::new(&files[0].path).exists());
         assert!(read_trace(files[0].path.clone()).is_ok());
 
-        // Projekt mit Ordner an einen anderen Ort kopieren: die Spur wird dort gefunden
+        // copy the project with its folder to another location: the trace is found there
         let neu = dir.path().join("neu");
         std::fs::create_dir_all(&neu).unwrap();
         let alt_projekt = std::path::PathBuf::from(p.path());
@@ -5671,7 +5671,7 @@ mod tests {
         let (_dir, p) = projekt();
         let id = p.import_file(mini_path()).unwrap()[0].id.clone();
         let big = u64::MAX;
-        // Bereiche und Positionen
+        // ranges and positions
         let _ = p.bases(id.clone(), 0, big);
         let _ = p.bases(id.clone(), big, 0);
         let _ = p.bases(id.clone(), 10, 5);
@@ -5712,7 +5712,7 @@ mod tests {
         let _ = p.record_workflow(id.clone(), String::new());
         let _ = p.external_files(String::new());
         let _ = p.remove_external_file("x".to_string());
-        // freie Funktionen
+        // free functions
         let _ = calc_ng_to_pmol(f64::NAN, 0);
         let _ = calc_ng_to_pmol(f64::INFINITY, u64::MAX);
         let _ = calc_ligation_insert_ng(1.0, 0, 0, 0.0);
@@ -5723,7 +5723,7 @@ mod tests {
         let _ = pdb_open("/gibt/es/nicht.pdb".to_string());
         let _ = qc_fastq("/gibt/es/nicht.fastq".to_string(), 0);
         let _ = trim_fastq("/gibt/es/nicht.fastq".to_string(), "/tmp/x".to_string());
-        // das Projekt ist danach noch benutzbar
+        // the project is still usable afterwards
         assert!(p.summary(id).is_ok());
     }
 }

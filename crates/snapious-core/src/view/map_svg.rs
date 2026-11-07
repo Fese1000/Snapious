@@ -1,12 +1,12 @@
-//! SVG-Ausgabe der Plasmidkarte (Kreis) und der linearen Karte.
+//! SVG output of the plasmid map (circular) and the linear map.
 
 use std::f64::consts::PI;
 
 use crate::model::document::SequenceDocument;
 use crate::view::feature_layout::assign_lanes;
 
-/// Farbe nach Featuretyp (Groß-/Kleinschreibung egal): `cds` und `gene` `#4b5bd6`, `promoter` `#1a9e8f`, `terminator` `#8b5a2b`,
-/// `rep_origin` `#8e44ad`, `primer_bind` `#e0559a`, alles andere `#888888`.
+/// Color by feature type (case-insensitive): `cds` and `gene` `#4b5bd6`, `promoter` `#1a9e8f`, `terminator` `#8b5a2b`,
+/// `rep_origin` `#8e44ad`, `primer_bind` `#e0559a`, everything else `#888888`.
 pub fn feature_color(feature_type: &str) -> &'static str {
     match feature_type.to_lowercase().as_str() {
         "cds" | "gene" => "#4b5bd6",
@@ -18,23 +18,23 @@ pub fn feature_color(feature_type: &str) -> &'static str {
     }
 }
 
-/// Kreiskarte als SVG-Text, quadratisch `size × size`.
+/// Circular map as SVG text, square `size × size`.
 ///
-/// - Kopf `<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 {size} {size}">` (Größe als ganze Zahl),
-///   Weißer Hintergrund `<rect width="100%" height="100%" fill="white"/>\n`; jede Zeile endet mit `\n`; Schluss `</svg>\n`.
-/// - Mittelpunkt `cx = cy = size / 2`, Rückgrat-Radius `R = size · 0.32`: `<circle class="backbone" cx=".." cy=".." r=".." fill="none" stroke="#555555" stroke-width="2"/>`.
-/// - Position `p` hat den Winkel `2π · p / Länge` (oben beginnend, im Uhrzeigersinn): Punkt `(cx + r·sin a, cy − r·cos a)`.
-/// - Features mit `assign_lanes`: Spur `k` liegt auf dem Radius `R − 14 − 14·k`. Jedes Segment `[s, e)` ist ein
-///   `<path class="feature" d="M x0,y0 A r,r 0 {groß} 1 x1,y1" fill="none" stroke="{farbe}" stroke-width="10"/>`
-///   mit `groß = 1`, wenn der überstrichene Winkel größer als π ist, sonst 0. Deckt das Segment die ganze Sequenz ab (`s == 0` und `e == Länge`),
-///   stattdessen `<circle class="feature" cx cy r fill="none" stroke="{farbe}" stroke-width="10"/>`.
-/// - Pro Feature (nicht pro Segment) ein Text `<text class="feature-label" x y text-anchor="middle" font-size="10">{Name}</text>` am Radius der
-///   Spur beim Winkel der Mitte seines ersten Segments (Name mit `xml_escape`); Features ohne Namen bekommen kein Label.
-/// - Enzymstellen `sites` (`(Name, Position)`, nach Position sortiert gegeben): je eine `<line class="site" x1 y1 x2 y2 stroke="#000000"/>`
-///   von Radius `R` bis `R + 10` und ein `<text class="site-label" x y font-size="10">{Name} ({Position + 1})</text>` bei Radius `R + 20`.
-/// - Mitte: `<text class="title" x="{cx}" y="{cy − 6}" text-anchor="middle" font-size="16">{Name des Dokuments}</text>` und
-///   `<text class="length" x="{cx}" y="{cy + 14}" text-anchor="middle" font-size="12">{Länge} bp</text>`.
-/// - Alle Zahlen mit `format!("{:.2}", …)`.
+/// - Header `<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 {size} {size}">` (size as an integer),
+///   white background `<rect width="100%" height="100%" fill="white"/>\n`; every line ends with `\n`; closing `</svg>\n`.
+/// - Center `cx = cy = size / 2`, backbone radius `R = size · 0.32`: `<circle class="backbone" cx=".." cy=".." r=".." fill="none" stroke="#555555" stroke-width="2"/>`.
+/// - Position `p` has angle `2π · p / length` (starting at the top, clockwise): point `(cx + r·sin a, cy − r·cos a)`.
+/// - Features with `assign_lanes`: lane `k` lies at radius `R − 14 − 14·k`. Each segment `[s, e)` is a
+///   `<path class="feature" d="M x0,y0 A r,r 0 {large} 1 x1,y1" fill="none" stroke="{color}" stroke-width="10"/>`
+///   with `large = 1` if the swept angle is greater than π, else 0. If the segment covers the whole sequence (`s == 0` and `e == length`),
+///   use `<circle class="feature" cx cy r fill="none" stroke="{color}" stroke-width="10"/>` instead.
+/// - One text per feature (not per segment) `<text class="feature-label" x y text-anchor="middle" font-size="10">{name}</text>` at the radius of the
+///   lane at the angle of the midpoint of its first segment (name via `xml_escape`); features without a name get no label.
+/// - Enzyme sites `sites` (`(name, position)`, given sorted by position): one `<line class="site" x1 y1 x2 y2 stroke="#000000"/>` each
+///   from radius `R` to `R + 10` and a `<text class="site-label" x y font-size="10">{name} ({position + 1})</text>` at radius `R + 20`.
+/// - Center: `<text class="title" x="{cx}" y="{cy − 6}" text-anchor="middle" font-size="16">{document name}</text>` and
+///   `<text class="length" x="{cx}" y="{cy + 14}" text-anchor="middle" font-size="12">{length} bp</text>`.
+/// - All numbers via `format!("{:.2}", …)`.
 pub fn circular_map_svg(doc: &SequenceDocument, sites: &[(String, usize)], size: f64) -> String {
     let w = size as i64;
     let mut svg = format!(
@@ -155,18 +155,18 @@ pub fn circular_map_svg(doc: &SequenceDocument, sites: &[(String, usize)], size:
     svg
 }
 
-/// Lineare Karte als SVG-Text `width × height`.
+/// Linear map as SVG text `width × height`.
 ///
-/// - Kopf wie oben mit `width`/`height`; Hintergrund wie oben.
-/// - Achse bei `y = 60` von `x = 20` bis `x = width − 20`: `<line class="axis" x1 y1 x2 y2 stroke="#555555" stroke-width="2"/>`.
-///   Position `p` liegt bei `x = 20 + p / Länge · (width − 40)`.
-/// - Features mit `assign_lanes`: Spur `k` liegt bei `y = 80 + 18·k` (Höhe 14): je Segment ein
-///   `<rect class="feature" x y width height fill="{farbe}"/>` (Breite mindestens 1) und je Feature ein
-///   `<text class="feature-label" x y font-size="10">{Name}</text>` bei `x` des ersten Segments, `y` = Oberkante der Spur + 11 (nur bei Name).
-/// - Enzymstellen: `<line class="site" x1 y1 x2 y2 stroke="#000000"/>` von `y = 60` bis `y = 50` und `<text class="site-label" x y font-size="10">{Name}</text>`
-///   bei `y = 46`.
-/// - Titel `<text class="title" x="20" y="20" font-size="14">{Name} ({Länge} bp)</text>`.
-/// - Alle Zahlen mit `format!("{:.2}", …)`.
+/// - Header as above with `width`/`height`; background as above.
+/// - Axis at `y = 60` from `x = 20` to `x = width − 20`: `<line class="axis" x1 y1 x2 y2 stroke="#555555" stroke-width="2"/>`.
+///   Position `p` lies at `x = 20 + p / length · (width − 40)`.
+/// - Features with `assign_lanes`: lane `k` lies at `y = 80 + 18·k` (height 14): one
+///   `<rect class="feature" x y width height fill="{color}"/>` per segment (width at least 1) and one
+///   `<text class="feature-label" x y font-size="10">{name}</text>` per feature at the `x` of the first segment, `y` = top of the lane + 11 (only if named).
+/// - Enzyme sites: `<line class="site" x1 y1 x2 y2 stroke="#000000"/>` from `y = 60` to `y = 50` and `<text class="site-label" x y font-size="10">{name}</text>`
+///   at `y = 46`.
+/// - Title `<text class="title" x="20" y="20" font-size="14">{name} ({length} bp)</text>`.
+/// - All numbers via `format!("{:.2}", …)`.
 pub fn linear_map_svg(
     doc: &SequenceDocument,
     sites: &[(String, usize)],
@@ -247,7 +247,7 @@ pub fn linear_map_svg(
     svg
 }
 
-/// Ersetzt `&`, `<`, `>`, `"` und `'` durch `&amp;`, `&lt;`, `&gt;`, `&quot;` und `&apos;`.
+/// Replaces `&`, `<`, `>`, `"` and `'` with `&amp;`, `&lt;`, `&gt;`, `&quot;` and `&apos;`.
 pub fn xml_escape(text: &str) -> String {
     text.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -313,7 +313,7 @@ mod tests {
         assert!(s.contains(">EcoRI (101)</text>"));
         assert!(s.contains(">pTest</text>"));
         assert!(s.contains(">1000 bp</text>"));
-        // Erstes Feature beginnt oben: Radius 128 − 14 = 114 bei Mittelpunkt 200 → y = 86
+        // First feature starts at the top: radius 128 − 14 = 114 with center 200 → y = 86
         assert!(s.contains("d=\"M 200.00,86.00 A 114.00,114.00 0 0 1 314.00,200.00\""));
         assert!(s.contains("stroke=\"#4b5bd6\"") && s.contains("stroke=\"#1a9e8f\""));
     }
@@ -341,7 +341,7 @@ mod tests {
             vec![feat("gene", "a", 0, 500), feat("gene", "b", 100, 400)],
         );
         let s = circular_map_svg(&d, &[], 400.0);
-        // Spur 0 Radius 114, Spur 1 Radius 100
+        // Lane 0 radius 114, lane 1 radius 100
         assert!(s.contains("114.00,114.00") && s.contains("100.00,100.00"));
     }
 
@@ -358,7 +358,7 @@ mod tests {
         assert!(s.contains(">BamHI</text>"));
         assert!(s.contains(">pTest (1000 bp)</text>"));
         assert_eq!(s.matches("<line class=\"site\"").count(), 1);
-        // BamHI bei x = 20 + 0.5 · 800 = 420
+        // BamHI at x = 20 + 0.5 · 800 = 420
         assert!(s.contains("x1=\"420.00\""));
     }
 

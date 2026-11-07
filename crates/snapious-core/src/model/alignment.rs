@@ -1,4 +1,4 @@
-//! Alignment-Dokument: gleich lange Zeilen mit Namen.
+//! Alignment document: equal-length rows with names.
 
 use std::collections::BTreeMap;
 
@@ -6,7 +6,7 @@ use crate::error::{Error, Result};
 use crate::model::sequence::SequenceType;
 use crate::util::{new_id, now_secs};
 
-/// Ein Mehrfachalignment. Lücken sind `-` (auch `.` wird als Lücke gezählt).
+/// A multiple alignment. Gaps are `-` (`.` also counts as a gap).
 #[derive(Clone, Debug, PartialEq)]
 pub struct AlignmentDocument {
     id: String,
@@ -23,8 +23,8 @@ fn is_gap(c: char) -> bool {
 }
 
 impl AlignmentDocument {
-    /// Prüft: gleich viele Namen wie Zeilen, mindestens eine Zeile, alle Zeilen gleich lang (in Zeichen), keine Leerzeichen in den Zeilen.
-    /// Fehler `Error::InvalidInput`.
+    /// Checks: as many names as rows, at least one row, all rows of equal length (in characters), no spaces in the rows.
+    /// Error `Error::InvalidInput`.
     pub fn new(
         id: &str,
         name: &str,
@@ -74,7 +74,7 @@ impl AlignmentDocument {
         })
     }
 
-    /// Neues Dokument mit neuer ID und aktueller Zeit.
+    /// New document with a new ID and the current time.
     pub fn of(
         name: &str,
         seq_type: SequenceType,
@@ -136,14 +136,14 @@ impl AlignmentDocument {
         self.row_names.get(i).map(String::as_str)
     }
 
-    /// Zeile ohne Lücken.
+    /// Row without gaps.
     pub fn ungapped(&self, i: usize) -> Option<String> {
         self.rows
             .get(i)
             .map(|r| r.chars().filter(|c| !is_gap(*c)).collect())
     }
 
-    /// Zeichen in Zeile `row`, Spalte `column`.
+    /// Character in row `row`, column `column`.
     pub fn at(&self, row: usize, column: usize) -> Option<char> {
         self.rows.get(row)?.chars().nth(column)
     }
@@ -166,12 +166,12 @@ impl AlignmentDocument {
         )
     }
 
-    /// Neue Zeilen und Namen (gleiche ID, Typ und Metadaten).
+    /// New rows and names (same ID, type and metadata).
     pub fn with_rows(&self, row_names: Vec<String>, rows: Vec<String>) -> Result<Self> {
         self.derive(row_names, rows)
     }
 
-    /// Entfernt Zeilen; ungültige Indizes → `Error::OutOfRange`; alle Zeilen entfernen → `Error::InvalidInput`.
+    /// Removes rows; invalid indices → `Error::OutOfRange`; removing all rows → `Error::InvalidInput`.
     pub fn remove_rows(&self, indices: &[usize]) -> Result<Self> {
         if let Some(bad) = indices.iter().find(|i| **i >= self.row_count()) {
             return Err(Error::OutOfRange(format!("Row {} does not exist", bad)));
@@ -188,7 +188,7 @@ impl AlignmentDocument {
         self.derive(names, rows)
     }
 
-    /// Entfernt Spalten; ungültige Indizes → `Error::OutOfRange`.
+    /// Removes columns; invalid indices → `Error::OutOfRange`.
     pub fn remove_columns(&self, columns: &[usize]) -> Result<Self> {
         if let Some(bad) = columns.iter().find(|c| **c >= self.column_count()) {
             return Err(Error::OutOfRange(format!("Column {} does not exist", bad)));
@@ -207,7 +207,7 @@ impl AlignmentDocument {
         self.derive(self.row_names.clone(), rows)
     }
 
-    /// Spalten `[from, to)`; `from > to` oder `to` hinter dem Ende → `Error::OutOfRange`.
+    /// Columns `[from, to)`; `from > to` or `to` beyond the end → `Error::OutOfRange`.
     pub fn sub_alignment(&self, from: usize, to: usize) -> Result<Self> {
         if from > to || to > self.column_count() {
             return Err(Error::OutOfRange(format!(
@@ -225,7 +225,7 @@ impl AlignmentDocument {
         self.derive(self.row_names.clone(), rows)
     }
 
-    /// Ordnet die Zeilen um: `order` muss eine Permutation von `0..row_count` sein, sonst `Error::InvalidInput`.
+    /// Reorders the rows: `order` must be a permutation of `0..row_count`, otherwise `Error::InvalidInput`.
     pub fn reorder(&self, order: &[usize]) -> Result<Self> {
         let mut sorted = order.to_vec();
         sorted.sort_unstable();

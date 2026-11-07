@@ -1,5 +1,5 @@
-//! Protein- und RNA-Operationen für Registry und Workflows: Eigenschaften berechnen, RNA falten.
-//! Beide liefern keine neuen Dokumente, sondern einen Ergebnistext in `summary`.
+//! Protein and RNA operations for registry and workflows: compute properties, fold RNA.
+//! Neither produces new documents, but a result text in `summary`.
 
 use crate::bio::protein::{
     aromaticity, extinction_coefficient_280, isoelectric_point, molecular_weight,
@@ -9,11 +9,11 @@ use crate::error::{Error, Result};
 use crate::model::document::Document;
 use crate::ops::operation::{Operation, OperationContext, OperationResult, Params};
 
-/// `protein.properties`: Eigenschaften einer Proteinsequenz. Eingabe: genau ein Sequenzdokument (sonst `Error::Operation`).
-/// `outputs` ist leer. `summary` (eine Zeile, Zahlen mit `format!`):
-/// `"{n} aa, {mw:.1} Da, pI {pi:.2}, ε280 {eps:.0} M⁻¹cm⁻¹, Aromaticity {arom:.3}"` mit `n` = Länge der Sequenz,
+/// `protein.properties`: properties of a protein sequence. Input: exactly one sequence document (otherwise `Error::Operation`).
+/// `outputs` is empty. `summary` (one line, numbers via `format!`):
+/// `"{n} aa, {mw:.1} Da, pI {pi:.2}, ε280 {eps:.0} M⁻¹cm⁻¹, Aromaticity {arom:.3}"` with `n` = length of the sequence,
 /// `mw = molecular_weight`, `pi = isoelectric_point`, `eps = extinction_coefficient_280(.., false)`, `arom = aromaticity`
-/// (jeweils für `bases()` des Dokuments). Eine leere Sequenz → `Error::Operation("The sequence is empty")`.
+/// (each for `bases()` of the document). An empty sequence → `Error::Operation("The sequence is empty")`.
 pub struct ProteinPropertiesOperation;
 
 impl Operation for ProteinPropertiesOperation {
@@ -64,9 +64,9 @@ impl Operation for ProteinPropertiesOperation {
     }
 }
 
-/// `rna.fold`: RNA mit `fold_rna` falten (benötigt das Programm RNAfold). Eingabe: genau ein Sequenzdokument; die Basen werden an
-/// `fold_rna` übergeben. `outputs` ist leer. `summary` = `"{structure} ({energy:.2} kcal/mol)"`. Fehler von `fold_rna` werden als
-/// `Error::Operation` mit demselben Text weitergegeben.
+/// `rna.fold`: folds RNA with `fold_rna` (requires the RNAfold program). Input: exactly one sequence document; the bases are passed to
+/// `fold_rna`. `outputs` is empty. `summary` = `"{structure} ({energy:.2} kcal/mol)"`. Errors from `fold_rna` are passed on as
+/// `Error::Operation` with the same text.
 pub struct RnaFoldOperation;
 
 impl Operation for RnaFoldOperation {
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn rna_falten() {
-        // nur mit installiertem RNAfold
+        // only with RNAfold installed
         if fold_rna("GGGGAAAACCCC").is_err() {
             return;
         }

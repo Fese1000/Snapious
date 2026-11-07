@@ -1,4 +1,4 @@
-//! Operationen mit Netzwerkzugriff: Datensatz von NCBI oder UniProt laden. Der Abruf ist austauschbar (`HttpGet`), damit die Tests ohne Netz laufen.
+//! Operations with network access: load a record from NCBI or UniProt. The retrieval is swappable (`HttpGet`) so tests run without a network.
 
 use crate::db::ncbi::HttpGet;
 use crate::db::uniprot_entry::{entry_url, parse_entry};
@@ -7,10 +7,10 @@ use crate::io::genbank;
 use crate::model::document::Document;
 use crate::ops::operation::{required, Operation, OperationContext, OperationResult, Params};
 
-/// `db.ncbi.fetch`: lädt einen NCBI-Datensatz (`nuccore`) als GenBank. Keine Eingaben nötig (werden ignoriert).
-/// Parameter: `id` (Pflicht, Kennung oder Akzession). Ergebnis: alle Sequenzdokumente aus `genbank::parse` des Textes von
-/// `NcbiClient::fetch_genbank`; liefert der Text kein Dokument, `Error::Operation("NCBI lieferte keine Sequenz für {id}")`.
-/// `summary` = `"{n} Sequenz(en) von NCBI"`. Fehler der Kernfunktionen als `Error::Operation` mit deren Text.
+/// `db.ncbi.fetch`: loads an NCBI record (`nuccore`) as GenBank. No inputs needed (ignored).
+/// Parameters: `id` (required, identifier or accession). Result: all sequence documents from `genbank::parse` of the text from
+/// `NcbiClient::fetch_genbank`; if the text yields no document, `Error::Operation("NCBI lieferte keine Sequenz für {id}")`.
+/// `summary` = `"{n} Sequenz(en) von NCBI"`. Errors of the core functions as `Error::Operation` with their text.
 pub struct NcbiFetchOperation<H: HttpGet> {
     pub http: H,
 }
@@ -32,7 +32,7 @@ impl<H: HttpGet> Operation for NcbiFetchOperation<H> {
     ) -> Result<OperationResult> {
         let id = required(params, "id")?;
 
-        // Replikation von NcbiClient::fetch_genbank Logik, da http nicht geklont werden kann/konnte.
+        // Replication of the NcbiClient::fetch_genbank logic, since http cannot be cloned.
         let url = crate::db::ncbi::efetch_url("nuccore", id, "gb");
         let text = self
             .http
@@ -56,10 +56,10 @@ impl<H: HttpGet> Operation for NcbiFetchOperation<H> {
     }
 }
 
-/// `db.uniprot.fetch`: lädt einen UniProt-Eintrag. Parameter: `accession` (Pflicht). Ruft `entry_url(accession)` ab,
-/// liest mit `parse_entry` und wandelt mit `to_document` um (Domänen usw. werden Features). Ergebnis: ein Protein-Dokument;
-/// `summary` = `"{accession}: {n} aa, {k} Feature(s)"` (`n` Sequenzlänge, `k` Zahl der Features des erzeugten Dokuments).
-/// Fehler als `Error::Operation` mit dem Text der Kernfunktion.
+/// `db.uniprot.fetch`: loads a UniProt entry. Parameter: `accession` (required). Fetches `entry_url(accession)`,
+/// reads with `parse_entry` and converts with `to_document` (domains etc. become features). Result: one protein document;
+/// `summary` = `"{accession}: {n} aa, {k} Feature(s)"` (`n` sequence length, `k` number of features of the produced document).
+/// Errors as `Error::Operation` with the text of the core function.
 pub struct UniprotFetchOperation<H: HttpGet> {
     pub http: H,
 }

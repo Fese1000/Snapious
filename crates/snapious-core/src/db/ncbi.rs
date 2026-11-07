@@ -1,15 +1,15 @@
-//! NCBI Entrez: Adressen bauen, JSON-Antworten lesen, Datensätze herunterladen.
+//! NCBI Entrez: build addresses, read JSON responses, download records.
 
 use crate::error::{Error, Result};
 use serde_json::Value;
 use std::process::Command;
 
-/// Ein einfacher GET-Abruf, der den Antworttext liefert. In Tests durch eine Attrappe ersetzbar.
+/// A simple GET fetch that returns the response text. Replaceable by a stub in tests.
 pub trait HttpGet {
     fn get(&self, url: &str) -> Result<String>;
 }
 
-/// Abruf über das Programm `curl` (auf macOS und den meisten Linux-Systemen vorhanden).
+/// Fetch via the program `curl` (available on macOS and most Linux systems).
 #[derive(Clone, Debug, Default)]
 pub struct CurlClient;
 
@@ -30,8 +30,8 @@ impl HttpGet for CurlClient {
     }
 }
 
-/// Prozentkodierung für Adressteile: Buchstaben, Ziffern und `-`, `_`, `.`, `~` bleiben; alle anderen Bytes (UTF-8) werden zu `%XX`
-/// mit Uppercase-Hex (Leerzeichen also `%20`).
+/// Percent encoding for address parts: letters, digits and `-`, `_`, `.`, `~` stay; all other bytes (UTF-8) become `%XX`
+/// with uppercase hex (so a space becomes `%20`).
 pub fn percent_encode(text: &str) -> String {
     let mut out = String::with_capacity(text.len() * 3);
     for byte in text.bytes() {
@@ -46,7 +46,7 @@ pub fn percent_encode(text: &str) -> String {
 
 const BASE: &str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
 
-/// `{BASE}esearch.fcgi?db={db}&term={term kodiert}&retmax={retmax}&retmode=json`
+/// `{BASE}esearch.fcgi?db={db}&term={term encoded}&retmax={retmax}&retmode=json`
 pub fn esearch_url(db: &str, term: &str, retmax: usize) -> String {
     format!(
         "{}esearch.fcgi?db={}&term={}&retmax={}&retmode=json",
@@ -57,7 +57,7 @@ pub fn esearch_url(db: &str, term: &str, retmax: usize) -> String {
     )
 }
 
-/// `{BASE}esummary.fcgi?db={db}&id={ids mit Komma}&retmode=json` (die Komma-Trennung bleibt unkodiert).
+/// `{BASE}esummary.fcgi?db={db}&id={ids joined by comma}&retmode=json` (the comma separator stays unencoded).
 pub fn esummary_url(db: &str, ids: &[String]) -> String {
     let id_str = ids.join(",");
     format!("{}esummary.fcgi?db={}&id={}&retmode=json", BASE, db, id_str)
@@ -71,19 +71,19 @@ pub fn efetch_url(db: &str, id: &str, rettype: &str) -> String {
     )
 }
 
-/// Ergebnis einer Suche.
+/// Result of a search.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SearchResult {
-    /// Gesamtzahl der Treffer (`count` als Zahl).
+    /// Total number of hits (`count` as a number).
     pub count: usize,
-    /// Die zurückgegebenen Kennungen in Reihenfolge von `idlist`.
+    /// The returned identifiers in the order of `idlist`.
     pub ids: Vec<String>,
 }
 
-/// Liest die esearch-Antwort: `{"esearchresult": {"count": "2", "idlist": ["11", "22"]}}`.
-/// `count` kommt als Text und wird in eine Zahl umgewandelt. Fehlt `esearchresult`, ist die Antwort kein JSON oder ist `count`
-/// keine Zahl, gibt es `Error::InvalidInput`. Fehlt `idlist`, ist die Liste leer. Hat die Antwort `esearchresult.ERROR`
-/// (Text), ist das ebenfalls `Error::InvalidInput` mit diesem Text.
+/// Reads the esearch response: `{"esearchresult": {"count": "2", "idlist": ["11", "22"]}}`.
+/// `count` arrives as text and is converted to a number. If `esearchresult` is missing, the response is not JSON, or `count`
+/// is not a number, the result is `Error::InvalidInput`. If `idlist` is missing, the list is empty. If the response has `esearchresult.ERROR`
+/// (text), that is likewise `Error::InvalidInput` with this text.
 pub fn parse_esearch(json: &str) -> Result<SearchResult> {
     let root = serde_json::from_str::<Value>(json)
         .map_err(|_| Error::InvalidInput("Invalid JSON".to_string()))?;
@@ -117,21 +117,21 @@ pub fn parse_esearch(json: &str) -> Result<SearchResult> {
     Ok(SearchResult { count, ids })
 }
 
-/// Kurzinfo zu einem Datensatz.
+/// Summary of a record.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SummaryRecord {
     pub id: String,
-    /// `accessionversion`, sonst `caption`, sonst leer.
+    /// `accessionversion`, otherwise `caption`, otherwise empty.
     pub accession: String,
     pub title: String,
     pub organism: String,
-    /// `slen` (Zahl oder Text mit Zahl), sonst `None`.
+    /// `slen` (number or text containing a number), otherwise `None`.
     pub length: Option<u64>,
 }
 
-/// Liest die esummary-Antwort: `{"result": {"uids": ["1", "2"], "1": {...}, "2": {...}}}`. Die Reihenfolge folgt `uids`;
-/// `uids`-Einträge ohne Objekt werden übersprungen. Fehlende Felder werden leer (`length`: `None`). `uid` des Objekts ist
-/// maßgeblich für `id`, fehlt es, gilt der Schlüssel. Fehler wie bei `parse_esearch` (`result` fehlt oder kein JSON → `Error::InvalidInput`).
+/// Reads the esummary response: `{"result": {"uids": ["1", "2"], "1": {...}, "2": {...}}}`. The order follows `uids`;
+/// `uids` entries without an object are skipped. Missing fields become empty (`length`: `None`). The object's `uid` is
+/// authoritative for `id`; if it is missing, the key is used. Errors as for `parse_esearch` (`result` missing or not JSON → `Error::InvalidInput`).
 pub fn parse_esummary(json: &str) -> Result<Vec<SummaryRecord>> {
     let root = serde_json::from_str::<Value>(json)
         .map_err(|_| Error::InvalidInput("Invalid JSON".to_string()))?;
@@ -195,7 +195,7 @@ pub fn parse_esummary(json: &str) -> Result<Vec<SummaryRecord>> {
     Ok(records)
 }
 
-/// Client mit austauschbarem Abruf.
+/// Client with a replaceable fetch.
 pub struct NcbiClient<H: HttpGet> {
     pub http: H,
 }
@@ -205,8 +205,8 @@ impl<H: HttpGet> NcbiClient<H> {
         Self { http }
     }
 
-    /// Sucht in `db` nach `term` (höchstens `retmax` Treffer) und holt die Kurzinfos der Treffer:
-    /// erst `esearch_url`, dann (nur bei mindestens einer Kennung) `esummary_url`. Ergebnis: Gesamtzahl der Treffer und die Kurzinfos.
+    /// Searches `db` for `term` (at most `retmax` hits) and fetches the summaries of the hits:
+    /// first `esearch_url`, then (only with at least one identifier) `esummary_url`. Result: total number of hits and the summaries.
     pub fn search(
         &self,
         db: &str,
@@ -228,7 +228,7 @@ impl<H: HttpGet> NcbiClient<H> {
         Ok((res.count, records))
     }
 
-    /// Lädt einen Datensatz im GenBank-Flatfile-Format (`rettype=gb`) aus `nuccore`. Ist die Antwort leer (nur Leerraum),
+    /// Downloads a record in GenBank flatfile format (`rettype=gb`) from `nuccore`. If the response is empty (whitespace only),
     /// `Error::InvalidInput("Leere Antwort für {id}")`.
     pub fn fetch_genbank(&self, id: &str) -> Result<String> {
         let url = efetch_url("nuccore", id, "gb");

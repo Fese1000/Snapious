@@ -1,13 +1,13 @@
-//! Einfache Faltungsvorhersage nach Nussinov (größtmögliche Zahl von Basenpaaren).
+//! Simple folding prediction after Nussinov (maximum number of base pairs).
 
-/// Findet die größtmögliche Zahl nicht kreuzender Basenpaare und gibt `(Zahl, Punkt-Klammer-Schreibweise)` zurück. Erlaubte Paare
-/// (Groß-/Kleinschreibung egal, `T` wie `U`): A–U, U–A, G–C, C–G, G–U, U–G. Zwischen den gepaarten Positionen `i < j` müssen mindestens
-/// `min_loop` Basen liegen (`j - i > min_loop`). Rekursion für `N[i][j]` (Bereich `i..=j`):
-/// `N[i][j] = max(N[i+1][j], N[i][j-1], N[i+1][j-1] + 1 wenn i, j paaren dürfen, max über k in i..j von N[i][k] + N[k+1][j])`; für `j <= i` gilt 0.
-/// Rückverfolgung für den Bereich `(i, j)` in dieser Reihenfolge der Fälle: (1) `N[i][j] == N[i+1][j]` → `i` ungepaart; (2) sonst
-/// `N[i][j] == N[i][j-1]` → `j` ungepaart; (3) sonst, wenn `i`, `j` paaren dürfen und `N[i][j] == N[i+1][j-1] + 1` → Paar `(i, j)`;
-/// (4) sonst das kleinste `k` mit `N[i][j] == N[i][k] + N[k+1][j]` aufteilen. Gepaarte Positionen werden `(` und `)`, alle anderen `.`.
-/// Leere Sequenz → `(0, "")`. Zeichen außer A, C, G, T, U paaren nie.
+/// Finds the maximum number of non-crossing base pairs and returns `(count, dot-bracket notation)`. Allowed pairs
+/// (case-insensitive, `T` as `U`): A–U, U–A, G–C, C–G, G–U, U–G. Between the paired positions `i < j` there must be at least
+/// `min_loop` bases (`j - i > min_loop`). Recursion for `N[i][j]` (range `i..=j`):
+/// `N[i][j] = max(N[i+1][j], N[i][j-1], N[i+1][j-1] + 1 if i, j may pair, max over k in i..j of N[i][k] + N[k+1][j])`; for `j <= i` it is 0.
+/// Traceback for the range `(i, j)` in this order of cases: (1) `N[i][j] == N[i+1][j]` → `i` unpaired; (2) otherwise
+/// `N[i][j] == N[i][j-1]` → `j` unpaired; (3) otherwise, if `i`, `j` may pair and `N[i][j] == N[i+1][j-1] + 1` → pair `(i, j)`;
+/// (4) otherwise split at the smallest `k` with `N[i][j] == N[i][k] + N[k+1][j]`. Paired positions become `(` and `)`, all others `.`.
+/// Empty sequence → `(0, "")`. Characters other than A, C, G, T, U never pair.
 pub fn max_pairs(seq: &str, min_loop: usize) -> (usize, String) {
     let s: Vec<u8> = seq
         .bytes()
@@ -26,7 +26,7 @@ pub fn max_pairs(seq: &str, min_loop: usize) -> (usize, String) {
             (b'A', b'U') | (b'U', b'A') | (b'G', b'C') | (b'C', b'G') | (b'G', b'U') | (b'U', b'G')
         )
     };
-    // t[i][j] = beste Paarzahl im Bereich i..=j; für j <= i gilt 0
+    // t[i][j] = best pair count in range i..=j; for j <= i it is 0
     let mut t = vec![vec![0usize; n]; n];
     for len in 1..n {
         for i in 0..n - len {
@@ -89,10 +89,10 @@ mod tests {
 
     #[test]
     fn schleife_und_eigenschaften() {
-        // zu kurze Schleife: GC mit nur einer Base dazwischen darf bei min_loop 3 nicht paaren
+        // loop too short: GC with only one base between must not pair at min_loop 3
         assert_eq!(max_pairs("GAC", 3).0, 0);
         assert_eq!(max_pairs("GAC", 0), (1, "(.)".to_string()));
-        // beliebige Eingaben ergeben ausgeglichene Klammern, deren Zahl der Paarzahl entspricht
+        // arbitrary inputs give balanced brackets whose count equals the pair count
         for s in [
             "GCGCAAUGCGC",
             "AUGCAUGCAUGC",

@@ -1,4 +1,4 @@
-//! Golden-Gate-Zusammenbau mit einem Typ-IIS-Enzym (BsaI, BsmBI, Esp3I, BbsI, SapI, …).
+//! Golden Gate assembly with a type IIS enzyme (BsaI, BsmBI, Esp3I, BbsI, SapI, …).
 
 use std::collections::{BTreeMap, HashSet};
 
@@ -11,29 +11,29 @@ use crate::model::feature::Feature;
 use crate::model::sequence::{Sequence, SequenceType};
 use crate::util::{new_id, now_secs};
 
-/// Ergebnis eines Zusammenbaus.
+/// Result of an assembly.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GoldenGateResult {
     pub construct: SequenceDocument,
-    /// Die verbundenen Fragmente in Reihenfolge der Kette.
+    /// The joined fragments in chain order.
     pub parts: Vec<Fragment>,
     pub warnings: Vec<String>,
 }
 
-/// Wählt aus dem Verdau eines Teils das Fragment, das ins Konstrukt kommt, und meldet Auffälligkeiten.
+/// Picks from the digest of a part the fragment that goes into the construct, and reports anomalies.
 ///
-/// - `fragments` ist das Ergebnis von `digest(teil, db, [enzym])`, `recognition` die Erkennungssequenz des Enzyms.
-/// - Linear: bei mindestens 3 Fragmenten (mindestens 2 Schnitte) sind die Innenfragmente alle außer dem ersten und letzten.
-///   Zirkulär: bei mindestens 2 Fragmenten alle Fragmente.
-/// - Gibt es mehrere Innenfragmente, wird zuerst unter denen gewählt, deren `top` weder `recognition` noch deren
-///   Reverse-Komplement enthält; unter den verbliebenen (oder, wenn keines übrig ist, unter allen) das längste, bei Gleichstand
-///   das erste. Gab es mehr Innenfragmente als bei genau zwei Schnitten (linear: mehr als 3 Fragmente, zirkulär: mehr als 2),
-///   kommt die Warnung `Interne Erkennungsstelle in {name}`.
-/// - Hat das Teil zu wenige Schnitte (linear weniger als 3 Fragmente, zirkulär weniger als 2), kommt die Warnung
-///   `Teil {name} hat weniger als 2 Schnittstellen` und das ganze Teil wird als Fragment mit stumpfen Enden verwendet
-///   (`top` = alle Basen, Features des Teils, `source_name` = Name, `source_start 0`, `source_end` = Länge).
+/// - `fragments` is the result of `digest(part, db, [enzyme])`, `recognition` the recognition sequence of the enzyme.
+/// - Linear: with at least 3 fragments (at least 2 cuts) the inner fragments are all except the first and last.
+///   Circular: with at least 2 fragments, all fragments.
+/// - If there are several inner fragments, the choice is first made among those whose `top` contains neither `recognition` nor its
+///   reverse complement; among the remaining ones (or, if none is left, among all) the longest, on a tie
+///   the first. If there were more inner fragments than with exactly two cuts (linear: more than 3 fragments, circular: more than 2),
+///   the warning `Interne Erkennungsstelle in {name}` is issued.
+/// - If the part has too few cuts (linear fewer than 3 fragments, circular fewer than 2), the warning
+///   `Teil {name} hat weniger als 2 Schnittstellen` is issued and the whole part is used as a fragment with blunt ends
+///   (`top` = all bases, features of the part, `source_name` = name, `source_start 0`, `source_end` = length).
 ///
-/// Rückgabe: das gewählte Fragment und die Warnungen.
+/// Returns: the chosen fragment and the warnings.
 pub fn pick_part_fragment(
     part: &SequenceDocument,
     fragments: &[Fragment],
@@ -109,16 +109,16 @@ pub fn pick_part_fragment(
     (best.clone(), warnings)
 }
 
-/// Warnungen zu den Überhängen der gewählten Fragmente (Reihenfolge: doppelte, palindromische, falsche Orientierung).
+/// Warnings about the overhangs of the chosen fragments (order: duplicate, palindromic, wrong orientation).
 fn overhang_warnings(fragments: &[Fragment]) -> Vec<String> {
     let mut out = Vec::new();
-    // Enden in der Reihenfolge Fragment 1 links, Fragment 1 rechts, Fragment 2 links, …
+    // Ends in the order fragment 1 left, fragment 1 right, fragment 2 left, …
     let ends: Vec<(bool, &End)> = fragments
         .iter()
         .flat_map(|f| [(false, &f.left), (true, &f.right)])
         .collect();
 
-    // 1. doppelte Enden (je Seite)
+    // 1. duplicate ends (per side)
     let mut seen: HashSet<String> = HashSet::new();
     for (side, e) in &ends {
         if e.is_blunt() {
@@ -129,7 +129,7 @@ fn overhang_warnings(fragments: &[Fragment]) -> Vec<String> {
             out.push(format!("Duplicate overhang {}", e.overhang));
         }
     }
-    // 2. palindromische Überhänge
+    // 2. palindromic overhangs
     let mut seen: HashSet<String> = HashSet::new();
     for (_, e) in &ends {
         if !e.is_blunt()
@@ -139,7 +139,7 @@ fn overhang_warnings(fragments: &[Fragment]) -> Vec<String> {
             out.push(format!("Palindromic overhang {}", e.overhang));
         }
     }
-    // 3. falsche Orientierung (gleiche Seite, Reverse-Komplement eines anderen Fragments)
+    // 3. wrong orientation (same side, reverse complement of another fragment)
     let mut seen: HashSet<String> = HashSet::new();
     for (idx, (side, e)) in ends.iter().enumerate() {
         if e.is_blunt() {
@@ -162,28 +162,28 @@ fn overhang_warnings(fragments: &[Fragment]) -> Vec<String> {
     out
 }
 
-/// Baut aus `parts` ein Konstrukt.
+/// Builds a construct from `parts`.
 ///
-/// 1. Das Enzym `enzyme_name` muss in `db` stehen, sonst `Error::InvalidInput`; ohne Teile `Error::InvalidInput`.
-///    Jedes Teil wird mit `digest` verdaut und mit `pick_part_fragment` auf ein Fragment reduziert (Warnungen sammeln).
-/// 2. Warnungen zu Überhängen (je einmal pro betroffenen Überhangtext, in dieser Reihenfolge, nach den Teilewarnungen):
-///    - `Duplicate overhang {x}`, wenn dasselbe Ende (Typ und Text, nicht stumpf) an mehreren rechten Enden oder an mehreren linken
-///      Enden verschiedener Fragmente vorkommt;
-///    - `Palindromic overhang {x}`, wenn ein nicht stumpfes Ende `x` gleich seinem eigenen Reverse-Komplement ist;
-///    - `Überhang {x} passt zum Reverse-Komplement eines anderen Teils (falsche Orientierung)`, wenn ein nicht palindromisches
-///      rechtes Ende `x` gleich dem Reverse-Komplement des rechten Endes eines anderen Fragments ist (ebenso für linke Enden).
-///      Reihenfolge der Prüfungen: Doppelte, Palindrome, Orientierung; innerhalb einer Prüfung nach Fragmentreihenfolge, dann links vor rechts.
-/// 3. Kette: Zirkulär beginnt sie beim ersten Fragment; linear bei dem ersten Fragment (in Eingabereihenfolge), dessen linkes Ende
-///    zu keinem rechten Ende eines anderen Fragments passt (`pairs_with`); gibt es kein solches, `Error::InvalidInput`.
-///    Weitere Glieder: das erste noch nicht benutzte Fragment (Eingabereihenfolge), dessen linkes Ende zum rechten Ende des
-///    letzten Gliedes passt.
-/// 4. Sind am Ende nicht alle Fragmente benutzt, oder (zirkulär) passt das letzte Glied nicht ans erste:
-///    `Error::InvalidInput("Parts cannot be joined into a chain: {Namen der Teile, die nicht benutzt wurden bzw. der Kette}")`.
-/// 5. Konstrukt: `join_fragments(&kette, circular)`; Name = Teilenamen (Reihenfolge der Kette) mit `" + "`; neue ID; DNA; Topologie
-///    nach `circular`; Metadaten `source = "clone.goldengate"`; Erstellzeit `now_secs()`; Features der Fragmente, um die Länge
-///    der vorangehenden Fragmente verschoben (`Location::shifted`, `Feature::with_location`).
-/// 6. Erkennungsstelle des Enzyms (oder deren Reverse-Komplement) im Konstrukt (bei zirkulär auch über den Nullpunkt, also in
-///    `konstrukt + konstrukt[..stellenlänge−1]`): Warnung `Erkennungsstelle von {enzyme_name} im Konstrukt vorhanden`.
+/// 1. The enzyme `enzyme_name` must be in `db`, otherwise `Error::InvalidInput`; without parts `Error::InvalidInput`.
+///    Each part is digested with `digest` and reduced to one fragment with `pick_part_fragment` (collect warnings).
+/// 2. Warnings about overhangs (once per affected overhang text, in this order, after the part warnings):
+///    - `Duplicate overhang {x}` if the same end (type and text, not blunt) occurs at several right ends or at several left
+///      ends of different fragments;
+///    - `Palindromic overhang {x}` if a non-blunt end `x` equals its own reverse complement;
+///    - `Überhang {x} passt zum Reverse-Komplement eines anderen Teils (falsche Orientierung)` if a non-palindromic
+///      right end `x` equals the reverse complement of the right end of another fragment (likewise for left ends).
+///      Order of the checks: duplicates, palindromes, orientation; within a check by fragment order, then left before right.
+/// 3. Chain: circular starts at the first fragment; linear at the first fragment (in input order) whose left end
+///    matches no right end of another fragment (`pairs_with`); if there is none, `Error::InvalidInput`.
+///    Further links: the first not yet used fragment (input order) whose left end matches the right end of the
+///    last link.
+/// 4. If at the end not all fragments are used, or (circular) the last link does not fit the first:
+///    `Error::InvalidInput("Parts cannot be joined into a chain: {names of the parts that were not used or of the chain}")`.
+/// 5. Construct: `join_fragments(&chain, circular)`; name = part names (chain order) joined with `" + "`; new ID; DNA; topology
+///    according to `circular`; metadata `source = "clone.goldengate"`; creation time `now_secs()`; features of the fragments, shifted by the length
+///    of the preceding fragments (`Location::shifted`, `Feature::with_location`).
+/// 6. Recognition site of the enzyme (or its reverse complement) in the construct (for circular also across the origin, i.e. in
+///    `construct + construct[..site_length−1]`): warning `Erkennungsstelle von {enzyme_name} im Konstrukt vorhanden`.
 pub fn assemble(
     db: &EnzymeDb,
     enzyme_name: &str,
@@ -211,7 +211,7 @@ pub fn assemble(
     let mut warnings = part_warnings;
     warnings.extend(overhang_warnings(&all_fragments));
 
-    // Kette bilden
+    // Form the chain
     let n = all_fragments.len();
     let unused_names = |used: &[bool]| -> String {
         parts
@@ -331,7 +331,7 @@ pub fn assemble(
         now_secs(),
     );
 
-    // Warnung: Erkennungsstelle im Konstrukt
+    // Warning: recognition site in the construct
     let rc_rec = iupac_reverse_complement(enzyme.recognition());
     let wrap_len = enzyme.recognition().len().saturating_sub(1);
     let check_bases = if circular {
@@ -372,7 +372,7 @@ mod tests {
         SequenceDocument::of(name, seq)
     }
 
-    /// Teil mit BsaI-Rändern: Vorwärtsstelle links, Rückwärtsstelle rechts.
+    /// Part with BsaI edges: forward site on the left, reverse site on the right.
     fn part(name: &str, left: &str, body: &str, right: &str) -> SequenceDocument {
         doc(
             name,
@@ -407,7 +407,7 @@ mod tests {
         assert_eq!(g.top, format!("AATG{}", "C".repeat(12)));
         assert_eq!(g.left, End::new(EndType::FivePrime, "AATG"));
         assert_eq!(g.right, End::new(EndType::FivePrime, "GCTT"));
-        // ohne Schnittstelle
+        // without cut site
         let kahl = doc("kahl", "ACGTACGT");
         let f = digest(&kahl, &db, &["BsaI"]).unwrap();
         let (g, w) = pick_part_fragment(&kahl, &f, "GGTCTC");
@@ -445,7 +445,7 @@ mod tests {
                 "T".repeat(12)
             )
         );
-        // anderer Anfang: gleiche Länge
+        // different start: same length
         let s = assemble(&db, "BsaI", &[p3(), p1(), p2()], true).unwrap();
         assert_eq!(s.construct.len(), 48);
     }
@@ -490,7 +490,7 @@ mod tests {
     #[test]
     fn falsche_orientierung() {
         let db = EnzymeDb::standard();
-        // rechtes Ende von q ist AAGC = Reverse-Komplement von GCTT (rechtes Ende von p1); die Kette p1, p2, q geht trotzdem auf
+        // right end of q is AAGC = reverse complement of GCTT (right end of p1); the chain p1, p2, q still works out
         let q = part("q", "CGAT", &"A".repeat(12), "AAGC");
         let r = assemble(&db, "BsaI", &[p1(), p2(), q], false).unwrap();
         assert!(
@@ -538,7 +538,7 @@ mod tests {
             assemble(&db, "BsaI", &[], false),
             Err(Error::InvalidInput(_))
         ));
-        // zirkulär geht nicht auf: p1 und p2 schließen sich nicht
+        // circular does not work out: p1 and p2 do not close up
         assert!(matches!(
             assemble(&db, "BsaI", &[p1(), p2()], true),
             Err(Error::InvalidInput(_))
@@ -594,7 +594,7 @@ mod tests {
             false,
         )
         .unwrap();
-        // im Teil p2 liegt das Innenfragment bei 9..25, das Feature 13..17 also bei 4..8 im Fragment
+        // in part p2 the inner fragment is at 9..25, so the feature 13..17 is at 4..8 in the fragment
         let p2f = p2().with_features(vec![Feature::new("misc_feature", "f", loc, Vec::new())]);
         let r = assemble(&db, "BsaI", &[p1(), p2f, p3()], true).unwrap();
         let starts: Vec<usize> = r

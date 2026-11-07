@@ -1,20 +1,20 @@
-//! Ursprung eines zirkulären Dokuments verschieben.
+//! Move the origin of a circular document.
 
 use crate::error::{Error, Result};
 use crate::model::document::{SequenceDocument, Topology};
 use crate::model::feature::{Feature, Interval, Location};
 use crate::model::sequence::{Sequence, SequenceType};
 
-/// Dreht ein zirkuläres Dokument so, dass die Position `new_origin` zum neuen Anfang wird.
-/// * Fehler `Error::InvalidState`, wenn das Dokument nicht zirkulär ist; `Error::OutOfRange`, wenn `new_origin >= Länge`
-///   (auch bei leerer Sequenz).
-/// * Neue Basen: `bases[new_origin..] + bases[..new_origin]`; Name, Topologie (zirkulär), Metadaten und Erstellzeit bleiben,
-///   die ID ist neu (`SequenceDocument::derive` oder `crate::util::new_id`).
-/// * Features: jede Position `p` wird zu `(p − new_origin) mod L`. Für jedes Intervall `[a, b)` eines Features gilt:
-///   liegt es ganz hinter dem Ursprung (`new_origin <= a`), wird es `[a − o, b − o)`; ganz davor (`b <= new_origin`):
-///   `[a + L − o, b + L − o)`; überspannt es den neuen Ursprung (`a < o < b`), wird es zu den zwei Intervallen
-///   `[a + L − o, L)` und `[0, b − o)` (in dieser Reihenfolge). Mehrere Intervalle (Join) werden einzeln abgebildet und der Reihe nach
-///   aneinandergehängt. Typ, Name, Strang, Teilmarkierungen und Qualifier bleiben; Ergebnis über `Location::new` und `Feature::new`.
+/// Rotates a circular document so that position `new_origin` becomes the new start.
+/// * Error `Error::InvalidState` if the document is not circular; `Error::OutOfRange` if `new_origin >= length`
+///   (also for an empty sequence).
+/// * New bases: `bases[new_origin..] + bases[..new_origin]`; name, topology (circular), metadata and creation time stay,
+///   the ID is new (`SequenceDocument::derive` or `crate::util::new_id`).
+/// * Features: each position `p` becomes `(p − new_origin) mod L`. For each interval `[a, b)` of a feature:
+///   if it lies entirely behind the origin (`new_origin <= a`), it becomes `[a − o, b − o)`; entirely before it (`b <= new_origin`):
+///   `[a + L − o, b + L − o)`; if it spans the new origin (`a < o < b`), it becomes the two intervals
+///   `[a + L − o, L)` and `[0, b − o)` (in this order). Multiple intervals (join) are mapped individually and appended
+///   in order. Type, name, strand, partial markers and qualifiers stay; the result goes through `Location::new` and `Feature::new`.
 pub fn rotate_document(doc: &SequenceDocument, new_origin: usize) -> Result<SequenceDocument> {
     if doc.topology() != Topology::Circular {
         return Err(Error::InvalidState(
@@ -43,21 +43,21 @@ pub fn rotate_document(doc: &SequenceDocument, new_origin: usize) -> Result<Sequ
             let b = iv.end();
 
             if new_origin <= a {
-                // Ganz hinter dem Ursprung
+                // Entirely behind the origin
                 new_intervals.push(Interval::new(a - new_origin, b - new_origin)?);
             } else if b <= new_origin {
-                // Ganz davor
+                // Entirely before it
                 let start = a + len - new_origin;
                 let end = b + len - new_origin;
                 new_intervals.push(Interval::new(start, end)?);
             } else {
-                // Überspannt den neuen Ursprung (a < new_origin < b)
+                // Spans the new origin (a < new_origin < b)
                 let start1 = a + len - new_origin;
                 let end1 = len;
                 let start2 = 0usize;
                 let end2 = b - new_origin;
 
-                // Da a < o < b gilt, sind start1 < end1 und start2 < end2 garantiert.
+                // Since a < o < b holds, start1 < end1 and start2 < end2 are guaranteed.
                 new_intervals.push(Interval::new(start1, end1)?);
                 new_intervals.push(Interval::new(start2, end2)?);
             }
@@ -169,7 +169,7 @@ mod tests {
         let there = rotate_document(&d, 3).unwrap();
         let back = rotate_document(&there, 7).unwrap();
         assert_eq!(back.bases(), d.bases());
-        // Die beim Drehen entstandene Teilung bleibt als zwei aneinanderstoßende Intervalle erhalten.
+        // The split created by the rotation is retained as two adjoining intervals.
         let loc = back.features()[0].location();
         assert_eq!(loc.length(), 3);
         assert!((1..4).all(|p| loc.contains(p)));

@@ -1,6 +1,6 @@
-//! Ablauf eines Assistenten (Klonierung, Primerdesign …): Schritte, Fortschritt und erlaubte Wechsel.
+//! Flow of a wizard (cloning, primer design …): steps, progress and allowed transitions.
 
-/// Zustand eines Assistenten mit festen Schritten.
+/// State of a wizard with fixed steps.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Wizard {
     steps: Vec<String>,
@@ -9,7 +9,7 @@ pub struct Wizard {
 }
 
 impl Wizard {
-    /// Neuer Assistent am ersten Schritt, nichts erledigt.
+    /// New wizard at the first step, nothing completed.
     pub fn new(steps: &[&str]) -> Self {
         Self {
             steps: steps.iter().map(|s| s.to_string()).collect(),
@@ -18,24 +18,24 @@ impl Wizard {
         }
     }
 
-    /// Name des aktuellen Schritts (`None` ohne Schritte).
+    /// Name of the current step (`None` without steps).
     pub fn current_step(&self) -> Option<&str> {
         self.steps.get(self.current).map(String::as_str)
     }
 
-    /// Index des aktuellen Schritts.
+    /// Index of the current step.
     pub fn current_index(&self) -> usize {
         self.current
     }
 
-    /// Markiert den aktuellen Schritt als erledigt (ohne Schritte: nichts).
+    /// Marks the current step as completed (without steps: nothing).
     pub fn complete_current(&mut self) {
         if let Some(d) = self.done.get_mut(self.current) {
             *d = true;
         }
     }
 
-    /// Weiter zum nächsten Schritt; nur wenn der aktuelle erledigt und nicht der letzte ist. `true`, wenn gewechselt wurde.
+    /// Move on to the next step; only if the current one is completed and is not the last. `true` if the step changed.
     #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> bool {
         let finished_here = self.done.get(self.current).copied().unwrap_or(false);
@@ -47,7 +47,7 @@ impl Wizard {
         }
     }
 
-    /// Einen Schritt zurück (die Erledigt-Markierungen bleiben); `false` am ersten Schritt.
+    /// One step back (the completed marks remain); `false` at the first step.
     pub fn back(&mut self) -> bool {
         if self.current > 0 {
             self.current -= 1;
@@ -57,7 +57,7 @@ impl Wizard {
         }
     }
 
-    /// Springt zum Schritt `index`, wenn er existiert und alle Schritte davor erledigt sind. `true`, wenn gewechselt wurde.
+    /// Jumps to step `index` if it exists and all steps before it are completed. `true` if the step changed.
     pub fn go_to(&mut self, index: usize) -> bool {
         if index < self.steps.len() && self.done[..index].iter().all(|d| *d) {
             self.current = index;
@@ -67,7 +67,7 @@ impl Wizard {
         }
     }
 
-    /// Anteil erledigter Schritte (0.0–1.0); ohne Schritte 0.0.
+    /// Fraction of completed steps (0.0–1.0); 0.0 without steps.
     pub fn progress(&self) -> f64 {
         if self.steps.is_empty() {
             return 0.0;
@@ -75,7 +75,7 @@ impl Wizard {
         self.done.iter().filter(|d| **d).count() as f64 / self.steps.len() as f64
     }
 
-    /// `true`, wenn es mindestens einen Schritt gibt und alle erledigt sind.
+    /// `true` if there is at least one step and all are completed.
     pub fn is_finished(&self) -> bool {
         !self.steps.is_empty() && self.done.iter().all(|d| *d)
     }
@@ -89,13 +89,13 @@ mod tests {
     fn ablauf() {
         let mut w = Wizard::new(&["Vektor", "Insert", "Enzyme"]);
         assert_eq!(w.current_step(), Some("Vektor"));
-        assert!(!w.next()); // Schritt 0 noch nicht erledigt
+        assert!(!w.next()); // step 0 not yet completed
         w.complete_current();
         assert!(w.next());
         assert_eq!(w.current_index(), 1);
         assert!(w.back());
         assert!(!w.back());
-        assert!(!w.go_to(2)); // Schritt 1 nicht erledigt
+        assert!(!w.go_to(2)); // step 1 not completed
         assert!(w.go_to(1));
         w.complete_current();
         assert!(w.go_to(2));
@@ -103,8 +103,8 @@ mod tests {
         assert!(!w.is_finished());
         w.complete_current();
         assert!(w.is_finished());
-        assert!(!w.next()); // letzter Schritt
-        assert!(!w.go_to(3)); // gibt es nicht
+        assert!(!w.next()); // last step
+        assert!(!w.go_to(3)); // does not exist
     }
 
     #[test]

@@ -3,25 +3,25 @@ import Foundation
 import SnapiousFFI
 import SwiftUI
 
-/// Eine Aminosäure über ihren drei Codonbasen `[lo, hi]` (0-basiert).
+/// An amino acid via its three codon bases `[lo, hi]` (0-based).
 struct CodonMark {
     let lo: Int
     let hi: Int
     let letter: String
     let isStart: Bool
     let isStop: Bool
-    /// Zeile unter den Basen (0 = erste Aminosäurezeile).
+    /// Row below the bases (0 = first amino acid row).
     var row: Int = 0
 }
 
-/// Eine Schnittstelle eines Enzyms (Beginn der Erkennungssequenz, 0-basiert).
+/// A cut site of an enzyme (start of the recognition sequence, 0-based).
 struct EnzymeSite: Hashable {
     let enzyme: String
     let position: Int
 }
 
-/// Zustand der App: geöffnetes Projekt, Dokumentliste, Auswahl und Fehlermeldungen.
-/// Alle Fachlogik steckt im Rust-Kern; hier wird nur aufgerufen und angezeigt.
+/// App state: open project, document list, selection and error messages.
+/// All domain logic lives in the Rust core; this layer only calls it and displays results.
 @MainActor
 final class AppModel: ObservableObject {
     @Published var project: Project?
@@ -43,7 +43,7 @@ final class AppModel: ObservableObject {
             loadSelection()
         }
     }
-    /// Mehrfachauswahl in der Dokumentliste (z. B. für ein Alignment); bei genau einem Eintrag ist das auch `selection`.
+    /// Multi-selection in the document list (e.g. for an alignment); with exactly one entry this is also `selection`.
     @Published var multiSelection: Set<String> = [] {
         didSet {
             if multiSelection.count == 1, let only = multiSelection.first, selection != only {
@@ -53,15 +53,15 @@ final class AppModel: ObservableObject {
             }
         }
     }
-    // MARK: Ungespeicherte Änderungen
+    // MARK: Unsaved changes
     enum Leave { case tab(Int); case selection(String?) }
-    /// Ziel, das der Nutzer ansteuern wollte, während Änderungen an der Sequenz offen sind (löst die Rückfrage aus).
+    /// Target the user wanted to navigate to while changes to the sequence are open (triggers the confirmation prompt).
     @Published var pendingLeave: Leave?
     var guardBypass = false
-    /// Zahl der Rückgängig-Schritte beim Öffnen bzw. beim letzten „Speichern“ je Dokument.
+    /// Number of undo steps on opening or at the last "Save", per document.
     var baselines: [String: Int] = [:]
-    /// Schritte je Nutzeraktion (Einfügen + Annotation = 2), damit Rückgängig die Aktion als Ganzes zurücknimmt.
-    /// Mehrschrittige Aktionen: (Zahl der Schritte danach, Zahl der Schritte der Aktion).
+    /// Steps per user action (insert + annotation = 2), so that undo reverts the action as a whole.
+    /// Multi-step actions: (number of steps afterwards, number of steps of the action).
     private var undoGroups: [String: [(after: Int, steps: Int)]] = [:]
     private var redoGroups: [String: [(after: Int, steps: Int)]] = [:]
     static weak var current: AppModel?
@@ -77,14 +77,14 @@ final class AppModel: ObservableObject {
     }
 
     var currentDirty: Bool { selection.map { isDirty($0) } ?? false }
-    var selectedName: String { summary?.name ?? tr("Sequenz") }
+    var selectedName: String { summary?.name ?? tr("Sequence") }
 
-    /// Änderungen sind schon im Projekt gespeichert; „Speichern“ übernimmt sie als neuen Ausgangspunkt.
+    /// Changes are already stored in the project; "Save" adopts them as the new baseline.
     func commitEdits() {
         if let id = selection { baselines[id] = undoCount(of: id); undoGroups[id] = []; redoGroups[id] = [] }
     }
 
-    /// Verwirft alle Änderungen seit dem Öffnen bzw. dem letzten Speichern.
+    /// Discards all changes since opening or the last save.
     func discardEdits() {
         guard let project, let id = selection else { return }
         let base = baselines[id] ?? 0
@@ -93,7 +93,7 @@ final class AppModel: ObservableObject {
         reloadCurrent()
     }
 
-    /// Antwort auf die Rückfrage: `save`, `discard` oder `cancel`.
+    /// Answer to the prompt: `save`, `discard` or `cancel`.
     func resolveLeave(_ choice: String) {
         guard let target = pendingLeave else { return }
         pendingLeave = nil
@@ -107,53 +107,53 @@ final class AppModel: ObservableObject {
         guardBypass = false
     }
 
-    /// Das gewählte Alignment (wenn das gewählte Dokument eines ist).
+    /// The selected alignment (if the selected document is one).
     @Published var alignment: AlignmentDto?
     @Published var summary: DocumentSummary?
     @Published var features: [FeatureInfo] = []
-    /// Lesetiefe der gewählten Sequenz (auf höchstens 1000 Werte gemittelt) aus einer verknüpften SAM/BAM-Datei.
+    /// Read depth of the selected sequence (averaged to at most 1000 values) from a linked SAM/BAM file.
     @Published var coverage: [Double] = []
     @Published var coverageLabel = ""
     @Published var preview: String = ""
     @Published var lanes: [PlacedFeatureDto] = []
-    /// Übersetzungen der CDS-Features für die Sequenzansicht: Aminosäuren je Codon, mit der Spanne `[lo, hi]` der Codonbasen.
+    /// Translations of the CDS features for the sequence view: amino acids per codon, with the span `[lo, hi]` of the codon bases.
     @Published var codons: [CodonMark] = []
-    /// Angezeigte Leserahmen: 1, 2, 3 vorwärts, −1, −2, −3 Gegenstrang.
+    /// Displayed reading frames: 1, 2, 3 forward, −1, −2, −3 reverse strand.
     @Published var aaFrames: [Int] = []
-    /// Aminosäuren der CDS-Features zeigen.
+    /// Show amino acids of the CDS features.
     @Published var showCdsTranslation = true
-    /// Enzyme der Standarddatenbank (für die Verdauansicht).
+    /// Enzymes of the default database (for the digest view).
     @Published var enzymes: [EnzymeInfoDto] = []
-    /// Einzelschneider-Enzyme mit ihrer Position (eine Zeile je Schnittstelle), nach Position sortiert.
+    /// Single-cutter enzymes with their position (one row per cut site), sorted by position.
     @Published var uniqueSites: [EnzymeSite] = []
-    /// Alle Schnittstellen aller Enzyme der Standarddatenbank (Grundlage für den Filter der Kartenansicht).
+    /// All cut sites of all enzymes in the default database (basis for the map view filter).
     @Published var allSites: [EnzymeSite] = []
-    /// Enzymfilter der Karte: `unique`, `double`, `all`, `custom` oder `set:<Name>`.
+    /// Enzyme filter of the map: `unique`, `double`, `all`, `custom` or `set:<name>`.
     @Published var siteFilter: String = UserDefaults.standard.string(forKey: "siteFilter") ?? "set:Häufige Klonierung" {
         didSet { UserDefaults.standard.set(siteFilter, forKey: "siteFilter") }
     }
     @Published var customEnzymes: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "customEnzymes") ?? []) {
         didSet { UserDefaults.standard.set(Array(customEnzymes), forKey: "customEnzymes") }
     }
-    /// Darstellung der Karte: `auto` (nach Topologie), `ring` oder `linear`.
+    /// Map display: `auto` (by topology), `ring` or `linear`.
     @Published var mapStyle = "auto"
-    /// Vergrößerung (1 = ganze Sequenz) und linker Rand des sichtbaren Ausschnitts in Basen.
+    /// Zoom (1 = whole sequence) and left edge of the visible section in bases.
     @Published var zoom = 1.0
     @Published var viewStart = 0.0
-    /// Drehung des ganzen Rings (Position, die oben steht), solange er nicht vergrößert ist.
+    /// Rotation of the whole ring (position at the top) as long as it is not zoomed in.
     @Published var ringRotation = 0.0
-    /// Ganze Sequenz für die Sequenzansicht (bis `fullLimit` Basen).
+    /// Whole sequence for the sequence view (up to `fullLimit` bases).
     @Published var fullBases: String = "" {
         didSet { fullBytes = Array(fullBases.utf8) }
     }
-    /// Dieselben Basen als Bytes (schneller Zugriff beim Zeichnen).
+    /// The same bases as bytes (fast access while drawing).
     private(set) var fullBytes: [UInt8] = []
-    /// Auswahl in der Sequenzansicht: Positionen zwischen den Basen, `nil` = nichts ausgewählt.
+    /// Selection in the sequence view: positions between bases, `nil` = nothing selected.
     @Published var selStart: Int?
     @Published var selEnd: Int?
     @Published var selStats: SelectionStatsDto?
     @Published var errorMessage: String?
-    /// Gewählter Reiter der Detailansicht (0 = Übersicht … 12 = NGS).
+    /// Selected tab of the detail view (0 = overview … 12 = NGS).
     /// Interface language: `en` or `de` (setting, applies immediately).
     @Published var language: String = L10n.language {
         didSet { L10n.language = language }
@@ -168,16 +168,16 @@ final class AppModel: ObservableObject {
             }
         }
     }
-    /// Kurze Rückmeldung unten im Fenster (verschwindet nach wenigen Sekunden).
+    /// Short feedback at the bottom of the window (disappears after a few seconds).
     @Published var notice: String?
     private var noticeToken = 0
-    /// Zuletzt geöffnete Projekte (neueste zuerst), gespeichert in den Benutzereinstellungen.
+    /// Recently opened projects (newest first), stored in the user settings.
     @Published var recentProjects: [String] = (UserDefaults.standard.stringArray(forKey: "recentProjects") ?? []).filter { FileManager.default.fileExists(atPath: $0) }
-    /// Hinweise des letzten Zusammenbaus (Gibson/Golden Gate), `nil` wenn keine.
+    /// Notes from the last assembly (Gibson/Golden Gate), `nil` if none.
     @Published var assemblyNotice: String?
 
     private static let lastProjectKey = "lastProjectPath"
-    /// Zahl der Basen, die in der Vorschau erscheinen.
+    /// Number of bases shown in the preview.
     static let previewLength: UInt64 = 600
     static let fullLimit: UInt64 = 2_000_000
 
@@ -190,11 +190,11 @@ final class AppModel: ObservableObject {
     }
 
     var projectTitle: String {
-        guard let p = project else { return tr("Kein Projekt geöffnet") }
+        guard let p = project else { return tr("No project open") }
         return URL(fileURLWithPath: p.path()).deletingPathExtension().lastPathComponent
     }
 
-    // MARK: Projekt
+    // MARK: Project
 
     func open(path: String) {
         run {
@@ -211,10 +211,10 @@ final class AppModel: ObservableObject {
 
     func newProject() {
         let panel = NSSavePanel()
-        panel.title = tr("Neues Snapious-Projekt")
+        panel.title = tr("New Snapious project")
         panel.nameFieldStringValue = "Projekt.snapious"
         panel.canCreateDirectories = true
-        // Immer im Dokumente-Ordner beginnen (das Panel merkt sich sonst den zuletzt benutzten Ordner)
+        // Always start in the Documents folder (otherwise the panel remembers the last used folder)
         panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         guard panel.runModal() == .OK, let url = panel.url else { return }
         open(path: url.path)
@@ -222,18 +222,18 @@ final class AppModel: ObservableObject {
 
     func openProject() {
         let panel = NSOpenPanel()
-        panel.title = tr("Snapious-Projekt öffnen")
+        panel.title = tr("Open Snapious project")
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         open(path: url.path)
     }
 
-    // MARK: Dokumente
+    // MARK: Documents
 
     func importFiles(_ urls: [URL]) {
         guard let project else {
-            errorMessage = tr("Bitte zuerst ein Projekt anlegen oder öffnen.")
+            errorMessage = tr("Please create or open a project first.")
             return
         }
         run {
@@ -244,41 +244,41 @@ final class AppModel: ObservableObject {
             }
             try self.refresh()
             if let last { self.selection = last }
-            self.announce(urls.count == 1 ? tr("„%@“ importiert", "\(urls[0].lastPathComponent)") : tr("%@ Dateien importiert", "\(urls.count)"))
+            self.announce(urls.count == 1 ? tr("“%@” imported", "\(urls[0].lastPathComponent)") : tr("%@ files imported", "\(urls.count)"))
         }
     }
 
     func chooseFilesToImport() {
         let panel = NSOpenPanel()
-        panel.title = tr("Importieren (FASTA, FASTQ, GenBank, EMBL, SnapGene, PIR, GCG, MEGA, NEXUS, Clustal, PHYLIP)")
+        panel.title = tr("Import (FASTA, FASTQ, GenBank, EMBL, SnapGene, PIR, GCG, MEGA, NEXUS, Clustal, PHYLIP)")
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         guard panel.runModal() == .OK else { return }
         importFiles(panel.urls)
     }
 
-    /// Speichert ein Dokument über einen Dialog in einer Datei (`format` wie bei `exportDocument`, `ext` ist die Dateiendung).
+    /// Saves a document to a file via a dialog (`format` as in `exportDocument`, `ext` is the file extension).
     func export(id: String, format: String, ext: String) {
         guard let project, let info = documents.first(where: { $0.id == id }) else { return }
         let panel = NSSavePanel()
-        panel.title = tr("Exportieren als %@", "\(format)")
+        panel.title = tr("Export as %@", "\(format)")
         panel.nameFieldStringValue = "\(info.name).\(ext)"
         panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         guard panel.runModal() == .OK, let url = panel.url else { return }
         run { try project.exportDocument(id: id, path: url.path, format: format) }
     }
 
-    /// Liest Annotationen (GFF3 oder BED) aus einer Datei und trägt sie als Features ins Dokument ein.
+    /// Reads annotations (GFF3 or BED) from a file and adds them to the document as features.
     func importAnnotations(id: String) {
         guard let project else { return }
         let panel = NSOpenPanel()
-        panel.title = tr("Annotationen importieren (GFF3 oder BED)")
+        panel.title = tr("Import annotations (GFF3 or BED)")
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         run {
             let n = try project.importAnnotations(id: id, path: url.path)
             if self.selection == id { self.reloadCurrent() }
-            self.assemblyNotice = tr("%@ Annotation(en) importiert", "\(n)")
+            self.assemblyNotice = tr("%@ annotation(s) imported", "\(n)")
         }
     }
 
@@ -300,7 +300,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Liste neu laden und ein Dokument auswählen (z. B. nach dem Speichern eines Konstrukts).
+    /// Reload the list and select a document (e.g. after saving a construct).
     func reload(selecting id: String?) {
         run {
             try self.refresh()
@@ -312,12 +312,12 @@ final class AppModel: ObservableObject {
         documents = try project?.documents() ?? []
     }
 
-    /// Art des gewählten Dokuments (`sequence`, `alignment`) oder `nil`.
+    /// Kind of the selected document (`sequence`, `alignment`) or `nil`.
     var selectedType: String? {
         documents.first { $0.id == selection }?.docType
     }
 
-    /// Aminosäuren aller CDS-Features (nur bei kurzen Dokumenten, damit die Ansicht schnell bleibt).
+    /// Amino acids of all CDS features (only for short documents, to keep the view fast).
     private func loadCodons(project: Project, id: String) -> [CodonMark] {
         guard (summary?.length ?? 0) <= 500_000, summary?.seqType != "PROTEIN" else { return [] }
         var marks: [CodonMark] = []
@@ -348,7 +348,7 @@ final class AppModel: ObservableObject {
         return marks
     }
 
-    /// Wählt die angezeigten Leserahmen und lädt die Aminosäuren neu.
+    /// Selects the displayed reading frames and reloads the amino acids.
     func setFrames(_ frames: [Int], cds: Bool) {
         aaFrames = frames
         showCdsTranslation = cds
@@ -356,7 +356,7 @@ final class AppModel: ObservableObject {
         codons = loadCodons(project: project, id: id)
     }
 
-    /// Legt Sequenzen aus eingefügtem Text an und wählt die erste. `true` bei Erfolg.
+    /// Creates sequences from pasted text and selects the first one. `true` on success.
     func createSequence(name: String, text: String, kind: String, circular: Bool) -> Bool {
         guard let project else { return false }
         var ok = false
@@ -365,14 +365,14 @@ final class AppModel: ObservableObject {
             try self.refresh()
             self.multiSelection = Set(infos.prefix(1).map { $0.id })
             self.selection = infos.first?.id
-            self.announce(infos.count == 1 ? tr("Sequenz „%@“ angelegt", "\(infos[0].name)") : tr("%@ Sequenzen angelegt", "\(infos.count)"))
+            self.announce(infos.count == 1 ? tr("Sequence “%@” created", "\(infos[0].name)") : tr("%@ sequences created", "\(infos.count)"))
             ok = true
         }
         return ok
     }
 
-    /// Setzt die Fragmente in der gegebenen Reihenfolge zusammen (`gibson`, `infusion`, `slic`, `goldengate`);
-    /// gibt die Hinweise des Zusammenbaus zurück (`nil` bei Fehler, der Fehler steht dann in `errorMessage`).
+    /// Assembles the fragments in the given order (`gibson`, `infusion`, `slic`, `goldengate`);
+    /// returns the assembly notes (`nil` on error; the error is then in `errorMessage`).
     func assembleFragments(ids: [String], kind: String, circular: Bool, enzyme: String, name: String) -> [String]? {
         guard let project, ids.count >= 2 else { return nil }
         var warnings: [String]?
@@ -389,7 +389,7 @@ final class AppModel: ObservableObject {
             try self.refresh()
             self.multiSelection = [result.document.id]
             self.selection = result.document.id
-            self.announce(tr("Konstrukt „%@“ angelegt", "\(result.document.name)"))
+            self.announce(tr("Construct “%@” created", "\(result.document.name)"))
             warnings = result.warnings
         }
         return warnings
@@ -443,9 +443,9 @@ final class AppModel: ObservableObject {
         }
     }
 
-    // MARK: Alignment und Baum
+    // MARK: Alignment and tree
 
-    /// Richtet die in der Liste gewählten Sequenzen aus und wählt das neue Alignment.
+    /// Aligns the sequences selected in the list and selects the new alignment.
     func alignSelected(backend: String = "builtin") {
         guard let project, multiSelection.count >= 2 else { return }
         let ids = documents.filter { multiSelection.contains($0.id) && $0.docType == "sequence" }.map { $0.id }
@@ -456,11 +456,11 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Setzt die in der Liste gewählten Sequenzen zusammen: `kind` ist `gibson`, `infusion`, `slic` oder `goldengate` (dann mit `enzyme`).
-    /// Meldet Hinweise des Zusammenbaus über `errorMessage`-ähnlichen Text in `assemblyNotice`.
+    /// Assembles the sequences selected in the list: `kind` is `gibson`, `infusion`, `slic` or `goldengate` (the latter with `enzyme`).
+    /// Reports assembly notes via `errorMessage`-like text in `assemblyNotice`.
     func assembleSelected(kind: String, circular: Bool, enzyme: String = "BsaI") {
         guard let project, multiSelection.count >= 2 else { return }
-        // Reihenfolge wie in der Liste
+        // Order as in the list
         let ids = documents.filter { multiSelection.contains($0.id) && $0.docType == "sequence" }.map { $0.id }
         run {
             let result: AssemblyDto
@@ -475,10 +475,10 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Lädt die Lesetiefe aus einer SAM/BAM-Datei für die gewählte Sequenz und zeigt sie unter der Sequenzansicht.
+    /// Loads the read depth from a SAM/BAM file for the selected sequence and shows it below the sequence view.
     func showCoverage(path: String, label: String) {
         guard let project, let id = selection else { return }
-        // Große SAM/BAM-Dateien brauchen Zeit: im Hintergrund lesen, damit die Oberfläche nicht einfriert
+        // Large SAM/BAM files take time: read in the background so the UI does not freeze
         Task.detached {
             do {
                 let depth = try project.coverageDepth(referenceId: id, alignmentPath: path, bins: 1000)
@@ -496,7 +496,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Setzt die gewählten Sequenzen zu Contigs zusammen und wählt den ersten.
+    /// Assembles the selected sequences into contigs and selects the first.
     func assembleReadsSelected(minOverlap: Int) {
         guard let project, multiSelection.count >= 2 else { return }
         let ids = documents.filter { multiSelection.contains($0.id) && $0.docType == "sequence" }.map { $0.id }
@@ -504,11 +504,11 @@ final class AppModel: ObservableObject {
             let infos = try project.assembleReads(ids: ids, minOverlap: UInt64(minOverlap))
             try self.refresh()
             if let first = infos.first { self.selection = first.id }
-            self.assemblyNotice = tr("%@ Contig(s) aus %@ Reads", "\(infos.count)", "\(ids.count)")
+            self.assemblyNotice = tr("%@ contig(s) from %@ reads", "\(infos.count)", "\(ids.count)")
         }
     }
 
-    /// Bildet die übrigen gewählten Sequenzen auf die erste gewählte (Referenz) ab.
+    /// Maps the other selected sequences onto the first selected one (reference).
     func mapReadsSelected(maxMismatches: Int) -> [ReadMapDto] {
         guard let project else { return [] }
         let ids = documents.filter { multiSelection.contains($0.id) && $0.docType == "sequence" }.map { $0.id }
@@ -521,7 +521,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Neues Alignment ohne Spalten, in denen mindestens der Anteil `threshold` der Zeilen eine Lücke hat.
+    /// New alignment without columns in which at least the fraction `threshold` of rows has a gap.
     func stripSelectedAlignment(threshold: Double) {
         guard let project, let id = selection, selectedType == "alignment" else { return }
         run {
@@ -531,7 +531,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Konsenssequenz des gewählten Alignments als neues Dokument.
+    /// Consensus sequence of the selected alignment as a new document.
     func consensusOfSelectedAlignment() {
         guard let project, let id = selection, selectedType == "alignment" else { return }
         run {
@@ -541,7 +541,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Konsens aus den in der Liste gewählten Sequenzierungen (Alignment und Konsenssequenz werden angelegt).
+    /// Consensus from the sequencing reads selected in the list (alignment and consensus sequence are created).
     @discardableResult
     func consensusOfSelectedReads(minQuality: Int) -> Bool {
         guard let project else { return false }
@@ -552,15 +552,15 @@ final class AppModel: ObservableObject {
             try self.refresh()
             self.multiSelection = [info.id]
             self.selection = info.id
-            self.announce(tr("Konsens aus %@ Reads angelegt (Alignment der Reads ebenfalls)", "\(ids.count)"))
+            self.announce(tr("Consensus from %@ reads created (alignment of the reads too)", "\(ids.count)"))
             ok = true
         }
         return ok
     }
 
-    // MARK: Features bearbeiten
+    // MARK: Edit features
 
-    /// Trägt die Auswahl als Feature ein.
+    /// Adds the selection as a feature.
     func addFeatureFromSelection(name: String, type: String, strand: String) {
         guard let project, let id = selection, let a = selStart, let b = selEnd, a != b else { return }
         let info = FeatureInfo(featureType: type, name: name, start: UInt64(min(a, b)), end: UInt64(max(a, b)), strand: strand)
@@ -570,7 +570,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Entfernt das Feature mit diesem Index aus dem Dokument.
+    /// Removes the feature with this index from the document.
     func removeFeature(index: Int) {
         guard let project, let id = selection else { return }
         run {
@@ -579,43 +579,43 @@ final class AppModel: ObservableObject {
         }
     }
 
-    // MARK: Suchen
+    // MARK: Search
 
     @Published var motifHits: [MotifHitDto] = []
     @Published var motifIndex = 0
     @Published var motifMessage: String?
 
-    /// Sucht ein Motiv (IUPAC) im gewählten Dokument und wählt den ersten Treffer.
+    /// Searches for a motif (IUPAC) in the selected document and selects the first hit.
     func findMotif(_ motif: String) {
         motifMessage = nil
         guard let project, let id = selection, !motif.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         do {
             motifHits = try project.findMotifHits(id: id, motif: motif)
             motifIndex = -1
-            if motifHits.isEmpty { motifMessage = tr("Nicht gefunden") } else { nextMotif(1) }
+            if motifHits.isEmpty { motifMessage = tr("Not found") } else { nextMotif(1) }
         } catch {
             motifHits = []
             motifMessage = error.localizedDescription
         }
     }
 
-    /// Springt zum nächsten (+1) oder vorigen (−1) Treffer und wählt ihn.
+    /// Jumps to the next (+1) or previous (−1) hit and selects it.
     func nextMotif(_ step: Int) {
         guard !motifHits.isEmpty else { return }
         motifIndex = ((motifIndex + step) % motifHits.count + motifHits.count) % motifHits.count
         let h = motifHits[motifIndex]
         select(from: Int(h.start), to: Int(min(h.end, UInt64(fullBytes.count))))
-        motifMessage = tr("Treffer %@ von %@", "\(motifIndex + 1)", "\(motifHits.count)") + (h.reverse ? tr(" (Gegenstrang)") : "")
+        motifMessage = tr("Hit %@ of %@", "\(motifIndex + 1)", "\(motifHits.count)") + (h.reverse ? tr(" (reverse strand)") : "")
     }
 
-    // MARK: Karte: Enzymfilter und Zoom
+    // MARK: Map: enzyme filter and zoom
 
-    /// Zahl der Schnittstellen je Enzym in der aktuellen Sequenz.
+    /// Number of cut sites per enzyme in the current sequence.
     var siteCounts: [String: Int] {
         Dictionary(allSites.map { ($0.enzyme, 1) }, uniquingKeysWith: +)
     }
 
-    /// Die nach `siteFilter` ausgewählten Schnittstellen.
+    /// The cut sites selected according to `siteFilter`.
     var visibleSites: [EnzymeSite] {
         let counts = siteCounts
         switch siteFilter {
@@ -630,7 +630,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Mitglieder der Enzymsets (Name → Enzyme), damit das Zeichnen nicht jedes Mal die Datei liest.
+    /// Members of the enzyme sets (name → enzymes), so drawing does not read the file every time.
     var setMembers: [String: Set<String>] = [:]
 
     func refreshEnzymeSets() {
@@ -638,18 +638,18 @@ final class AppModel: ObservableObject {
         objectWillChange.send()
     }
 
-    /// Länge des Dokuments in Basen.
+    /// Length of the document in bases.
     var docLength: Int { Int(summary?.length ?? 0) }
 
-    /// Sichtbare Spanne in Basen bei der aktuellen Vergrößerung.
+    /// Visible span in bases at the current zoom.
     var viewSpan: Double { max(1, Double(docLength) / zoom) }
 
-    /// Breite der Kartenansicht in Punkten (von der Ansicht gesetzt).
+    /// Width of the map view in points (set by the view).
     var viewWidth: Double = 1000
-    /// Schriftgröße der linearen Sequenzansicht als Faktor (1 = normal).
+    /// Font size of the linear sequence view as a factor (1 = normal).
     @Published var textScale = 1.0
 
-    /// Größte Vergrößerung: im linearen Modus die Stufe, ab der die Basen als Text erscheinen (neun Punkte je Base); im Ring bis acht Basen.
+    /// Maximum zoom: in linear mode the level at which bases appear as text (nine points per base); in the ring up to eight bases.
     var maxZoom: Double {
         let len = Double(max(1, docLength))
         let ringMode = mapStyle == "ring" || (mapStyle == "auto" && summary?.topology == "CIRCULAR")
@@ -665,7 +665,7 @@ final class AppModel: ObservableObject {
         viewStart = clampStart(centre - viewSpan / 2)
     }
 
-    /// Im Plasmid-Ring läuft der Ausschnitt über die Nahtstelle hinweg (endlos drehen); sonst bleibt er innerhalb der Sequenz.
+    /// In the plasmid ring the section wraps across the seam (rotate endlessly); otherwise it stays within the sequence.
     var ringMode: Bool { summary?.seqType != "PROTEIN" && (mapStyle == "ring" || (mapStyle == "auto" && summary?.topology == "CIRCULAR")) }
 
     func clampStart(_ v: Double) -> Double {
@@ -682,9 +682,9 @@ final class AppModel: ObservableObject {
         viewStart = clampStart(start)
     }
 
-    // MARK: Bearbeiten
+    // MARK: Edit
 
-    /// Ersetzt die Auswahl (oder fügt am Cursor ein) durch `bases`; leerer Text löscht die Auswahl.
+    /// Replaces the selection (or inserts at the cursor) with `bases`; empty text deletes the selection.
     func replaceSelection(with bases: String) {
         guard let project, let id = selection else { return }
         let allowed = summary?.seqType == "PROTEIN" ? "ACDEFGHIKLMNPQRSTVWYXBZUOJ*" : "ACGTUNRYSWKMBDHV"
@@ -692,7 +692,7 @@ final class AppModel: ObservableObject {
         guard let a = selStart, let b = selEnd else { return }
         let lo = min(a, b), hi = max(a, b)
         if cleaned.isEmpty && lo == hi { return }
-        // Weitertippen direkt hinter einer automatisch angelegten „Neu“-Annotation verlängert sie
+        // Continuing to type directly after an automatically created "New" annotation extends it
         let before = undoCount(of: id)
         let joined = features.first { $0.name == Self.newName && $0.featureType == "misc_feature" && Int($0.end) == lo && lo == hi }
         run {
@@ -704,7 +704,7 @@ final class AppModel: ObservableObject {
                 try project.editReplace(id: id, start: UInt64(lo), end: UInt64(hi), bases: cleaned)
             }
             if !cleaned.isEmpty, self.summary?.seqType != "PROTEIN" {
-                // Neues als Annotation markieren (ein Rückgängig-Schritt zusammen mit dem Einfügen)
+                // Mark the new part as an annotation (one undo step together with the insertion)
                 var start = lo
                 if let j = joined, let idx = try? project.features(id: id).firstIndex(where: { $0.name == Self.newName && Int($0.end) == lo }) {
                     start = Int(j.start)
@@ -723,7 +723,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Löscht das Zeichen vor dem Cursor (Rücktaste) oder die Auswahl.
+    /// Deletes the character before the cursor (Backspace) or the selection.
     func backspace() {
         guard let project, let id = selection, let a = selStart, let b = selEnd else { return }
         let lo = min(a, b), hi = max(a, b)
@@ -740,7 +740,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Verschiebt den Cursor um `delta` Basen (hebt die Auswahl auf).
+    /// Moves the cursor by `delta` bases (clears the selection).
     func moveCaret(by delta: Int) {
         let total = fullBytes.count
         let base = (delta < 0 ? min(selStart ?? 0, selEnd ?? 0) : max(selStart ?? 0, selEnd ?? 0))
@@ -752,21 +752,21 @@ final class AppModel: ObservableObject {
 
     static let newName = "Neu"
 
-    // MARK: Annotationen
+    // MARK: Annotations
 
-    /// Annotationstypen, die in Karte und Sequenz ausgeblendet sind.
-    /// Markierte Basen übersetzen: `off`, `forward` (ab der ersten markierten Base) oder `reverse` (Gegenstrang der Markierung).
+    /// Annotation types hidden in map and sequence.
+    /// Translate selected bases: `off`, `forward` (from the first selected base) or `reverse` (reverse strand of the selection).
     @Published var translateSelection = "off"
     @Published var hiddenTypes: Set<String> = []
-    /// Seitenleiste mit der Annotationsliste.
+    /// Sidebar with the annotation list.
     @Published var showAnnotations = true
     @Published var selectedFeature: Int?
-    /// Position, zu der die lineare Ansicht scrollen soll.
+    /// Position the linear view should scroll to.
     @Published var scrollBP = 0
 
     var visibleLanes: [PlacedFeatureDto] { lanes.filter { !hiddenTypes.contains($0.featureType) } }
 
-    /// Wählt eine Annotation: Bereich markieren und dorthin scrollen bzw. den Ring-Ausschnitt verschieben.
+    /// Selects an annotation: marks the range and scrolls there or moves the ring section.
     func focusFeature(_ index: Int, scroll: Bool = true) {
         guard features.indices.contains(index) else { return }
         let f = features[index]
@@ -778,7 +778,7 @@ final class AppModel: ObservableObject {
         if zoom > 1.001 { panView(to: mid - viewSpan / 2) }
     }
 
-    /// Neue Annotation anlegen (ein Rückgängig-Schritt).
+    /// Create a new annotation (one undo step).
     func addAnnotation(_ info: FeatureInfo) {
         guard let project, let id = selection else { return }
         run {
@@ -788,7 +788,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Annotation ändern (entfernen + neu anlegen, als ein Rückgängig-Schritt).
+    /// Edit an annotation (remove + recreate, as one undo step).
     func updateAnnotation(index: Int, to info: FeatureInfo) {
         guard let project, let id = selection else { return }
         let before = undoCount(of: id)
@@ -818,7 +818,7 @@ final class AppModel: ObservableObject {
         step { p, i in var any = false; for _ in 0..<n { any = try p.editRedo(id: i) || any }; return any }
     }
 
-    /// Text der Auswahl (für Kopieren/Ausschneiden per Tastatur).
+    /// Text of the selection (for copy/cut via keyboard).
     func selectionString() -> String? {
         guard let a = selStart, let b = selEnd, a != b else { return nil }
         let lo = max(0, min(a, b)), hi = min(fullBytes.count, max(a, b))
@@ -826,7 +826,7 @@ final class AppModel: ObservableObject {
         return String(decoding: fullBytes[lo..<hi], as: UTF8.self)
     }
 
-    /// Entf-Taste: löscht die Auswahl oder die Base hinter dem Cursor.
+    /// Delete key: deletes the selection or the base after the cursor.
     func forwardDelete() {
         guard let a = selStart, let b = selEnd else { return }
         if a != b { replaceSelection(with: ""); return }
@@ -845,13 +845,13 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Zahl der möglichen Rückgängig-Schritte und ob Wiederholen möglich ist.
+    /// Number of possible undo steps and whether redo is possible.
     var undoState: (undo: Int, redo: Bool) {
         guard let project, let id = selection, let s = try? project.editState(id: id), s.count == 2 else { return (0, false) }
         return (Int(s[0]), s[1] != 0)
     }
 
-    /// Dokumentdaten neu laden, Auswahl bleibt erhalten.
+    /// Reload document data, keeping the selection.
     func reloadCurrent() {
         let keepA = selStart, keepB = selEnd
         loadSelection()
@@ -859,7 +859,7 @@ final class AppModel: ObservableObject {
         selEnd = keepB
     }
 
-    // MARK: Auswahl in der Sequenzansicht
+    // MARK: Selection in the sequence view
 
     var hasSelection: Bool {
         if let a = selStart, let b = selEnd { return a != b }
@@ -872,7 +872,7 @@ final class AppModel: ObservableObject {
         selStats = nil
     }
 
-    /// Setzt die Auswahl (Positionen zwischen den Basen) und holt die Kennzahlen.
+    /// Sets the selection (positions between bases) and fetches the statistics.
     func select(from a: Int, to b: Int) {
         selStart = a
         selEnd = b
@@ -887,7 +887,7 @@ final class AppModel: ObservableObject {
         selStats = try? project.selectionStats(id: id, start: UInt64(min(a, b)), end: UInt64(max(a, b)))
     }
 
-    /// Kopiert die Auswahl in die Zwischenablage (`bases`, `fasta` oder `reverse_complement`).
+    /// Copies the selection to the clipboard (`bases`, `fasta` or `reverse_complement`).
     func copySelection(format: String) {
         guard let project, let id = selection, let a = selStart, let b = selEnd, a != b else { return }
         run {
@@ -897,9 +897,9 @@ final class AppModel: ObservableObject {
         }
     }
 
-    // MARK: Sequenzwerkzeuge (Rückübersetzung, Zusammenfügen, Vergleich, Alignment-Spalten)
+    // MARK: Sequence tools (back-translation, joining, comparison, alignment columns)
 
-    /// Rückübersetzt das gewählte Protein in ein neues DNA-Dokument. `true` bei Erfolg.
+    /// Back-translates the selected protein into a new DNA document. `true` on success.
     @discardableResult
     func backTranslateSelected(mode: String, name: String) -> Bool {
         guard let project, let id = selection else { return false }
@@ -914,7 +914,7 @@ final class AppModel: ObservableObject {
         return ok
     }
 
-    /// Fügt die in der Liste gewählten Sequenzen (Reihenfolge wie in der Liste) zu einer neuen zusammen.
+    /// Joins the sequences selected in the list (order as in the list) into a new one.
     @discardableResult
     func concatenateSelected(name: String, circular: Bool) -> Bool {
         guard let project, multiSelection.count >= 2 else { return false }
@@ -930,12 +930,12 @@ final class AppModel: ObservableObject {
         return ok
     }
 
-    /// Vergleicht die Features der ersten beiden gewählten Sequenzen.
+    /// Compares the features of the first two selected sequences.
     func compareAnnotationsSelected(mode: String) -> AnnotationComparisonDto? {
         guard let project else { return nil }
         let ids = documents.filter { multiSelection.contains($0.id) && $0.docType == "sequence" }.map { $0.id }
         guard ids.count == 2 else {
-            errorMessage = tr("Zum Vergleichen genau zwei Sequenzen wählen.")
+            errorMessage = tr("Select exactly two sequences to compare.")
             return nil
         }
         var result: AnnotationComparisonDto?
@@ -943,12 +943,12 @@ final class AppModel: ObservableObject {
         return result
     }
 
-    /// Features einer Sequenz (für die Anzeige von Vergleichsergebnissen).
+    /// Features of a sequence (for displaying comparison results).
     func featuresOf(_ id: String) -> [FeatureInfo] {
         (try? project?.features(id: id)) ?? []
     }
 
-    /// Entfernt Spalten aus dem gewählten Alignment (`gaps`, `constant`, `codon`) und wählt das Ergebnis.
+    /// Removes columns from the selected alignment (`gaps`, `constant`, `codon`) and selects the result.
     @discardableResult
     func stripColumns(kind: String, param: Double, start: Int, name: String) -> Bool {
         guard let project, let id = selection, selectedType == "alignment" else { return false }
@@ -962,7 +962,7 @@ final class AppModel: ObservableObject {
         return ok
     }
 
-    /// Neue Sequenz: Referenzzeile des gewählten Alignments mit den Varianten einer anderen Zeile.
+    /// New sequence: reference row of the selected alignment with the variants of another row.
     @discardableResult
     func sequenceWithVariants(reference: Int, row: Int, name: String) -> Bool {
         guard let project, let id = selection, selectedType == "alignment" else { return false }
@@ -977,7 +977,7 @@ final class AppModel: ObservableObject {
         return ok
     }
 
-    /// Mögliche stille Änderungen im CDS-Feature `feature` der gewählten Sequenz.
+    /// Possible silent changes in the CDS feature `feature` of the selected sequence.
     func silentChanges(feature: Int, site: String, mode: String) -> [SilentChangeDto] {
         guard let project, let id = selection else { return [] }
         var list: [SilentChangeDto] = []
@@ -985,7 +985,7 @@ final class AppModel: ObservableObject {
         return list
     }
 
-    /// Wendet eine stille Änderung an (ersetzt die eine Base).
+    /// Applies a silent change (replaces the single base).
     func applySilentChange(_ c: SilentChangeDto) {
         let p = Int(c.position)
         selStart = p
@@ -993,7 +993,7 @@ final class AppModel: ObservableObject {
         replaceSelection(with: c.to)
     }
 
-    /// Legt aus den Features des gewählten Typs (leer = alle) neue Sequenzen an. Gibt die Zahl der neuen Dokumente zurück.
+    /// Creates new sequences from the features of the selected type (empty = all). Returns the number of new documents.
     @discardableResult
     func extractFeatures(type: String, flank: Int) -> Int {
         guard let project, let id = selection else { return 0 }
@@ -1002,12 +1002,12 @@ final class AppModel: ObservableObject {
             let infos = try project.extractFeatures(id: id, featureType: type, flank: UInt64(max(0, flank)))
             try self.refresh()
             count = infos.count
-            self.announce(tr("%@ neue Sequenz(en) aus Features angelegt", "\(infos.count)"))
+            self.announce(tr("%@ new sequence(s) created from features", "\(infos.count)"))
         }
         return count
     }
 
-    /// Zeigt `text` einige Sekunden unten im Fenster.
+    /// Shows `text` at the bottom of the window for a few seconds.
     func announce(_ text: String) {
         notice = text
         noticeToken += 1

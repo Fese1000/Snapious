@@ -1,23 +1,23 @@
-//! Agarosegel-Simulation: Laufstrecke aus der Fragmentgröße und Banden einer Spur.
+//! Agarose gel simulation: migration distance from fragment size and bands of a lane.
 
-/// Eine Bande. `mobility` 0.0 = ganz oben (große Fragmente), 1.0 = ganz unten.
+/// A band. `mobility` 0.0 = very top (large fragments), 1.0 = very bottom.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Band {
     pub size_bp: usize,
     pub mobility: f64,
-    /// Relative Helligkeit, die hellste Bande einer Spur hat 1.0.
+    /// Relative brightness; the brightest band of a lane has 1.0.
     pub intensity: f64,
 }
 
-/// Eine Spur auf dem Gel.
+/// A lane on the gel.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Lane {
     pub label: String,
-    /// Von oben nach unten sortiert (größte Fragmente zuerst).
+    /// Sorted top to bottom (largest fragments first).
     pub bands: Vec<Band>,
 }
 
-/// Größenstandard.
+/// Size standard.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ladder {
     pub name: String,
@@ -46,13 +46,13 @@ impl Ladder {
     }
 }
 
-/// Simulation für eine Agarosekonzentration.
+/// Simulation for an agarose concentration.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GelSimulator {
     agarose_percent: f64,
 }
 
-/// Stützstellen `(Prozent, kleinste auflösbare Größe, größte auflösbare Größe)`.
+/// Support points `(percent, smallest resolvable size, largest resolvable size)`.
 const TABLE: [(f64, f64, f64); 4] = [
     (0.7, 500.0, 15000.0),
     (1.0, 300.0, 10000.0),
@@ -61,7 +61,7 @@ const TABLE: [(f64, f64, f64); 4] = [
 ];
 
 impl GelSimulator {
-    /// Merkt die Konzentration; Werte außerhalb von 0,5 bis 3,0 werden auf diesen Bereich begrenzt.
+    /// Stores the concentration; values outside 0.5 to 3.0 are clamped to this range.
     pub fn new(agarose_percent: f64) -> GelSimulator {
         let clamped = agarose_percent.clamp(0.5, 3.0);
         GelSimulator {
@@ -73,8 +73,8 @@ impl GelSimulator {
         self.agarose_percent
     }
 
-    /// Auflösungsbereich `(smin, smax)` in bp. Zwischen den Stützstellen aus `TABLE` wird `log10` der Größe linear
-    /// in der Prozentzahl interpoliert; unterhalb der ersten und oberhalb der letzten Stützstelle gelten deren Werte.
+    /// Resolution range `(smin, smax)` in bp. Between the support points of `TABLE`, `log10` of the size is interpolated linearly
+    /// in the percentage; below the first and above the last support point their values apply.
     pub fn range(&self) -> (f64, f64) {
         let p = self.agarose_percent;
         let mut smin_log = 0.0f64;
@@ -104,7 +104,7 @@ impl GelSimulator {
         (10f64.powf(smin_log), 10f64.powf(smax_log))
     }
 
-    /// `clamp((log10(smax) − log10(size)) / (log10(smax) − log10(smin)), 0, 1)`; Größe 0 zählt wie 1.
+    /// `clamp((log10(smax) − log10(size)) / (log10(smax) − log10(smin)), 0, 1)`; size 0 counts as 1.
     pub fn mobility(&self, size_bp: usize) -> f64 {
         let (smin, smax) = self.range();
         let size = if size_bp == 0 { 1 } else { size_bp };
@@ -124,10 +124,10 @@ impl GelSimulator {
         (num / den).clamp(0.0, 1.0)
     }
 
-    /// Spur für Fragmente. Gleiche Größen werden zu einer Bande zusammengefasst. Rohintensität einer Größe =
-    /// `mass_ng · size · anzahl / summe_aller_größen`; danach durch die größte Rohintensität geteilt (hellste Bande = 1.0).
-    /// Größen 0 werden ignoriert. Keine Fragmente oder `mass_ng <= 0`: alle Intensitäten 0.0 (bei keinen Fragmenten keine Banden).
-    /// Banden nach Größe absteigend.
+    /// Lane for fragments. Equal sizes are merged into one band. Raw intensity of a size =
+    /// `mass_ng · size · count / sum_of_all_sizes`; then divided by the largest raw intensity (brightest band = 1.0).
+    /// Sizes of 0 are ignored. No fragments or `mass_ng <= 0`: all intensities 0.0 (no bands if there are no fragments).
+    /// Bands by size descending.
     pub fn lane(&self, label: &str, fragment_sizes: &[usize], mass_ng: f64) -> Lane {
         let mut counts = std::collections::BTreeMap::<usize, usize>::new();
         for &s in fragment_sizes {
@@ -182,7 +182,7 @@ impl GelSimulator {
         }
     }
 
-    /// Spur für einen Standard: `label` ist der Name, jede Größe eine Bande mit Intensität 1.0, Größen absteigend.
+    /// Lane for a standard: `label` is the name, each size a band with intensity 1.0, sizes descending.
     pub fn ladder_lane(&self, ladder: &Ladder) -> Lane {
         let mut bands = ladder
             .sizes
@@ -254,7 +254,7 @@ mod tests {
         let m10 = GelSimulator::new(1.0).mobility(1000);
         let m12 = GelSimulator::new(1.25).mobility(1000);
         let m15 = GelSimulator::new(1.5).mobility(1000);
-        // im dichteren Gel liegt dieselbe Bande weiter oben (kleinere Laufstrecke)
+        // in the denser gel the same band lies further up (smaller migration distance)
         assert!(m10 > m12 && m12 > m15);
     }
 

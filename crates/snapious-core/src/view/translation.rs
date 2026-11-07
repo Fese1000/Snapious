@@ -1,42 +1,42 @@
-//! Translation von Sequenzbereichen und Features in Aminosäuren (für die Anzeige unter der Sequenz).
+//! Translation of sequence ranges and features into amino acids (for display below the sequence).
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::error::{Error, Result};
 use crate::model::feature::{Feature, Strand};
 use crate::model::sequence::amino_acid_for;
 
-/// Eine Aminosäure mit der Position ihres ersten Basenbuchstabens.
+/// An amino acid with the position of its first base letter.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AminoAcidCell {
-    /// Position der ersten Base des Codons im Dokument (0-basiert; bei Features auf dem Gegenstrang die
-    /// Position der Base, die in Leserichtung des Features zuerst kommt, also die höchste Koordinate).
+    /// Position of the first base of the codon in the document (0-based; for features on the opposite strand, the
+    /// position of the base that comes first in the feature's reading direction, i.e. the highest coordinate).
     pub base_position: usize,
-    /// Einbuchstabencode; Stopp = `*`, unbekannt = `X`.
+    /// One-letter code; stop = `*`, unknown = `X`.
     pub amino_acid: char,
-    /// Das Codon ist `ATG`.
+    /// The codon is `ATG`.
     pub is_start: bool,
-    /// Das Codon ist ein Stopcodon (`TAA`, `TAG`, `TGA`).
+    /// The codon is a stop codon (`TAA`, `TAG`, `TGA`).
     pub is_stop: bool,
 }
 
-/// Translation im Leserahmen `frame` (0, 1, 2; größere Werte zählen als `frame % 3`) auf dem Vorwärtsstrang.
-/// Es werden nur Codons übersetzt, die vollständig in `[from, to)` liegen (`to` wird auf die Länge von `bases`
-/// begrenzt) und deren erste Position `p` die Bedingung `p % 3 == frame % 3` erfüllt. `U` zählt wie `T`,
-/// Groß-/Kleinschreibung egal. Ergebnis aufsteigend nach `base_position`.
+/// Translation in reading frame `frame` (0, 1, 2; larger values count as `frame % 3`) on the forward strand.
+/// Only codons lying completely within `[from, to)` are translated (`to` is clamped to the length of `bases`)
+/// and whose first position `p` satisfies `p % 3 == frame % 3`. `U` counts as `T`,
+/// case-insensitive. Result ascending by `base_position`.
 pub fn translate_frame(bases: &str, frame: usize, from: usize, to: usize) -> Vec<AminoAcidCell> {
     let frame = frame % 3;
     let len = bases.len();
 
-    // Finde die erste Base, die im Rahmen ist und >= from.
+    // Find the first base that is in frame and >= from.
     let mut pos = from.min(len);
-    // Finde die erste Base, deren Position modulo 3 zum Rahmen passt und >= from.
+    // Find the first base whose position modulo 3 matches the frame and >= from.
     while pos < len && pos % 3 != frame % 3 {
         pos += 1;
     }
 
     let mut cells = Vec::new();
     while pos + 2 < to.min(len) {
-        // Konvertiere zu Uppercase, zähle U wie T.
+        // Convert to uppercase, count U as T.
         let codon: String = (pos..pos + 3)
             .map(|i| match bases.as_bytes()[i].to_ascii_uppercase() {
                 b'U' => 'T',
@@ -58,20 +58,20 @@ pub fn translate_frame(bases: &str, frame: usize, from: usize, to: usize) -> Vec
     cells
 }
 
-/// Translation eines Features (z. B. CDS), dem Verlauf seiner Intervalle und seinem Strang folgend:
-/// 1. Basen der Intervalle in aufsteigender Reihenfolge aneinanderhängen und merken, welche Dokumentposition
-///    jede Base hat.
-/// 2. Bei `Strand::Reverse` Basen und Positionsliste umdrehen und die Basen reverse-komplementieren
+/// Translation of a feature (e.g. CDS), following the course of its intervals and its strand:
+/// 1. Concatenate the bases of the intervals in ascending order and remember which document position
+///    each base has.
+/// 2. For `Strand::Reverse`, reverse the bases and the position list and reverse-complement the bases
 ///    (`iupac_reverse_complement`).
-/// 3. Qualifier `codon_start` (1, 2 oder 3; Standard 1) gibt an, wie viele Basen (`codon_start - 1`) am Anfang
-///    übersprungen werden.
-/// 4. Ab da in Dreiergruppen übersetzen; ein unvollständiges Schluss-Codon entfällt.
+/// 3. Qualifier `codon_start` (1, 2 or 3; default 1) says how many bases (`codon_start - 1`) at the start
+///    are skipped.
+/// 4. From there translate in groups of three; an incomplete final codon is dropped.
 ///
-/// Fehler: Feature reicht über `bases` hinaus → `Error::OutOfRange`; `codon_start` ungültig → `Error::InvalidInput`.
+/// Errors: feature extends beyond `bases` → `Error::OutOfRange`; invalid `codon_start` → `Error::InvalidInput`.
 pub fn translate_feature(bases: &str, feature: &Feature) -> Result<Vec<AminoAcidCell>> {
     let intervals = feature.location().intervals();
 
-    // Prüfe, dass alle Intervalle innerhalb der Sequenz liegen.
+    // Check that all intervals lie within the sequence.
     let seq_len = bases.len();
     for interval in intervals {
         if interval.end() > seq_len {
@@ -84,7 +84,7 @@ pub fn translate_feature(bases: &str, feature: &Feature) -> Result<Vec<AminoAcid
         }
     }
 
-    // Hole codon_start aus Qualifiern (Standard 1). Prüfe auf ungültige Werte.
+    // Get codon_start from the qualifiers (default 1). Check for invalid values.
     let codon_start: usize = match feature.qualifier("codon_start") {
         None => 1,
         Some(v) => v
@@ -99,7 +99,7 @@ pub fn translate_feature(bases: &str, feature: &Feature) -> Result<Vec<AminoAcid
             })?,
     };
 
-    // Bauen: hänge alle Basen der Intervalle aneinander, merke die Dokument-Position jeder Base.
+    // Build: concatenate all bases of the intervals, remember the document position of each base.
     let mut merged_bases: Vec<u8> = Vec::new();
     let mut doc_positions: Vec<usize> = Vec::new();
 
@@ -110,8 +110,8 @@ pub fn translate_feature(bases: &str, feature: &Feature) -> Result<Vec<AminoAcid
         }
     }
 
-    // Bei Reverse-Strang: Positionsliste umkehren (höchste Koordinate zuerst),
-    // Basen reverse-komplementieren (`iupac_reverse_complement` macht bereits Reverse + Komplement).
+    // For the reverse strand: reverse the position list (highest coordinate first),
+    // reverse-complement the bases (`iupac_reverse_complement` already does reverse + complement).
     let (working_bases, working_positions) = match feature.location().strand() {
         Strand::Reverse => {
             let rc = iupac_reverse_complement(&String::from_utf8_lossy(&merged_bases));
@@ -122,7 +122,7 @@ pub fn translate_feature(bases: &str, feature: &Feature) -> Result<Vec<AminoAcid
         _ => (merged_bases, doc_positions),
     };
 
-    // codon_start - 1 Basen überspringen.
+    // Skip codon_start - 1 bases.
     let skip = codon_start - 1;
 
     let mut cells = Vec::new();
@@ -136,7 +136,7 @@ pub fn translate_feature(bases: &str, feature: &Feature) -> Result<Vec<AminoAcid
             .collect();
 
         let aa = amino_acid_for(codon.as_bytes());
-        // Dokument-Position der ersten Base dieses Codons.
+        // Document position of the first base of this codon.
         let doc_pos = working_positions[i];
 
         cells.push(AminoAcidCell {
@@ -200,13 +200,13 @@ mod tests {
 
     #[test]
     fn bereich_und_grenzen() {
-        // from = 2: erstes Codon im Rahmen 0 beginnt bei 3
+        // from = 2: the first codon in frame 0 starts at 3
         let c = translate_frame("ATGAAATAG", 0, 2, 9);
         assert_eq!(summary(&c), ("K*".to_string(), vec![3, 6]));
-        // to schneidet ein Codon ab: nur vollständige Codons zählen
+        // to cuts off a codon: only complete codons count
         let d = translate_frame("ATGAAATAG", 0, 0, 7);
         assert_eq!(summary(&d), ("MK".to_string(), vec![0, 3]));
-        // to hinter dem Ende wird begrenzt
+        // to beyond the end is clamped
         assert_eq!(translate_frame("ATGAAA", 0, 0, 100).len(), 2);
         assert!(translate_frame("ATG", 0, 5, 9).is_empty());
         assert!(translate_frame("", 0, 0, 0).is_empty());
@@ -237,14 +237,14 @@ mod tests {
 
     #[test]
     fn feature_rueckwaerts() {
-        // Reverse-Komplement von CTATTTCAT ist ATGAAATAG
+        // Reverse complement of CTATTTCAT is ATGAAATAG
         let c = translate_feature("CTATTTCAT", &cds(&[(0, 9)], Strand::Reverse, None)).unwrap();
         assert_eq!(summary(&c), ("MK*".to_string(), vec![8, 5, 2]));
     }
 
     #[test]
     fn feature_mit_join() {
-        // Basen 0..3 und 6..9 ergeben ATG + TAG
+        // Bases 0..3 and 6..9 give ATG + TAG
         let c =
             translate_feature("ATGCCCTAG", &cds(&[(0, 3), (6, 9)], Strand::Forward, None)).unwrap();
         assert_eq!(summary(&c), ("M*".to_string(), vec![0, 6]));
@@ -261,7 +261,7 @@ mod tests {
     fn codon_start_ueberspringt_basen() {
         let c =
             translate_feature("ATGAAATAG", &cds(&[(0, 9)], Strand::Forward, Some("2"))).unwrap();
-        // TGA AAT AG → '*' (Position 1), 'N' (Position 4); "AG" ist unvollständig
+        // TGA AAT AG → '*' (position 1), 'N' (position 4); "AG" is incomplete
         assert_eq!(summary(&c), ("*N".to_string(), vec![1, 4]));
         assert!(c[0].is_stop);
     }

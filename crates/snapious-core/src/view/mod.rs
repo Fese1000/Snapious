@@ -1,4 +1,4 @@
-//! Reine Layout- und Anzeige-Logik (ohne Zeichnen).
+//! Pure layout and display logic (no drawing).
 
 pub mod command_search;
 pub mod edit_session;

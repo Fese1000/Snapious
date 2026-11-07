@@ -1,11 +1,11 @@
-//! FASTA lesen und schreiben.
+//! Read and write FASTA.
 
 use std::path::Path;
 
 use crate::error::{Error, Result};
 use crate::model::sequence::Sequence;
 
-/// ID aus einer Kopfzeile: erstes Wort nach `>`.
+/// ID from a header line: first word after `>`.
 pub fn extract_id(header: &str) -> String {
     header
         .trim_start_matches('>')
@@ -15,8 +15,8 @@ pub fn extract_id(header: &str) -> String {
         .to_string()
 }
 
-/// Liest alle Einträge. Text vor dem ersten `>` wird ignoriert; leere Zeilen und `\r` sind erlaubt.
-/// Der Sequenztyp wird erkannt (nur ACGTN → DNA, nur ACGUN → RNA, sonst Protein).
+/// Reads all records. Text before the first `>` is ignored; empty lines and `\r` are allowed.
+/// The sequence type is detected (only ACGTN -> DNA, only ACGUN -> RNA, otherwise protein).
 pub fn parse(text: &str) -> Result<Vec<Sequence>> {
     let mut out = Vec::new();
     let mut header: Option<(usize, String)> = None;
@@ -51,7 +51,7 @@ pub fn read(path: &Path) -> Result<Vec<Sequence>> {
     parse(&std::fs::read_to_string(path)?)
 }
 
-/// FASTA-Text (60 Zeichen pro Zeile, jeder Eintrag mit Zeilenumbruch am Ende).
+/// FASTA text (60 characters per line, each record ending with a line break).
 pub fn format(sequences: &[Sequence]) -> String {
     let mut out = String::new();
     for s in sequences {

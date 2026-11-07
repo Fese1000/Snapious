@@ -1,16 +1,16 @@
-//! Codon-Tabellen einlesen: Kazusa-Textformat und eine einfache JSON-Darstellung.
+//! Read codon tables: Kazusa text format and a simple JSON representation.
 
 use crate::bio::codon_optimize::CodonTable;
 use crate::bio::codon_usage::CodonCounts;
 use crate::error::{Error, Result};
 use serde_json;
 
-/// Liest die Textdarstellung der Kazusa-Codon-Nutzungstabelle („Codon Usage Database“).
-/// Jede Zeile enthält mehrere Einträge der Form `UUU 17.1( 1234)` (Codon mit `U` statt `T`, Häufigkeit je Tausend,
-/// absolute Anzahl in Klammern, die Anzahl darf Leerzeichen innerhalb der Klammer haben), getrennt durch Leerraum.
-/// Gelesen wird je Eintrag Codon und Anzahl; Codons werden in Uppercase mit `T` statt `U` gespeichert.
-/// Zeilen ohne solche Einträge (Kopfzeilen, Leerzeilen) werden ignoriert.
-/// Fehler `Error::InvalidInput`, wenn kein einziger Eintrag gefunden wird oder eine Anzahl keine ganze Zahl ist.
+/// Reads the text representation of the Kazusa codon usage table ("Codon Usage Database").
+/// Each line contains several entries of the form `UUU 17.1( 1234)` (codon with `U` instead of `T`, frequency per thousand,
+/// absolute count in parentheses, the count may contain spaces inside the parentheses), separated by whitespace.
+/// For each entry, codon and count are read; codons are stored in uppercase with `T` instead of `U`.
+/// Lines without such entries (header lines, blank lines) are ignored.
+/// Error `Error::InvalidInput` if no entry at all is found or a count is not an integer.
 pub fn parse_kazusa(text: &str) -> Result<CodonCounts> {
     let mut counts = CodonCounts::new();
     for line in text.lines() {
@@ -65,9 +65,9 @@ pub fn parse_kazusa(text: &str) -> Result<CodonCounts> {
     Ok(counts)
 }
 
-/// Liest eine Codon-Tabelle aus JSON der Form `{"organism": "...", "codons": {"ATG": 1.0, "GCT": 0.18}}`
-/// (Häufigkeiten wie bei `CodonTable::from_frequencies`; `organism` ist optional). Fehler `Error::InvalidInput` bei ungültigem
-/// JSON, fehlendem `codons` oder ungültigen Codons/Häufigkeiten (Meldung der Kernfunktion weitergeben).
+/// Reads a codon table from JSON of the form `{"organism": "...", "codons": {"ATG": 1.0, "GCT": 0.18}}`
+/// (frequencies as in `CodonTable::from_frequencies`; `organism` is optional). Error `Error::InvalidInput` on invalid
+/// JSON, missing `codons` or invalid codons/frequencies (pass on the core function's message).
 pub fn table_from_json(json: &str) -> Result<CodonTable> {
     let val: serde_json::Value = serde_json::from_str(json)
         .map_err(|e| Error::InvalidInput(format!("Invalid JSON: {}", e)))?;
@@ -84,9 +84,9 @@ pub fn table_from_json(json: &str) -> Result<CodonTable> {
     CodonTable::from_frequencies(&pairs)
 }
 
-/// Schreibt Zählungen als JSON für `table_from_json`: `{"organism": <Name>, "codons": {...}}` mit den relativen Häufigkeiten
-/// innerhalb der Aminosäurefamilie (`CodonTable::from_counts`, danach `frequency` je Codon), Codons alphabetisch sortiert,
-/// Häufigkeiten auf 4 Nachkommastellen gerundet. Es werden alle 64 Codons geschrieben.
+/// Writes counts as JSON for `table_from_json`: `{"organism": <name>, "codons": {...}}` with the relative frequencies
+/// within the amino acid family (`CodonTable::from_counts`, then `frequency` per codon), codons sorted alphabetically,
+/// frequencies rounded to 4 decimal places. All 64 codons are written.
 pub fn counts_to_json(organism: &str, counts: &CodonCounts) -> Result<String> {
     let table = CodonTable::from_counts(counts);
     let letters = ['A', 'C', 'G', 'T'];

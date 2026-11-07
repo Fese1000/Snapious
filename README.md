@@ -3,7 +3,7 @@
 **Snapious** is a hobby project: a re-implementation of the core features of Geneious Prime and SnapGene for molecular biology, native to macOS.
 Rust core, SwiftUI app, connected through UniFFI. It is an independent project and not affiliated with Geneious or SnapGene.
 
-The earlier Java project (`src/`, `pom.xml`) is kept for reference only; its old description is in [docs/README-java-referenz.md](docs/README-java-referenz.md).
+The earlier Java project (`src/`, `pom.xml`) is kept for reference only; its old description is in [docs/README-java-reference.md](docs/README-java-reference.md).
 
 ## Download
 
@@ -24,7 +24,7 @@ The app is not notarized: on first launch right-click → Open, or run `xattr -c
 * **NCBI** and **UniProt** search with import; import of GenBank, EMBL, FASTA/FASTQ, SnapGene (`.dna`, experimental), GFF3/BED and many other formats
 * **Workflows**: save chains of operations as JSON and apply them
 
-Open items and plans: [`docs/plan/OFFENE_FRAGEN.md`](docs/plan/OFFENE_FRAGEN.md); comparison with Geneious: [`docs/plan/15-GENEIOUS-VERGLEICH.md`](docs/plan/15-GENEIOUS-VERGLEICH.md).
+Open items and plans: [`docs/plan/OPEN-QUESTIONS.md`](docs/plan/OPEN-QUESTIONS.md); comparison with Geneious: [`docs/plan/15-GENEIOUS-COMPARISON.md`](docs/plan/15-GENEIOUS-COMPARISON.md).
 Phylogenetic trees, taxonomy and population genetics are deliberately out of scope. The app interface is English by default; German can be selected in Settings (⌘,). The planning documents under `docs/` are in German.
 
 ## Layout
@@ -56,7 +56,7 @@ Render views to PNG without a window: `Snapious --snapshot <project.snapious> <f
 ## Working with Qwen
 
 Small Rust tasks are prepared as a skeleton with finished tests; a local Qwen model fills in the bodies (`scripts/qwen/run_card.py`).
-Results are checked with `cargo test` and `clippy -D warnings`. Details: [`docs/plan/09-QWEN-ARBEITSWEISE.md`](docs/plan/09-QWEN-ARBEITSWEISE.md).
+Results are checked with `cargo test` and `clippy -D warnings`. Details: [`docs/plan/09-QWEN-WORKFLOW.md`](docs/plan/09-QWEN-WORKFLOW.md).
 
 ## Contributing
 

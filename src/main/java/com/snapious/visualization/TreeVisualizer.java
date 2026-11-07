@@ -16,14 +16,14 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
- * Visualisiert Phylogenie-Bäume auf einem Swing Canvas.
- * Unterstützt Newick-String-Eingabe und TreeNode-Objekte.
+ * Visualizes phylogenetic trees on a Swing canvas.
+ * Supports Newick string input and TreeNode objects.
  */
 public class TreeVisualizer extends JComponent {
 
     private Phylogeny.TreeNode tree;
 
-    // Layout-Parameter
+    // Layout parameters
     private double nodeRadius = 6;
     private Color textColor = new Color(248, 250, 252);
     private Color lineColor = new Color(96, 165, 250);
@@ -46,26 +46,26 @@ public class TreeVisualizer extends JComponent {
 
         if (tree == null) return;
 
-        // Layout berechnen
+        // Compute layout
         LayoutInfo layout = calculateLayout(tree, width, height);
 
-        // Linien zeichnen
+        // Draw lines
         drawBranches(gc, layout, tree);
 
-        // Knoten zeichnen
+        // Draw nodes
         drawNodes(gc, layout, tree);
 
-        // Labels zeichnen
+        // Draw labels
         drawLabels(gc, layout, tree);
     }
 
-    /** Zeichnet einen Phylogenie-Baum */
+    /** Draws a phylogenetic tree */
     public void drawTree(Phylogeny.TreeNode root) {
         this.tree = root;
         repaint();
     }
 
-    /** Zeichnet einen Newick-String */
+    /** Draws a Newick string */
     public void drawNewick(String newickTree) {
         Phylogeny.TreeNode root = parseNewick(newickTree);
 
@@ -74,7 +74,7 @@ public class TreeVisualizer extends JComponent {
         }
     }
 
-    // ======== LAYOUT-BERECHNUNG ========
+    // ======== LAYOUT CALCULATION ========
 
     private static class LayoutInfo {
         Map<Phylogeny.TreeNode, Point2D> positions;
@@ -96,19 +96,19 @@ public class TreeVisualizer extends JComponent {
         }
     }
 
-    /** Berechnet Positionen aller Knoten für rechteckiges Layout */
+    /** Computes positions of all nodes for a rectangular layout */
     private LayoutInfo calculateLayout(Phylogeny.TreeNode root, double width, double height) {
         LayoutInfo layout = new LayoutInfo();
 
-        // Alle Blätter finden und horizontal verteilen
+        // Find all leaves and distribute them horizontally
         List<Phylogeny.TreeNode> leaves = new ArrayList<>();
         collectLeaves(root, leaves);
 
         if (leaves.isEmpty()) return layout;
 
-        // Horizontale Positionen berechnen
-        double marginX = 120;  // Platz für Labels links
-        double marginY = 40;   // Oben/unten
+        // Compute horizontal positions
+        double marginX = 120;  // space for labels on the left
+        double marginY = 40;   // top/bottom
         double usableWidth = width - marginX * 2;
         double usableHeight = height - marginY * 2;
 
@@ -120,15 +120,15 @@ public class TreeVisualizer extends JComponent {
             double x, y;
 
             if (leaves.size() == 1) {
-                // Einzelnes Blatt - Mitte rechts
+                // Single leaf - middle right
                 x = marginX + usableWidth;
                 y = height / 2;
             } else {
-                // Mehrere Blätter - gleichmäßig verteilen
+                // Several leaves - distribute evenly
                 x = marginX + usableWidth;
                 y = marginY + (i * leafSpacing);
 
-                // Anpassen falls zu wenig Blätter
+                // Adjust if there are too few leaves
                 if (leaves.size() < 4) {
                     double extraSpace = usableHeight - (leaves.size() - 1) * leafSpacing;
                     y = marginY + extraSpace / 2 + (i * leafSpacing);
@@ -147,7 +147,7 @@ public class TreeVisualizer extends JComponent {
             }
         }
 
-        // Interne Knoten positionieren (rekursiv)
+        // Position internal nodes (recursively)
         positionInternalNodes(root, layout);
 
         return layout;
@@ -167,7 +167,7 @@ public class TreeVisualizer extends JComponent {
     private void positionInternalNodes(Phylogeny.TreeNode node, LayoutInfo layout) {
         if (node.isLeaf()) return;
 
-        // Kinder-Positionen holen
+        // Get child positions
         List<Point2D> childPositions = new ArrayList<>();
 
         for (Phylogeny.TreeNode child : node.getChildren()) {
@@ -176,7 +176,7 @@ public class TreeVisualizer extends JComponent {
             if (pos != null) {
                 childPositions.add(pos);
             } else {
-                // Rekursiv positionieren falls noch nicht geschehen
+                // Position recursively if not yet done
                 positionInternalNodes(child, layout);
 
                 pos = layout.get(child);
@@ -184,14 +184,14 @@ public class TreeVisualizer extends JComponent {
             }
         }
 
-        // Eltern-Position = mittlerer Y, X aus Branch-Länge
+        // Parent position = mean Y, X from branch length
         if (!childPositions.isEmpty()) {
             double avgY = childPositions.stream().mapToDouble(p -> p.getY()).average().orElse(0);
 
-            // Branch-Länge aus dem Baum
+            // Branch length from the tree
             double branchLen = node.getBranchLength();
 
-            // X-Position basierend auf max Branch-Länge der Kinder
+            // X position based on the max branch length of the children
             double maxX = childPositions.stream().mapToDouble(p -> p.getX()).max().orElse(0);
 
             double parentX = Math.max(50, maxX - branchLen * 100);
@@ -200,7 +200,7 @@ public class TreeVisualizer extends JComponent {
         }
     }
 
-    // ======== ZEICHENFUNKTIONEN ========
+    // ======== DRAWING FUNCTIONS ========
 
     private void drawBranches(Graphics2D gc, LayoutInfo layout, Phylogeny.TreeNode node) {
         if (node.isLeaf()) return;
@@ -217,7 +217,7 @@ public class TreeVisualizer extends JComponent {
                 gc.drawLine((int) parentPos.getX(), (int) parentPos.getY(),
                             (int) childPos.getX(), (int) childPos.getY());
 
-                // Rekursiv Kinder zeichnen
+                // Draw children recursively
                 drawBranches(gc, layout, child);
             }
         }
@@ -227,7 +227,7 @@ public class TreeVisualizer extends JComponent {
         Point2D pos = layout.get(node);
 
         if (pos != null) {
-            // Blatt-Knoten
+            // Leaf node
             if (node.isLeaf()) {
                 gc.setColor(highlightColor);
                 gc.fillOval((int) (pos.getX() - nodeRadius), (int) (pos.getY() - nodeRadius),
@@ -239,7 +239,7 @@ public class TreeVisualizer extends JComponent {
                         (int) (nodeRadius * 2), (int) (nodeRadius * 2));
 
             } else {
-                // Interne Knoten - kleinerer Kreis
+                // Internal nodes - smaller circle
                 gc.setColor(internalNodeColor);
                 gc.fillOval((int) (pos.getX() - nodeRadius / 2), (int) (pos.getY() - nodeRadius / 2),
                         (int) nodeRadius, (int) nodeRadius);
@@ -249,7 +249,7 @@ public class TreeVisualizer extends JComponent {
                 gc.drawOval((int) (pos.getX() - nodeRadius / 2), (int) (pos.getY() - nodeRadius / 2),
                         (int) nodeRadius, (int) nodeRadius);
 
-                // Rekursiv Kinder zeichnen
+                // Draw children recursively
                 for (Phylogeny.TreeNode child : node.getChildren()) {
                     drawNodes(gc, layout, child);
                 }
@@ -266,13 +266,13 @@ public class TreeVisualizer extends JComponent {
 
             String label = node.getName();
 
-            // Label rechts vom Knoten
+            // Label to the right of the node
             double textX = pos.getX() + nodeRadius + 5;
 
-            // Y-Position anpassen für vertikales Zentrieren
+            // Adjust Y position for vertical centering
             gc.drawString(label, (int) textX, (int) (pos.getY() + 4));
 
-            // Support-Wert anzeigen falls vorhanden
+            // Show support value if present
             if (node.getSupport() < 100) {
                 gc.setColor(highlightColor);
                 gc.setFont(new Font("Monospaced", Font.PLAIN, 10));
@@ -284,7 +284,7 @@ public class TreeVisualizer extends JComponent {
             }
         }
 
-        // Rekursiv Kinder labels zeichnen
+        // Draw child labels recursively
         if (!node.isLeaf()) {
             for (Phylogeny.TreeNode child : node.getChildren()) {
                 drawLabels(gc, layout, child);
@@ -292,9 +292,9 @@ public class TreeVisualizer extends JComponent {
         }
     }
 
-    // ======== NEWICK-PARSER ========
+    // ======== NEWICK PARSER ========
 
-    /** Parsed Newick-String zu TreeNode */
+    /** Parses a Newick string into a TreeNode */
     public Phylogeny.TreeNode parseNewick(String newick) {
         if (newick == null || newick.trim().isEmpty()) return null;
 
@@ -310,31 +310,31 @@ public class TreeVisualizer extends JComponent {
         skipWhitespace(chars, pos);
 
         if (chars[pos[0]] == '(') {
-            // Interner Knoten
-            pos[0]++;  // ( überspringen
+            // Internal node
+            pos[0]++;  // skip (
 
             Phylogeny.TreeNode node = new Phylogeny.TreeNode("", 0);
 
-            // Erstes Kind
+            // First child
             Phylogeny.TreeNode child1 = parseNode(chars, pos);
             node.addChild(child1);
 
             skipWhitespace(chars, pos);
 
             if (chars[pos[0]] == ',') {
-                pos[0]++;  // Komma überspringen
+                pos[0]++;  // skip comma
 
-                // Zweites Kind
+                // Second child
                 Phylogeny.TreeNode child2 = parseNode(chars, pos);
                 node.addChild(child2);
 
             } else if (chars[pos[0]] == ')') {
-                // Nur ein Kind - unwahrscheinlich aber möglich
+                // Only one child - unlikely but possible
             }
 
             skipWhitespace(chars, pos);
 
-            // Label falls vorhanden
+            // Label if present
             String label = parseLabel(chars, pos);
 
             if (label != null && !label.isEmpty()) {
@@ -343,16 +343,16 @@ public class TreeVisualizer extends JComponent {
 
             skipWhitespace(chars, pos);
 
-            // Branch-Länge falls vorhanden
+            // Branch length if present
             if (pos[0] < chars.length && chars[pos[0]] == ':') {
-                pos[0]++;  // : überspringen
+                pos[0]++;  // skip :
 
                 String lengthStr = parseNumber(chars, pos);
                 if (lengthStr != null) {
                     try {
                         node.setBranchLength(Double.parseDouble(lengthStr));
                     } catch (NumberFormatException e) {
-                        // Ignorieren
+                        // Ignore
                     }
                 }
             }
@@ -360,13 +360,13 @@ public class TreeVisualizer extends JComponent {
             skipWhitespace(chars, pos);
 
             if (pos[0] < chars.length && chars[pos[0]] == ')') {
-                pos[0]++;  // ) überspringen (falls vorhanden)
+                pos[0]++;  // skip ) (if present)
             }
 
             return node;
 
         } else {
-            // Blatt-Knoten
+            // Leaf node
             String label = parseLabel(chars, pos);
 
             skipWhitespace(chars, pos);
@@ -374,21 +374,21 @@ public class TreeVisualizer extends JComponent {
             Phylogeny.TreeNode node;
 
             if (label == null || label.isEmpty()) {
-                node = new Phylogeny.TreeNode("(unbenannt)", 0);
+                node = new Phylogeny.TreeNode("(unnamed)", 0);
             } else {
                 node = new Phylogeny.TreeNode(label, 0);
             }
 
-            // Branch-Länge falls vorhanden
+            // Branch length if present
             if (pos[0] < chars.length && chars[pos[0]] == ':') {
-                pos[0]++;  // : überspringen
+                pos[0]++;  // skip :
 
                 String lengthStr = parseNumber(chars, pos);
                 if (lengthStr != null) {
                     try {
                         node.setBranchLength(Double.parseDouble(lengthStr));
                     } catch (NumberFormatException e) {
-                        // Ignorieren
+                        // Ignore
                     }
                 }
             }
@@ -456,7 +456,7 @@ public class TreeVisualizer extends JComponent {
         return Character.isDigit(c) || c == '-';
     }
 
-    // ======== GETTER/SETTER ========
+    // ======== GETTERS/SETTERS ========
 
     public void setNodeRadius(double radius) {
         this.nodeRadius = Math.max(2, radius);
@@ -474,7 +474,7 @@ public class TreeVisualizer extends JComponent {
         this.highlightColor = color;
     }
 
-    /** Canvas-Größe aktualisieren und neu zeichnen */
+    /** Update canvas size and redraw */
     public void resize() {
         if (tree != null) {
             drawTree(tree);

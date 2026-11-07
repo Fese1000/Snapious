@@ -6,36 +6,36 @@ import java.util.*;
 import java.util.stream.*;
 
 /**
- * Komplettes Klonierungs-Toolkit mit allen gängigen Klonierungsmethoden.
- * Unterstützt: Ligation-basiert, Gateway, Gibson Assembly, Golden Gate,
- * SLIC, In-Fusion, TOPO, PCR-basiert, BAC/YAC Klonierung.
+ * Complete cloning toolkit covering all common cloning methods.
+ * Supports: ligation-based, Gateway, Gibson Assembly, Golden Gate,
+ * SLIC, In-Fusion, TOPO, PCR-based, BAC/YAC cloning.
  */
 public class CloningMethod {
 
-    // ======== KLONIERUNGSARTEN ==========
+    // ======== CLONING TYPES ==========
 
     public enum CloningType {
-        RESTRICTION_LIGASE("Restriktionsligase-Klonierung"),
-        GATEWAY("Gateway Rekombination (AttL/AttR)"),
-        GIBSON_ASSEMBLY("Gibson Assembly (Exonuklease, Polymerase, Ligase)"),
-        GOLDEN_GATE("Golden Gate (Type IIS Restriktionsenzyme)"),
+        RESTRICTION_LIGASE("Restriction ligase cloning"),
+        GATEWAY("Gateway recombination (AttL/AttR)"),
+        GIBSON_ASSEMBLY("Gibson Assembly (Exonuclease, Polymerase, Ligase)"),
+        GOLDEN_GATE("Golden Gate (Type IIS restriction enzymes)"),
         SLIC("SLIC (Sequence and Ligation Independent Cloning)"),
-        IN_FUSION("In-Fusion Cloning (Homologie-basiert)"),
+        IN_FUSION("In-Fusion Cloning (homology-based)"),
         TOPO_TOPOLOGICAL("TOPO Cloning (Topoisomerase I)"),
-        PCR_BASED("PCR-basierte Klonierung (Overlap-Extension)"),
-        BAC_CLONING("BAC/Kosmid-Klonierung (große Inserts)"),
-        YAC_CLONING("YAC-Klonierung (Hefe-Chromosomen)"),
-        CRISPR_KLONIERUNG("CRISPR/Cas9-basierte Klonierung"),
-        CASSETTE_KLONIERUNG("Cassette-Klonierung (multi-site)");
+        PCR_BASED("PCR-based cloning (Overlap-Extension)"),
+        BAC_CLONING("BAC/cosmid cloning (large inserts)"),
+        YAC_CLONING("YAC cloning (yeast chromosomes)"),
+        CRISPR_KLONIERUNG("CRISPR/Cas9-based cloning"),
+        CASSETTE_KLONIERUNG("Cassette cloning (multi-site)");
 
         private final String description;
         CloningType(String desc) { this.description = desc; }
         public String getDescription() { return description; }
     }
 
-    // ======== HAUPTKLASSE FÜR KLONIERUNGSPLANUNG ==========
+    // ======== MAIN CLASS FOR CLONING PLANNING ==========
 
-    /** Erstellt einen vollständigen Klonierungsplan basierend auf Insert und Vektor */
+    /** Creates a complete cloning plan based on insert and vector */
     public static CloningPlan createCloningPlan(Sequence insert, Sequence vector,
                                                CloningType method) {
         return switch (method) {
@@ -54,11 +54,11 @@ public class CloningMethod {
         };
     }
 
-    // ======== 1. RESTRIKTIONS-LIGASE KLONIERUNG ==========
+    // ======== 1. RESTRICTION LIGASE CLONING ==========
 
     /**
-     * Kandidaten sind Enzyme, die den Vektor genau einmal schneiden (Linearisierung).
-     * Verdaut wird mit dem ersten Kandidaten, der auch im Insert schneidet.
+     * Candidates are enzymes that cut the vector exactly once (linearization).
+     * Digestion uses the first candidate that also cuts in the insert.
      */
     private static CloningPlan createRestrictionLigationPlan(Sequence insert, Sequence vector) {
         RestrictionEnzymeDB enzymeDB = new RestrictionEnzymeDB();
@@ -69,7 +69,7 @@ public class CloningMethod {
         Map<String, Long> vectorCounts = vectorAll.stream()
             .collect(Collectors.groupingBy(c -> c.getEnzyme().getName(), Collectors.counting()));
 
-        // Enzyme mit genau einer Schnittstelle im Vektor
+        // Enzymes with exactly one cut site in the vector
         Set<String> uniqueVectorCutters = vectorCounts.entrySet().stream()
             .filter(e -> e.getValue() == 1)
             .map(Map.Entry::getKey)
@@ -94,15 +94,15 @@ public class CloningMethod {
             insertSites,
             vectorSites,
             fragments,
-            "Restriktionsligase-Klonierung:\n" +
-            "1. Insert und Vektor mit Enzymen verdauen, die den Vektor genau einmal schneiden\n" +
-            "2. Für gerichtete Klonierung zwei Enzyme mit unterschiedlichen Überhängen wählen\n" +
-            "3. Vektor dephosphorylieren, Fragmente reinigen\n" +
-            "4. Mit T4-DNA-Ligase ligieren (16°C über Nacht oder 25°C, 10 Min.)"
+            "Restriction ligase cloning:\n" +
+            "1. Digest insert and vector with enzymes that cut the vector exactly once\n" +
+            "2. For directional cloning choose two enzymes with different overhangs\n" +
+            "3. Dephosphorylate the vector, purify the fragments\n" +
+            "4. Ligate with T4 DNA ligase (16°C overnight or 25°C, 10 min)"
         );
     }
 
-    // ======== 2. GATEWAY KLONIERUNG (Att-Recombination) ==========
+    // ======== 2. GATEWAY CLONING (att recombination) ==========
 
     private static final String ATT_B1 = "ACAAGTTTGTACAAAAAAGCAGGCT";
     private static final String ATT_B2 = "ACCACTTTGTACAAGAAAGCTGGGT";
@@ -114,27 +114,27 @@ public class CloningMethod {
         if (bases.contains(ATT_B2)) found.add("attB2: " + ATT_B2);
 
         String status = found.size() == 2
-            ? "Insert trägt bereits attB1 und attB2."
-            : "Insert trägt nicht beide attB-Stellen; per PCR ergänzen: 5' attB1 (" + ATT_B1
+            ? "Insert already carries attB1 and attB2."
+            : "Insert does not carry both attB sites; add them by PCR: 5' attB1 (" + ATT_B1
                 + "), 3' attB2 (" + ATT_B2 + ").";
 
         return new CloningPlan(
             CloningType.GATEWAY,
             insert, vector,
-            Collections.emptyList(),  // Keine Restriktionsstellen benötigt
+            Collections.emptyList(),  // no restriction sites needed
             Collections.emptyList(),
             found,
-            "Gateway-Klonierung (Att-Rekombination):\n" + status + "\n" +
-            "1. PCR mit attB-Primern\n" +
-            "2. BP-Reaktion (attB × attP → attL, Entry-Klon)\n" +
-            "3. LR-Reaktion (attL × attR → attB, Expressionsklon)"
+            "Gateway cloning (att recombination):\n" + status + "\n" +
+            "1. PCR with attB primers\n" +
+            "2. BP reaction (attB × attP → attL, Entry-Klon)\n" +
+            "3. LR reaction (attL × attR → attB, expression clone)"
         );
     }
 
     // ======== 3. GIBSON ASSEMBLY ==========
 
     private static CloningPlan createGibsonAssemblyPlan(Sequence insert, Sequence vector) {
-        final int overlapLength = 30;  // 20-40 bp üblich
+        final int overlapLength = 30;  // 20-40 bp is common
 
         String insert5end = head(insert, overlapLength);
         String insert3end = tail(insert, overlapLength);
@@ -150,16 +150,16 @@ public class CloningMethod {
             Collections.emptyList(),
             Collections.emptyList(),
             List.of(insert5end, insert3end, vector5end, vector3end),
-            "Gibson Assembly (Exonuklease + Polymerase + Ligase):\n" +
-            "Vorhandener Overlap Vektor→Insert: " + junction1 + " bp, Insert→Vektor: " + junction2 + " bp\n" +
-            "1. 20-40 bp Overlap zwischen den Fragmenten über Primer-Überhänge herstellen\n" +
-            "2. Vektor linearisieren, Insert per PCR amplifizieren\n" +
-            "3. Gibson-Mix, 50°C für 15-60 Min.\n" +
-            "4. Transformieren"
+            "Gibson Assembly (Exonuclease + Polymerase + Ligase):\n" +
+            "Existing overlap vector→insert: " + junction1 + " bp, insert→vector: " + junction2 + " bp\n" +
+            "1. Create a 20-40 bp overlap between the fragments via primer overhangs\n" +
+            "2. Linearize the vector, amplify the insert by PCR\n" +
+            "3. Gibson mix, 50°C for 15-60 min\n" +
+            "4. Transform"
         );
     }
 
-    // ======== 4. GOLDEN GATE (Type IIS Enzyme) ==========
+    // ======== 4. GOLDEN GATE (Type IIS enzymes) ==========
 
     private static CloningPlan createGoldenGatePlan(Sequence insert, Sequence vector) {
         RestrictionEnzymeDB enzymeDB = new RestrictionEnzymeDB();
@@ -177,17 +177,17 @@ public class CloningMethod {
             typeIISInsert,
             typeIISVector,
             Collections.emptyList(),
-            "Golden Gate Assembly (Type IIS Enzyme):\n" +
-            "1. Enzym wählen (BsaI, BsmBI/Esp3I, BbsI/BpiI, SapI), das nicht intern im Insert schneidet\n" +
-            "2. 4-bp-Überhänge über Primer festlegen\n" +
-            "3. Verdau und Ligation im selben Ansatz (Thermocycler: 37°C ↔ 16°C)"
+            "Golden Gate Assembly (Type IIS enzymes):\n" +
+            "1. Choose an enzyme (BsaI, BsmBI/Esp3I, BbsI/BpiI, SapI) that does not cut internally in the insert\n" +
+            "2. Define 4-bp overhangs via primers\n" +
+            "3. Digestion and ligation in the same reaction (Thermocycler: 37°C ↔ 16°C)"
         );
     }
 
     // ======== 5. SLIC ==========
 
     private static CloningPlan createSLICPlan(Sequence insert, Sequence vector) {
-        final int overlapLength = 40;  // 30-60 bp üblich
+        final int overlapLength = 40;  // 30-60 bp is common
 
         return new CloningPlan(
             CloningType.SLIC,
@@ -196,9 +196,9 @@ public class CloningMethod {
             Collections.emptyList(),
             List.of(head(insert, overlapLength), tail(insert, overlapLength)),
             "SLIC (Sequence and Ligation Independent Cloning):\n" +
-            "1. PCR mit 30-60 bp Overlap zum Vektor\n" +
-            "2. 3'-Exonuklease-Behandlung (T4-DNA-Polymerase) legt einzelsträngige Overlaps frei\n" +
-            "3. Annealing, anschließend transformieren"
+            "1. PCR with 30-60 bp overlap to the vector\n" +
+            "2. 3' exonuclease treatment (T4 DNA polymerase) exposes single-stranded overlaps\n" +
+            "3. Annealing, then transform"
         );
     }
 
@@ -214,9 +214,9 @@ public class CloningMethod {
             Collections.emptyList(),
             List.of(head(insert, overlapLength), tail(insert, overlapLength)),
             "In-Fusion Cloning:\n" +
-            "1. Linearisierten Vektor und PCR-Insert mit 15 bp Overlap herstellen\n" +
-            "2. In-Fusion-Enzymmix, 50°C, 15 Min.\n" +
-            "3. Transformieren"
+            "1. Prepare linearized vector and PCR insert with a 15 bp overlap\n" +
+            "2. In-Fusion enzyme mix, 50°C, 15 min\n" +
+            "3. Transform"
         );
     }
 
@@ -230,13 +230,13 @@ public class CloningMethod {
             Collections.emptyList(),
             Collections.emptyList(),
             "TOPO Cloning (Topoisomerase I):\n" +
-            "1. PCR mit Taq-Polymerase (3'-A-Überhang) bzw. mit CACC-Primer für gerichtetes TOPO\n" +
-            "2. Mit linearisiertem TOPO-Vektor mischen (Raumtemperatur, 5 Min.)\n" +
-            "3. Transformieren"
+            "1. PCR with Taq polymerase (3' A overhang) or with a CACC primer for directional TOPO\n" +
+            "2. Mix with linearized TOPO vector (room temperature, 5 min)\n" +
+            "3. Transform"
         );
     }
 
-    // ======== 8. PCR-BASIERTE KLONIERUNG ==========
+    // ======== 8. PCR-BASED CLONING ==========
 
     private static CloningPlan createPCRBasedPlan(Sequence insert, Sequence vector) {
         final int overlapLength = 20;
@@ -247,14 +247,14 @@ public class CloningMethod {
             Collections.emptyList(),
             Collections.emptyList(),
             List.of(head(insert, overlapLength), tail(insert, overlapLength)),
-            "PCR-basierte Klonierung (Overlap-Extension-PCR):\n" +
-            "1. Teilfragmente mit überlappenden Primern amplifizieren\n" +
-            "2. Fragmente mischen und per Overlap-Extension zusammenfügen\n" +
-            "3. Produkt reinigen und klonieren"
+            "PCR-based cloning (Overlap-Extension-PCR):\n" +
+            "1. Amplify partial fragments with overlapping primers\n" +
+            "2. Mix the fragments and join them by overlap extension\n" +
+            "3. Purify the product and clone it"
         );
     }
 
-    // ======== 9. BAC/KOSMID KLONIERUNG ==========
+    // ======== 9. BAC/COSMID CLONING ==========
 
     private static CloningPlan createBACCloningPlan(Sequence insert, Sequence vector) {
         return new CloningPlan(
@@ -263,14 +263,14 @@ public class CloningMethod {
             Collections.emptyList(),
             Collections.emptyList(),
             Collections.emptyList(),
-            "BAC-Klonierung (bis ca. 300 kb):\n" +
-            "1. Hochmolekulare DNA schonend isolieren, Partialverdau mit z. B. HindIII\n" +
-            "2. Größenselektion per Pulsfeld-Gelelektrophorese\n" +
-            "3. Ligation in den BAC-Vektor, Elektroporation in E. coli"
+            "BAC cloning (up to approx. 300 kb):\n" +
+            "1. Gently isolate high-molecular-weight DNA, partial digest with e.g. HindIII\n" +
+            "2. Size selection by pulsed-field gel electrophoresis\n" +
+            "3. Ligation into the BAC vector, electroporation into E. coli"
         );
     }
 
-    // ======== 10. YAC KLONIERUNG ==========
+    // ======== 10. YAC CLONING ==========
 
     private static CloningPlan createYACCloningPlan(Sequence insert, Sequence vector) {
         return new CloningPlan(
@@ -279,10 +279,10 @@ public class CloningMethod {
             Collections.emptyList(),
             Collections.emptyList(),
             Collections.emptyList(),
-            "YAC-Klonierung (bis ca. 2 Mb):\n" +
-            "1. YAC-Vektor mit Zentromer (CEN), Replikationsursprung (ARS) und Telomeren\n" +
-            "2. Ligation mit hochmolekularer DNA\n" +
-            "3. Transformation von Hefe-Sphäroplasten (Saccharomyces cerevisiae)"
+            "YAC cloning (up to approx. 2 Mb):\n" +
+            "1. YAC vector with centromere (CEN), replication origin (ARS) and telomeres\n" +
+            "2. Ligation with high-molecular-weight DNA\n" +
+            "3. Transformation of yeast spheroplasts (Saccharomyces cerevisiae)"
         );
     }
 
@@ -295,14 +295,14 @@ public class CloningMethod {
             Collections.emptyList(),
             Collections.emptyList(),
             Collections.emptyList(),
-            "CRISPR/Cas9-basierte Klonierung (Knock-in über HDR):\n" +
-            "1. sgRNA (20 nt) neben einer NGG-PAM entwerfen\n" +
-            "2. Reparaturvorlage mit 50-100 bp Homologiearmen\n" +
-            "3. Cas9 (RNP oder Plasmid), sgRNA und Vorlage einbringen"
+            "CRISPR/Cas9-based cloning (knock-in via HDR):\n" +
+            "1. Design an sgRNA (20 nt) next to an NGG PAM\n" +
+            "2. Repair template with 50-100 bp homology arms\n" +
+            "3. Deliver Cas9 (RNP or plasmid), sgRNA and template"
         );
     }
 
-    // ======== 12. CASSETTE-KLONIERUNG ==========
+    // ======== 12. CASSETTE CLONING ==========
 
     private static CloningPlan createCassettePlan(Sequence insert, Sequence vector) {
         return new CloningPlan(
@@ -311,14 +311,14 @@ public class CloningMethod {
             Collections.emptyList(),
             Collections.emptyList(),
             Collections.emptyList(),
-            "Cassette-Klonierung (MoClo / Golden-Gate-basiert):\n" +
-            "1. Module mit standardisierten 4-bp-Überhängen\n" +
-            "2. Mehrere Fragmente in einer Reaktion (BsaI/BpiI)\n" +
-            "3. Mehrstufige Assemblierung über Level-0/1/2-Vektoren"
+            "Cassette cloning (MoClo / Golden-Gate-basiert):\n" +
+            "1. Modules with standardized 4-bp overhangs\n" +
+            "2. Several fragments in one reaction (BsaI/BpiI)\n" +
+            "3. Multi-level assembly via level 0/1/2 vectors"
         );
     }
 
-    // ======== HILFSFUNKTIONEN ==========
+    // ======== HELPER FUNCTIONS ==========
 
     private static String head(Sequence seq, int n) {
         String b = seq.getBases();
@@ -330,7 +330,7 @@ public class CloningMethod {
         return b.substring(Math.max(0, b.length() - n));
     }
 
-    /** Länge des längsten Suffixes von {@code left}, das Präfix von {@code right} ist. */
+    /** Length of the longest suffix of {@code left} that is a prefix of {@code right}. */
     private static int overlap(String left, String right) {
         for (int len = Math.min(left.length(), right.length()); len > 0; len--) {
             if (left.endsWith(right.substring(0, len))) return len;
@@ -338,17 +338,17 @@ public class CloningMethod {
         return 0;
     }
 
-    // ======== DATENKLASSEN ==========
+    // ======== DATA CLASSES ==========
 
-    /** Vollständiger Klonierungsplan für Insert und Vektor */
+    /** Complete cloning plan for insert and vector */
     public static class CloningPlan {
         private final CloningType method;
         private Sequence insert;
         private Sequence vector;
         private List<RestrictionEnzymeDB.CutSite> insertCutSites;
         private List<RestrictionEnzymeDB.CutSite> vectorCutSites;
-        private List<String> fragmentsOrOverlaps;  // Fragmente (Ligase) oder Overlaps (Gibson/SLIC)
-        private String protocol;  // Schritt-für-Schritt-Anleitung
+        private List<String> fragmentsOrOverlaps;  // fragments (ligase) or overlaps (Gibson/SLIC)
+        private String protocol;  // step-by-step instructions
 
         public CloningPlan(CloningType method, Sequence insert, Sequence vector,
                           List<RestrictionEnzymeDB.CutSite> insertCutSites,
@@ -373,33 +373,33 @@ public class CloningMethod {
         public List<String> getFragmentsOrOverlaps() { return fragmentsOrOverlaps; }
         public String getProtocol() { return protocol; }
 
-        /** Generiere Schritt-für-Schritt-Anleitung */
+        /** Generate step-by-step instructions */
         public String generateProtocol() {
             StringBuilder sb = new StringBuilder();
 
-            sb.append(String.format("=== %s Protokoll ===\n\n", method.getDescription()));
+            sb.append(String.format("=== %s Protocol ===\n\n", method.getDescription()));
             sb.append(protocol).append("\n\n");
 
             if (!insertCutSites.isEmpty()) {
-                sb.append("Verfügbare Schnittstellen im Insert:\n");
+                sb.append("Available cut sites in the insert:\n");
                 for (RestrictionEnzymeDB.CutSite site : insertCutSites) {
-                    sb.append(String.format("  - %s@%d (Überhang: %s)\n",
+                    sb.append(String.format("  - %s@%d (Overhang: %s)\n",
                         site.getEnzyme().getName(), site.getPosition(),
-                        site.getOverhang() == null ? "stumpf" : site.getOverhang()));
+                        site.getOverhang() == null ? "blunt" : site.getOverhang()));
                 }
             }
 
             if (!vectorCutSites.isEmpty()) {
-                sb.append("Verfügbare Schnittstellen im Vektor:\n");
+                sb.append("Available cut sites in the vector:\n");
                 for (RestrictionEnzymeDB.CutSite site : vectorCutSites) {
-                    sb.append(String.format("  - %s@%d (Überhang: %s)\n",
+                    sb.append(String.format("  - %s@%d (Overhang: %s)\n",
                         site.getEnzyme().getName(), site.getPosition(),
-                        site.getOverhang() == null ? "stumpf" : site.getOverhang()));
+                        site.getOverhang() == null ? "blunt" : site.getOverhang()));
                 }
             }
 
             if (!fragmentsOrOverlaps.isEmpty()) {
-                sb.append("Fragmente/Overlaps:\n");
+                sb.append("Fragments/overlaps:\n");
                 for (int i = 0; i < fragmentsOrOverlaps.size(); i++) {
                     sb.append(String.format("  [%d] %s\n", i + 1, fragmentsOrOverlaps.get(i)));
                 }
@@ -414,13 +414,13 @@ public class CloningMethod {
         }
     }
 
-    // ======== HAUPTFUNKTIONEN FÜR DIE UI ==========
+    // ======== MAIN FUNCTIONS FOR THE UI ==========
 
-    /** Erstellt einen vollständigen Klonierungsplan für Insert und Vektor */
+    /** Creates a complete cloning plan for insert and vector */
     public static Map<String, Object> getCloningSummary(Sequence insert, Sequence vector) {
         Map<String, Object> summary = new LinkedHashMap<>();
 
-        // Alle Klonierungsmethoden durchgehen
+        // Go through all cloning methods
         for (CloningType method : CloningType.values()) {
             CloningPlan plan = createCloningPlan(insert, vector, method);
 

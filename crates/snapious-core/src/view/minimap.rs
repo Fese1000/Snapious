@@ -1,10 +1,10 @@
-//! Dichte-Streifen für die Übersicht (Minimap) einer Sequenz: Anteil je Abschnitt, der von Features bedeckt ist.
+//! Density strips for the overview (minimap) of a sequence: fraction of each section covered by features.
 
-/// Teilt `0..total_len` in `bins` gleich breite Abschnitte (Grenzen als Kommazahlen: Abschnitt `i` reicht von
-/// `i * total_len / bins` bis `(i + 1) * total_len / bins`) und gibt je Abschnitt den bedeckten Anteil (0.0–1.0) zurück.
-/// `intervals` sind `(start, ende)` mit exklusivem Ende; Einträge mit `start >= ende` werden ignoriert, Enden über
-/// `total_len` abgeschnitten; überlappende Intervalle zählen nur einmal (Vereinigung).
-/// `total_len == 0` oder `bins == 0` → leerer Vektor.
+/// Splits `0..total_len` into `bins` equally wide sections (bounds as floating-point numbers: section `i` runs from
+/// `i * total_len / bins` to `(i + 1) * total_len / bins`) and returns the covered fraction (0.0–1.0) for each section.
+/// `intervals` are `(start, end)` with exclusive end; entries with `start >= end` are ignored, ends beyond
+/// `total_len` are clipped; overlapping intervals count only once (union).
+/// `total_len == 0` or `bins == 0` → empty vector.
 pub fn density_bins(total_len: usize, intervals: &[(usize, usize)], bins: usize) -> Vec<f64> {
     if total_len == 0 || bins == 0 {
         return Vec::new();
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn vereinigung_und_teilbedeckung() {
-        // 10..40 bedeckt; Abschnitte 0..25 und 25..50: je 15/25
+        // 10..40 covered; sections 0..25 and 25..50: 15/25 each
         close(
             &density_bins(100, &[(10, 30), (20, 40)], 4),
             &[0.6, 0.6, 0.0, 0.0],
@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn kommagrenzen() {
-        // Länge 10, 4 Abschnitte à 2.5
+        // length 10, 4 sections of 2.5
         close(&density_bins(10, &[(5, 10)], 4), &[0.0, 0.0, 1.0, 1.0]);
         close(&density_bins(10, &[(0, 10)], 4), &[1.0; 4]);
     }

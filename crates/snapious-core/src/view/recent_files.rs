@@ -1,7 +1,7 @@
-//! Liste der zuletzt geöffneten Projekte.
+//! List of recently opened projects.
 
-/// Setzt `path` an den Anfang der Liste: ein vorhandener gleicher Eintrag (genau gleicher Text) wird zuvor entfernt, danach wird die
-/// Liste auf höchstens `max` Einträge gekürzt (die ältesten fallen weg). `max == 0` → leere Liste. Leerer `path` ändert die Liste nicht.
+/// Puts `path` at the front of the list: an existing identical entry (exactly identical text) is removed first, then the
+/// list is truncated to at most `max` entries (the oldest drop off). `max == 0` → empty list. An empty `path` leaves the list unchanged.
 pub fn add_recent(list: &[String], path: &str, max: usize) -> Vec<String> {
     if path.is_empty() {
         return list.to_vec();
@@ -26,7 +26,7 @@ pub fn add_recent(list: &[String], path: &str, max: usize) -> Vec<String> {
     result
 }
 
-/// Entfernt alle Einträge, für die `exists` falsch liefert; die Reihenfolge der übrigen bleibt.
+/// Removes all entries for which `exists` returns false; the order of the rest is preserved.
 pub fn remove_missing(list: &[String], exists: &dyn Fn(&str) -> bool) -> Vec<String> {
     list.iter()
         .filter(|p| exists(p.as_str()))

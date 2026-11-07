@@ -34,7 +34,7 @@ class BLASTLikeSearchTest {
     @Test
     void findetReverseKomplementAufMinusStrang() {
         var db = List.of(dna("subject", "CCCCATGCGTACGTAGCTAGCCCC"));
-        // Reverse-Komplement der Teilsequenz
+        // Reverse complement of the subsequence
         var hits = BLASTLikeSearch.search("CTAGCTACGTACGCAT", db, 8);
 
         assertFalse(hits.isEmpty());

@@ -1,14 +1,14 @@
-//! Bearbeitungssitzung mit Rückgängig/Wiederholen für ein Sequenzdokument.
+//! Editing session with undo/redo for a sequence document.
 
 use crate::error::{Error, Result};
 use crate::model::document::{SequenceDocument, Topology};
 use crate::model::feature::Feature;
 
-/// Höchstzahl der Rückgängig-Schritte.
+/// Maximum number of undo steps.
 pub const MAX_UNDO: usize = 200;
 
-/// Hält das aktuelle Dokument sowie Rückgängig- und Wiederholen-Stapel.
-/// Jede Änderung erzeugt über die unveränderlichen Methoden von `SequenceDocument` ein neues Dokument.
+/// Holds the current document plus the undo and redo stacks.
+/// Every change produces a new document via the immutable methods of `SequenceDocument`.
 #[derive(Clone, Debug)]
 pub struct EditSession {
     current: SequenceDocument,
@@ -18,7 +18,7 @@ pub struct EditSession {
 }
 
 impl EditSession {
-    /// Neue Sitzung; das Dokument gilt als gespeichert (`is_modified() == false`).
+    /// New session; the document counts as saved (`is_modified() == false`).
     pub fn new(doc: SequenceDocument) -> Self {
         EditSession {
             current: doc.clone(),
@@ -28,14 +28,14 @@ impl EditSession {
         }
     }
 
-    /// Das aktuelle Dokument.
+    /// The current document.
     pub fn document(&self) -> &SequenceDocument {
         &self.current
     }
 
-    /// Setzt `doc` als neuen Stand: alter Stand auf den Rückgängig-Stapel, Wiederholen-Stapel leeren.
-    /// Hat der Rückgängig-Stapel dann mehr als `MAX_UNDO` Einträge, fällt der älteste weg.
-    /// Ist `doc` gleich dem aktuellen Dokument, passiert nichts.
+    /// Sets `doc` as the new state: old state goes onto the undo stack, redo stack is cleared.
+    /// If the undo stack then has more than `MAX_UNDO` entries, the oldest is dropped.
+    /// If `doc` equals the current document, nothing happens.
     pub fn apply(&mut self, doc: SequenceDocument) {
         if self.current == doc {
             return;
@@ -48,29 +48,29 @@ impl EditSession {
         self.current = doc;
     }
 
-    /// Fügt Basen ein (`SequenceDocument::insert`). Bei Fehler bleibt die Sitzung unverändert.
+    /// Inserts bases (`SequenceDocument::insert`). On error the session stays unchanged.
     pub fn insert(&mut self, position: usize, bases: &str) -> Result<()> {
         let new_doc = self.current.insert(position, bases)?;
         self.apply(new_doc);
         Ok(())
     }
 
-    /// Löscht `[start, end)` (`SequenceDocument::delete`). Bei Fehler bleibt die Sitzung unverändert.
+    /// Deletes `[start, end)` (`SequenceDocument::delete`). On error the session stays unchanged.
     pub fn delete(&mut self, start: usize, end: usize) -> Result<()> {
         let new_doc = self.current.delete(start, end)?;
         self.apply(new_doc);
         Ok(())
     }
 
-    /// Ersetzt `[start, end)` durch `bases` (`SequenceDocument::replace`) als einen einzigen Schritt.
+    /// Replaces `[start, end)` with `bases` (`SequenceDocument::replace`) as a single step.
     pub fn replace(&mut self, start: usize, end: usize, bases: &str) -> Result<()> {
         let new_doc = self.current.replace(start, end, bases)?;
         self.apply(new_doc);
         Ok(())
     }
 
-    /// Hängt ein Feature ans Ende der Featureliste an. Reicht es über das Dokumentende hinaus
-    /// (`location().end() > len()`), Fehler `Error::OutOfRange` und keine Änderung.
+    /// Appends a feature to the end of the feature list. If it extends beyond the end of the document
+    /// (`location().end() > len()`), returns `Error::OutOfRange` and makes no change.
     pub fn add_feature(&mut self, feature: Feature) -> Result<()> {
         let mut features = self.current.features().to_vec();
         if feature.location().end() > self.current.len() {
@@ -86,7 +86,7 @@ impl EditSession {
         Ok(())
     }
 
-    /// Entfernt das Feature mit diesem Index. Ungültiger Index: `Error::OutOfRange`, keine Änderung.
+    /// Removes the feature with this index. Invalid index: `Error::OutOfRange`, no change.
     pub fn remove_feature(&mut self, index: usize) -> Result<()> {
         let features = self.current.features();
         if index >= features.len() {
@@ -103,7 +103,7 @@ impl EditSession {
         Ok(())
     }
 
-    /// Ändert die Topologie. Ist sie schon so, passiert nichts (kein Undo-Schritt).
+    /// Changes the topology. If it is already set, nothing happens (no undo step).
     pub fn set_topology(&mut self, topology: Topology) {
         if self.current.topology() != topology {
             let new_doc = self.current.with_topology(topology);
@@ -111,7 +111,7 @@ impl EditSession {
         }
     }
 
-    /// Benennt das Dokument um (`with_name`); gleicher Name: nichts.
+    /// Renames the document (`with_name`); same name: nothing.
     pub fn rename(&mut self, name: &str) {
         if self.current.name() != name {
             let new_doc = self.current.with_name(name);
@@ -127,12 +127,12 @@ impl EditSession {
         !self.redo.is_empty()
     }
 
-    /// Anzahl möglicher Rückgängig-Schritte.
+    /// Number of possible undo steps.
     pub fn undo_depth(&self) -> usize {
         self.undo.len()
     }
 
-    /// Macht den letzten Schritt rückgängig; `false`, wenn nichts zu tun ist.
+    /// Undoes the last step; `false` if there is nothing to do.
     pub fn undo(&mut self) -> bool {
         let prev = match self.undo.pop() {
             Some(doc) => doc,
@@ -143,7 +143,7 @@ impl EditSession {
         true
     }
 
-    /// Stellt den zuletzt zurückgenommenen Schritt wieder her; `false`, wenn nichts zu tun ist.
+    /// Restores the most recently undone step; `false` if there is nothing to do.
     pub fn redo(&mut self) -> bool {
         let next = match self.redo.pop() {
             Some(doc) => doc,
@@ -154,13 +154,13 @@ impl EditSession {
         true
     }
 
-    /// `true`, wenn das aktuelle Dokument vom zuletzt gespeicherten abweicht (Vergleich mit `==`).
-    /// Nach Rückgängig bis zum gespeicherten Stand ist es wieder `false`.
+    /// `true` if the current document differs from the last saved one (compared with `==`).
+    /// After undoing back to the saved state it is `false` again.
     pub fn is_modified(&self) -> bool {
         self.current != self.saved
     }
 
-    /// Merkt den aktuellen Stand als gespeichert.
+    /// Marks the current state as saved.
     pub fn mark_saved(&mut self) {
         self.saved = self.current.clone();
     }

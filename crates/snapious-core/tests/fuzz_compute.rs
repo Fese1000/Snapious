@@ -1,4 +1,4 @@
-//! Zufallstest: Rechenfunktionen mit zufälligen und extremen Eingaben dürfen Fehler melden oder leere Ergebnisse liefern, aber nie abstürzen.
+//! Random test: computation functions with random and extreme inputs may report errors or return empty results, but must never crash.
 
 use std::panic::catch_unwind;
 
@@ -155,7 +155,7 @@ fn zufaellige_eingaben_stuerzen_nicht_ab() {
                 ],
             )
         );
-        // Dokumente: Verdau mit zufälligen Enzymen
+        // documents: digest with random enzymes
         if !a.is_empty() && a.chars().all(|c| "ACGT".contains(c)) {
             if let Ok(seq) = Sequence::new("s", "s", &a, SequenceType::Dna) {
                 let topology = if rng.below(2) == 0 {

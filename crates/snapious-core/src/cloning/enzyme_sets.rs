@@ -1,15 +1,15 @@
-//! Enzymsets: benannte Gruppen von Restriktionsenzymen (für Verdau und Klonierung).
+//! Enzyme sets: named groups of restriction enzymes (for digest and cloning).
 
 use std::collections::HashSet;
 
-/// Ein benanntes Set.
+/// A named set.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EnzymeSet {
     pub name: String,
     pub enzymes: Vec<String>,
 }
 
-/// Eingebaute Sets in dieser Reihenfolge:
+/// Built-in sets in this order:
 /// 1. `Häufige Klonierung`: EcoRI, BamHI, HindIII, XbaI, SpeI, PstI, NotI, XhoI, NcoI, NdeI
 /// 2. `Golden Gate (Typ IIS)`: BsaI, BsmBI, BbsI, SapI, Esp3I
 /// 3. `Glatte Enden`: EcoRV, SmaI, PvuII, HpaI, ScaI
@@ -53,8 +53,8 @@ pub fn builtin_sets() -> Vec<EnzymeSet> {
     ]
 }
 
-/// Zerlegt einen Text in Enzymnamen: getrennt an Komma, Semikolon und Leerraum; leere Teile entfallen; doppelte Namen
-/// (Groß-/Kleinschreibung egal) nur beim ersten Vorkommen, in der Schreibweise des ersten.
+/// Splits a text into enzyme names: separated at comma, semicolon and whitespace; empty parts are dropped; duplicate names
+/// (case-insensitive) only at the first occurrence, in the spelling of the first.
 pub fn parse_enzyme_list(text: &str) -> Vec<String> {
     let mut seen = HashSet::new();
     let mut result = Vec::new();
@@ -71,12 +71,12 @@ pub fn parse_enzyme_list(text: &str) -> Vec<String> {
     result
 }
 
-/// Fügt Namen mit `", "` zusammen (Umkehrung von `parse_enzyme_list` für saubere Listen).
+/// Joins names with `", "` (inverse of `parse_enzyme_list` for clean lists).
 pub fn format_enzyme_list(enzymes: &[String]) -> String {
     enzymes.join(", ")
 }
 
-/// Vereinigung mehrerer Sets: Namen in der Reihenfolge des ersten Auftretens, doppelte (Groß-/Kleinschreibung egal) nur einmal.
+/// Union of several sets: names in order of first appearance, duplicates (case-insensitive) only once.
 pub fn union_sets(sets: &[EnzymeSet]) -> Vec<String> {
     let mut seen = HashSet::new();
     let mut result = Vec::new();

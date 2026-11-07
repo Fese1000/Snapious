@@ -2,7 +2,7 @@ import AppKit
 import SnapiousFFI
 import SwiftUI
 
-/// Dialog „Tabelle importieren“: CSV/TSV wählen, Spalten für Name und Sequenz zuordnen.
+/// "Import table" dialog: choose CSV/TSV, map columns for name and sequence.
 struct TableImportView: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -20,20 +20,20 @@ struct TableImportView: View {
 
     private func columnTitle(_ i: Int) -> String {
         if hasHeader, let h = preview.first, i < h.count, !h[i].isEmpty { return "\(i + 1): \(h[i])" }
-        return tr("Spalte %@", "\(i + 1)")
+        return tr("Column %@", "\(i + 1)")
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(tr("Tabelle importieren")).font(.title2.bold())
+            Text(tr("Import table")).font(.title2.bold())
             HStack {
-                Button(tr("Datei wählen …")) { choose() }
-                Text(url?.lastPathComponent ?? tr("keine Datei")).foregroundStyle(.secondary)
+                Button(tr("Choose file …")) { choose() }
+                Text(url?.lastPathComponent ?? tr("no file")).foregroundStyle(.secondary)
                 Spacer()
-                Picker(tr("Trennzeichen"), selection: $sep) {
-                    Text(tr("Komma")).tag(",")
-                    Text(tr("Semikolon")).tag(";")
-                    Text(tr("Tabulator")).tag("\t")
+                Picker(tr("Delimiter"), selection: $sep) {
+                    Text(tr("Comma")).tag(",")
+                    Text(tr("Semicolon")).tag(";")
+                    Text(tr("Tab")).tag("\t")
                 }
                 .frame(width: 220)
                 .onChange(of: sep) { _, _ in loadPreview() }
@@ -55,23 +55,23 @@ struct TableImportView: View {
                 .frame(height: 120)
                 .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.separator))
                 Form {
-                    Toggle(tr("Erste Zeile ist die Kopfzeile"), isOn: $hasHeader)
+                    Toggle(tr("First row is the header"), isOn: $hasHeader)
                     Picker(tr("Name"), selection: $nameCol) { ForEach(0..<columnCount, id: \.self) { Text(columnTitle($0)).tag($0) } }
-                    Picker(tr("Sequenz"), selection: $seqCol) { ForEach(0..<columnCount, id: \.self) { Text(columnTitle($0)).tag($0) } }
-                    Picker(tr("Art"), selection: $kind) {
-                        Text(tr("Automatisch erkennen")).tag("AUTO")
+                    Picker(tr("Sequence"), selection: $seqCol) { ForEach(0..<columnCount, id: \.self) { Text(columnTitle($0)).tag($0) } }
+                    Picker(tr("Kind"), selection: $kind) {
+                        Text(tr("Detect automatically")).tag("AUTO")
                         Text("DNA").tag("DNA")
                         Text("RNA").tag("RNA")
                         Text(tr("Protein")).tag("PROTEIN")
                     }
-                    Toggle(tr("Zirkulär"), isOn: $circular).disabled(kind == "PROTEIN")
+                    Toggle(tr("Circular"), isOn: $circular).disabled(kind == "PROTEIN")
                 }
             }
             if let message { Text(message).foregroundStyle(.red) }
             HStack {
                 Spacer()
-                Button(tr("Abbrechen"), role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
-                Button(tr("Importieren")) { run() }.keyboardShortcut(.defaultAction).disabled(url == nil || preview.isEmpty)
+                Button(tr("Cancel"), role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(tr("Import")) { run() }.keyboardShortcut(.defaultAction).disabled(url == nil || preview.isEmpty)
             }
         }
         .padding(20)
@@ -80,14 +80,14 @@ struct TableImportView: View {
 
     private func choose() {
         let p = NSOpenPanel()
-        p.title = tr("Tabelle wählen (CSV, TSV)")
+        p.title = tr("Choose table (CSV, TSV)")
         guard p.runModal() == .OK, let u = p.url else { return }
         url = u
         sep = Self.guessSeparator(u)
         loadPreview()
     }
 
-    /// Trennzeichen aus der ersten Zeile erraten: das häufigste von Tabulator, Semikolon und Komma (sonst Komma).
+    /// Guess the delimiter from the first line: the most frequent of tab, semicolon and comma (otherwise comma).
     private static func guessSeparator(_ url: URL) -> String {
         guard let h = try? FileHandle(forReadingFrom: url), let data = try? h.read(upToCount: 4096),
               let text = String(data: data, encoding: .utf8) else { return "," }

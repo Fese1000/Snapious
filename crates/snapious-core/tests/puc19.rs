@@ -1,5 +1,5 @@
-//! Integrationstest mit dem echten pUC19-Eintrag (NCBI L09137).
-//! Erwartungswerte wurden unabhängig (Python) aus der Datei berechnet.
+//! Integration test with the real pUC19 entry (NCBI L09137).
+//! Expected values were computed independently (Python) from the file.
 
 use snapious_core::io::genbank;
 use snapious_core::model::{Document, Topology};
@@ -34,7 +34,7 @@ fn puc19_grunddaten() {
 fn puc19_gc_gehalt_und_schnittstellen_im_mcs() {
     let d = laden();
     assert!((d.sequence().gc_content() - 0.506_329_113_9).abs() < 1e-9);
-    // 0-basierte Startpositionen der Erkennungssequenzen, jeweils genau eine Stelle
+    // 0-based start positions of the recognition sequences, exactly one site each
     for (motiv, pos) in [
         ("GAATTC", 395),
         ("GGATCC", 416),
@@ -67,11 +67,11 @@ fn puc19_round_trip_genbank_und_projekt() {
 #[test]
 fn puc19_bearbeiten_ueber_dokument() {
     let d = laden();
-    // Einfügen mitten in das source-Feature verlängert es
+    // Inserting in the middle of the source feature extends it
     let e = d.insert(1000, "GGGG").unwrap();
     assert_eq!(e.len(), 2690);
     assert_eq!(e.features()[0].location().length(), 2690);
-    // Reverse-Komplement zweimal ergibt das Original
+    // Reverse complement twice gives the original
     let r = e
         .reverse_complement()
         .unwrap()

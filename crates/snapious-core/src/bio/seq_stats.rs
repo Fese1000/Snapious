@@ -1,12 +1,12 @@
-//! Statistiken über Nukleotidsequenzen: GC-Verlauf, GC-Skew, Dinukleotide und CpG-Inseln.
+//! Statistics on nucleotide sequences: GC profile, GC skew, dinucleotides and CpG islands.
 
 use std::collections::BTreeMap;
 
 use crate::error::{Error, Result};
 
-/// GC-Anteil in Prozent je Fenster. Fenster der Länge `window` beginnen bei `0, step, 2·step, …`, solange sie ganz in die
-/// Sequenz passen. Gezählt werden G und C (Schreibweise egal) geteilt durch die Fensterlänge. Ergebnis: `(Beginn, Prozent)`.
-/// `window == 0` oder `step == 0` → `Error::InvalidInput`. Ist die Sequenz kürzer als das Fenster, ist das Ergebnis leer.
+/// GC fraction in percent per window. Windows of length `window` start at `0, step, 2·step, …` as long as they fit entirely into the
+/// sequence. G and C (case-insensitive) are counted and divided by the window length. Result: `(start, percent)`.
+/// `window == 0` or `step == 0` → `Error::InvalidInput`. If the sequence is shorter than the window, the result is empty.
 pub fn gc_windows(bases: &str, window: usize, step: usize) -> Result<Vec<(usize, f64)>> {
     if window == 0 || step == 0 {
         return Err(Error::InvalidInput(
@@ -35,7 +35,7 @@ pub fn gc_windows(bases: &str, window: usize, step: usize) -> Result<Vec<(usize,
     Ok(result)
 }
 
-/// GC-Skew `(G − C) / (G + C)` je Fenster (gleiche Fensterregeln wie `gc_windows`); ohne G und C ist der Wert 0.0.
+/// GC skew `(G − C) / (G + C)` per window (same window rules as `gc_windows`); without G and C the value is 0.0.
 pub fn gc_skew(bases: &str, window: usize, step: usize) -> Result<Vec<(usize, f64)>> {
     if window == 0 || step == 0 {
         return Err(Error::InvalidInput(
@@ -75,8 +75,8 @@ pub fn gc_skew(bases: &str, window: usize, step: usize) -> Result<Vec<(usize, f6
     Ok(result)
 }
 
-/// Anzahl jedes überlappenden Dinukleotids aus A, C, G, T (Uppercase als Schlüssel, `U` wie `T`). Paare mit anderen Zeichen
-/// werden nicht gezählt. Nur vorkommende Paare erscheinen im Ergebnis.
+/// Count of each overlapping dinucleotide of A, C, G, T (uppercase as key, `U` as `T`). Pairs with other characters
+/// are not counted. Only pairs that occur appear in the result.
 pub fn dinucleotide_counts(bases: &str) -> BTreeMap<String, usize> {
     let mut counts = BTreeMap::new();
     let letters: Vec<char> = bases
@@ -96,18 +96,18 @@ pub fn dinucleotide_counts(bases: &str) -> BTreeMap<String, usize> {
     counts
 }
 
-/// Ein Bereich `[start, end)`.
+/// A range `[start, end)`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Region {
     pub start: usize,
     pub end: usize,
 }
 
-/// Sucht CpG-Inseln nach Gardiner-Garden und Frommer (1987): Alle Fenster der Länge `min_length` (Schritt 1), deren GC-Anteil
-/// mindestens `min_gc` (0 bis 1) und deren Verhältnis beobachtet/erwartet mindestens `min_obs_exp` ist, gelten als Treffer.
-/// Beobachtet/erwartet = `CpG-Zahl · Fensterlänge / (C-Zahl · G-Zahl)`; sind C oder G nicht vorhanden, gilt das Fenster nicht.
-/// Überlappende oder aneinandergrenzende Trefferfenster werden zu einem Bereich vereinigt (Beginn des ersten bis Ende des letzten Fensters).
-/// Ergebnis aufsteigend sortiert. `min_length == 0` → `Error::InvalidInput`. Kürzere Sequenzen ergeben eine leere Liste.
+/// Finds CpG islands after Gardiner-Garden and Frommer (1987): all windows of length `min_length` (step 1) whose GC fraction is
+/// at least `min_gc` (0 to 1) and whose observed/expected ratio is at least `min_obs_exp` count as hits.
+/// Observed/expected = `CpG count · window length / (C count · G count)`; if C or G is absent, the window does not qualify.
+/// Overlapping or adjacent hit windows are merged into one region (start of the first to end of the last window).
+/// Result sorted ascending. `min_length == 0` → `Error::InvalidInput`. Shorter sequences give an empty list.
 pub fn cpg_islands(
     bases: &str,
     min_length: usize,
@@ -261,7 +261,7 @@ mod tests {
         let flanke = "A".repeat(150);
         let seq = format!("{}{}{}", flanke, insel, flanke);
         let r = cpg_islands(&seq, 200, 0.5, 0.6).unwrap();
-        // Fenster mit bis zu 100 A (halbe Fensterlänge) und sonst Insel erfüllen GC 0.5: Beginn 150 − 100, Ende 390 + 100
+        // Windows with up to 100 A (half the window length) and otherwise the island satisfy GC 0.5: start 150 − 100, end 390 + 100
         assert_eq!(
             r,
             vec![Region {
@@ -275,7 +275,7 @@ mod tests {
             cpg_islands("CGCG", 0, 0.5, 0.6),
             Err(Error::InvalidInput(_))
         ));
-        // GC reich, aber ohne CpG (nur GC-Wechsel GCGC… hat CpG; hier GGGGCCCC… hat nur ein CpG je 8)
+        // GC rich but without CpG (only alternating GC GCGC… has CpG; here GGGGCCCC… has only one CpG per 8)
         let ohne = "GGGGCCCC".repeat(40);
         assert!(cpg_islands(&ohne, 200, 0.5, 0.6).unwrap().is_empty());
     }

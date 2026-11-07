@@ -1,4 +1,4 @@
-//! Datenmodell: Sequenz, Features, Dokumente.
+//! Data model: sequence, features, documents.
 
 pub mod alignment;
 pub mod document;

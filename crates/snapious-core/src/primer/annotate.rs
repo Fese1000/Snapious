@@ -1,20 +1,20 @@
-//! Primerbindestellen als Features in eine Sequenz eintragen.
+//! Add primer binding sites as features to a sequence.
 
 use crate::cloning::pcr::{PcrSimulator, Primer};
 use crate::error::Result;
 use crate::model::feature::{Feature, Interval, Location, Strand};
 
-/// Sucht jeden Primer mit `PcrSimulator::find_bindings` auf der Vorlage und macht daraus Features.
+/// Searches each primer on the template with `PcrSimulator::find_bindings` and turns the hits into features.
 ///
-/// - Typ `primer_bind`, Name = Primername.
-/// - Strang: `Forward` für Vorwärtsbindungen, `Reverse` für Rückwärtsbindungen.
-/// - Ort: `[start, end)` der Bindung. Ragt bei einer zirkulären Vorlage das Ende über die Länge hinaus (`end > Länge`), entstehen zwei
-///   Intervalle: `[start, Länge)` und `[0, end − Länge)` in dieser Reihenfolge (`Location::new` mit beiden Intervallen).
-///   `partial_start` und `partial_end` sind falsch.
-/// - Qualifier (in dieser Reihenfolge): `("note", ["Abweichungen: {n}"])` und, wenn der Primer einen nicht bindenden 5'-Schwanz hat
-///   (`tail_length > 0`), zusätzlich `("note", ["5'-Schwanz: {n} nt"])` — beide Einträge heißen `note`.
-/// - Ergebnis sortiert nach `Location::start()`, dann nach Name, dann Vorwärts vor Rückwärts; Primer in der Reihenfolge der Eingabe.
-///   Jede Bindung ergibt ein Feature.
+/// - Type `primer_bind`, name = primer name.
+/// - Strand: `Forward` for forward bindings, `Reverse` for reverse bindings.
+/// - Location: `[start, end)` of the binding. If on a circular template the end extends past the length (`end > length`), two
+///   intervals result: `[start, length)` and `[0, end - length)` in this order (`Location::new` with both intervals).
+///   `partial_start` and `partial_end` are false.
+/// - Qualifiers (in this order): `("note", ["Abweichungen: {n}"])` and, if the primer has a non-binding 5' tail
+///   (`tail_length > 0`), additionally `("note", ["5'-Schwanz: {n} nt"])` — both entries are named `note`.
+/// - Result sorted by `Location::start()`, then by name, then forward before reverse; primers in input order.
+///   Each binding yields one feature.
 pub fn annotate_primers(
     template: &str,
     circular: bool,
@@ -105,7 +105,7 @@ mod tests {
             feats[0].qualifiers()[1],
             ("note".to_string(), vec!["5' tail: 6 nt".to_string()])
         );
-        // Abweichung an Position 1: mit max 1 gebunden
+        // Mismatch at position 1: bound with max 1
         let mut s: Vec<char> = T[..14].chars().collect();
         s[1] = 'A';
         let s: String = s.into_iter().collect();

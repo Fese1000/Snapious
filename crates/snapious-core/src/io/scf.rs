@@ -1,25 +1,25 @@
-//! SCF-Dateien (Chromatogramme, Version 3) lesen: Basen, Qualitäten, Peak-Positionen.
+//! Read SCF files (chromatograms, version 3): bases, qualities, peak positions.
 
 use crate::error::{Error, Result};
 
-/// Gelesene Basen eines Chromatogramms.
+/// Bases read from a chromatogram.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScfRead {
     pub bases: String,
-    /// Qualität der gerufenen Base: der Wert aus dem Array der Wahrscheinlichkeiten, das zu dieser Base gehört (A, C, G, T).
-    /// Bei anderen Zeichen (z. B. `N`) das Maximum der vier Werte.
+    /// Quality of the called base: the value from the probability array that belongs to this base (A, C, G, T).
+    /// For other characters (e.g. `N`) the maximum of the four values.
     pub qualities: Vec<u8>,
-    /// Position des Peaks im Spurverlauf je Base.
+    /// Position of the peak in the trace per base.
     pub peaks: Vec<u32>,
 }
 
-/// Liest die Basen-Daten einer SCF-Datei Version 3 (alle Zahlen Big-Endian, `u32`). Kopf (128 Bytes):
-/// Magic `.scf` (4 Bytes), `samples`, `samples_offset`, `bases`, `bases_left_clip`, `bases_right_clip`, `bases_offset`, `comments_size`,
-/// `comments_offset`, dann `version` (4 Zeichen, z. B. `3.00`), danach weitere Felder, die ignoriert werden. Ab `bases_offset` liegen
-/// hintereinander, jeweils `bases` Einträge: `peak_index` (`u32` je Base), `prob_A`, `prob_C`, `prob_G`, `prob_T` (je 1 Byte je Base),
-/// die Basenzeichen (1 Byte je Base), dann 3 Spare-Bytes je Base (ignorieren). Die Spurdaten (`samples`) werden nicht gelesen.
-/// Fehler `Error::InvalidInput`: Datei kürzer als 128 Bytes, falsches Magic, Version nicht `3.00` (also `version != b"3.00"`) oder
-/// Abschnitte, die über das Dateiende hinausgehen (kein Absturz bei beliebigen Eingaben; `checked_add` / `get` verwenden).
+/// Reads the base data of an SCF version 3 file (all numbers big-endian, `u32`). Header (128 bytes):
+/// magic `.scf` (4 bytes), `samples`, `samples_offset`, `bases`, `bases_left_clip`, `bases_right_clip`, `bases_offset`, `comments_size`,
+/// `comments_offset`, then `version` (4 characters, e.g. `3.00`), followed by further fields that are ignored. From `bases_offset` lie,
+/// one after another, `bases` entries each: `peak_index` (`u32` per base), `prob_A`, `prob_C`, `prob_G`, `prob_T` (1 byte each per base),
+/// the base characters (1 byte per base), then 3 spare bytes per base (ignore). The trace data (`samples`) is not read.
+/// `Error::InvalidInput`: file shorter than 128 bytes, wrong magic, version not `3.00` (i.e. `version != b"3.00"`) or
+/// sections extending past the end of the file (no panic on arbitrary input; use `checked_add` / `get`).
 fn u32_at(data: &[u8], pos: usize) -> Result<u32> {
     let end = pos
         .checked_add(4)
@@ -59,7 +59,7 @@ pub fn parse_scf(data: &[u8]) -> Result<ScfRead> {
         .iter()
         .map(|c| u32::from_be_bytes(*c))
         .collect();
-    let mut pos = offset + peaks_len; // kann nicht überlaufen: slice_at hat geprüft
+    let mut pos = offset + peaks_len; // cannot overflow: slice_at has checked
     let prob_a = slice_at(data, pos, bases)?;
     pos += bases;
     let prob_c = slice_at(data, pos, bases)?;
@@ -69,7 +69,7 @@ pub fn parse_scf(data: &[u8]) -> Result<ScfRead> {
     let prob_t = slice_at(data, pos, bases)?;
     pos += bases;
     let chars = slice_at(data, pos, bases)?;
-    // die Spare-Bytes (3 je Base) müssen nicht vorhanden sein, werden aber nicht gelesen
+    // the spare bytes (3 per base) need not be present, but are not read
     let mut text = String::with_capacity(bases);
     let mut qualities = Vec::with_capacity(bases);
     for i in 0..bases {
@@ -91,14 +91,14 @@ pub fn parse_scf(data: &[u8]) -> Result<ScfRead> {
     })
 }
 
-/// Liest die Spurdaten (Messwerte) einer SCF-Datei Version 3. Gleicher Kopf wie bei `parse_scf` (Zahlen Big-Endian, `u32`): `samples` bei Byte 4,
-/// `samples_offset` bei Byte 8, die Größe eines Messwertes (`sample_size`, 1 oder 2) bei Byte 40. Ab `samples_offset` folgen nacheinander die vier
-/// Kanäle **A, C, G, T**, jeweils `samples` Werte der Größe `sample_size` (Big-Endian, bei Größe 1 ein Byte ohne Vorzeichen). Jeder Kanal ist
-/// doppelt differenzkodiert: zweimal nacheinander (zwei Durchgänge) wird für `i = 0..samples` gerechnet `wert[i] = wert[i] + vorher; vorher = wert[i]`
-/// (`vorher` beginnt je Durchgang bei 0; Rechnung mit `u16` und `wrapping_add`). Ergebnis: vier Vektoren (A, C, G, T) mit je `samples` Werten.
-/// Fehler `Error::InvalidInput`: Datei kürzer als 128 Bytes, falsches Magic, Version nicht `3.00`, `sample_size` nicht 1 oder 2 oder Daten, die über das Dateiende
-/// reichen (kein Absturz bei beliebigen Eingaben; `checked_add`, `checked_mul` und `get` verwenden).
-/// Beispiel: gespeichert `[10, 0, 0]` ergibt `[10, 20, 30]`.
+/// Reads the trace data (sample values) of an SCF version 3 file. Same header as in `parse_scf` (numbers big-endian, `u32`): `samples` at byte 4,
+/// `samples_offset` at byte 8, the size of a sample value (`sample_size`, 1 or 2) at byte 40. From `samples_offset` the four
+/// channels **A, C, G, T** follow one after another, each `samples` values of size `sample_size` (big-endian; for size 1 an unsigned byte). Each channel is
+/// double delta-encoded: twice in a row (two passes), for `i = 0..samples` compute `value[i] = value[i] + previous; previous = value[i]`
+/// (`previous` starts at 0 in each pass; computed with `u16` and `wrapping_add`). Result: four vectors (A, C, G, T) with `samples` values each.
+/// `Error::InvalidInput`: file shorter than 128 bytes, wrong magic, version not `3.00`, `sample_size` not 1 or 2, or data extending past the end of the file
+/// (no panic on arbitrary input; use `checked_add`, `checked_mul` and `get`).
+/// Example: stored `[10, 0, 0]` yields `[10, 20, 30]`.
 pub fn parse_scf_samples(data: &[u8]) -> Result<Vec<Vec<u16>>> {
     if data.len() < 128 || &data[..4] != b".scf" {
         return Err(Error::InvalidInput("Not an SCF file".to_string()));
@@ -149,7 +149,7 @@ pub fn parse_scf_samples(data: &[u8]) -> Result<Vec<Vec<u16>>> {
 mod samples_tests {
     use super::*;
 
-    /// SCF mit drei Messwerten je Kanal (Größe 2), keine Basen; die gespeicherten Werte sind doppelt differenzkodiert.
+    /// SCF with three sample values per channel (size 2), no bases; the stored values are double delta-encoded.
     fn mit_spuren(stored: [[u16; 3]; 4]) -> Vec<u8> {
         let mut d = Vec::new();
         d.extend_from_slice(b".scf");
@@ -204,7 +204,7 @@ mod tests {
         v.to_be_bytes()
     }
 
-    /// Baut eine SCF-Datei mit drei Basen `ACG`.
+    /// Builds an SCF file with three bases `ACG`.
     fn beispiel() -> Vec<u8> {
         let mut d = Vec::new();
         d.extend_from_slice(b".scf");
@@ -237,8 +237,8 @@ mod tests {
     #[test]
     fn andere_zeichen_und_fehler() {
         let mut d = beispiel();
-        d[150] = 55; // prob_T der zweiten Base
-        d[153] = b'N'; // zweite Base wird N: Maximum der vier Werte (2, 30, 2, 55)
+        d[150] = 55; // prob_T of the second base
+        d[153] = b'N'; // second base becomes N: maximum of the four values (2, 30, 2, 55)
         assert_eq!(parse_scf(&d).unwrap().qualities, vec![40, 55, 20]);
         assert_eq!(parse_scf(&d).unwrap().bases, "ANG");
         assert!(parse_scf(&[]).is_err());

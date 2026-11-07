@@ -1,7 +1,7 @@
 import Foundation
 
-/// Language of the interface: English (default) or German. The source strings in the code are German;
-/// `tr` returns the English text from `Translations.en` when English is selected.
+/// Language of the interface: English (default) or German. The source strings in the code are English;
+/// `tr` returns the German text from `Translations.de` when German is selected.
 enum L10n {
     static var language: String = UserDefaults.standard.string(forKey: "language") ?? "en" {
         didSet { UserDefaults.standard.set(language, forKey: "language") }
@@ -44,8 +44,8 @@ enum L10n {
     }
 
     static func translate(_ key: String) -> String {
-        guard language == "en" else { return key }
-        guard let t = Translations.en[normalized(key)] else { return key }
+        guard language == "de" else { return key }
+        guard let t = Translations.de[normalized(key)] else { return key }
         // put the original specifiers (%d, %.1f …) back, in order
         let sp = specs(key)
         if sp.isEmpty { return t }

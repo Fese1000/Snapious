@@ -1,7 +1,7 @@
-//! Expressionswerte aus Read-Zählungen: RPKM/FPKM, TPM und log2-Verhältnis.
+//! Expression values from read counts: RPKM/FPKM, TPM and log2 ratio.
 
-/// RPKM (gleich FPKM bei einzelnen Reads): `count * 1e9 / (length_bp * total_reads)`. Ist `length_bp <= 0.0` oder
-/// `total_reads <= 0.0`, ist das Ergebnis `0.0`.
+/// RPKM (equal to FPKM for single reads): `count * 1e9 / (length_bp * total_reads)`. If `length_bp <= 0.0` or
+/// `total_reads <= 0.0`, the result is `0.0`.
 pub fn rpkm(count: f64, length_bp: f64, total_reads: f64) -> f64 {
     if length_bp <= 0.0 || total_reads <= 0.0 {
         return 0.0;
@@ -9,9 +9,9 @@ pub fn rpkm(count: f64, length_bp: f64, total_reads: f64) -> f64 {
     count * 1e9 / (length_bp * total_reads)
 }
 
-/// TPM für alle Gene: `rate_i = count_i / length_i`, `TPM_i = rate_i / Σ rate * 1e6`. Gene mit `length <= 0.0` haben die Rate 0.
-/// Ist die Summe der Raten 0, sind alle Werte `0.0`. `counts` und `lengths` sind gleich lang (sonst werden nur die ersten
-/// `min(len)` Paare berücksichtigt und der Rest der Ausgabe fehlt: Länge der Ausgabe = `min(len)`).
+/// TPM for all genes: `rate_i = count_i / length_i`, `TPM_i = rate_i / Σ rate * 1e6`. Genes with `length <= 0.0` have rate 0.
+/// If the sum of the rates is 0, all values are `0.0`. `counts` and `lengths` have the same length (otherwise only the first
+/// `min(len)` pairs are considered and the rest of the output is missing: output length = `min(len)`).
 pub fn tpm(counts: &[f64], lengths: &[f64]) -> Vec<f64> {
     let len = counts.len().min(lengths.len());
     let mut rates: Vec<f64> = Vec::with_capacity(len);
@@ -33,7 +33,7 @@ pub fn tpm(counts: &[f64], lengths: &[f64]) -> Vec<f64> {
     rates.iter().map(|&r| r / sum_rates * 1e6).collect()
 }
 
-/// `log2((a + pseudo) / (b + pseudo))`. Ist `a + pseudo <= 0.0` oder `b + pseudo <= 0.0`, ist das Ergebnis `f64::NAN`.
+/// `log2((a + pseudo) / (b + pseudo))`. If `a + pseudo <= 0.0` or `b + pseudo <= 0.0`, the result is `f64::NAN`.
 pub fn log2_ratio(a: f64, b: f64, pseudo: f64) -> f64 {
     let a_adj = a + pseudo;
     let b_adj = b + pseudo;

@@ -93,7 +93,7 @@ class PhylogenyTest {
 
     @Test
     void testJukesCantorSaturated() {
-        // Sehr unterschiedliche Sequenzen sollten saturieren
+        // Very different sequences should saturate
         StringBuilder sb1 = new StringBuilder();
         StringBuilder sb2 = new StringBuilder();
 
@@ -119,7 +119,7 @@ class PhylogenyTest {
 
     @Test
     void testKimura2ParamWithTransitions() {
-        // A <-> G ist eine Transition
+        // A <-> G is a transition
         double dist = Phylogeny.kimura2ParamDistance("AATT", "GGTT");
 
         assertTrue(dist > 0);
@@ -298,7 +298,7 @@ class PhylogenyTest {
         node.setSupport(75);
         assertEquals(75, node.getSupport());
 
-        // Boundary: sollte auf 0-100 gekappt werden
+        // Boundary: should be clamped to 0-100
         node.setSupport(150);
         assertEquals(100, node.getSupport());
 
@@ -315,7 +315,7 @@ class PhylogenyTest {
         node.setBranchLength(0.5);
         assertEquals(0.5, node.getBranchLength(), 0.001);
 
-        // Negative sollte auf 0 gekappt werden
+        // Negative should be clamped to 0
         node.setBranchLength(-1);
         assertEquals(0, node.getBranchLength(), 0.001);
     }
@@ -330,7 +330,7 @@ class PhylogenyTest {
         var tree = Phylogeny.neighborJoining(seqs);
         long elapsed = System.currentTimeMillis() - startTime;
 
-        assertTrue(elapsed < 10000, "Tree sollte innerhalb von 10s gebaut werden");
+        assertTrue(elapsed < 10000, "Tree should be built within 10s");
         assertNotNull(tree);
 
         String newick = tree.toNewick();

@@ -5,21 +5,21 @@ import java.util.*;
 import java.util.stream.*;
 
 /**
- * Coverage Analyzer für NGS (Next-Generation Sequencing) Daten.
- * Berechnet Depth/Coverage über genomische Regionen, generiert Coverage-Histogramme,
- * erkennt Gap-Regionen und exportiert als BED-Datei.
+ * Coverage analyzer for NGS (next-generation sequencing) data.
+ * Computes depth/coverage over genomic regions, generates coverage histograms,
+ * detects gap regions and exports as a BED file.
  */
 public class CoverageAnalyzer {
 
-    // ======== READ DATENSTRUKTUR ==========
+    // ======== READ DATA STRUCTURE ==========
 
-    /** Repräsentiert einen sequenzierten Read mit Position und Quality */
+    /** Represents a sequenced read with position and quality */
     public static class Read {
-        private String name;          // Read-ID (z.B. "read_001")
-        private String bases;         // Sequenz-Basen (A, T, G, C)
-        private int position;         // Start-Position auf Referenz (0-basiert)
-        private String qualityString;  // Quality-Zeichenkette (für FASTQ)
-        private QualityScoreConverter.EncodingType encoding;  // Encoding-Typ
+        private String name;          // read ID (e.g. "read_001")
+        private String bases;         // sequence bases (A, T, G, C)
+        private int position;         // start position on the reference (0-based)
+        private String qualityString;  // quality string (for FASTQ)
+        private QualityScoreConverter.EncodingType encoding;  // encoding type
 
         public Read(String name, String bases, int position) {
             this(name, bases, position, null, QualityScoreConverter.EncodingType.SANGER);
@@ -38,23 +38,23 @@ public class CoverageAnalyzer {
         public String getBases() { return bases; }
         public int getPosition() { return position; }
 
-        /** Read-Länge */
+        /** Read length */
         public int length() { return bases.length(); }
 
-        /** End-Position auf Referenz (exklusiv) */
+        /** End position on the reference (exclusive) */
         public int endPosition() { return position + bases.length(); }
 
-        /** Prüfe ob Read gültige Quality hat (Q≥20) */
+        /** Check whether the read has valid quality (Q≥20) */
         public boolean hasValidQuality() {
-            if (qualityString == null || qualityString.isEmpty()) return true;  // Keine Quality → akzeptieren
+            if (qualityString == null || qualityString.isEmpty()) return true;  // no quality → accept
 
             List<Integer> phredScores = QualityScoreConverter.toPhredScores(qualityString, encoding);
-            return phredScores.stream().allMatch(s -> s >= 20);  // Mindestens Q20
+            return phredScores.stream().allMatch(s -> s >= 20);  // at least Q20
         }
 
-        /** Durchschnittliche Quality */
+        /** Average quality */
         public double avgQuality() {
-            if (qualityString == null || qualityString.isEmpty()) return 30;  // Fallback
+            if (qualityString == null || qualityString.isEmpty()) return 30;  // fallback
 
             List<Integer> phredScores = QualityScoreConverter.toPhredScores(qualityString, encoding);
             return phredScores.stream().mapToInt(Integer::intValue).average().orElse(30);
@@ -64,12 +64,12 @@ public class CoverageAnalyzer {
         public String toString() { return name; }
     }
 
-    // ======== REFERENZ-SEKTION ==========
+    // ======== REFERENCE SECTION ==========
 
-    /** Repräsentiert eine Referenz-Sequenz oder Region */
+    /** Represents a reference sequence or region */
     public static class ReferenceRegion {
-        private String id;           // Chromosom/Scaffold-ID (z.B. "chr1")
-        private int length;          // Gesamtlänge der Region
+        private String id;           // chromosome/scaffold ID (e.g. "chr1")
+        private int length;          // total length of the region
 
         public ReferenceRegion(String id, int length) {
             this.id = id;
@@ -79,16 +79,16 @@ public class CoverageAnalyzer {
         public String getId() { return id; }
         public int getLength() { return length; }
 
-        /** Generiere Region-String (alle Ns) */
+        /** Generate region string (all Ns) */
         public String generateNSequence() { return "N".repeat(Math.min(length, 1000)); }
     }
 
-    // ======== COVERAGE DATEN ==========
+    // ======== COVERAGE DATA ==========
 
-    /** Repräsentiert die Coverage an einer bestimmten Position */
+    /** Represents the coverage at a given position */
     public static class CoveragePoint {
-        private int position;       // 0-basierte Position
-        private int depth;          // Depth an dieser Position
+        private int position;       // 0-based position
+        private int depth;          // depth at this position
 
         public CoveragePoint(int position, int depth) {
             this.position = position;
@@ -98,20 +98,20 @@ public class CoverageAnalyzer {
         public int getPosition() { return position; }
         public int getDepth() { return depth; }
 
-        /** Ist diese Position über einem Threshold? */
+        /** Is this position above a threshold? */
         public boolean aboveThreshold(int threshold) { return depth >= threshold; }
 
         @Override
         public String toString() { return String.format("Pos %d: Depth %d", position, depth); }
     }
 
-    /** Repräsentiert eine Coverage-Region (zusammenhängende Depth) */
+    /** Represents a coverage region (contiguous depth) */
     public static class CoverageRegion {
-        private String seqId;       // Chromosom-ID
-        private int start;          // Start-Position (0-basiert)
-        private int end;            // End-Position (0-basiert, exklusiv)
-        private double meanDepth;   // Durchschnittliche Depth
-        private double percentCovered;  // Prozentsatz abdeckend (ab Threshold)
+        private String seqId;       // chromosome ID
+        private int start;          // start position (0-based)
+        private int end;            // end position (0-based, exclusive)
+        private double meanDepth;   // average depth
+        private double percentCovered;  // percentage covered (above threshold)
 
         public CoverageRegion(String seqId, int start, int end,
                              double meanDepth, double percentCovered) {
@@ -126,22 +126,22 @@ public class CoverageAnalyzer {
         public int getStart() { return start; }
         public int getEnd() { return end; }
 
-        /** Region-Länge */
+        /** Region length */
         public int length() { return end - start; }
 
         public double getMeanDepth() { return meanDepth; }
         public double getPercentCovered() { return percentCovered; }
 
-        /** Format als BED-Datei-Zeile */
+        /** Format as a BED file line */
         public String toBED() {
-            int score = (int) Math.min(1000, Math.round(meanDepth));  // BED-Score 0-1000
+            int score = (int) Math.min(1000, Math.round(meanDepth));  // BED score 0-1000
             return String.format(Locale.ROOT, "%s\t%d\t%d\tCoverage_%.1fx\t%d\t.",
                 seqId, start, end, meanDepth, score);
         }
 
-        /** Format als Text-Report */
+        /** Format as a text report */
         public String format() {
-            return String.format("%s:%d-%d (Depth %.1fx, %.0f%% abgedeckt)",
+            return String.format("%s:%d-%d (Depth %.1fx, %.0f%% covered)",
                 seqId, start, end, meanDepth, percentCovered);
         }
 
@@ -149,11 +149,11 @@ public class CoverageAnalyzer {
         public String toString() { return format(); }
     }
 
-    /** Repräsentiert eine Gap-Region (keine Coverage) */
+    /** Represents a gap region (no coverage) */
     public static class GapRegion {
-        private String seqId;       // Chromosom-ID
-        private int start;          // Start-Position (0-basiert)
-        private int end;            // End-Position (exklusiv)
+        private String seqId;       // chromosome ID
+        private int start;          // start position (0-based)
+        private int end;            // end position (exclusive)
 
         public GapRegion(String seqId, int start, int end) {
             this.seqId = seqId;
@@ -165,7 +165,7 @@ public class CoverageAnalyzer {
         public int getStart() { return start; }
         public int getEnd() { return end; }
 
-        /** Gap-Länge */
+        /** Gap length */
         public int length() { return end - start; }
 
         @Override
@@ -174,19 +174,19 @@ public class CoverageAnalyzer {
         }
     }
 
-    // ======== COVERAGE ANALYSE ERGEBNIS ==========
+    // ======== COVERAGE ANALYSIS RESULT ==========
 
-    /** Haupt-Ergebnis der Coverage-Analyse */
+    /** Main result of the coverage analysis */
     public static class CoverageResult {
-        private String seqId;           // Chromosom/Referenz-ID
-        private int regionLength;       // Gesamtlänge der Region
-        private List<CoveragePoint> coveragePoints;  // Depth pro Position
-        private Map<Integer, Integer> depthHistogram;  // Coverage-Histogramm (depth → Anzahl Positionen)
-        private List<CoverageRegion> coveredRegions;  // Abgedeckte Regionen (ab Threshold)
-        private List<GapRegion> gapRegions;  // Gap-Regionen (keine Abdeckung)
-        private double percentCovered;  // Gesamte Prozentsatz abgedeckt
-        private double meanDepth;       // Durchschnittliche Depth über gesamte Region
-        private int medianDepth;        // Median-Depth
+        private String seqId;           // chromosome/reference ID
+        private int regionLength;       // total length of the region
+        private List<CoveragePoint> coveragePoints;  // depth per position
+        private Map<Integer, Integer> depthHistogram;  // coverage histogram (depth → number of positions)
+        private List<CoverageRegion> coveredRegions;  // covered regions (above threshold)
+        private List<GapRegion> gapRegions;  // gap regions (no coverage)
+        private double percentCovered;  // overall percentage covered
+        private double meanDepth;       // average depth over the whole region
+        private int medianDepth;        // median depth
 
         public CoverageResult(String seqId, int regionLength,
                              List<CoveragePoint> coveragePoints,
@@ -215,32 +215,32 @@ public class CoverageAnalyzer {
         public double getMeanDepth() { return meanDepth; }
         public int getMedianDepth() { return medianDepth; }
 
-        /** Coverage-Bewertung */
+        /** Coverage rating */
         public String coverageLabel() {
-            if (meanDepth >= 30) return "Hoch Coverage ✓✓";
-            if (meanDepth >= 10) return "Mittelwertige Coverage ✓";
-            if (meanDepth >= 5) return "Niedrige Coverage";
-            return "Unzureichende Coverage ✗";
+            if (meanDepth >= 30) return "High coverage ✓✓";
+            if (meanDepth >= 10) return "Medium coverage ✓";
+            if (meanDepth >= 5) return "Low coverage";
+            return "Insufficient coverage ✗";
         }
 
-        /** Generiere vollständigen Coverage-Bericht */
+        /** Generate the full coverage report */
         public String generateReport() {
             StringBuilder sb = new StringBuilder();
 
-            sb.append(String.format("=== Coverage-Analyse: %s ===\n\n", seqId));
-            sb.append(String.format("Referenz-Länge: %d bp\n", regionLength));
-            sb.append(String.format("Durchschnittliche Depth: %.1fx\n", (double) meanDepth));
-            sb.append(String.format("Median-Depth: %dx\n", medianDepth));
-            sb.append(String.format("Coverage-Bewertung: %s\n", coverageLabel()));
-            sb.append(String.format("Abgedeckte Region: %.0f%%\n", percentCovered));
+            sb.append(String.format("=== Coverage Analysis: %s ===\n\n", seqId));
+            sb.append(String.format("Reference length: %d bp\n", regionLength));
+            sb.append(String.format("Average depth: %.1fx\n", (double) meanDepth));
+            sb.append(String.format("Median depth: %dx\n", medianDepth));
+            sb.append(String.format("Coverage rating: %s\n", coverageLabel()));
+            sb.append(String.format("Covered region: %.0f%%\n", percentCovered));
 
-            // Coverage-Histogramm
-            sb.append("\nCoverage-Histogramm:\n");
+            // Coverage histogram
+            sb.append("\nCoverage histogram:\n");
 
             depthHistogram.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> {
-                    // Visualisiere als Balkendiagramm (max 50 Zeichen Breite)
+                    // Visualize as a bar chart (max 50 characters wide)
                     int barWidth = Math.min(50, entry.getValue() / Math.max(1, regionLength / 20));
 
                     sb.append(String.format("  %3dx: ", entry.getKey()));
@@ -253,31 +253,31 @@ public class CoverageAnalyzer {
                         entry.getValue(), (double) entry.getValue() / regionLength * 100));
                 });
 
-            // Gap-Regionen
+            // Gap regions
             if (!gapRegions.isEmpty()) {
-                sb.append(String.format("\nGap-Regionen (0x Coverage): %d\n", gapRegions.size()));
+                sb.append(String.format("\nGap regions (0x Coverage): %d\n", gapRegions.size()));
 
                 for (GapRegion gap : gapRegions.subList(0, Math.min(10, gapRegions.size()))) {
                     sb.append(String.format("  %s\n", gap));
                 }
 
                 if (gapRegions.size() > 10) {
-                    sb.append(String.format("  ... und %d weitere Gap-Regionen\n", gapRegions.size() - 10));
+                    sb.append(String.format("  ... and %d more gap regions\n", gapRegions.size() - 10));
                 }
 
                 long totalGapBp = gapRegions.stream().mapToInt(GapRegion::length).sum();
-                sb.append(String.format("\nGesamte Gap-Länge: %d bp (%.0f%%)\n",
+                sb.append(String.format("\nTotal gap length: %d bp (%.0f%%)\n",
                     totalGapBp, (double) totalGapBp / regionLength * 100));
             }
 
-            // Hohe Coverage-Regionen (>30x)
+            // High coverage regions (>30x)
             List<CoverageRegion> highCoverage = coveredRegions.stream()
                 .filter(r -> r.getMeanDepth() >= 30)
                 .sorted((a, b) -> Double.compare(b.getMeanDepth(), a.getMeanDepth()))
                 .toList();
 
             if (!highCoverage.isEmpty()) {
-                sb.append(String.format("\nHohe Coverage-Regionen (≥30x): %d\n", highCoverage.size()));
+                sb.append(String.format("\nHigh coverage regions (≥30x): %d\n", highCoverage.size()));
 
                 for (int i = 0; i < Math.min(5, highCoverage.size()); i++) {
                     sb.append(String.format("  %s\n", highCoverage.get(i)));
@@ -291,69 +291,69 @@ public class CoverageAnalyzer {
         public String toString() { return generateReport(); }
     }
 
-    // ======== HAUPTANALYSE ==========
+    // ======== MAIN ANALYSIS ==========
 
     /**
-     * Analysiere Coverage/Depth einer Referenzregion über Reads.
-     * @param reference Referenz-Region (Chromosom, Länge)
-     * @param reads Sequenzierungs-Reads
-     * @return CoverageResult mit Depth, Histogramm, Gap-Erkennung
+     * Analyze coverage/depth of a reference region over reads.
+     * @param reference reference region (chromosome, length)
+     * @param reads sequencing reads
+     * @return CoverageResult with depth, histogram, gap detection
      */
     public static CoverageResult analyzeCoverage(ReferenceRegion reference, List<Read> reads) {
-        return analyzeCoverage(reference, reads, 10);  // Standard-Threshold: 10x
+        return analyzeCoverage(reference, reads, 10);  // default threshold: 10x
     }
 
     /**
-     * Analysiere Coverage/Depth mit benutzerdefiniertem Threshold.
+     * Analyze coverage/depth with a user-defined threshold.
      */
     public static CoverageResult analyzeCoverage(ReferenceRegion reference,
                                                 List<Read> reads, int coverageThreshold) {
         String seqId = reference.getId();
         int regionLength = reference.getLength();
 
-        // Erstelle Depth-Array (0-basiert)
+        // Create depth array (0-based)
         int[] depthArray = new int[regionLength];
 
-        // Zähle Coverage über alle Reads
+        // Count coverage over all reads
         for (Read read : reads) {
-            if (read.getPosition() >= regionLength) continue;  // Read außerhalb der Region
+            if (read.getPosition() >= regionLength) continue;  // read outside the region
 
             int readEnd = Math.min(read.endPosition(), regionLength);
 
-            // Erhöhe Depth für alle Positionen des Reads
+            // Increase depth for all positions of the read
             for (int pos = read.getPosition(); pos < readEnd; pos++) {
                 depthArray[pos]++;
             }
         }
 
-        // Generiere CoveragePoints
+        // Generate CoveragePoints
         List<CoveragePoint> coveragePoints = new ArrayList<>(regionLength);
 
         for (int i = 0; i < regionLength; i++) {
             coveragePoints.add(new CoveragePoint(i, depthArray[i]));
         }
 
-        // Berechne Depth-Histogramm (depth → Anzahl Positionen)
+        // Compute depth histogram (depth → number of positions)
         Map<Integer, Integer> depthHistogram = new TreeMap<>();
 
         for (int depth : depthArray) {
             depthHistogram.merge(depth, 1, Integer::sum);
         }
 
-        // Berechne Statistiken (Mean, Median)
+        // Compute statistics (mean, median)
         int[] sortedDepths = depthArray.clone();
         Arrays.sort(sortedDepths);
 
         double meanDepth = Arrays.stream(depthArray).average().orElse(0);
         int medianDepth = sortedDepths.length == 0 ? 0 : sortedDepths[sortedDepths.length / 2];
 
-        // Finde abgedeckte Regionen (ab Threshold)
+        // Find covered regions (above threshold)
         List<CoverageRegion> coveredRegions = findCoveredRegions(seqId, depthArray, regionLength, coverageThreshold);
 
-        // Finde Gap-Regionen (0x Coverage)
+        // Find gap regions (0x coverage)
         List<GapRegion> gapRegions = findGaps(seqId, depthArray, regionLength);
 
-        // Berechne prozentuale Abdeckung (Positionen ≥ Threshold)
+        // Compute percentage covered (positions ≥ threshold)
         long coveredPositions = Arrays.stream(depthArray).filter(d -> d >= coverageThreshold).count();
         double percentCovered = (double) coveredPositions / regionLength * 100;
 
@@ -362,7 +362,7 @@ public class CoverageAnalyzer {
             coveredRegions, gapRegions, percentCovered, meanDepth, medianDepth);
     }
 
-    /** Finde abgedeckte Regionen (zusammenhängende Bereiche ≥ Threshold) */
+    /** Find covered regions (contiguous areas ≥ threshold) */
     private static List<CoverageRegion> findCoveredRegions(String seqId, int[] depthArray,
                                                           int regionLength, int threshold) {
         List<CoverageRegion> regions = new ArrayList<>();
@@ -372,33 +372,33 @@ public class CoverageAnalyzer {
 
         for (int i = 0; i < regionLength; i++) {
             if (depthArray[i] >= threshold) {
-                // Teil einer abgedeckten Region
+                // Part of a covered region
                 if (regionStart == -1) {
-                    regionStart = i;  // Region-Start
+                    regionStart = i;  // region start
                     depthsInRegion.clear();
                 }
 
                 depthsInRegion.add(depthArray[i]);
 
             } else {
-                // Region enden (wenn aktiv)
+                // End region (if active)
                 if (regionStart != -1) {
-                    int regionEnd = i;  // Exklusiv
+                    int regionEnd = i;  // exclusive
                     double meanDepth = depthsInRegion.stream().mapToInt(Integer::intValue).average().orElse(0);
 
-                    // Prozentuale Abdeckung innerhalb dieser Region
+                    // Percentage covered within this region
                     long coveredInRegion = depthsInRegion.stream().filter(d -> d >= threshold).count();
                     double percentCovered = (double) coveredInRegion / depthsInRegion.size() * 100;
 
                     regions.add(new CoverageRegion(seqId, regionStart, regionEnd,
                         meanDepth, percentCovered));
 
-                    regionStart = -1;  // Reset
+                    regionStart = -1;  // reset
                 }
             }
         }
 
-        // Schließe offene Region am Ende ab
+        // Close the open region at the end
         if (regionStart != -1) {
             int regionEnd = regionLength;
             double meanDepth = depthsInRegion.stream().mapToInt(Integer::intValue).average().orElse(0);
@@ -413,7 +413,7 @@ public class CoverageAnalyzer {
         return regions;
     }
 
-    /** Finde Gap-Regionen (0x Coverage) */
+    /** Find gap regions (0x coverage) */
     private static List<GapRegion> findGaps(String seqId, int[] depthArray, int regionLength) {
         List<GapRegion> gaps = new ArrayList<>();
 
@@ -421,22 +421,22 @@ public class CoverageAnalyzer {
 
         for (int i = 0; i < regionLength; i++) {
             if (depthArray[i] == 0) {
-                // Teil eines Gaps
+                // Part of a gap
                 if (gapStart == -1) {
-                    gapStart = i;  // Gap-Start
+                    gapStart = i;  // gap start
 
                 }
 
             } else {
-                // Gap enden (wenn aktiv)
+                // End gap (if active)
                 if (gapStart != -1) {
-                    gaps.add(new GapRegion(seqId, gapStart, i));  // Exklusiv
-                    gapStart = -1;  // Reset
+                    gaps.add(new GapRegion(seqId, gapStart, i));  // exclusive
+                    gapStart = -1;  // reset
                 }
             }
         }
 
-        // Schließe offenes Gap am Ende ab
+        // Close the open gap at the end
         if (gapStart != -1) {
             gaps.add(new GapRegion(seqId, gapStart, regionLength));
         }
@@ -444,14 +444,14 @@ public class CoverageAnalyzer {
         return gaps;
     }
 
-    // ======== QUALITY-GEFILTERTE ANALYSE ==========
+    // ======== QUALITY-FILTERED ANALYSIS ==========
 
     /**
-     * Analysiere Coverage mit Quality-Filterung (nur Reads ≥ Q20 zählen).
+     * Analyze coverage with quality filtering (only reads ≥ Q20 count).
      */
     public static CoverageResult analyzeCoverageWithQualityFilter(ReferenceRegion reference,
                                                                    List<Read> reads) {
-        // Filtere Reads nach Quality
+        // Filter reads by quality
         List<Read> validReads = reads.stream()
             .filter(Read::hasValidQuality)
             .collect(Collectors.toList());
@@ -459,7 +459,7 @@ public class CoverageAnalyzer {
         return analyzeCoverage(reference, validReads);
     }
 
-    /** Zähle Reads über einem Quality-Threshold */
+    /** Count reads above a quality threshold */
     public static long countReadsAboveQuality(List<Read> reads, int minQ) {
         return reads.stream()
             .filter(read -> read.qualityString != null && !read.qualityString.isEmpty())
@@ -470,13 +470,13 @@ public class CoverageAnalyzer {
             .count();
     }
 
-    // ======== EXPORT FUNKTIONEN ==========
+    // ======== EXPORT FUNCTIONS ==========
 
-    /** Exportiere Coverage als BED-Datei */
+    /** Export coverage as a BED file */
     public static String exportToBED(CoverageResult result) {
         StringBuilder sb = new StringBuilder();
 
-        // BED-Header (optional, aber nützlich)
+        // BED header (optional, but useful)
         sb.append(String.format("track type=coverage name=\"%s\" visibility=all\n", result.getSeqId()));
 
         for (CoverageRegion region : result.getCoveredRegions()) {
@@ -486,7 +486,7 @@ public class CoverageAnalyzer {
         return sb.toString();
     }
 
-    /** Exportiere Coverage als BigWind-ähnliches Format (bin 10bp-Bins) */
+    /** Export coverage as a BigWig-like format (10bp bins) */
     public static String exportToBinnedCoverage(CoverageResult result, int binSize) {
         StringBuilder sb = new StringBuilder();
 
@@ -495,7 +495,7 @@ public class CoverageAnalyzer {
         for (int i = 0; i < regionLength; i += binSize) {
             int binEnd = Math.min(i + binSize, regionLength);
 
-            // Berechne Durchschnittliche Depth über diesen Bin
+            // Compute average depth over this bin
             final int binStart = i;
             double avgDepth = result.getCoveragePoints().stream()
                 .filter(cp -> cp.getPosition() >= binStart && cp.getPosition() < binEnd)
@@ -510,9 +510,9 @@ public class CoverageAnalyzer {
         return sb.toString();
     }
 
-    // ======== UI-FUNKTIONEN ==========
+    // ======== UI FUNCTIONS ==========
 
-    /** Generiere schnellen Coverage-Überblick */
+    /** Generate a quick coverage overview */
     public static String quickCoverageOverview(ReferenceRegion reference, List<Read> reads) {
         CoverageResult result = analyzeCoverage(reference, reads);
 
@@ -527,7 +527,7 @@ public class CoverageAnalyzer {
         return sb.toString();
     }
 
-    /** Vergleiche Coverage zweier Proben */
+    /** Compare coverage of two samples */
     public static String compareCoverage(ReferenceRegion reference,
                                         List<Read> reads1, List<Read> reads2) {
         CoverageResult result1 = analyzeCoverage(reference, reads1);
@@ -535,36 +535,36 @@ public class CoverageAnalyzer {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("=== Coverage-Vergleich ===\n\n");
+        sb.append("=== Coverage Comparison ===\n\n");
 
         sb.append(String.format("%s:\n", result1.getSeqId()));
-        sb.append(String.format("  Probe 1: Mean %.1fx, Coverage %.0f%%, Gaps %d\n",
+        sb.append(String.format("  Sample 1: Mean %.1fx, Coverage %.0f%%, Gaps %d\n",
             result1.getMeanDepth(), result1.getPercentCovered(), result1.getGapRegions().size()));
-        sb.append(String.format("  Probe 2: Mean %.1fx, Coverage %.0f%%, Gaps %d\n",
+        sb.append(String.format("  Sample 2: Mean %.1fx, Coverage %.0f%%, Gaps %d\n",
             result2.getMeanDepth(), result2.getPercentCovered(), result2.getGapRegions().size()));
 
         double depthDiff = Math.abs(result1.getMeanDepth() - result2.getMeanDepth());
-        sb.append(String.format("\nDepth-Differenz: %.1fx\n", depthDiff));
+        sb.append(String.format("\nDepth difference: %.1fx\n", depthDiff));
 
         if (depthDiff < 5) {
-            sb.append("Beide Proben haben ähnliche Coverage ✓");
+            sb.append("Both samples have similar coverage ✓");
         } else {
-            sb.append("Coverage-Unterschied signifikant — Probenvorbereitung prüfen");
+            sb.append("Coverage difference significant — check sample preparation");
         }
 
         return sb.toString();
     }
 
-    /** Generiere vollständigen Coverage-Bericht für Ausgabe */
+    /** Generate the full coverage report for output */
     public static String generateFullCoverageReport(ReferenceRegion reference, List<Read> reads) {
         CoverageResult result = analyzeCoverage(reference, reads);
 
         StringBuilder sb = new StringBuilder();
 
-        // Zusammenfassung
+        // Summary
         sb.append(result.generateReport());
 
-        // Export-Optionen
+        // Export options
         sb.append("\n=== Export ===\n");
         sb.append("BED-Format:\n");
         sb.append(exportToBED(result));
@@ -572,35 +572,35 @@ public class CoverageAnalyzer {
         return sb.toString();
     }
 
-    // ======== BEISPIEL-READS GENERIEREN (für Tests) ==========
+    // ======== GENERATE EXAMPLE READS (for tests) ==========
 
-    /** Generiere synthetische Test-Reads für eine Referenz */
+    /** Generate synthetic test reads for a reference */
     public static List<Read> generateSyntheticReads(ReferenceRegion reference, int avgDepth) {
         List<Read> reads = new ArrayList<>();
 
         if (reference.getLength() == 0) return reads;
 
-        // Berechne Anzahl der Reads basierend auf gewünschter Depth
-        int readLength = 150;  // Standard Illumina Read-Länge
+        // Compute the number of reads based on the desired depth
+        int readLength = 150;  // standard Illumina read length
         long totalReads = (long) avgDepth * reference.getLength() / readLength;
 
-        // Deterministische Pseudo-Zufalls-Generierung (für Reproduzierbarkeit)
-        Random rand = new Random(42);  // Fester Seed
+        // Deterministic pseudo-random generation (for reproducibility)
+        Random rand = new Random(42);  // fixed seed
 
         for (long i = 0; i < totalReads; i++) {
             String readName = String.format("read_%08d", i);
 
-            // Zufällige Position
+            // Random position
             int position;
 
             if (reference.getLength() <= readLength) {
-                position = 0;  // Sehr kurze Referenz
+                position = 0;  // very short reference
 
             } else {
                 position = rand.nextInt(reference.getLength() - readLength);
             }
 
-            // Synetische Sequenz (zufällige Basen)
+            // Synthetic sequence (random bases)
             StringBuilder bases = new StringBuilder(readLength);
 
             String possibleBases = "ATGC";
@@ -608,7 +608,7 @@ public class CoverageAnalyzer {
                 bases.append(possibleBases.charAt(rand.nextInt(4)));
             }
 
-            // Quality-String (mittlere Qualität ~Q30)
+            // Quality string (medium quality ~Q30)
             StringBuilder quality = new StringBuilder(bases.length());
 
             for (int j = 0; j < bases.length(); j++) {

@@ -1,33 +1,33 @@
-//! FASTA-Index im samtools-Format (`.fai`): bauen, lesen, schreiben und Teilstücke direkt aus der Datei holen.
+//! FASTA index in samtools format (`.fai`): build, read, write and fetch subsequences directly from the file.
 
 use std::path::Path;
 
 use crate::error::{Error, Result};
 
-/// Ein Indexeintrag.
+/// An index entry.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FaiEntry {
-    /// Name = erstes Wort der Kopfzeile nach `>`.
+    /// Name = first word of the header line after `>`.
     pub name: String,
-    /// Zahl der Basen.
+    /// Number of bases.
     pub length: u64,
-    /// Byteposition der ersten Base in der Datei.
+    /// Byte position of the first base in the file.
     pub offset: u64,
-    /// Basen je Zeile (Länge der ersten Sequenzzeile).
+    /// Bases per line (length of the first sequence line).
     pub bases_per_line: u64,
-    /// Bytes je Zeile einschließlich Zeilenende (`bases_per_line + 1` bei `\n`, `+ 2` bei `\r\n`).
+    /// Bytes per line including the line ending (`bases_per_line + 1` for `\n`, `+ 2` for `\r\n`).
     pub bytes_per_line: u64,
 }
 
-/// Baut den Index aus dem Bytestrom einer FASTA-Datei. Kopfzeilen beginnen mit `>`; leere Zeilen vor dem ersten Eintrag werden
-/// ignoriert. `offset` = Position des ersten Bytes hinter der Kopfzeile (einschließlich ihres Zeilenendes). `bases_per_line` ist die
-/// Länge der ersten Sequenzzeile (ohne Zeilenende), `bytes_per_line` ihre Länge mit Zeilenende (`\n` oder `\r\n`, erkannt an der ersten
-/// Sequenzzeile). Fehler `Error::InvalidInput`: Sequence line before the first header line; eine Zeile eines Eintrags ist länger als die erste
-/// oder eine Zeile außer der letzten ist kürzer (Meldung enthält den Namen); doppelter Name. Ein Eintrag ohne Sequenz hat `length 0`,
-/// `offset` hinter der Kopfzeile und `bases_per_line = bytes_per_line = 0`. Die letzte Zeile darf ohne Zeilenende enden.
+/// Builds the index from the byte stream of a FASTA file. Header lines start with `>`; empty lines before the first entry are
+/// ignored. `offset` = position of the first byte after the header line (including its line ending). `bases_per_line` is the
+/// length of the first sequence line (without line ending), `bytes_per_line` its length with line ending (`\n` or `\r\n`, detected from the first
+/// sequence line). Error `Error::InvalidInput`: Sequence line before the first header line; a line of an entry is longer than the first
+/// or a line other than the last is shorter (message contains the name); duplicate name. An entry without sequence has `length 0`,
+/// `offset` after the header line and `bases_per_line = bytes_per_line = 0`. The last line may end without a line ending.
 pub fn build_fai(fasta: &[u8]) -> Result<Vec<FaiEntry>> {
     let mut entries: Vec<FaiEntry> = Vec::new();
-    // laufender Eintrag: (Name, Offset, erste Zeilenlänge, Bytes je Zeile, Länge, letzte Zeile war kürzer)
+    // current entry: (name, offset, first line length, bytes per line, length, last line was shorter)
     struct Cur {
         entry: FaiEntry,
         short_seen: bool,
@@ -98,7 +98,7 @@ pub fn build_fai(fasta: &[u8]) -> Result<Vec<FaiEntry>> {
     Ok(entries)
 }
 
-/// Schreibt Einträge im `.fai`-Format: je Zeile `name\tlength\toffset\tbases_per_line\tbytes_per_line\n`.
+/// Writes entries in `.fai` format: per line `name\tlength\toffset\tbases_per_line\tbytes_per_line\n`.
 pub fn format_fai(entries: &[FaiEntry]) -> String {
     entries
         .iter()
@@ -111,8 +111,8 @@ pub fn format_fai(entries: &[FaiEntry]) -> String {
         .collect()
 }
 
-/// Liest `.fai`-Text (fünf tabgetrennte Spalten, leere Zeilen ignoriert). Fehler `Error::InvalidInput` bei falscher Spaltenzahl
-/// oder Zahlen, die sich nicht lesen lassen (Meldung mit Zeilennummer).
+/// Reads `.fai` text (five tab-separated columns, empty lines ignored). Error `Error::InvalidInput` for a wrong number of columns
+/// or numbers that cannot be parsed (message with line number).
 pub fn parse_fai(text: &str) -> Result<Vec<FaiEntry>> {
     let mut out = Vec::new();
     for (n, line) in text.lines().enumerate() {
@@ -143,9 +143,9 @@ pub fn parse_fai(text: &str) -> Result<Vec<FaiEntry>> {
     Ok(out)
 }
 
-/// Holt die Basen `[start, end)` (0-basiert) eines Eintrags aus dem Bytestrom der FASTA-Datei: Basis `i` liegt bei
-/// `offset + (i / bases_per_line) * bytes_per_line + i % bases_per_line`. Fehler `Error::OutOfRange` bei `start > end`,
-/// `end > length` oder wenn die Bytes außerhalb der Daten liegen. Ein leerer Bereich ergibt `""`.
+/// Fetches the bases `[start, end)` (0-based) of an entry from the byte stream of the FASTA file: base `i` is located at
+/// `offset + (i / bases_per_line) * bytes_per_line + i % bases_per_line`. Error `Error::OutOfRange` for `start > end`,
+/// `end > length` or if the bytes lie outside the data. An empty range yields `""`.
 pub fn fetch_from_bytes(data: &[u8], entry: &FaiEntry, start: u64, end: u64) -> Result<String> {
     if start > end || end > entry.length {
         return Err(Error::OutOfRange(format!(
@@ -166,7 +166,7 @@ pub fn fetch_from_bytes(data: &[u8], entry: &FaiEntry, start: u64, end: u64) -> 
     Ok(out)
 }
 
-/// Wie `fetch_from_bytes`, liest aber nur die nötigen Bytes aus der Datei (`Seek` + `Read`, nicht die ganze Datei). Dateifehler als `Error::Io`.
+/// Like `fetch_from_bytes`, but reads only the necessary bytes from the file (`Seek` + `Read`, not the whole file). File errors as `Error::Io`.
 pub fn fetch_from_file(path: &Path, entry: &FaiEntry, start: u64, end: u64) -> Result<String> {
     use std::io::{Read, Seek, SeekFrom};
     if start > end || end > entry.length {
@@ -280,7 +280,7 @@ mod tests {
         assert_eq!(fetch_from_file(&p, &e[1], 58, 64).unwrap(), &s2[58..64]);
         assert!(fetch_from_file(&dir.join("fehlt.fa"), &e[1], 0, 1).is_err());
         let _ = std::fs::remove_dir_all(dir);
-        // Windows-Zeilenenden, letzte Zeile ohne Zeilenende, leerer Eintrag
+        // Windows line endings, last line without line ending, empty entry
         let crlf = ">a\r\nACGTAC\r\nGT";
         let e = build_fai(crlf.as_bytes()).unwrap();
         assert_eq!(e[0].length, 8);
@@ -292,7 +292,7 @@ mod tests {
         let leer = build_fai(b">x\n>y\nAC\n").unwrap();
         assert_eq!(leer[0].length, 0);
         assert_eq!(leer[1].offset, 6);
-        // Fehler
+        // Errors
         assert!(build_fai(b"ACGT\n>a\nAC\n").is_err());
         assert!(build_fai(b">a\nAC\n>a\nGG\n").is_err());
         assert!(build_fai(b">a\nACGT\nACGTAC\n").is_err());

@@ -1,14 +1,14 @@
-//! Qualitätswerte (Phred) und ihre ASCII-Kodierungen.
+//! Quality values (Phred) and their ASCII encodings.
 //!
 //! * Sanger / Illumina 1.8+: Phred+33
-//! * Illumina 1.3–1.7: Phred+64
-//! * Solexa (Illumina 1.0): Solexa-Skala+64 (Odds-basiert, kann negativ sein)
+//! * Illumina 1.3-1.7: Phred+64
+//! * Solexa (Illumina 1.0): Solexa scale+64 (odds-based, can be negative)
 
 use std::collections::BTreeMap;
 
 use crate::error::{Error, Result};
 
-/// Kodierung von Qualitätszeichen.
+/// Encoding of quality characters.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EncodingType {
     Sanger,
@@ -33,12 +33,12 @@ impl EncodingType {
     }
 }
 
-/// Größter darstellbarer Phred-Wert.
+/// Largest representable Phred value.
 pub const MAX_PHRED: i32 = 93;
 
-/// Klassifikation über das kleinste vorkommende Zeichen (übliche Heuristik): unter `;` (59) nur Phred+33,
-/// unter `@` (64) nur Solexa, ab `@` Phred+64. Ohne niedrige Qualitäten ist Phred+64 nicht sicher von
-/// Phred+33 zu unterscheiden.
+/// Classification by the smallest character present (usual heuristic): below `;` (59) only Phred+33,
+/// below `@` (64) only Solexa, from `@` Phred+64. Without low qualities Phred+64 cannot be reliably distinguished from
+/// Phred+33.
 fn classify(min_char: u8) -> EncodingType {
     if min_char < 59 {
         EncodingType::Sanger
@@ -49,7 +49,7 @@ fn classify(min_char: u8) -> EncodingType {
     }
 }
 
-/// Erkennt die Kodierung eines Qualitätsstrings. Leerer String → Fehler.
+/// Detects the encoding of a quality string. Empty string -> error.
 pub fn detect_encoding(quality: &str) -> Result<EncodingType> {
     quality
         .bytes()
@@ -58,7 +58,7 @@ pub fn detect_encoding(quality: &str) -> Result<EncodingType> {
         .ok_or_else(|| Error::InvalidInput("Quality string must not be empty".to_string()))
 }
 
-/// Erkennt die Kodierung über mehrere Strings gemeinsam (leer → Sanger).
+/// Detects the encoding across several strings together (empty -> Sanger).
 pub fn detect_encoding_many(qualities: &[String]) -> EncodingType {
     qualities
         .iter()
@@ -80,7 +80,7 @@ fn phred_to_solexa(p: i32) -> i32 {
     }
 }
 
-/// Phred-Werte (mindestens 0, höchstens 93) für einen Qualitätsstring.
+/// Phred values (at least 0, at most 93) for a quality string.
 pub fn to_phred_scores(quality: &str, enc: EncodingType) -> Vec<i32> {
     quality
         .bytes()
@@ -96,7 +96,7 @@ pub fn to_phred_scores(quality: &str, enc: EncodingType) -> Vec<i32> {
         .collect()
 }
 
-/// Qualitätsstring aus Phred-Werten (druckbare Zeichen `!` bis `~`).
+/// Quality string from Phred values (printable characters `!` to `~`).
 pub fn from_phred_scores(scores: &[i32], enc: EncodingType) -> String {
     scores
         .iter()
@@ -111,21 +111,21 @@ pub fn from_phred_scores(scores: &[i32], enc: EncodingType) -> String {
         .collect()
 }
 
-/// Wandelt einen Qualitätsstring von einer Kodierung in eine andere.
+/// Converts a quality string from one encoding to another.
 pub fn convert_encoding(quality: &str, from: EncodingType, to: EncodingType) -> String {
     from_phred_scores(&to_phred_scores(quality, from), to)
 }
 
-/// Fehlerwahrscheinlichkeit zu einem Phred-Wert: 10^(−Q/10).
+/// Error probability for a Phred value: 10^(-Q/10).
 pub fn error_probability(phred: i32) -> f64 {
     10f64.powf(-(phred as f64) / 10.0)
 }
 
-/// Kennzahlen zu einem Qualitätsstring.
+/// Summary statistics for a quality string.
 #[derive(Clone, Debug, PartialEq)]
 pub struct QualityStats {
     pub mean: f64,
-    /// Unterer Median (Element mit Index `(n−1)/2` der sortierten Werte).
+    /// Lower median (element at index `(n-1)/2` of the sorted values).
     pub median: f64,
     pub min: f64,
     pub max: f64,
@@ -146,7 +146,7 @@ impl QualityStats {
     }
 }
 
-/// Mittel, Median, Minimum und Maximum; alles 0 bei leerem String.
+/// Mean, median, minimum and maximum; all 0 for an empty string.
 pub fn calculate_stats(quality: &str, enc: EncodingType) -> QualityStats {
     let mut scores = to_phred_scores(quality, enc);
     if scores.is_empty() {
@@ -168,7 +168,7 @@ pub fn calculate_stats(quality: &str, enc: EncodingType) -> QualityStats {
     }
 }
 
-/// Häufigkeit jedes Phred-Wertes.
+/// Frequency of each Phred value.
 pub fn histogram(quality: &str, enc: EncodingType) -> BTreeMap<i32, usize> {
     let mut h = BTreeMap::new();
     for s in to_phred_scores(quality, enc) {
@@ -177,7 +177,7 @@ pub fn histogram(quality: &str, enc: EncodingType) -> BTreeMap<i32, usize> {
     h
 }
 
-/// Ersetzt Zeichen mit Qualität unter `min_quality` durch `!` (Q0).
+/// Replaces characters with quality below `min_quality` with `!` (Q0).
 pub fn filter_by_quality(quality: &str, enc: EncodingType, min_quality: i32) -> String {
     quality
         .bytes()
@@ -186,7 +186,7 @@ pub fn filter_by_quality(quality: &str, enc: EncodingType, min_quality: i32) -> 
         .collect()
 }
 
-/// Zahl der Basen mit mindestens `min_quality`.
+/// Number of bases with at least `min_quality`.
 pub fn count_bases_above(quality: &str, enc: EncodingType, min_quality: i32) -> usize {
     to_phred_scores(quality, enc)
         .into_iter()
@@ -194,7 +194,7 @@ pub fn count_bases_above(quality: &str, enc: EncodingType, min_quality: i32) -> 
         .count()
 }
 
-/// Ersetzt Basen mit zu geringer Qualität durch `N`. Fehlt für eine Base die Qualität, gilt sie als 0.
+/// Replaces bases with too low quality with `N`. If a base has no quality, it counts as 0.
 pub fn mask_low_quality(
     sequence: &str,
     quality: &str,
@@ -215,7 +215,7 @@ pub fn mask_low_quality(
         .collect()
 }
 
-/// Kurzer Textbericht über mehrere Qualitätsstrings.
+/// Short text report on several quality strings.
 pub fn report(qualities: &[String]) -> String {
     let enc = detect_encoding_many(qualities);
     let mut out = format!(
@@ -304,7 +304,7 @@ mod tests {
 
     #[test]
     fn solexa_umrechnung() {
-        // Phred 10 ↔ Solexa 10 (Odds 9:1 ≈ 10 dB), Phred 0 → Solexa −5
+        // Phred 10 <-> Solexa 10 (odds 9:1 ~ 10 dB), Phred 0 -> Solexa -5
         assert_eq!(phred_to_solexa(10), 10);
         assert_eq!(phred_to_solexa(0), -5);
         assert_eq!(solexa_to_phred(10), 10);
@@ -315,9 +315,9 @@ mod tests {
 
     #[test]
     fn grenzen_werden_geklemmt() {
-        // Zeichen unter dem Offset ergeben Phred 0
+        // Characters below the offset yield Phred 0
         assert_eq!(to_phred_scores("!", EncodingType::Illumina13), vec![0]);
-        // Sehr hohe Werte werden auf druckbares Zeichen begrenzt
+        // Very high values are capped to a printable character
         assert_eq!(from_phred_scores(&[200], EncodingType::Sanger), "~");
         assert_eq!(from_phred_scores(&[-5], EncodingType::Sanger), "!");
     }
@@ -327,7 +327,7 @@ mod tests {
         let s = calculate_stats("!5I+", EncodingType::Sanger); // 0, 20, 40, 10
         assert_eq!(s.length, 4);
         assert_eq!(s.mean, 17.5);
-        assert_eq!(s.median, 10.0); // sortiert 0,10,20,40 → Index 1
+        assert_eq!(s.median, 10.0); // sorted 0,10,20,40 -> index 1
         assert_eq!((s.min, s.max), (0.0, 40.0));
         assert_eq!(s.label(), "Low (Q10+)");
         let leer = calculate_stats("", EncodingType::Sanger);

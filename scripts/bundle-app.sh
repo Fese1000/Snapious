@@ -1,14 +1,14 @@
 #!/bin/sh
-# Baut die Snapious-App und legt sie als "build/Snapious.app" an.
-# Voraussetzung: vollständige Xcode-Toolchain (SwiftUI-Makros) und akzeptierte Xcode-Lizenz:
+# Builds the Snapious app and creates it as "build/Snapious.app".
+# Requirements: full Xcode toolchain (SwiftUI macros) and accepted Xcode license:
 #   sudo xcodebuild -license accept
-# Aufruf aus dem Projektordner:  scripts/bundle-app.sh
+# Run from the project folder:  scripts/bundle-app.sh
 set -eu
 cd "$(dirname "$0")/.."
 
 scripts/build-ffi.sh
 
-# Xcode-Toolchain verwenden, auch wenn xcode-select noch auf die Command Line Tools zeigt
+# Use the Xcode toolchain even if xcode-select still points to the Command Line Tools
 if [ -d /Applications/Xcode.app/Contents/Developer ]; then
   export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 fi
@@ -39,12 +39,12 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleDocumentTypes</key>
   <array>
     <dict>
-      <key>CFBundleTypeName</key><string>Snapious-Projekt</string>
+      <key>CFBundleTypeName</key><string>Snapious Project</string>
       <key>CFBundleTypeExtensions</key><array><string>snapious</string></array>
       <key>CFBundleTypeRole</key><string>Editor</string>
     </dict>
     <dict>
-      <key>CFBundleTypeName</key><string>Sequenzdatei</string>
+      <key>CFBundleTypeName</key><string>Sequence file</string>
       <key>CFBundleTypeExtensions</key>
       <array><string>gb</string><string>gbk</string><string>fa</string><string>fasta</string><string>fastq</string><string>fq</string></array>
       <key>CFBundleTypeRole</key><string>Viewer</string>
@@ -54,7 +54,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-# Lokale Ad-hoc-Signatur, damit macOS die App ohne Warnung startet (kein Entwicklerzertifikat nötig)
+# Local ad-hoc signature so macOS launches the app without a warning (no developer certificate needed)
 codesign --force --sign - "$APP" >/dev/null 2>&1 || true
 
-echo "Fertig: $APP   (starten mit:  open $APP)"
+echo "Done: $APP   (launch with:  open $APP)"

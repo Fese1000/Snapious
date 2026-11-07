@@ -5,12 +5,12 @@ import com.snapious.core.Sequence;
 import java.util.*;
 
 /**
- * Datenbank gängiger Restriktionsenzyme (Daten nach NEB/REBASE) mit Sequenzsuche auf beiden
- * Strängen, IUPAC-Mehrdeutigkeitscodes und korrekter Berechnung der Schnittstellen und Überhänge.
+ * Database of common restriction enzymes (data from NEB/REBASE) with sequence search on both
+ * strands, IUPAC ambiguity codes and correct computation of cut sites and overhangs.
  *
- * <p>Schnittstellen werden als Zahl der Basen links des Schnitts auf dem Oberstrang angegeben,
- * relativ zum Beginn der Erkennungssequenz. Für Enzyme vom Typ IIS kann der Schnitt hinter der
- * Erkennungssequenz liegen (Wert &gt; Länge der Erkennungssequenz).
+ * <p>Cut sites are given as the number of bases to the left of the cut on the top strand,
+ * relative to the start of the recognition sequence. For type IIS enzymes the cut can lie after the
+ * recognition sequence (value &gt; length of the recognition sequence).
  */
 public class RestrictionEnzymeDB {
 
@@ -63,7 +63,7 @@ public class RestrictionEnzymeDB {
         return enzymes.stream().filter(RestrictionEnzyme::isStickyEnd).toList();
     }
 
-    /** Isoschizomere: Enzyme mit derselben Erkennungssequenz wie das Enzym namens {@code name}. */
+    /** Isoschizomers: enzymes with the same recognition sequence as the enzyme named {@code name}. */
     public List<RestrictionEnzyme> findByIsochore(String name) {
         return enzymes.stream()
             .filter(e -> e.getName().equalsIgnoreCase(name))
@@ -72,11 +72,11 @@ public class RestrictionEnzymeDB {
             .orElse(Collections.emptyList());
     }
 
-    // ======== STANDARD-DATENBANK ========
+    // ======== STANDARD DATABASE ========
 
     private void add(String name, String site, int top, int bottom, EnzymeType type,
                      String organism, String temperature) {
-        addEnzyme(new RestrictionEnzyme(name, site, top, bottom, type, organism, "NEB", temperature, "siehe Hersteller"));
+        addEnzyme(new RestrictionEnzyme(name, site, top, bottom, type, organism, "NEB", temperature, "see manufacturer"));
     }
 
     private void initializeDefaultDatabase() {
@@ -161,9 +161,9 @@ public class RestrictionEnzymeDB {
         add("AarI", "CACCTGC", 11, 15, EnzymeType.TYPE_IIS, "Arthrobacter aurescens", "37°C");
     }
 
-    // ======== ENZYMSUCHFUNKTIONEN FÜR KLONIERUNG ========
+    // ======== ENZYME SEARCH FUNCTIONS FOR CLONING ========
 
-    /** Finde alle Schnittstellen aller Enzyme in einer Sequenz (beide Stränge), sortiert nach Position. */
+    /** Find all cut sites of all enzymes in a sequence (both strands), sorted by position. */
     public List<CutSite> findAllCutSites(Sequence sequence) {
         List<CutSite> allSites = new ArrayList<>();
         String bases = sequence.getBases().toUpperCase().replace('U', 'T');
@@ -180,7 +180,7 @@ public class RestrictionEnzymeDB {
         return allSites;
     }
 
-    /** Überhang in Oberstrang-Koordinaten (leer bei stumpfen Enden oder Schnitt außerhalb der Sequenz). */
+    /** Overhang in top-strand coordinates (empty for blunt ends or cuts outside the sequence). */
     private static String overhangAt(String bases, RestrictionEnzyme.Match m) {
         int from = Math.min(m.cutTop(), m.cutBottom());
         int to = Math.max(m.cutTop(), m.cutBottom());
@@ -188,24 +188,24 @@ public class RestrictionEnzymeDB {
         return bases.substring(from, to);
     }
 
-    /** Positionen (Beginn der Erkennungssequenz, 0-basiert) eines Enzyms auf beiden Strängen. */
+    /** Positions (start of the recognition sequence, 0-based) of an enzyme on both strands. */
     public List<Integer> findEnzymePositions(RestrictionEnzyme enzyme, String sequence) {
         return enzyme.findMatches(sequence.toUpperCase().replace('U', 'T')).stream()
             .map(RestrictionEnzyme.Match::start)
             .toList();
     }
 
-    /** Finde alle Enzyme mit stumpfen Enden */
+    /** Find all enzymes with blunt ends */
     public List<RestrictionEnzyme> getBluntEndEnzymes() {
         return findByBluntEnd();
     }
 
-    /** Finde alle Enzyme mit klebrigen Enden (sticky ends) */
+    /** Find all enzymes with sticky ends */
     public List<RestrictionEnzyme> getStickyEndEnzymes() {
         return findByStickyEnd();
     }
 
-    /** Finde Enzyme anderer Erkennungssequenz, deren Enden mit denen des Enzyms ligierbar sind. */
+    /** Find enzymes with a different recognition sequence whose ends can be ligated with those of the enzyme. */
     public List<RestrictionEnzyme> findCompatibleEnzymes(RestrictionEnzyme enzyme) {
         return enzymes.stream()
             .filter(e -> !e.getName().equals(enzyme.getName()))
@@ -213,7 +213,7 @@ public class RestrictionEnzymeDB {
             .toList();
     }
 
-    /** Finde Isoschizomere (gleiche Erkennungssequenz, anderes Enzym) */
+    /** Find isoschizomers (same recognition sequence, different enzyme) */
     public List<RestrictionEnzyme> findIsochore(RestrictionEnzyme enzyme) {
         return enzymes.stream()
             .filter(e -> e.getRecognitionSequence().equals(enzyme.getRecognitionSequence()))
@@ -221,19 +221,19 @@ public class RestrictionEnzymeDB {
             .toList();
     }
 
-    /** Enzyme, deren Aktivität durch Dam-/CpG-Methylierung blockiert werden kann. */
+    /** Enzymes whose activity can be blocked by Dam/CpG methylation. */
     public List<RestrictionEnzyme> getMethylationSensitive() {
         return enzymes.stream()
             .filter(RestrictionEnzyme::isMethylationSensitive)
             .toList();
     }
 
-    // ======== IUPAC-HILFSFUNKTIONEN ========
+    // ======== IUPAC HELPER FUNCTIONS ========
 
     private static final String IUPAC = "ACGTRYKMSWBDHVN";
     private static final String IUPAC_COMPLEMENT = "TGCAYRMKWSVHDBN";
 
-    /** Reverse-Komplement einer Sequenz mit IUPAC-Codes. */
+    /** Reverse complement of a sequence with IUPAC codes. */
     static String reverseComplement(String seq) {
         StringBuilder sb = new StringBuilder(seq.length());
         for (int i = seq.length() - 1; i >= 0; i--) {
@@ -243,7 +243,7 @@ public class RestrictionEnzymeDB {
         return sb.toString();
     }
 
-    /** Passt die konkrete Base {@code base} (A/C/G/T/N) auf den IUPAC-Code {@code code}? */
+    /** Does the concrete base {@code base} (A/C/G/T/N) match the IUPAC code {@code code}? */
     static boolean matches(char base, char code) {
         if (base == code) return true;
         return switch (code) {
@@ -262,29 +262,29 @@ public class RestrictionEnzymeDB {
         };
     }
 
-    // ======== DATENKLASSEN ========
+    // ======== DATA CLASSES ========
 
     public enum EnzymeType {
         TYPE_I,
         TYPE_II,
-        TYPE_IIS,  // schneidet außerhalb der Erkennungssequenz (Golden Gate)
-        TYPE_IIP   // palindromische Erkennungssequenz (klassische Restriktionsenzyme)
+        TYPE_IIS,  // cuts outside the recognition sequence (Golden Gate)
+        TYPE_IIP   // palindromic recognition sequence (classic restriction enzymes)
     }
 
-    /** Repräsentiert ein einzelnes Restriktionsenzym */
+    /** Represents a single restriction enzyme */
     public static class RestrictionEnzyme {
 
-        /** Treffer einer Erkennungssequenz: Beginn, Orientierung und Schnittstellen (Oberstrang-Koordinaten). */
+        /** Hit of a recognition sequence: start, orientation and cut sites (top-strand coordinates). */
         record Match(int start, boolean forward, int cutTop, int cutBottom) {}
 
-        /** Methylierungsempfindlich (Dam oder CpG) laut NEB. */
+        /** Methylation sensitive (Dam or CpG) according to NEB. */
         private static final Set<String> METHYLATION_SENSITIVE = Set.of(
             "AscI", "BclI", "BssHII", "ClaI", "HpaII", "MboI", "NotI", "SmaI", "XbaI");
 
         private final String name;
-        private final String recognitionSequence;  // IUPAC, ohne Schnittmarkierung
-        private final int cutTop;      // Schnitt auf dem Oberstrang, ab Beginn der Erkennungssequenz
-        private final int cutBottom;   // Schnitt auf dem Unterstrang (in Oberstrang-Koordinaten)
+        private final String recognitionSequence;  // IUPAC, without cut marker
+        private final int cutTop;      // cut on the top strand, from the start of the recognition sequence
+        private final int cutBottom;   // cut on the bottom strand (in top-strand coordinates)
         private final EnzymeType type;
         private final String sourceOrganism;
         private final String supplier;
@@ -294,14 +294,14 @@ public class RestrictionEnzymeDB {
         private final boolean palindromic;
 
         /**
-         * @param cutTop    Basen links vom Schnitt im Oberstrang (EcoRI G^AATTC: 1)
-         * @param cutBottom Basen links vom Schnitt im Unterstrang, in Oberstrang-Koordinaten (EcoRI: 5)
+         * @param cutTop    bases to the left of the cut on the top strand (EcoRI G^AATTC: 1)
+         * @param cutBottom bases to the left of the cut on the bottom strand, in top-strand coordinates (EcoRI: 5)
          */
         public RestrictionEnzyme(String name, String recognitionSequence, int cutTop, int cutBottom,
                                  EnzymeType type, String sourceOrganism, String supplier,
                                  String temperature, String bufferCondition) {
             if (recognitionSequence == null || recognitionSequence.isBlank()) {
-                throw new IllegalArgumentException("Erkennungssequenz fehlt für " + name);
+                throw new IllegalArgumentException("Recognition sequence missing for " + name);
             }
             this.name = name;
             this.recognitionSequence = recognitionSequence.toUpperCase().replace("^", "");
@@ -317,8 +317,8 @@ public class RestrictionEnzymeDB {
         }
 
         /**
-         * Kurzform für symmetrische Schnitte: der Unterstrang wird an der gespiegelten Position
-         * geschnitten (Länge - cutPosition). {@code stickyEnds=false} erzwingt stumpfe Enden.
+         * Short form for symmetric cuts: the bottom strand is cut at the mirrored position
+         * (length - cutPosition). {@code stickyEnds=false} forces blunt ends.
          */
         public RestrictionEnzyme(String name, String recognitionSequence, int cutPosition,
                                  EnzymeType type, boolean stickyEnds, String sourceOrganism,
@@ -331,7 +331,7 @@ public class RestrictionEnzymeDB {
         public String getName() { return name; }
         public String getRecognitionSequence() { return recognitionSequence; }
 
-        /** Schnittstelle (Oberstrang) relativ zum Beginn der Erkennungssequenz */
+        /** Cut site (top strand) relative to the start of the recognition sequence */
         public int getCutPositionWithinRecognitionSite() { return cutTop; }
 
         public int getBottomStrandCutPosition() { return cutBottom; }
@@ -340,7 +340,7 @@ public class RestrictionEnzymeDB {
         public boolean isBluntEnd() { return cutTop == cutBottom; }
         public boolean isStickyEnd() { return cutTop != cutBottom; }
 
-        /** Überhang überstehende Basen: &gt;0 = 5'-Überhang, &lt;0 = 3'-Überhang, 0 = stumpf */
+        /** Overhang protruding bases: &gt;0 = 5' overhang, &lt;0 = 3' overhang, 0 = blunt */
         public int getOverhangLength() { return cutBottom - cutTop; }
 
         public String getSourceOrganism() { return sourceOrganism; }
@@ -348,13 +348,13 @@ public class RestrictionEnzymeDB {
         public String getTemperature() { return temperature; }
         public String getBufferCondition() { return bufferCondition; }
 
-        /** Dam-/CpG-Methylierung kann das Enzym blockieren. */
+        /** Dam/CpG methylation can block the enzyme. */
         public boolean isMethylationSensitive() { return METHYLATION_SENSITIVE.contains(name); }
 
         /**
-         * Überhangsequenz (Oberstrang-Richtung) für Enzyme, deren Schnitt innerhalb der
-         * Erkennungssequenz liegt und deren Überhang damit festgelegt ist; sonst {@code null}
-         * (stumpf, Typ IIS oder Überhang mit N/mehrdeutigen Basen).
+         * Overhang sequence (top-strand direction) for enzymes whose cut lies within the
+         * recognition sequence and whose overhang is therefore fixed; otherwise {@code null}
+         * (blunt, type IIS, or overhang with N/ambiguous bases).
          */
         public String getOverhangSequence() {
             if (isBluntEnd()) return null;
@@ -365,7 +365,7 @@ public class RestrictionEnzymeDB {
             return overhang.chars().allMatch(c -> "ACGT".indexOf(c) >= 0) ? overhang : null;
         }
 
-        /** Alle Treffer in {@code sequence} (Großbuchstaben, T statt U), beide Stränge. */
+        /** All hits in {@code sequence} (uppercase, T instead of U), both strands. */
         List<Match> findMatches(String sequence) {
             List<Match> found = new ArrayList<>();
             int len = recognitionSequence.length();
@@ -375,7 +375,7 @@ public class RestrictionEnzymeDB {
                     found.add(new Match(i, true, i + cutTop, i + cutBottom));
                 }
                 if (!palindromic && matchesAt(sequence, i, reverseSite)) {
-                    // Spiegelung: Schnitte relativ zum Ende der Erkennungssequenz
+                    // Mirroring: cuts relative to the end of the recognition sequence
                     found.add(new Match(i, false, i + len - cutBottom, i + len - cutTop));
                 }
             }
@@ -389,7 +389,7 @@ public class RestrictionEnzymeDB {
             return true;
         }
 
-        /** Schneidet eine Sequenz an allen Erkennungsstellen (Oberstrang-Fragmente). */
+        /** Cuts a sequence at all recognition sites (top-strand fragments). */
         public List<String> cut(String sequence) {
             String upper = sequence.toUpperCase().replace('U', 'T');
 
@@ -409,8 +409,8 @@ public class RestrictionEnzymeDB {
         }
 
         /**
-         * Ligierbar mit {@code other}: beide stumpf, oder gleiche Überhangsart und komplementäre
-         * Überhänge (Reverse-Komplement des einen entspricht dem anderen).
+         * Ligatable with {@code other}: both blunt, or the same overhang type and complementary
+         * overhangs (reverse complement of one equals the other).
          */
         public boolean isCompatibleWith(RestrictionEnzyme other) {
             if (this.isBluntEnd() || other.isBluntEnd()) {
@@ -440,13 +440,13 @@ public class RestrictionEnzymeDB {
         public int hashCode() { return name.hashCode(); }
     }
 
-    /** Eine Schnittstelle eines Enzyms in einer DNA-Sequenz. */
+    /** A cut site of an enzyme in a DNA sequence. */
     public static class CutSite {
         private final RestrictionEnzyme enzyme;
         private final String sequenceId;
-        private final int position;     // Beginn der Erkennungssequenz, 0-basiert
-        private final int cutPosition;  // Basen links vom Schnitt im Oberstrang
-        private final char strand;      // '+' oder '-'
+        private final int position;     // start of the recognition sequence, 0-based
+        private final int cutPosition;  // bases to the left of the cut on the top strand
+        private final char strand;      // '+' or '-'
         private final String overhang;
 
         public CutSite(RestrictionEnzyme enzyme, String sequenceId, int position) {
@@ -466,16 +466,16 @@ public class RestrictionEnzymeDB {
         public RestrictionEnzyme getEnzyme() { return enzyme; }
         public String getSequenceId() { return sequenceId; }
 
-        /** Beginn der Erkennungssequenz (0-basiert) */
+        /** Start of the recognition sequence (0-based) */
         public int getPosition() { return position; }
 
-        /** Anzahl Basen links vom Schnitt im Oberstrang */
+        /** Number of bases to the left of the cut on the top strand */
         public int getCutPosition() { return cutPosition; }
 
-        /** '+' wenn die Erkennungssequenz so im Oberstrang steht, '-' wenn auf dem Gegenstrang */
+        /** '+' if the recognition sequence is on the top strand this way, '-' if on the opposite strand */
         public char getStrand() { return strand; }
 
-        /** Überhangsequenz in Oberstrang-Richtung; {@code null} bei stumpfen Enden. */
+        /** Overhang sequence in top-strand direction; {@code null} for blunt ends. */
         public String getOverhang() { return overhang == null || overhang.isEmpty() ? null : overhang; }
 
         public boolean isBlunt() { return enzyme.isBluntEnd(); }

@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Dialog „Neue Sequenz“: Text einfügen (roh oder FASTA) oder eintippen, Art und Form wählen.
+/// "New sequence" dialog: paste text (raw or FASTA) or type it in, choose kind and shape.
 struct NewSequenceView: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -10,7 +10,7 @@ struct NewSequenceView: View {
     @State private var kind = "AUTO"
     @State private var circular = false
 
-    /// Zahl der Buchstaben im Text (ohne Kopfzeilen), nur zur Anzeige.
+    /// Number of letters in the text (without header lines), for display only.
     private var letterCount: Int {
         text.split(separator: "\n", omittingEmptySubsequences: false)
             .filter { !$0.hasPrefix(">") }
@@ -19,24 +19,24 @@ struct NewSequenceView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(tr("Neue Sequenz")).font(.title2.bold())
+            Text(tr("New sequence")).font(.title2.bold())
             Form {
-                TextField(tr("Name"), text: $name, prompt: Text(tr("optional, sonst aus der FASTA-Kopfzeile")))
-                Picker(tr("Art"), selection: $kind) {
-                    Text(tr("Automatisch erkennen")).tag("AUTO")
+                TextField(tr("Name"), text: $name, prompt: Text(tr("optional, otherwise from the FASTA header")))
+                Picker(tr("Kind"), selection: $kind) {
+                    Text(tr("Detect automatically")).tag("AUTO")
                     Text("DNA").tag("DNA")
                     Text("RNA").tag("RNA")
                     Text(tr("Protein")).tag("PROTEIN")
                 }
-                Toggle(tr("Zirkulär (Plasmid)"), isOn: $circular)
+                Toggle(tr("Circular (plasmid)"), isOn: $circular)
                     .disabled(kind == "PROTEIN")
             }
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(tr("Sequenz")).font(.headline)
+                    Text(tr("Sequence")).font(.headline)
                     Spacer()
-                    Text(tr("%@ Zeichen", "\(letterCount)")).foregroundStyle(.secondary)
-                    Button(tr("Aus Zwischenablage")) {
+                    Text(tr("%@ characters", "\(letterCount)")).foregroundStyle(.secondary)
+                    Button(tr("From clipboard")) {
                         if let s = NSPasteboard.general.string(forType: .string) { text = s }
                     }
                 }
@@ -44,14 +44,14 @@ struct NewSequenceView: View {
                     .font(.system(.body, design: .monospaced))
                     .frame(minHeight: 180)
                     .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.separator))
-                Text(tr("Rohe Buchstaben, Zeilennummern und Leerzeichen werden entfernt. FASTA mit mehreren Einträgen legt mehrere Sequenzen an."))
+                Text(tr("Raw letters; line numbers and spaces are removed. FASTA with several entries creates several sequences."))
                     .font(.caption).foregroundStyle(.secondary)
             }
             HStack {
                 Spacer()
-                Button(tr("Abbrechen"), role: .cancel) { dismiss() }
+                Button(tr("Cancel"), role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button(tr("Anlegen")) {
+                Button(tr("Create")) {
                     if model.createSequence(name: name, text: text, kind: kind, circular: circular) { dismiss() }
                 }
                 .keyboardShortcut(.defaultAction)

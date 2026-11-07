@@ -1,10 +1,10 @@
-//! Workflows: Folgen von Operationen, deren Ergebnisse weitergereicht werden.
+//! Workflows: sequences of operations whose results are passed on.
 //!
-//! JSON-Format:
+//! JSON format:
 //! `{"name": "…", "description": "…", "inputCount": 1,
 //!   "steps": [{"id": "rc", "operation": "edit.reverseComplement", "parameters": {"k": "v"}, "inputs": ["$in:0"]}, …],
 //!   "outputs": ["$step:1:0"]}`
-//! Verweise: `$in:N` ist das Eingabedokument N (0-basiert), `$step:S:N` die Ausgabe N des Schritts S (0-basiert; nur frühere Schritte).
+//! References: `$in:N` is input document N (0-based), `$step:S:N` is output N of step S (0-based; earlier steps only).
 
 use serde_json::{json, Value};
 
@@ -14,24 +14,24 @@ use crate::ops::operation::{HistoryEntry, OperationContext, Params};
 use crate::ops::registry::OperationRegistry;
 use crate::ops::runner::OperationRunner;
 
-/// Ein Schritt eines Workflows.
+/// A step of a workflow.
 #[derive(Clone, Debug, PartialEq)]
 pub struct WorkflowStep {
     pub id: String,
     pub operation_id: String,
     pub parameters: Params,
-    /// Verweise wie `$in:0` oder `$step:2:1`.
+    /// References like `$in:0` or `$step:2:1`.
     pub inputs: Vec<String>,
 }
 
-/// Ein Workflow.
+/// A workflow.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Workflow {
     pub name: String,
     pub description: String,
     pub input_count: usize,
     pub steps: Vec<WorkflowStep>,
-    /// Verweise auf die Ergebnisse (wie bei den Eingaben der Schritte).
+    /// References to the results (as for the inputs of the steps).
     pub outputs: Vec<String>,
 }
 
@@ -60,10 +60,10 @@ fn parse_reference(text: &str) -> Result<Reference> {
 }
 
 impl Workflow {
-    /// Prüft den Workflow vor der Ausführung: jede Operation ist in `registry` bekannt, jeder Verweis ist gültig
-    /// (`$in:N` mit `N < input_count`, `$step:S:…` nur mit `S` kleiner als die Nummer des Schritts, der den Verweis benutzt;
-    /// für `outputs` muss `S` ein vorhandener Schritt sein), Schritte haben mindestens eine Eingabe, `outputs` ist nicht leer.
-    /// Fehler `Error::InvalidInput` mit Schrittnummer (1-basiert) wo es einen Schritt betrifft.
+    /// Validates the workflow before execution: every operation is known in `registry`, every reference is valid
+    /// (`$in:N` with `N < input_count`, `$step:S:…` only with `S` smaller than the number of the step using the reference;
+    /// for `outputs`, `S` must be an existing step), steps have at least one input, `outputs` is not empty.
+    /// Error `Error::InvalidInput` with step number (1-based) where it concerns a step.
     pub fn validate(&self, registry: &OperationRegistry) -> Result<()> {
         if self.outputs.is_empty() {
             return Err(Error::InvalidInput(
@@ -122,7 +122,7 @@ impl Workflow {
         Ok(())
     }
 
-    /// Als JSON-Text (eingerückt).
+    /// As JSON text (indented).
     pub fn to_json(&self) -> String {
         let steps: Vec<Value> = self
             .steps
@@ -139,9 +139,9 @@ impl Workflow {
         serde_json::to_string_pretty(&v).unwrap_or_default()
     }
 
-    /// Liest JSON im Format oben. Fehler `Error::InvalidInput` bei ungültigem JSON, fehlendem `name`, `steps` oder `outputs` oder falschen Typen.
-    /// `description` und `parameters` dürfen fehlen, `inputCount` fehlt → 1, `id` fehlt → `schritt{N}` (1-basiert). Parameterwerte
-    /// dürfen Zahlen, Wahrheitswerte oder Texte sein (alles wird zu Text).
+    /// Reads JSON in the format above. Error `Error::InvalidInput` for invalid JSON, missing `name`, `steps` or `outputs`, or wrong types.
+    /// `description` and `parameters` may be missing, `inputCount` missing → 1, `id` missing → `schritt{N}` (1-based). Parameter values
+    /// may be numbers, booleans or text (everything becomes text).
     pub fn from_json(text: &str) -> Result<Workflow> {
         let bad = |what: &str| Error::InvalidInput(format!("Workflow JSON: {}", what));
         let v: Value = serde_json::from_str(text).map_err(|e| bad(&e.to_string()))?;
@@ -235,17 +235,17 @@ impl Workflow {
     }
 }
 
-/// Ergebnis eines Laufs.
+/// Result of a run.
 #[derive(Clone, Debug, PartialEq)]
 pub struct WorkflowResult {
     pub outputs: Vec<Document>,
-    /// Die bei diesem Lauf neu entstandenen Verlaufseinträge.
+    /// The history entries newly created in this run.
     pub history: Vec<HistoryEntry>,
-    /// Fehlermeldungen (leer bei Erfolg).
+    /// Error messages (empty on success).
     pub errors: Vec<String>,
 }
 
-/// Führt Workflows aus.
+/// Executes workflows.
 pub struct WorkflowRunner<'a> {
     pub registry: &'a OperationRegistry,
 }
@@ -255,9 +255,9 @@ impl<'a> WorkflowRunner<'a> {
         Self { registry }
     }
 
-    /// Führt `wf` auf `inputs` aus. Zuerst `validate` und die Prüfung `inputs.len() == input_count` (beides vor jeder Ausführung, ohne
-    /// Verlaufseinträge). Jeder Schritt läuft über `runner.execute`; ein Fehler wird zu `Error::Operation("Schritt N: …")`
-    /// (1-basiert). Verweise auf nicht vorhandene Ausgaben eines Schritts ebenfalls (`Schritt N: Verweis … liefert keine Ausgabe`).
+    /// Executes `wf` on `inputs`. First `validate` and the check `inputs.len() == input_count` (both before any execution, without
+    /// history entries). Each step runs via `runner.execute`; an error becomes `Error::Operation("Schritt N: …")`
+    /// (1-based). References to non-existent outputs of a step likewise (`Schritt N: Verweis … liefert keine Ausgabe`).
     pub fn run(
         &self,
         wf: &Workflow,
@@ -326,9 +326,9 @@ impl<'a> WorkflowRunner<'a> {
         })
     }
 
-    /// Führt `wf` für jedes Dokument einzeln aus (der Workflow braucht dafür genau eine Eingabe). Ein Fehler stoppt die anderen Läufe nicht:
-    /// er steht in `errors` des betreffenden Ergebnisses (`outputs` und `history` leer). Ist der Workflow selbst ungültig, hat jedes
-    /// Ergebnis diese Fehlermeldung.
+    /// Executes `wf` for each document individually (the workflow needs exactly one input for this). An error does not stop the other runs:
+    /// it appears in `errors` of the respective result (`outputs` and `history` empty). If the workflow itself is invalid, every
+    /// result has this error message.
     pub fn run_batch(
         &self,
         wf: &Workflow,
@@ -460,7 +460,7 @@ mod tests {
         y.steps[0].inputs = vec!["$kaputt".to_string()];
         assert!(y.validate(&reg).is_err());
         assert!(rc_dann_einfuegen().validate(&reg).is_ok());
-        // falsche Zahl Eingaben
+        // wrong number of inputs
         let falsch =
             WorkflowRunner::new(&reg).run(&rc_dann_einfuegen(), &[], &mut runner, &mut NullContext);
         assert!(matches!(falsch, Err(Error::InvalidInput(_))));
@@ -478,7 +478,7 @@ mod tests {
             .run(&wf, &[doc("AATT")], &mut runner, &mut NullContext)
             .unwrap_err();
         assert!(e.to_string().contains("Step 2"), "{}", e);
-        // Stapel: ein gültiger, ein ungültiger Lauf (Position 3 passt nur zur längeren Sequenz)
+        // batch: one valid, one invalid run (position 3 fits only the longer sequence)
         let mut wf2 = rc_dann_einfuegen();
         wf2.steps[1]
             .parameters

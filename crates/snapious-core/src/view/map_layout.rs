@@ -1,19 +1,19 @@
-//! Geometrie für Plasmidkarte (Kreis) und lineare Karte. Reine Zahlenrechnung, kein Zeichnen.
+//! Geometry for the plasmid map (circular) and linear map. Pure number crunching, no drawing.
 
 use std::f64::consts::PI;
 
 use crate::error::{Error, Result};
 
-/// Kreiskarte: Position 0 liegt oben (12 Uhr), die Positionen laufen im Uhrzeigersinn.
-/// Winkel sind Bogenmaß in `[0, 2π)`. Punkte haben den Mittelpunkt `(0, 0)`, `x` zeigt nach rechts,
-/// `y` nach unten (wie auf dem Bildschirm).
+/// Circular map: position 0 is at the top (12 o'clock), positions run clockwise.
+/// Angles are radians in `[0, 2π)`. Points have the center `(0, 0)`, `x` points right,
+/// `y` down (as on screen).
 #[derive(Clone, Debug, PartialEq)]
 pub struct CircularMapLayout {
     length: usize,
 }
 
 impl CircularMapLayout {
-    /// Fehler `Error::InvalidInput`, wenn `length == 0`.
+    /// Error `Error::InvalidInput` if `length == 0`.
     pub fn new(length: usize) -> Result<Self> {
         if length == 0 {
             return Err(Error::InvalidInput("length must be > 0".into()));
@@ -21,32 +21,32 @@ impl CircularMapLayout {
         Ok(CircularMapLayout { length })
     }
 
-    /// Länge der Sequenz in Basen.
+    /// Length of the sequence in bases.
     pub fn length(&self) -> usize {
         self.length
     }
 
-    /// Winkel einer Position: `2π · position / length`. Positionen ab `length` laufen im Kreis weiter
-    /// (Ergebnis wird auf `[0, 2π)` gebracht).
+    /// Angle of a position: `2π · position / length`. Positions from `length` on keep wrapping around the circle
+    /// (the result is normalized to `[0, 2π)`).
     pub fn angle_of(&self, position: f64) -> f64 {
         (position / self.length as f64 * 2.0 * PI) % (2.0 * PI)
     }
 
-    /// Punkt auf dem Kreis mit `radius`: `x = radius · sin(winkel)`, `y = -radius · cos(winkel)`.
+    /// Point on the circle with `radius`: `x = radius · sin(angle)`, `y = -radius · cos(angle)`.
     pub fn point_at(&self, position: f64, radius: f64) -> (f64, f64) {
         let angle = self.angle_of(position);
         (radius * angle.sin(), -radius * angle.cos())
     }
 
-    /// Überstrichener Winkel von `start` bis `end` (Basenpositionen, `end >= start`): `2π · (end − start) / length`.
-    /// Ist `end < start` (Feature über den Nullpunkt), gilt `end + length`.
+    /// Swept angle from `start` to `end` (base positions, `end >= start`): `2π · (end − start) / length`.
+    /// If `end < start` (feature across the origin), `end + length` is used.
     pub fn sweep_of(&self, start: usize, end: usize) -> f64 {
         let effective_end = if end < start { end + self.length } else { end };
         2.0 * PI * (effective_end - start) as f64 / self.length as f64
     }
 
-    /// Umkehrung von `angle_of`: Winkel (auch negativ oder über 2π) auf `[0, 2π)` bringen, dann
-    /// `round(winkel / 2π · length)`; das Ergebnis `length` wird zu `0`.
+    /// Inverse of `angle_of`: bring the angle (also negative or above 2π) into `[0, 2π)`, then
+    /// `round(angle / 2π · length)`; a result of `length` becomes `0`.
     pub fn position_at_angle(&self, angle: f64) -> usize {
         let normalized = ((angle % (2.0 * PI)) + 2.0 * PI) % (2.0 * PI);
         let pos = (normalized / (2.0 * PI) * self.length as f64).round() as usize;
@@ -57,8 +57,8 @@ impl CircularMapLayout {
         }
     }
 
-    /// Position zu einem Punkt (Mausklick): Winkel = `atan2(x, -y)`, dann wie `position_at_angle`.
-    /// Der Mittelpunkt `(0, 0)` ergibt Position 0.
+    /// Position for a point (mouse click): angle = `atan2(x, -y)`, then as in `position_at_angle`.
+    /// The center `(0, 0)` yields position 0.
     pub fn position_at_point(&self, x: f64, y: f64) -> usize {
         if x == 0.0 && y == 0.0 {
             return 0;
@@ -68,9 +68,9 @@ impl CircularMapLayout {
     }
 }
 
-/// Schiebt Beschriftungswinkel auseinander. `angles` ist aufsteigend sortiert. Nur ein Vorwärtsdurchgang:
-/// `out[0] = angles[0]`, danach `out[i] = max(angles[i], out[i-1] + min_gap)`. Es gibt keinen Umbruch
-/// am Kreisende. Gleiche Länge und Reihenfolge wie die Eingabe.
+/// Pushes label angles apart. `angles` is sorted ascending. Forward pass only:
+/// `out[0] = angles[0]`, then `out[i] = max(angles[i], out[i-1] + min_gap)`. There is no wrap-around
+/// at the end of the circle. Same length and order as the input.
 pub fn spread_labels(angles: &[f64], min_gap: f64) -> Vec<f64> {
     if angles.is_empty() {
         return vec![];
@@ -83,7 +83,7 @@ pub fn spread_labels(angles: &[f64], min_gap: f64) -> Vec<f64> {
     out
 }
 
-/// Lineare Karte: Position `0` liegt bei `x = 0`, Position `length` bei `x = width`.
+/// Linear map: position `0` is at `x = 0`, position `length` at `x = width`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct LinearMapLayout {
     length: usize,
@@ -91,7 +91,7 @@ pub struct LinearMapLayout {
 }
 
 impl LinearMapLayout {
-    /// Fehler `Error::InvalidInput`, wenn `length == 0` oder `width` nicht größer als 0 ist.
+    /// Error `Error::InvalidInput` if `length == 0` or `width` is not greater than 0.
     pub fn new(length: usize, width: f64) -> Result<Self> {
         if length == 0 || width <= 0.0 || width.is_nan() {
             return Err(Error::InvalidInput(
@@ -101,18 +101,18 @@ impl LinearMapLayout {
         Ok(LinearMapLayout { length, width })
     }
 
-    /// `x = position / length · width` (ohne Begrenzung).
+    /// `x = position / length · width` (unclamped).
     pub fn x_of(&self, position: f64) -> f64 {
         position / self.length as f64 * self.width
     }
 
-    /// Umkehrung: `round(x / width · length)`, auf `0..=length` begrenzt.
+    /// Inverse: `round(x / width · length)`, clamped to `0..=length`.
     pub fn position_at_x(&self, x: f64) -> usize {
         let pos = (x / self.width * self.length as f64).round() as usize;
         pos.min(self.length)
     }
 
-    /// Breite einer Spanne `[start, end)` in x-Einheiten: `(end − start) / length · width`; 0 wenn `end <= start`.
+    /// Width of a span `[start, end)` in x units: `(end − start) / length · width`; 0 if `end <= start`.
     pub fn width_of(&self, start: usize, end: usize) -> f64 {
         if end <= start {
             return 0.0;
@@ -120,15 +120,15 @@ impl LinearMapLayout {
         (end - start) as f64 / self.length as f64 * self.width
     }
 
-    /// Positionen der Skalenstriche: Vielfache von `tick_step(length, max_ticks)` von 0 bis einschließlich `length`.
+    /// Positions of the tick marks: multiples of `tick_step(length, max_ticks)` from 0 up to and including `length`.
     pub fn ticks(&self, max_ticks: usize) -> Vec<usize> {
         let step = tick_step(self.length, max_ticks);
         (0..=self.length).step_by(step).collect()
     }
 }
 
-/// „Schöne" Schrittweite für Skalenstriche: die kleinste Zahl der Form 1, 2 oder 5 mal 10^k (k ≥ 0), bei der
-/// `length / schritt <= max_ticks` gilt. `max_ticks == 0` wird wie 1 behandelt. Mindestens 1.
+/// "Nice" step size for tick marks: the smallest number of the form 1, 2 or 5 times 10^k (k ≥ 0) for which
+/// `length / step <= max_ticks` holds. `max_ticks == 0` is treated as 1. At least 1.
 pub fn tick_step(length: usize, max_ticks: usize) -> usize {
     for exp in 0.. {
         for &mult in &[1usize, 2usize, 5usize] {
@@ -186,7 +186,7 @@ mod tests {
         let l = CircularMapLayout::new(1000).unwrap();
         assert!(close(l.sweep_of(0, 250), PI / 2.0));
         assert!(close(l.sweep_of(100, 100), 0.0));
-        // über den Nullpunkt: 900 bis 100 sind 200 Basen
+        // across the origin: 900 to 100 is 200 bases
         assert!(close(l.sweep_of(900, 100), 2.0 * PI * 0.2));
     }
 
@@ -215,7 +215,7 @@ mod tests {
         assert!(close(out[3], 1.0));
         assert!(spread_labels(&[], 0.1).is_empty());
         assert_eq!(spread_labels(&[0.5], 0.1), vec![0.5]);
-        // schon weit genug auseinander: unverändert
+        // already far enough apart: unchanged
         assert_eq!(spread_labels(&[0.0, 1.0, 2.0], 0.5), vec![0.0, 1.0, 2.0]);
     }
 

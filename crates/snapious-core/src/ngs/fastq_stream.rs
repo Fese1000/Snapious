@@ -1,4 +1,4 @@
-//! FASTQ als Strom lesen (ein Eintrag nach dem anderen, ohne die Datei ganz zu laden); `.gz` über das Programm `gzip`.
+//! Read FASTQ as a stream (one entry at a time, without loading the whole file); `.gz` via the `gzip` program.
 
 use std::io::BufRead;
 use std::path::Path;
@@ -6,10 +6,10 @@ use std::path::Path;
 use crate::error::{Error, Result};
 use crate::io::fastq::FastqRecord;
 
-/// Liest Einträge aus einer Zeilenquelle.
+/// Reads entries from a line source.
 pub struct FastqReader<R: BufRead> {
     reader: R,
-    /// Zahl der bisher gelesenen Zeilen (für Fehlermeldungen, 1-basiert die zuletzt gelesene).
+    /// Number of lines read so far (for error messages; the last one read, 1-based).
     line: usize,
     finished: bool,
 }
@@ -23,7 +23,7 @@ impl<R: BufRead> FastqReader<R> {
         }
     }
 
-    /// Liest die nächste Zeile ohne `\n`/`\r\n`; `Ok(None)` am Ende der Quelle. Lesefehler als `Error::Io`.
+    /// Reads the next line without `\n`/`\r\n`; `Ok(None)` at the end of the source. Read errors as `Error::Io`.
     fn next_line(&mut self) -> Result<Option<String>> {
         let mut buf = String::new();
         match self.reader.read_line(&mut buf) {
@@ -43,12 +43,12 @@ impl<R: BufRead> FastqReader<R> {
 impl<R: BufRead> Iterator for FastqReader<R> {
     type Item = Result<FastqRecord>;
 
-    /// Nächster Eintrag. Leere Zeilen vor einer Kopfzeile werden übersprungen; am Ende der Quelle `None`.
-    /// Ein Eintrag besteht aus vier Zeilen: Kopfzeile mit `@` (ID = erstes Wort nach `@`, `comment` = der Rest der Zeile ohne
-    /// führenden Leerraum, sonst leer), Sequenz, eine Zeile, die mit `+` beginnt, und Qualität.
-    /// Fehler (`Error::InvalidInput`, Meldung beginnt mit `Zeile {n}:` mit der Nummer der fehlerhaften Zeile): Kopfzeile ohne `@`;
-    /// dritte Zeile ohne `+`; Qualität und Sequenz verschieden lang; file ends in the middle of an entry. Nach einem Fehler liefert der Iterator
-    /// danach nur noch `None`.
+    /// Next entry. Empty lines before a header line are skipped; at the end of the source `None`.
+    /// An entry consists of four lines: header line with `@` (ID = first word after `@`, `comment` = the rest of the line without
+    /// leading whitespace, otherwise empty), sequence, a line starting with `+`, and quality.
+    /// Errors (`Error::InvalidInput`, message starts with `Zeile {n}:` with the number of the faulty line): header line without `@`;
+    /// third line without `+`; quality and sequence of different lengths; file ends in the middle of an entry. After an error the iterator
+    /// returns only `None`.
     fn next(&mut self) -> Option<Result<FastqRecord>> {
         if self.finished {
             return None;
@@ -67,8 +67,8 @@ impl<R: BufRead> Iterator for FastqReader<R> {
     }
 }
 
-/// Öffnet eine FASTQ-Datei zum Streamen. Endet der Name auf `.gz`, wird `gzip -dc <datei>` gestartet und dessen Ausgabe gelesen
-/// (Fehler beim Start → `Error::Io`); sonst wird die Datei direkt gelesen (`Error::Io`, wenn sie fehlt).
+/// Opens a FASTQ file for streaming. If the name ends in `.gz`, `gzip -dc <file>` is started and its output read
+/// (error on start → `Error::Io`); otherwise the file is read directly (`Error::Io` if it is missing).
 pub fn open_fastq(path: &Path) -> Result<FastqReader<Box<dyn BufRead>>> {
     let name = path.to_string_lossy();
     if name.ends_with(".gz") {
@@ -93,7 +93,7 @@ pub fn open_fastq(path: &Path) -> Result<FastqReader<Box<dyn BufRead>>> {
 
 fn read_record<R: BufRead>(r: &mut FastqReader<R>) -> Result<Option<FastqRecord>> {
     let bad = |line: usize, msg: &str| Error::InvalidInput(format!("Line {}: {}", line, msg));
-    // Kopfzeile, leere Zeilen davor überspringen
+    // Header line, skip empty lines before it
     let header = loop {
         match r.next_line()? {
             None => return Ok(None),
@@ -196,7 +196,7 @@ mod tests {
         let n = open_fastq(&plain).unwrap().filter(|r| r.is_ok()).count();
         assert_eq!(n, 2);
         assert!(open_fastq(&dir.join("fehlt.fastq")).is_err());
-        // gzip nur, wenn das Programm vorhanden ist
+        // gzip only if the program is available
         let zipped = std::process::Command::new("gzip")
             .arg("-k")
             .arg(&plain)

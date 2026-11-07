@@ -1,6 +1,6 @@
-//! Zwei Sätze von Annotationen vergleichen: gemeinsam oder nur in einem Satz.
+//! Compare two sets of annotations: shared or only in one set.
 
-/// Eine Annotation (Intervall `[start, end)` und Typ).
+/// An annotation (interval `[start, end)` and type).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Span {
     pub start: usize,
@@ -8,30 +8,30 @@ pub struct Span {
     pub kind: String,
 }
 
-/// Wann zwei Annotationen als gleich gelten.
+/// When two annotations count as equal.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MatchMode {
-    /// Gleicher Typ, gleicher Beginn, gleiches Ende.
+    /// Same type, same start, same end.
     Exact,
-    /// Gleicher Typ und sich überlappende Intervalle (mindestens eine gemeinsame Position).
+    /// Same type and overlapping intervals (at least one shared position).
     Overlap,
 }
 
-/// Ergebnis: Indizes in den übergebenen Listen, jeweils aufsteigend.
+/// Result: indices into the passed lists, each ascending.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Comparison {
-    /// Einträge aus `a` ohne Entsprechung in `b`.
+    /// Entries from `a` with no counterpart in `b`.
     pub only_a: Vec<usize>,
-    /// Einträge aus `b` ohne Entsprechung in `a`.
+    /// Entries from `b` with no counterpart in `a`.
     pub only_b: Vec<usize>,
-    /// Einträge aus `a` mit mindestens einer Entsprechung in `b`.
+    /// Entries from `a` with at least one counterpart in `b`.
     pub common_a: Vec<usize>,
-    /// Einträge aus `b` mit mindestens einer Entsprechung in `a`.
+    /// Entries from `b` with at least one counterpart in `a`.
     pub common_b: Vec<usize>,
 }
 
-/// Vergleicht `a` und `b` nach `mode`. Typen werden ohne Beachtung der Groß-/Kleinschreibung verglichen. Zwei Intervalle
-/// überlappen, wenn `a.start < b.end && b.start < a.end`.
+/// Compares `a` and `b` according to `mode`. Types are compared case-insensitively. Two intervals
+/// overlap if `a.start < b.end && b.start < a.end`.
 pub fn compare_sets(a: &[Span], b: &[Span], mode: MatchMode) -> Comparison {
     let mut common_a = Vec::new();
     let mut only_a = Vec::new();

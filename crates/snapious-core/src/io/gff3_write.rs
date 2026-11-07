@@ -1,9 +1,9 @@
-//! GFF3 schreiben: die Features eines Sequenzdokuments als Annotationsdatei.
+//! Write GFF3: the features of a sequence document as an annotation file.
 
 use crate::model::document::SequenceDocument;
 
-/// Prozentkodierung für GFF3-Attribute: `%` → `%25`, `;` → `%3B`, `=` → `%3D`, `&` → `%26`, `,` → `%2C`, Tabulator → `%09`,
-/// Zeilenumbruch → `%0A`, Wagenrücklauf → `%0D`; alles andere bleibt (auch Umlaute).
+/// Percent-encoding for GFF3 attributes: `%` -> `%25`, `;` -> `%3B`, `=` -> `%3D`, `&` -> `%26`, `,` -> `%2C`, tab -> `%09`,
+/// line feed -> `%0A`, carriage return -> `%0D`; everything else stays (including umlauts).
 pub fn percent_encode_attribute(text: &str) -> String {
     let mut out = String::with_capacity(text.len() * 3);
     for c in text.chars() {
@@ -22,15 +22,15 @@ pub fn percent_encode_attribute(text: &str) -> String {
     out
 }
 
-/// Schreibt `doc` als GFF3-Text.
-/// - Erste Zeile `##gff-version 3\n`, zweite `##sequence-region {Dokumentname} 1 {Länge}\n` (Name des Dokuments, Leerzeichen durch `_` ersetzt).
-/// - Danach je Feature und je Intervall eine Zeile mit neun durch Tabulator getrennten Spalten:
-///   `seqid` (wie oben), `source` = `snapious`, Typ des Features, Start (`start + 1`), Ende (`end`), Score `.`, Strang (`+`, `-` oder `.`),
-///   Phase `.`, Attribute.
-/// - Attribute: `ID=f{N}` (N = 1-basierte Nummer des Features; bei mehreren Intervallen haben alle Zeilen dieselbe `ID`), `Name={Name kodiert}`
-///   (nur wenn der Name nicht leer ist), dann alle Qualifier in Reihenfolge als `{Schlüssel}={Wert1},{Wert2}` (Schlüssel und Werte
-///   mit `percent_encode_attribute`); Qualifier mit dem Schlüssel `Name` oder `ID` werden weggelassen.
-/// - Jede Zeile endet mit `\n`. Ein Dokument ohne Features ergibt nur die beiden Kopfzeilen.
+/// Writes `doc` as GFF3 text.
+/// - First line `##gff-version 3\n`, second `##sequence-region {document name} 1 {length}\n` (document name, spaces replaced by `_`).
+/// - Then one line per feature and per interval with nine tab-separated columns:
+///   `seqid` (as above), `source` = `snapious`, feature type, start (`start + 1`), end (`end`), score `.`, strand (`+`, `-` or `.`),
+///   phase `.`, attributes.
+/// - Attributes: `ID=f{N}` (N = 1-based feature number; with multiple intervals all lines share the same `ID`), `Name={encoded name}`
+///   (only if the name is not empty), then all qualifiers in order as `{key}={value1},{value2}` (key and values
+///   via `percent_encode_attribute`); qualifiers with the key `Name` or `ID` are omitted.
+/// - Every line ends with `\n`. A document without features yields only the two header lines.
 pub fn write_gff3(doc: &SequenceDocument) -> String {
     let mut out = String::new();
     out.push_str("##gff-version 3\n");

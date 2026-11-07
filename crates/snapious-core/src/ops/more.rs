@@ -1,4 +1,4 @@
-//! Weitere eingebaute Operationen (Bearbeiten, Alignment, Bäume, Klonierung, Translation) für Registry und Workflows.
+//! More built-in operations (editing, alignment, trees, cloning, translation) for registry and workflows.
 
 use crate::bio::align_stats::{consensus, strip_columns};
 use crate::bio::backends::{align_with, AlignBackend};
@@ -363,7 +363,7 @@ simple_op!(
     }
 );
 
-/// Alle Operationen dieses Moduls.
+/// All operations of this module.
 pub fn all_operations() -> Vec<Box<dyn Operation>> {
     vec![
         Box::new(DeleteOperation),

@@ -1,16 +1,16 @@
-//! Laborrechner: Stoffmengen, Kopienzahl, Ligationsansatz und Verdünnung für doppelsträngige DNA.
+//! Lab calculator: amounts of substance, copy number, ligation setup and dilution for double-stranded DNA.
 
 use crate::error::{Error, Result};
 
-/// Mittlere Masse eines Basenpaares in g/mol.
+/// Mean mass of one base pair in g/mol.
 const BP_MASS: f64 = 617.96;
-/// Zuschlag für die Enden in g/mol.
+/// Surcharge for the ends in g/mol.
 const END_MASS: f64 = 36.04;
-/// Avogadro-Konstante.
+/// Avogadro constant.
 const AVOGADRO: f64 = 6.022_140_76e23;
 
-/// Molekülmasse in g/mol (Da) von dsDNA mit `bp` Basenpaaren: `bp * 617,96 + 36,04`.
-/// Fehler `Error::InvalidInput`, wenn `bp` 0 ist.
+/// Molecular mass in g/mol (Da) of dsDNA with `bp` base pairs: `bp * 617.96 + 36.04`.
+/// Error `Error::InvalidInput` if `bp` is 0.
 pub fn dsdna_mass(bp: usize) -> Result<f64> {
     if bp == 0 {
         return Err(Error::InvalidInput("Base pairs must be > 0".into()));
@@ -18,8 +18,8 @@ pub fn dsdna_mass(bp: usize) -> Result<f64> {
     Ok((bp as f64) * BP_MASS + END_MASS)
 }
 
-/// Umrechnung ng → pmol: `ng * 1000 / dsdna_mass(bp)`.
-/// Fehler `Error::InvalidInput` bei `bp == 0` oder negativem/nicht endlichem `ng`.
+/// Conversion ng → pmol: `ng * 1000 / dsdna_mass(bp)`.
+/// Error `Error::InvalidInput` for `bp == 0` or negative/non-finite `ng`.
 pub fn ng_to_pmol(ng: f64, bp: usize) -> Result<f64> {
     if bp == 0 {
         return Err(Error::InvalidInput("Base pairs must be > 0".into()));
@@ -33,7 +33,7 @@ pub fn ng_to_pmol(ng: f64, bp: usize) -> Result<f64> {
     Ok(ng * 1000.0 / mass)
 }
 
-/// Umrechnung pmol → ng: `pmol * dsdna_mass(bp) / 1000`. Fehler wie bei `ng_to_pmol`.
+/// Conversion pmol → ng: `pmol * dsdna_mass(bp) / 1000`. Errors as for `ng_to_pmol`.
 pub fn pmol_to_ng(pmol: f64, bp: usize) -> Result<f64> {
     if bp == 0 {
         return Err(Error::InvalidInput("Base pairs must be > 0".into()));
@@ -47,7 +47,7 @@ pub fn pmol_to_ng(pmol: f64, bp: usize) -> Result<f64> {
     Ok(pmol * mass / 1000.0)
 }
 
-/// Zahl der Moleküle: `ng * 1e-9 / dsdna_mass(bp) * 6,02214076e23`. Fehler wie bei `ng_to_pmol`.
+/// Number of molecules: `ng * 1e-9 / dsdna_mass(bp) * 6.02214076e23`. Errors as for `ng_to_pmol`.
 pub fn copy_number(ng: f64, bp: usize) -> Result<f64> {
     if bp == 0 {
         return Err(Error::InvalidInput("Base pairs must be > 0".into()));
@@ -61,9 +61,9 @@ pub fn copy_number(ng: f64, bp: usize) -> Result<f64> {
     Ok(ng * 1e-9 / mass * AVOGADRO)
 }
 
-/// Benötigte Insert-Menge in ng für ein molares Verhältnis `insert : vektor` (z. B. 3.0 für 3:1):
+/// Required insert amount in ng for a molar ratio `insert : vector` (e.g. 3.0 for 3:1):
 /// `molar_ratio * vector_ng * insert_bp / vector_bp`.
-/// Fehler `Error::InvalidInput` bei `vector_bp == 0`, `insert_bp == 0`, `vector_ng < 0` oder `molar_ratio <= 0`.
+/// Error `Error::InvalidInput` for `vector_bp == 0`, `insert_bp == 0`, `vector_ng < 0` or `molar_ratio <= 0`.
 pub fn ligation_insert_ng(
     vector_ng: f64,
     vector_bp: usize,
@@ -83,8 +83,8 @@ pub fn ligation_insert_ng(
     Ok(molar_ratio * vector_ng * (insert_bp as f64) / (vector_bp as f64))
 }
 
-/// Verdünnung nach `c1 * v1 = c2 * v2`: Volumen der Stammlösung `v1 = c_final * v_final / c_stock`.
-/// Fehler `Error::InvalidInput`, wenn `c_stock <= 0`, `c_final < 0`, `v_final < 0` oder `c_final > c_stock`.
+/// Dilution by `c1 * v1 = c2 * v2`: volume of the stock solution `v1 = c_final * v_final / c_stock`.
+/// Error `Error::InvalidInput` if `c_stock <= 0`, `c_final < 0`, `v_final < 0` or `c_final > c_stock`.
 pub fn dilution_volume(c_stock: f64, c_final: f64, v_final: f64) -> Result<f64> {
     if c_stock <= 0.0 || c_final < 0.0 || v_final < 0.0 {
         return Err(Error::InvalidInput(
@@ -128,7 +128,7 @@ mod tests {
 
     #[test]
     fn ligation_und_verduennung() {
-        // 50 ng Vektor (3000 bp), Insert 1000 bp, 3:1 -> 3 * 50 * 1000 / 3000 = 50 ng
+        // 50 ng vector (3000 bp), insert 1000 bp, 3:1 -> 3 * 50 * 1000 / 3000 = 50 ng
         assert!(near(
             ligation_insert_ng(50.0, 3000, 1000, 3.0).unwrap(),
             50.0
@@ -137,7 +137,7 @@ mod tests {
             ligation_insert_ng(100.0, 4000, 500, 1.0).unwrap(),
             12.5
         ));
-        // 10x-Stamm auf 1x in 50 µl -> 5 µl
+        // 10x stock to 1x in 50 µl -> 5 µl
         assert!(near(dilution_volume(10.0, 1.0, 50.0).unwrap(), 5.0));
         assert!(near(dilution_volume(5.0, 5.0, 20.0).unwrap(), 20.0));
     }

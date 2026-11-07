@@ -1,4 +1,4 @@
-//! Einzelner UniProt-Eintrag (JSON) mit Sequenz und Features; Umwandlung in ein Protein-Dokument.
+//! Single UniProt entry (JSON) with sequence and features; conversion into a protein document.
 
 use crate::db::ncbi::percent_encode;
 use crate::error::{Error, Result};
@@ -9,7 +9,7 @@ use crate::model::sequence::{Sequence, SequenceType};
 use serde_json::Value;
 use std::collections::BTreeMap;
 
-/// Adresse eines Eintrags: `https://rest.uniprot.org/uniprotkb/<accession>.json` (Akzession mit `percent_encode` aus `db::ncbi`).
+/// Address of an entry: `https://rest.uniprot.org/uniprotkb/<accession>.json` (accession via `percent_encode` from `db::ncbi`).
 pub fn entry_url(accession: &str) -> String {
     format!(
         "https://rest.uniprot.org/uniprotkb/{}.json",
@@ -17,7 +17,7 @@ pub fn entry_url(accession: &str) -> String {
     )
 }
 
-/// Ein Feature des Eintrags; Positionen wie bei UniProt 1-basiert und eingeschlossen.
+/// A feature of the entry; positions as in UniProt are 1-based and inclusive.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProteinFeature {
     pub kind: String,
@@ -26,21 +26,21 @@ pub struct ProteinFeature {
     pub end: usize,
 }
 
-/// Ein UniProt-Eintrag.
+/// A UniProt entry.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UniprotEntry {
     pub accession: String,
-    /// `uniProtkbId`, sonst leer.
+    /// `uniProtkbId`, otherwise empty.
     pub entry_name: String,
-    /// `organism.scientificName`, sonst leer.
+    /// `organism.scientificName`, otherwise empty.
     pub organism: String,
     pub sequence: String,
     pub features: Vec<ProteinFeature>,
 }
 
-/// Liest ein Eintrag-JSON: Pflicht `primaryAccession` (Text) und `sequence.value` (Text), sonst `Error::InvalidInput`; kein JSON ebenfalls.
-/// `features` (Liste, darf fehlen): je Eintrag `type` (Text, Pflicht), `description` (Text, sonst leer), `location.start.value` und
-/// `location.end.value` (ganze Zahlen). Features ohne `type` oder ohne beide Positionen werden übersprungen; Reihenfolge wie im JSON.
+/// Reads an entry JSON: required `primaryAccession` (text) and `sequence.value` (text), otherwise `Error::InvalidInput`; likewise for non-JSON.
+/// `features` (list, may be absent): per entry `type` (text, required), `description` (text, otherwise empty), `location.start.value` and
+/// `location.end.value` (integers). Features without `type` or without both positions are skipped; order as in the JSON.
 pub fn parse_entry(json: &str) -> Result<UniprotEntry> {
     let root = serde_json::from_str::<Value>(json)
         .map_err(|e| Error::InvalidInput(format!("Invalid JSON: {}", e)))?;
@@ -115,11 +115,11 @@ pub fn parse_entry(json: &str) -> Result<UniprotEntry> {
 }
 
 impl UniprotEntry {
-    /// Protein-Dokument: Name = `entry_name`, falls nicht leer, sonst `accession`; Sequenz = `sequence` (Uppercase, `SequenceType::Protein`);
-    /// Topologie linear; Metadaten `accession`, `organism` (nur wenn nicht leer), `source = "uniprot"`.
-    /// Jedes Feature wird ein `Feature` des Typs `kind` mit Name = `description`, falls nicht leer, sonst `kind`, Strang `Strand::None`, Intervall
-    /// `[start − 1, end)` (UniProt 1-basiert, eingeschlossen). Features mit `start == 0`, `end < start` oder `end` hinter der Sequenzlänge
-    /// werden übersprungen.
+    /// Protein document: name = `entry_name` if not empty, otherwise `accession`; sequence = `sequence` (uppercase, `SequenceType::Protein`);
+    /// linear topology; metadata `accession`, `organism` (only if not empty), `source = "uniprot"`.
+    /// Each feature becomes a `Feature` of type `kind` with name = `description` if not empty, otherwise `kind`, strand `Strand::None`, interval
+    /// `[start − 1, end)` (UniProt 1-based, inclusive). Features with `start == 0`, `end < start` or `end` beyond the sequence length
+    /// are skipped.
     pub fn to_document(&self) -> Result<SequenceDocument> {
         let name = if !self.entry_name.is_empty() {
             self.entry_name.clone()

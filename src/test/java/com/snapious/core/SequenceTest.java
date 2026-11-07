@@ -36,11 +36,11 @@ class SequenceTest {
 
     @Test
     void testTranslate() {
-        // Startcodon ATG -> M, dann TTT -> F
+        // Start codon ATG -> M, then TTT -> F
         Sequence dna = new Sequence("ATGTTTTAA", "Test-DNA", Sequence.SequenceType.DNA);
         String protein = dna.translate().getBases();
 
-        assertTrue(protein.contains("M"));  // Start-Codon
+        assertTrue(protein.contains("M"));  // start codon
     }
 
     @Test
@@ -62,11 +62,11 @@ class SequenceTest {
 
     @Test
     void testFindOrfs() {
-        // ATG CCG TAG: Startcodon, ein Codon, Stopp (Rahmen 3)
+        // ATG CCG TAG: start codon, one codon, stop (frame 3)
         String bases = "AAATGCCGTAGCTAA";
         Sequence seq = new Sequence(bases, "Test-ORF", Sequence.SequenceType.DNA);
 
-        List<Sequence> orfs = seq.findORFs(2);  // Mindestlänge in Codons
+        List<Sequence> orfs = seq.findORFs(2);  // minimum length in codons
 
         assertEquals(1, orfs.size());
         assertEquals("ATGCCG", orfs.get(0).getBases());
@@ -161,7 +161,7 @@ class SequenceTest {
 
     @Test
     void testCodonTranslation() {
-        // ATG = M (Methionin), TTT = F (Phenylalanin)
+        // ATG = M (methionine), TTT = F (phenylalanine)
         Sequence dna = new Sequence("ATGTTTTAA", "Codon-Test", Sequence.SequenceType.DNA);
         String protein = dna.translate().getBases();
 
@@ -173,11 +173,11 @@ class SequenceTest {
         Sequence seq = new Sequence("ATCG", "Test-DNA", Sequence.SequenceType.DNA);
 
         assertThrows(IndexOutOfBoundsException.class, () -> {
-            seq.subsequence(2, 10);  // End > Länge
+            seq.subsequence(2, 10);  // end > length
         });
 
         assertThrows(IndexOutOfBoundsException.class, () -> {
-            seq.subsequence(-1, 3);  // Negativer Start
+            seq.subsequence(-1, 3);  // negative start
         });
     }
 
@@ -185,12 +185,12 @@ class SequenceTest {
     void testGcContentEdgeCases() {
         Sequence empty = new Sequence("", "Empty", Sequence.SequenceType.DNA);
 
-        // GC-Content von leerer Sequenz sollte 0 sein oder Exception
+        // GC content of an empty sequence should be 0 or an exception
         try {
             double gc = empty.gcContent();
             assertEquals(0, gc, 0.01);
         } catch (IllegalStateException e) {
-            // Auch akzeptabel
+            // Also acceptable
         }
 
         Sequence allA = new Sequence("AAAA", "All-A", Sequence.SequenceType.DNA);
@@ -201,7 +201,7 @@ class SequenceTest {
     void testTranscribeRnaToDna() {
         Sequence rna = new Sequence("AUCG", "Test-RNA", Sequence.SequenceType.RNA);
 
-        // RNA zu DNA Transkription (ersetzt U durch T)
+        // RNA to DNA transcription (replaces U with T)
         String dna = rna.toDNA().getBases();
 
         assertEquals("ATCG", dna);

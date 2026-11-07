@@ -1,6 +1,6 @@
-//! Suche der Befehlspalette (⌘K): unscharfer Vergleich von Eingabe und Befehlstiteln.
+//! Command palette search (⌘K): fuzzy matching of input against command titles.
 
-/// Ein Eintrag der Befehlspalette.
+/// An entry of the command palette.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Command {
     pub id: String,
@@ -8,13 +8,13 @@ pub struct Command {
     pub keywords: Vec<String>,
 }
 
-/// Unscharfe Bewertung: Alle Zeichen von `query` müssen in `text` in dieser Reihenfolge vorkommen
-/// (Groß-/Kleinschreibung egal, Leerzeichen in `query` werden ignoriert). Es wird gierig von links gesucht:
-/// jedes Zeichen nimmt das erste passende Zeichen hinter dem vorigen Treffer.
+/// Fuzzy score: all characters of `query` must occur in `text` in this order
+/// (case-insensitive, spaces in `query` are ignored). The search is greedy from the left:
+/// each character takes the first matching character after the previous hit.
 ///
-/// Punkte je Treffer: +1; zusätzlich +5, wenn der Treffer direkt auf den vorigen Treffer folgt; zusätzlich +8,
-/// wenn der Treffer am Wortanfang liegt (Index 0 oder das Zeichen davor ist Leerzeichen, `.`, `-` oder `_`).
-/// Leere Eingabe → `Some(0)`; passt nicht alles → `None`.
+/// Points per hit: +1; plus +5 if the hit directly follows the previous hit; plus +8
+/// if the hit is at the start of a word (index 0 or the preceding character is a space, `.`, `-` or `_`).
+/// Empty input → `Some(0)`; if not everything matches → `None`.
 pub fn fuzzy_score(query: &str, text: &str) -> Option<i32> {
     if query.trim().is_empty() {
         return Some(0);
@@ -60,10 +60,10 @@ fn matches_word_boundary(text: &[char], idx: usize) -> bool {
     text[idx - 1] == ' ' || text[idx - 1] == '.' || text[idx - 1] == '-' || text[idx - 1] == '_'
 }
 
-/// Sortiert Befehle nach Treffer für `query` und gibt die Indizes in `commands` zurück.
-/// Leere Eingabe (nur Leerraum) → alle Indizes in Originalreihenfolge. Sonst: Wert eines Befehls = Maximum aus
-/// `fuzzy_score` des Titels **plus 10** und den `fuzzy_score`-Werten der Stichwörter (ohne Aufschlag); Befehle ohne
-/// Treffer fehlen. Sortierung: Wert absteigend, bei Gleichstand kürzerer Titel (Zeichenzahl), dann kleinerer Index.
+/// Sorts commands by match for `query` and returns the indices into `commands`.
+/// Empty input (whitespace only) → all indices in original order. Otherwise: a command's value = maximum of
+/// the `fuzzy_score` of the title **plus 10** and the `fuzzy_score` values of the keywords (without bonus); commands without
+/// a match are omitted. Sorting: value descending, ties by shorter title (character count), then smaller index.
 pub fn rank_commands(commands: &[Command], query: &str) -> Vec<usize> {
     if query.trim().is_empty() {
         return (0..commands.len()).collect();
@@ -125,9 +125,9 @@ mod tests {
             cmd("Verdau simulieren", &[]),
             cmd("Primer prüfen", &[]),
         ];
-        // beide Primer-Titel: 9 + 6 + 10 = 25, der kürzere Titel zuerst
+        // both Primer titles: 9 + 6 + 10 = 25, the shorter title first
         assert_eq!(rank_commands(&cmds, "pr"), vec![2, 0]);
-        // nur das Stichwort "pcr" trifft (21), Titel ohne Aufschlag
+        // only the keyword "pcr" matches (21), title without bonus
         assert_eq!(rank_commands(&cmds, "pcr"), vec![0]);
         assert_eq!(rank_commands(&cmds, "  "), vec![0, 1, 2]);
         assert!(rank_commands(&cmds, "qqq").is_empty());

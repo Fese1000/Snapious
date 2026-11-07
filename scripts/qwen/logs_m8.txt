@@ -1,5 +1,0 @@
-=== coverage_stats.rs Versuch 1
-[26s {'prompt_tokens': 1911, 'completion_tokens': 1013, 'total_tokens': 2924}]
-=== coverage_stats.rs Versuch 2
-[25s {'prompt_tokens': 2968, 'completion_tokens': 1032, 'total_tokens': 4000}]
-ERGEBNIS coverage_stats.rs: GRÜN (2 Tests) nach 2 Versuch(en)

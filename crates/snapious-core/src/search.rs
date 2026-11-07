@@ -1,9 +1,9 @@
-//! Lokale BLAST-ähnliche Ähnlichkeitssuche nach dem Seed-and-Extend-Prinzip.
+//! Local BLAST-like similarity search using the seed-and-extend principle.
 //!
-//! k-mere (Wörter) der Query werden in den Subjects gesucht (exakte Treffer = Seeds) und ohne Lücken in beide
-//! Richtungen verlängert (Treffer +2, Fehlpaarung −1, Abbruch nach 10 Punkten Verlust, X-drop).
-//! Nukleotide werden auf beiden Strängen durchsucht. Bewertet wird einfach nach Identität (kein BLOSUM).
-//! Quelle: Altschul et al., J. Mol. Biol. 215 (1990), vereinfacht.
+//! k-mers (words) of the query are searched in the subjects (exact hits = seeds) and extended without gaps in both
+//! directions (hit +2, mismatch −1, stop after a loss of 10 points, X-drop).
+//! Nucleotides are searched on both strands. Scoring is simply by identity (no BLOSUM).
+//! Source: Altschul et al., J. Mol. Biol. 215 (1990), simplified.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
@@ -17,12 +17,12 @@ const MATCH: i32 = 2;
 const MISMATCH: i32 = -1;
 const X_DROP: i32 = 10;
 
-/// Eine zu durchsuchende Sequenz.
+/// A sequence to be searched.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SearchSubject {
     pub id: String,
     pub sequence: String,
-    /// Protein (nur ein Strang, Wörter bis Länge 12) oder Nukleotid (beide Stränge, Wörter bis Länge 32).
+    /// Protein (one strand only, words up to length 12) or nucleotide (both strands, words up to length 32).
     pub protein: bool,
 }
 
@@ -36,12 +36,12 @@ impl SearchSubject {
     }
 }
 
-/// High-scoring Segment Pair.
+/// High-scoring segment pair.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Hsp {
     pub query_id: String,
     pub subject_id: String,
-    /// Bereich auf dem Vorwärtsstrang der Query `[start, end)`.
+    /// Range on the forward strand of the query `[start, end)`.
     pub query_start: usize,
     pub query_end: usize,
     pub subject_start: usize,
@@ -49,7 +49,7 @@ pub struct Hsp {
     pub score: i32,
     pub matches: usize,
     pub mismatches: usize,
-    /// `'+'` oder `'-'` (Query als Reverse-Komplement).
+    /// `'+'` or `'-'` (query as reverse complement).
     pub strand: char,
 }
 
@@ -116,7 +116,7 @@ fn pack(w: &[u8], protein: bool) -> Option<u64> {
     }
 }
 
-/// Verlängert einen Seed; liefert (Query-Start, Subject-Start, Länge, Treffer, Score) im Koordinatensystem des Strangs.
+/// Extends a seed; returns (query start, subject start, length, hits, score) in the coordinate system of the strand.
 fn extend(
     q: &[u8],
     s: &[u8],
@@ -188,7 +188,7 @@ fn search_strand(
             index.entry(key).or_default().push(i);
         }
     }
-    // Diagonale (spos - qpos) → bereits abgedecktes Ende in der Query
+    // diagonal (spos - qpos) → end already covered in the query
     let mut covered: HashMap<i64, usize> = HashMap::new();
     for spos in 0..=(s.len() - k) {
         let Some(key) = pack(&s[spos..spos + k], subject.protein) else {
@@ -223,8 +223,8 @@ fn search_strand(
     }
 }
 
-/// Sucht `query` in allen `subjects`. Ergebnis: überlappungsfreie HSPs nach Score absteigend.
-/// `word_size` ist die Seed-Länge (Nukleotide 1–32, Protein 1–12).
+/// Searches `query` in all `subjects`. Result: non-overlapping HSPs in descending score order.
+/// `word_size` is the seed length (nucleotides 1–32, protein 1–12).
 pub fn search(
     query_id: &str,
     query: &str,
@@ -314,12 +314,12 @@ fn filter_and_sort(hsps: &mut Vec<Hsp>) -> Vec<Hsp> {
     unique
 }
 
-/// Alle verschiedenen k-mere einer Sequenz (Uppercase).
+/// All distinct k-mers of a sequence (uppercase).
 pub fn unique_kmers(seq: &str, k: usize) -> BTreeSet<String> {
     kmer_frequencies(seq, k).into_keys().collect()
 }
 
-/// Häufigkeit jedes k-mers (Uppercase).
+/// Frequency of each k-mer (uppercase).
 pub fn kmer_frequencies(seq: &str, k: usize) -> BTreeMap<String, usize> {
     let s = seq.to_ascii_uppercase();
     let mut m = BTreeMap::new();
@@ -332,7 +332,7 @@ pub fn kmer_frequencies(seq: &str, k: usize) -> BTreeMap<String, usize> {
     m
 }
 
-/// Textzusammenfassung der besten Treffer.
+/// Text summary of the best hits.
 pub fn search_summary(hsps: &[Hsp], query_name: &str) -> String {
     let mut out = format!(
         "=== BLAST-like search results for: {} ===\n\nHits (HSPs): {}\n",
@@ -418,11 +418,11 @@ mod tests {
 
     #[test]
     fn kein_treffer() {
-        // A…A gegen C…C: auch das Reverse-Komplement (G…G) passt nicht
+        // A…A against C…C: the reverse complement (G…G) does not match either
         assert!(search("q", &"A".repeat(16), &[nt("s", &"C".repeat(16))], 8)
             .unwrap()
             .is_empty());
-        // A…A gegen T…T trifft dagegen auf dem Minusstrang
+        // A…A against T…T, however, hits on the minus strand
         let hits = search("q", &"A".repeat(16), &[nt("s", &"T".repeat(16))], 8).unwrap();
         assert_eq!(hits[0].strand, '-');
     }

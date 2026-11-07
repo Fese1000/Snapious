@@ -1,11 +1,11 @@
-//! Kleine Hilfsfunktionen ohne Abhängigkeiten.
+//! Small helper functions without dependencies.
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-/// Aktuelle Zeit in Sekunden seit 1970 (UTC).
+/// Current time in seconds since 1970 (UTC).
 pub fn now_secs() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -13,7 +13,7 @@ pub fn now_secs() -> i64 {
         .unwrap_or(0)
 }
 
-/// Neue eindeutige ID (Zeitstempel in Nanosekunden + Zähler, hexadezimal).
+/// New unique ID (timestamp in nanoseconds + counter, hexadecimal).
 pub fn new_id() -> String {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -23,8 +23,8 @@ pub fn new_id() -> String {
     format!("{:x}-{:x}", nanos, n)
 }
 
-/// Kleiner deterministischer Zufallsgenerator (SplitMix64) für Bootstrap und Tests.
-/// Gleicher Startwert ergibt immer dieselbe Folge, unabhängig von Plattform und Threads.
+/// Small deterministic random number generator (SplitMix64) for bootstrap and tests.
+/// The same seed always gives the same sequence, independent of platform and threads.
 #[derive(Clone, Debug)]
 pub struct Rng {
     state: u64,
@@ -43,7 +43,7 @@ impl Rng {
         z ^ (z >> 31)
     }
 
-    /// Gleichverteilte Zahl in `0..n` (`n` muss größer als 0 sein; bei 0 kommt 0 zurück).
+    /// Uniformly distributed number in `0..n` (`n` must be greater than 0; returns 0 for 0).
     pub fn below(&mut self, n: usize) -> usize {
         if n == 0 {
             return 0;

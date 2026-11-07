@@ -1,3 +1,0 @@
-=== microsat.rs Versuch 1
-[30s {'prompt_tokens': 2193, 'completion_tokens': 1407, 'total_tokens': 3600}]
-ERGEBNIS microsat.rs: GRÜN (2 Tests) nach 1 Versuch(en)

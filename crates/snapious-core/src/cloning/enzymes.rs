@@ -1,28 +1,28 @@
-//! Restriktionsenzyme: Datenbank, Suche auf beiden Strängen (IUPAC), Schnittstellen und Überhänge.
+//! Restriction enzymes: database, search on both strands (IUPAC), cut sites and overhangs.
 //!
-//! Schnittstellen werden als Zahl der Basen links des Schnitts relativ zum Beginn der Erkennungssequenz
-//! angegeben (`cut_top` im Oberstrang, `cut_bottom` im Unterstrang, beides in Oberstrang-Koordinaten).
-//! Beispiel EcoRI `G^AATTC`: `cut_top = 1`, `cut_bottom = 5`, 5'-Überhang `AATT`.
-//! Bei Typ-IIS-Enzymen kann der Schnitt hinter der Erkennungssequenz liegen.
-//! Daten nach NEB/REBASE (Auswahl).
+//! Cut sites are given as the number of bases to the left of the cut relative to the start of the recognition sequence
+//! (`cut_top` in the top strand, `cut_bottom` in the bottom strand, both in top-strand coordinates).
+//! Example EcoRI `G^AATTC`: `cut_top = 1`, `cut_bottom = 5`, 5' overhang `AATT`.
+//! For type IIS enzymes the cut can lie beyond the recognition sequence.
+//! Data after NEB/REBASE (selection).
 
 use rayon::prelude::*;
 
 use crate::error::{Error, Result};
 use crate::model::document::{SequenceDocument, Topology};
 
-/// Art des Enzyms.
+/// Kind of enzyme.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum EnzymeType {
     TypeI,
     TypeII,
-    /// Schneidet außerhalb der Erkennungssequenz (Golden Gate).
+    /// Cuts outside the recognition sequence (Golden Gate).
     TypeIIS,
-    /// Palindromische Erkennungssequenz (klassische Restriktionsenzyme).
+    /// Palindromic recognition sequence (classic restriction enzymes).
     TypeIIP,
 }
 
-/// Dam-/CpG-Methylierung kann diese Enzyme blockieren (laut NEB).
+/// Dam/CpG methylation can block these enzymes (according to NEB).
 const METHYLATION_SENSITIVE: [&str; 9] = [
     "AscI", "BclI", "BssHII", "ClaI", "HpaII", "MboI", "NotI", "SmaI", "XbaI",
 ];
@@ -30,7 +30,7 @@ const METHYLATION_SENSITIVE: [&str; 9] = [
 const IUPAC: &[u8] = b"ACGTRYKMSWBDHVN";
 const IUPAC_COMPLEMENT: &[u8] = b"TGCAYRMKWSVHDBN";
 
-/// Reverse-Komplement mit IUPAC-Codes (unbekannte Zeichen werden zu `N`).
+/// Reverse complement with IUPAC codes (unknown characters become `N`).
 pub fn iupac_reverse_complement(seq: &str) -> String {
     seq.bytes()
         .rev()
@@ -64,7 +64,7 @@ fn pattern_mask(c: u8) -> u8 {
     }
 }
 
-/// Maske einer Base in der Sequenz: nur eindeutige Basen passen auf Mehrdeutigkeitscodes des Musters.
+/// Mask of a base in the sequence: only unambiguous bases match ambiguity codes of the pattern.
 #[inline]
 fn base_mask(b: u8) -> u8 {
     match b {
@@ -76,20 +76,20 @@ fn base_mask(b: u8) -> u8 {
     }
 }
 
-/// Treffer einer Erkennungssequenz in einer Sequenz.
+/// Hit of a recognition sequence in a sequence.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SiteMatch {
-    /// Beginn der Erkennungssequenz im Oberstrang (0-basiert).
+    /// Start of the recognition sequence in the top strand (0-based).
     pub start: usize,
-    /// `true`, wenn die Erkennungssequenz im Oberstrang steht, `false` bei Treffer auf dem Gegenstrang.
+    /// `true` if the recognition sequence is on the top strand, `false` for a hit on the opposite strand.
     pub forward: bool,
-    /// Anzahl Basen links vom Schnitt im Oberstrang (kann außerhalb `0..=len` liegen).
+    /// Number of bases to the left of the cut in the top strand (can lie outside `0..=len`).
     pub cut_top: i64,
-    /// Anzahl Basen links vom Schnitt im Unterstrang, in Oberstrang-Koordinaten.
+    /// Number of bases to the left of the cut in the bottom strand, in top-strand coordinates.
     pub cut_bottom: i64,
 }
 
-/// Ein Restriktionsenzym.
+/// A restriction enzyme.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RestrictionEnzyme {
     name: String,
@@ -107,7 +107,7 @@ pub struct RestrictionEnzyme {
 }
 
 impl RestrictionEnzyme {
-    /// Neues Enzym. `cut_top`/`cut_bottom` wie in der Moduldokumentation. `^` in der Erkennungssequenz wird entfernt.
+    /// New enzyme. `cut_top`/`cut_bottom` as in the module documentation. `^` in the recognition sequence is removed.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         name: &str,
@@ -148,8 +148,8 @@ impl RestrictionEnzyme {
         })
     }
 
-    /// Kurzform für symmetrische Schnitte: Unterstrang an der gespiegelten Position
-    /// (`Länge − cut`); `sticky = false` erzwingt einen stumpfen Schnitt.
+    /// Shorthand for symmetric cuts: bottom strand at the mirrored position
+    /// (`length − cut`); `sticky = false` forces a blunt cut.
     #[allow(clippy::too_many_arguments)]
     pub fn symmetric(
         name: &str,
@@ -181,17 +181,17 @@ impl RestrictionEnzyme {
         &self.name
     }
 
-    /// Erkennungssequenz (IUPAC, Uppercase, ohne Schnittmarkierung).
+    /// Recognition sequence (IUPAC, uppercase, without cut marker).
     pub fn recognition(&self) -> &str {
         &self.recognition
     }
 
-    /// Schnittstelle im Oberstrang relativ zum Beginn der Erkennungssequenz.
+    /// Cut site in the top strand relative to the start of the recognition sequence.
     pub fn cut_top(&self) -> usize {
         self.cut_top
     }
 
-    /// Schnittstelle im Unterstrang (Oberstrang-Koordinaten).
+    /// Cut site in the bottom strand (top-strand coordinates).
     pub fn cut_bottom(&self) -> usize {
         self.cut_bottom
     }
@@ -228,7 +228,7 @@ impl RestrictionEnzyme {
         !self.is_blunt()
     }
 
-    /// Überhang: positiv = 5'-Überhang, negativ = 3'-Überhang, 0 = stumpf.
+    /// Overhang: positive = 5' overhang, negative = 3' overhang, 0 = blunt.
     pub fn overhang_length(&self) -> i64 {
         self.cut_bottom as i64 - self.cut_top as i64
     }
@@ -237,8 +237,8 @@ impl RestrictionEnzyme {
         METHYLATION_SENSITIVE.contains(&self.name.as_str())
     }
 
-    /// Überhangsequenz (Oberstrang-Schreibweise), wenn sie festliegt: nicht bei stumpfen Enden, Typ IIS
-    /// (Schnitt außerhalb der Erkennungssequenz) oder Überhängen mit mehrdeutigen Basen.
+    /// Overhang sequence (top-strand notation) if it is fixed: not for blunt ends, type IIS
+    /// (cut outside the recognition sequence) or overhangs with ambiguous bases.
     pub fn overhang_sequence(&self) -> Option<String> {
         if self.is_blunt() {
             return None;
@@ -256,7 +256,7 @@ impl RestrictionEnzyme {
             .then(|| o.to_string())
     }
 
-    /// Ligierbar mit `other`: beide stumpf, oder gleiche Überhangsart und komplementäre Überhänge.
+    /// Ligatable with `other`: both blunt, or same overhang kind and complementary overhangs.
     pub fn is_compatible_with(&self, other: &RestrictionEnzyme) -> bool {
         if self.is_blunt() || other.is_blunt() {
             return self.is_blunt() && other.is_blunt();
@@ -279,7 +279,7 @@ impl RestrictionEnzyme {
         true
     }
 
-    /// Alle Treffer in `sequence` (Uppercase, T statt U) auf beiden Strängen, nach `start` sortiert.
+    /// All hits in `sequence` (uppercase, T instead of U) on both strands, sorted by `start`.
     pub fn find_matches(&self, sequence: &[u8]) -> Vec<SiteMatch> {
         let len = self.recognition.len();
         let mut out = Vec::new();
@@ -309,8 +309,8 @@ impl RestrictionEnzyme {
         out
     }
 
-    /// Schneidet eine lineare Sequenz an allen Erkennungsstellen (Oberstrang-Fragmente).
-    /// Schnitte außerhalb von `1..len` erzeugen keine Fragmente; doppelte Schnittstellen zählen einmal.
+    /// Cuts a linear sequence at all recognition sites (top-strand fragments).
+    /// Cuts outside `1..len` produce no fragments; duplicate cut sites count once.
     pub fn cut(&self, sequence: &str) -> Vec<String> {
         let upper = sequence.to_ascii_uppercase().replace('U', "T");
         let mut cuts: Vec<i64> = self
@@ -332,20 +332,20 @@ impl RestrictionEnzyme {
     }
 }
 
-/// Eine Schnittstelle eines Enzyms in einer Sequenz.
+/// A cut site of an enzyme in a sequence.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CutSite {
     pub enzyme: String,
     pub sequence_id: String,
-    /// Beginn der Erkennungssequenz (0-basiert).
+    /// Start of the recognition sequence (0-based).
     pub position: usize,
-    /// Anzahl Basen links vom Schnitt im Oberstrang.
+    /// Number of bases to the left of the cut in the top strand.
     pub cut_top: i64,
-    /// Anzahl Basen links vom Schnitt im Unterstrang (Oberstrang-Koordinaten).
+    /// Number of bases to the left of the cut in the bottom strand (top-strand coordinates).
     pub cut_bottom: i64,
-    /// `true`, wenn die Erkennungssequenz im Oberstrang steht.
+    /// `true` if the recognition sequence is on the top strand.
     pub forward: bool,
-    /// Überhang in Oberstrang-Richtung; leer bei stumpfen Enden oder Schnitt außerhalb der Sequenz.
+    /// Overhang in top-strand direction; empty for blunt ends or a cut outside the sequence.
     pub overhang: String,
 }
 
@@ -354,7 +354,7 @@ impl CutSite {
         self.cut_top == self.cut_bottom
     }
 
-    /// Überhang oder `None` bei stumpfen Enden.
+    /// Overhang or `None` for blunt ends.
     pub fn overhang(&self) -> Option<&str> {
         (!self.overhang.is_empty()).then_some(self.overhang.as_str())
     }
@@ -370,13 +370,13 @@ impl std::fmt::Display for CutSite {
     }
 }
 
-/// Sammlung von Enzymen.
+/// Collection of enzymes.
 #[derive(Clone, Debug, Default)]
 pub struct EnzymeDb {
     enzymes: Vec<RestrictionEnzyme>,
 }
 
-/// (Name, Erkennung, cut_top, cut_bottom, Typ, Organismus, Temperatur)
+/// (name, recognition, cut_top, cut_bottom, type, organism, temperature)
 type Row = (
     &'static str,
     &'static str,
@@ -1106,7 +1106,7 @@ impl EnzymeDb {
         Self::default()
     }
 
-    /// Standarddatenbank mit 79 gängigen Enzymen.
+    /// Default database with 79 common enzymes.
     pub fn standard() -> Self {
         let enzymes = STANDARD
             .iter()
@@ -1137,7 +1137,7 @@ impl EnzymeDb {
         self.enzymes.iter().find(|e| e.name == name)
     }
 
-    /// Enzyme, deren Name den Suchtext enthält (Groß-/Kleinschreibung egal).
+    /// Enzymes whose name contains the search text (case-insensitive).
     pub fn search_by_name(&self, text: &str) -> Vec<&RestrictionEnzyme> {
         let t = text.to_lowercase();
         self.enzymes
@@ -1170,7 +1170,7 @@ impl EnzymeDb {
         self.enzymes.iter().filter(|e| e.is_sticky()).collect()
     }
 
-    /// Isoschizomere: andere Enzyme mit derselben Erkennungssequenz.
+    /// Isoschizomers: other enzymes with the same recognition sequence.
     pub fn isoschizomers(&self, enzyme: &RestrictionEnzyme) -> Vec<&RestrictionEnzyme> {
         self.enzymes
             .iter()
@@ -1178,7 +1178,7 @@ impl EnzymeDb {
             .collect()
     }
 
-    /// Andere Enzyme mit ligierbaren Enden.
+    /// Other enzymes with ligatable ends.
     pub fn compatible_with(&self, enzyme: &RestrictionEnzyme) -> Vec<&RestrictionEnzyme> {
         self.enzymes
             .iter()
@@ -1193,8 +1193,8 @@ impl EnzymeDb {
             .collect()
     }
 
-    /// Alle Schnittstellen aller Enzyme in einer Sequenz, nach Position und Name sortiert.
-    /// Zirkuläre Sequenzen werden über den Nullpunkt hinweg durchsucht; die Positionen liegen dann in `0..len`.
+    /// All cut sites of all enzymes in a sequence, sorted by position and name.
+    /// Circular sequences are searched across the origin; the positions then lie in `0..len`.
     pub fn find_all_cut_sites(
         &self,
         bases: &str,
@@ -1211,7 +1211,7 @@ impl EnzymeDb {
             .unwrap_or(0);
         let work: String = if circular && len > 0 && max_site > 1 {
             let extra = (max_site - 1).min(len);
-            // Bei sehr kurzen Sequenzen ggf. mehrfach umlaufen
+            // For very short sequences, possibly wrap around several times
             let mut s = upper.clone();
             while s.len() < len + max_site - 1 {
                 s.push_str(&upper[..extra.min(upper.len())]);
@@ -1263,7 +1263,7 @@ impl EnzymeDb {
         sites
     }
 
-    /// Schnittstellen in einem Sequenzdokument (berücksichtigt die Topologie).
+    /// Cut sites in a sequence document (takes the topology into account).
     pub fn find_in_document(&self, doc: &SequenceDocument) -> Vec<CutSite> {
         self.find_all_cut_sites(
             doc.bases(),
@@ -1272,7 +1272,7 @@ impl EnzymeDb {
         )
     }
 
-    /// Anzahl der Schnittstellen je Enzym (nur Enzyme mit mindestens einer).
+    /// Number of cut sites per enzyme (only enzymes with at least one).
     pub fn site_counts(&self, bases: &str, circular: bool) -> Vec<(String, usize)> {
         let mut counts: std::collections::BTreeMap<String, usize> =
             std::collections::BTreeMap::new();
@@ -1283,7 +1283,7 @@ impl EnzymeDb {
     }
 }
 
-/// Überhang in Oberstrang-Schreibweise aus den Schnittpositionen (leer bei stumpf/außerhalb).
+/// Overhang in top-strand notation from the cut positions (empty for blunt/outside).
 fn overhang_text(upper: &str, cut_top: i64, cut_bottom: i64, circular: bool) -> String {
     if cut_top == cut_bottom {
         return String::new();
@@ -1438,9 +1438,9 @@ mod tests {
         let hinf = db().get("HinfI").unwrap().clone(); // GANTC
         assert_eq!(hinf.find_matches(b"GAATC").len(), 1);
         assert_eq!(hinf.find_matches(b"GACTC").len(), 1);
-        assert_eq!(hinf.find_matches(b"GANTC").len(), 1); // N passt auf N
+        assert_eq!(hinf.find_matches(b"GANTC").len(), 1); // N matches N
         assert_eq!(hinf.find_matches(b"GAATG").len(), 0);
-        // N in der Sequenz passt nicht auf eindeutige Muster
+        // N in the sequence does not match unambiguous patterns
         assert!(db()
             .get("EcoRI")
             .unwrap()
@@ -1469,13 +1469,13 @@ mod tests {
         assert!(bam.is_compatible_with(bgl));
         assert!(!bam.is_compatible_with(eco));
         assert!(d.compatible_with(bam).iter().any(|e| e.name() == "BglII"));
-        // stumpfe Enden sind untereinander kompatibel, aber nicht mit klebrigen
+        // blunt ends are compatible with each other, but not with sticky ones
         assert!(d
             .get("SmaI")
             .unwrap()
             .is_compatible_with(d.get("EcoRV").unwrap()));
         assert!(!d.get("SmaI").unwrap().is_compatible_with(eco));
-        // 5'- und 3'-Überhang passen nicht zusammen
+        // 5' and 3' overhangs do not fit together
         assert!(!d.get("PstI").unwrap().is_compatible_with(eco));
     }
 

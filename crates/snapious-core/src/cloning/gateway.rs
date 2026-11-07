@@ -1,10 +1,10 @@
-//! Gateway-Klonierung (Modell): BP- und LR-Reaktion über die Kerne der att-Stellen.
+//! Gateway cloning (model): BP and LR reaction via the cores of the att sites.
 
 use crate::error::{Error, Result};
 use crate::model::document::{SequenceDocument, Topology};
 
-/// Eine att-Stelle aus linkem Arm, Kern und rechtem Arm.
-/// `attB = Bl + Kern + Br`, `attP = Pl + Kern + Pr`, `attL = Bl + Kern + Pr`, `attR = Pl + Kern + Br`.
+/// An att site made of left arm, core and right arm.
+/// `attB = Bl + core + Br`, `attP = Pl + core + Pr`, `attL = Bl + core + Pr`, `attR = Pl + core + Br`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GatewaySite {
     pub name: String,
@@ -30,16 +30,16 @@ impl GatewaySite {
     }
 }
 
-/// Zwei att-Stellen (`att1` und `att2`), die nur mit sich selbst rekombinieren.
+/// Two att sites (`att1` and `att2`) that recombine only with themselves.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Gateway {
     pub att1: GatewaySite,
     pub att2: GatewaySite,
 }
 
-/// Findet `site` (Uppercase) genau einmal in `bases` (Uppercase) und gibt den Beginn zurück.
-/// Fehler `Error::InvalidInput` mit `"{name} nicht gefunden"` (kein Treffer) oder `"{name} occurs multiple times"` (mehr als ein Treffer, auch
-/// überlappend).
+/// Finds `site` (uppercase) exactly once in `bases` (uppercase) and returns the start.
+/// Error `Error::InvalidInput` with `"{name} nicht gefunden"` (no hit) or `"{name} occurs multiple times"` (more than one hit, also
+/// overlapping).
 pub fn find_unique(bases: &str, site: &str, name: &str) -> Result<usize> {
     let hits: Vec<usize> = if site.is_empty() || site.len() > bases.len() {
         Vec::new()
@@ -55,8 +55,8 @@ pub fn find_unique(bases: &str, site: &str, name: &str) -> Result<usize> {
     }
 }
 
-/// Dreht ein zirkuläres Dokument so, dass es bei `first` beginnt, und zerlegt es in `(Insert, Rest)` zwischen `first` und `second`.
-/// `first_name`/`second_name` dienen den Fehlermeldungen. Gibt `(Insert, Rest)` zurück.
+/// Rotates a circular document so that it begins at `first`, and splits it into `(insert, rest)` between `first` and `second`.
+/// `first_name`/`second_name` are used for the error messages. Returns `(insert, rest)`.
 fn split_between(
     bases: &str,
     first: &str,
@@ -113,15 +113,15 @@ impl Gateway {
         Gateway { att1, att2 }
     }
 
-    /// BP-Reaktion `attB × attP → attL + attR`; Rückgabe ist der Entry-Klon.
+    /// BP reaction `attB × attP → attL + attR`; returns the entry clone.
     ///
-    /// - `att_b_product` muss linear, `donor` zirkulär sein, sonst `Error::InvalidInput`.
-    /// - Im Produkt (Uppercase) steht `attB1` vor `attB2` (je genau einmal, mit `find_unique` und den Namen `attB1`/`attB2`);
-    ///   das Insert ist der Text dazwischen. Im Spender ist `attP1` + `attP2` zu finden (Namen `attP1`/`attP2`), zirkulär: der Spender
-    ///   wird so gedreht, dass er bei `attP1` beginnt; `attP2` muss danach hinter `attP1` liegen (sonst `Error::InvalidInput`).
-    ///   Der Rest ist der Text hinter `attP2` bis zum Ende des gedrehten Spenders.
-    /// - Ergebnis: `attL1 + Insert + attL2 + Rest`, zirkulär, Name `"{Spender} + {Produkt} (BP)"`, DNA, neue ID, Metadaten
-    ///   `source = "clone.gateway.bp"`. Features werden nicht übernommen.
+    /// - `att_b_product` must be linear, `donor` circular, otherwise `Error::InvalidInput`.
+    /// - In the product (uppercase) `attB1` comes before `attB2` (each exactly once, via `find_unique` and the names `attB1`/`attB2`);
+    ///   the insert is the text in between. In the donor `attP1` + `attP2` are to be found (names `attP1`/`attP2`), circular: the donor
+    ///   is rotated so that it begins at `attP1`; `attP2` must then lie after `attP1` (otherwise `Error::InvalidInput`).
+    ///   The rest is the text after `attP2` up to the end of the rotated donor.
+    /// - Result: `attL1 + insert + attL2 + rest`, circular, name `"{donor} + {product} (BP)"`, DNA, new ID, metadata
+    ///   `source = "clone.gateway.bp"`. Features are not carried over.
     pub fn bp_reaction(
         &self,
         att_b_product: &SequenceDocument,
@@ -169,12 +169,12 @@ impl Gateway {
         )
     }
 
-    /// LR-Reaktion `attL × attR → attB + attP`; Rückgabe ist der Expressionsklon.
+    /// LR reaction `attL × attR → attB + attP`; returns the expression clone.
     ///
-    /// - Beide Dokumente müssen zirkulär sein, sonst `Error::InvalidInput`.
-    /// - Im Entry-Klon: `attL1` und `attL2` (Namen `attL1`/`attL2`), gedreht wie oben bei `attL1` beginnend, Insert = Text zwischen den beiden.
-    ///   Im Zielvektor: `attR1`, `attR2`, gedreht bei `attR1` beginnend, Rest hinter `attR2`.
-    /// - Ergebnis: `attB1 + Insert + attB2 + Rest`, zirkulär, Name `"{Zielvektor} + {Entry-Klon} (LR)"`, Metadaten `source = "clone.gateway.lr"`.
+    /// - Both documents must be circular, otherwise `Error::InvalidInput`.
+    /// - In the entry clone: `attL1` and `attL2` (names `attL1`/`attL2`), rotated as above to begin at `attL1`, insert = text between the two.
+    ///   In the destination vector: `attR1`, `attR2`, rotated to begin at `attR1`, rest after `attR2`.
+    /// - Result: `attB1 + insert + attB2 + rest`, circular, name `"{destination vector} + {entry clone} (LR)"`, metadata `source = "clone.gateway.lr"`.
     pub fn lr_reaction(
         &self,
         entry_clone: &SequenceDocument,
@@ -295,7 +295,7 @@ mod tests {
     fn bp_reaktion() {
         let g = Gateway::new(att1(), att2());
         let entry = g.bp_reaction(&product(), &donor()).unwrap();
-        // Spender gedreht: attP1 + SEL + attP2 + Rest ("TTTT" + "CCCC"); Ergebnis attL1 + Insert + attL2 + Rest
+        // Donor rotated: attP1 + SEL + attP2 + rest ("TTTT" + "CCCC"); result attL1 + insert + attL2 + rest
         let expected = format!("{}{}{}{}", att1().att_l(), INS, att2().att_l(), "TTTTCCCC");
         assert_eq!(entry.bases(), expected);
         assert_eq!(entry.topology(), Topology::Circular);
@@ -333,7 +333,7 @@ mod tests {
     #[test]
     fn fehler() {
         let g = Gateway::new(att1(), att2());
-        // falsche Topologie
+        // wrong topology
         assert!(matches!(
             g.bp_reaction(&donor(), &donor()),
             Err(Error::InvalidInput(_))
@@ -346,13 +346,13 @@ mod tests {
             g.lr_reaction(&product(), &donor()),
             Err(Error::InvalidInput(_))
         ));
-        // fehlende att-Stelle
+        // missing att site
         let ohne = doc("ohne", "GATCGATC", Topology::Linear);
         match g.bp_reaction(&ohne, &donor()) {
             Err(Error::InvalidInput(m)) => assert_eq!(m, "attB1 not found"),
             other => panic!("unerwartet: {:?}", other),
         }
-        // falsche Reihenfolge der Stellen im Produkt
+        // wrong order of the sites in the product
         let falsch = doc(
             "falsch",
             &format!("{}{}{}", att2().att_b(), INS, att1().att_b()),

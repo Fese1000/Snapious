@@ -1,7 +1,7 @@
 import SnapiousFFI
 import SwiftUI
 
-/// CRISPR-gRNA-Suche für das gewählte Dokument.
+/// CRISPR gRNA search for the selected document.
 struct GuideView: View {
     @ObservedObject var model: AppModel
     @State private var nuclease = "spcas9"
@@ -11,25 +11,25 @@ struct GuideView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Picker(tr("Nuklease"), selection: $nuclease) {
+                Picker(tr("Nuclease"), selection: $nuclease) {
                     Text("SpCas9 (NGG)").tag("spcas9")
                     Text("SaCas9 (NNGRRT)").tag("sacas9")
                     Text("Cas12a (TTTV)").tag("cas12a")
                 }
                 .frame(width: 280)
-                Button(tr("Suchen")) { search() }
-                Text(tr("%@ Treffer", "\(guides.count)")).foregroundStyle(Theme.inkSoft)
+                Button(tr("Search")) { search() }
+                Text(tr("%@ hits", "\(guides.count)")).foregroundStyle(Theme.inkSoft)
                 Spacer()
             }
             if let message { Text(message).foregroundStyle(Theme.danger) }
             Table(guides) {
-                TableColumn(tr("Bereich")) { g in Text("\(g.dto.start + 1)–\(g.dto.end)") }.width(110)
-                TableColumn(tr("Strang")) { g in Text(g.dto.forward ? "+" : "−") }.width(50)
+                TableColumn(tr("Range")) { g in Text("\(g.dto.start + 1)–\(g.dto.end)") }.width(110)
+                TableColumn(tr("Strand")) { g in Text(g.dto.forward ? "+" : "−") }.width(50)
                 TableColumn(tr("Protospacer")) { g in Text(g.dto.protospacer).font(Theme.mono(13)) }
                 TableColumn("PAM", value: \.dto.pam).width(70)
                 TableColumn("GC") { g in Text(String(format: "%.0f %%", g.dto.gcPercent)) }.width(60)
-                TableColumn(tr("Wertung")) { g in Text(String(format: "%.0f", g.dto.score)) }.width(70)
-                TableColumn(tr("Hinweise")) { g in Text(g.dto.warnings.joined(separator: "; ")).foregroundStyle(Theme.inkSoft) }
+                TableColumn(tr("Score")) { g in Text(String(format: "%.0f", g.dto.score)) }.width(70)
+                TableColumn(tr("Notes")) { g in Text(g.dto.warnings.joined(separator: "; ")).foregroundStyle(Theme.inkSoft) }
             }
         }
         .padding(8)

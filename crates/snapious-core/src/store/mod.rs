@@ -1,4 +1,4 @@
-//! Persistenz: Projektdatei (SQLite).
+//! Persistence: project file (SQLite).
 
 pub mod external;
 pub mod folders;

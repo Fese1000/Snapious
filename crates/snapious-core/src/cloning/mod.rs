@@ -1,4 +1,4 @@
-//! Klonierung: Restriktionsenzyme, Verdau, Zusammenbau.
+//! Cloning: restriction enzymes, digest, assembly.
 
 pub mod concatenate;
 pub mod cut_positions;

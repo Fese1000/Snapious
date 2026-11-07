@@ -1,6 +1,6 @@
-//! Auswahl in der Sequenzansicht: Positionen liegen ZWISCHEN den Basen (0 bis Länge).
+//! Selection in the sequence view: positions lie BETWEEN the bases (0 to length).
 
-/// Auswahl mit Ankerpunkt und Cursor. `none()` bedeutet: nichts ausgewählt, kein Cursor.
+/// Selection with anchor point and caret. `none()` means: nothing selected, no caret.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Selection {
     anchor: Option<usize>,
@@ -15,7 +15,7 @@ impl Selection {
         }
     }
 
-    /// Nur ein Cursor an `position` (leere Auswahl).
+    /// Just a caret at `position` (empty selection).
     pub fn caret_at(position: usize) -> Self {
         Selection {
             anchor: Some(position),
@@ -23,7 +23,7 @@ impl Selection {
         }
     }
 
-    /// Bereich von `anchor` bis `caret` (in beliebiger Reihenfolge).
+    /// Range from `anchor` to `caret` (in either order).
     pub fn range(anchor: usize, caret: usize) -> Self {
         Selection {
             anchor: Some(anchor),
@@ -39,43 +39,43 @@ impl Selection {
         self.caret
     }
 
-    /// Nichts ausgewählt und kein Cursor.
+    /// Nothing selected and no caret.
     pub fn is_none(&self) -> bool {
         self.anchor.is_none() && self.caret.is_none()
     }
 
-    /// Keine Basen ausgewählt (`none()` oder Anker gleich Cursor).
+    /// No bases selected (`none()` or anchor equals caret).
     pub fn is_empty(&self) -> bool {
         self.is_none() || self.anchor == self.caret
     }
 
-    /// Kleinere der beiden Positionen (0 bei `none()`).
+    /// Smaller of the two positions (0 for `none()`).
     pub fn start(&self) -> usize {
         self.anchor
             .unwrap_or_default()
             .min(self.caret.unwrap_or_default())
     }
 
-    /// Größere der beiden Positionen (0 bei `none()`).
+    /// Larger of the two positions (0 for `none()`).
     pub fn end(&self) -> usize {
         self.anchor
             .unwrap_or_default()
             .max(self.caret.unwrap_or_default())
     }
 
-    /// Zahl der ausgewählten Basen (`end - start`).
+    /// Number of selected bases (`end - start`).
     pub fn len(&self) -> usize {
         self.end() - self.start()
     }
 
-    /// Liegt die Basis mit dem Index `position` in der Auswahl (`start <= position < end`)?
+    /// Is the base with index `position` in the selection (`start <= position < end`)?
     pub fn contains(&self, position: usize) -> bool {
         let s = self.start();
         let e = self.end();
         s <= position && position < e
     }
 
-    /// Anker bleibt, der Cursor wandert nach `position`. Bei `none()` wird daraus ein Cursor an `position`.
+    /// Anchor stays, the caret moves to `position`. For `none()` this becomes a caret at `position`.
     pub fn extend_to(&self, position: usize) -> Selection {
         if self.is_none() {
             return Selection::caret_at(position);
@@ -86,7 +86,7 @@ impl Selection {
         }
     }
 
-    /// Beide Positionen höchstens `sequence_length`.
+    /// Both positions at most `sequence_length`.
     pub fn clamp(&self, sequence_length: usize) -> Selection {
         if self.is_none() {
             return Self::none();
@@ -97,8 +97,8 @@ impl Selection {
         }
     }
 
-    /// Cursor um `delta` verschieben, begrenzt auf `0..=sequence_length` (bei `none()` startet der Cursor bei 0).
-    /// Mit `extend = true` bleibt der Anker, sonst entsteht ein reiner Cursor an der neuen Position.
+    /// Move caret by `delta`, clamped to `0..=sequence_length` (for `none()` the caret starts at 0).
+    /// With `extend = true` the anchor stays, otherwise a plain caret results at the new position.
     pub fn move_caret(&self, delta: isize, sequence_length: usize, extend: bool) -> Selection {
         let current_pos = self.caret.unwrap_or_default();
         let new_pos = (current_pos as isize + delta)
@@ -176,7 +176,7 @@ mod tests {
         let e = s.move_caret(2, 10, true);
         assert_eq!((e.start(), e.end()), (3, 5));
         assert_eq!(e.anchor(), Some(3));
-        // ohne Shift fällt die Auswahl auf den Cursor zusammen
+        // without Shift the selection collapses to the caret
         assert_eq!(
             Selection::range(2, 6).move_caret(1, 10, false),
             Selection::caret_at(7)

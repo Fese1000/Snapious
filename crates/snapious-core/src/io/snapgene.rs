@@ -1,12 +1,12 @@
-//! SnapGene-Dateien (`.dna`) lesen (nur Lesen, nach der öffentlich beschriebenen Blockstruktur; noch ohne Prüfung an echten Dateien).
+//! Read SnapGene files (`.dna`) (read-only, based on the publicly described block structure; not yet checked against real files).
 //!
-//! Aufbau: Folge von Blöcken `[Typ: 1 Byte][Länge: u32 Big-Endian][Daten]`.
-//! - Typ `0x09` (zuerst): 8 Bytes `SnapGene`, dann drei u16 (Dateityp, Exportversion, Importversion).
-//! - Typ `0x00`: DNA. Erstes Datenbyte = Flags (Bit 0 gesetzt = zirkulär), der Rest die Sequenz als ASCII.
-//! - Typ `0x0A`: Features als XML: `<Feature name=".." type=".." directionality="1"> <Segment range="396-452"/> <Q name="note"><V text="…"/></Q> </Feature>`.
-//!   `directionality`: 1 = vorwärts, 2 = rückwärts, sonst ohne Richtung. `range` ist 1-basiert und schließt das Ende ein.
+//! Layout: sequence of blocks `[type: 1 byte][length: u32 big-endian][data]`.
+//! - Type `0x09` (first): 8 bytes `SnapGene`, then three u16 (file type, export version, import version).
+//! - Type `0x00`: DNA. First data byte = flags (bit 0 set = circular), the rest is the sequence as ASCII.
+//! - Type `0x0A`: features as XML: `<Feature name=".." type=".." directionality="1"> <Segment range="396-452"/> <Q name="note"><V text="…"/></Q> </Feature>`.
+//!   `directionality`: 1 = forward, 2 = reverse, otherwise no direction. `range` is 1-based and includes the end.
 //!
-//! Andere Blöcke werden übersprungen.
+//! Other blocks are skipped.
 
 use crate::error::{Error, Result};
 use crate::model::document::{SequenceDocument, Topology};
@@ -14,14 +14,14 @@ use crate::model::feature::{Feature, Interval, Location, Strand};
 use crate::model::sequence::{Sequence, SequenceType};
 use crate::util::{new_id, now_secs};
 
-/// Ist das der Anfang einer SnapGene-Datei? (`0x09`, Länge 14, `SnapGene`).
+/// Is this the start of a SnapGene file? (`0x09`, length 14, `SnapGene`).
 pub fn is_snapgene(bytes: &[u8]) -> bool {
     bytes.len() >= 13
         && bytes.first() == Some(&0x09)
         && bytes.get(5..13) == Some(b"SnapGene".as_slice())
 }
 
-/// Ersetzt `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` und Zeichenverweise `&#10;`/`&#x0A;` durch die Zeichen.
+/// Replaces `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and character references `&#10;`/`&#x0A;` with the characters.
 pub fn xml_unescape(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
@@ -62,7 +62,7 @@ pub fn xml_unescape(text: &str) -> String {
     out
 }
 
-/// Wert eines Attributs `name="…"` in einem Tag-Text (entschlüsselt) oder `None`.
+/// Value of an attribute `name="…"` in a tag text (decoded) or `None`.
 fn attribute(tag: &str, name: &str) -> Option<String> {
     let pattern = format!(" {}=\"", name);
     let start = tag.find(&pattern)? + pattern.len();
@@ -70,7 +70,7 @@ fn attribute(tag: &str, name: &str) -> Option<String> {
     tag.get(start..start + len).map(xml_unescape)
 }
 
-/// Teilt XML grob in Tags (`<…>`), Textstücke ignorierend. Jeder Eintrag ist der Tag-Text ohne die spitzen Klammern.
+/// Roughly splits XML into tags (`<…>`), ignoring text pieces. Each entry is the tag text without the angle brackets.
 fn tags(xml: &str) -> Vec<&str> {
     let mut out = Vec::new();
     let mut rest = xml;
@@ -87,7 +87,7 @@ fn tags(xml: &str) -> Vec<&str> {
     out
 }
 
-/// Feature im Aufbau: Name, Typ, Strang, Intervalle, Qualifier.
+/// Feature under construction: name, type, strand, intervals, qualifiers.
 type PartialFeature = (
     String,
     String,
@@ -96,10 +96,10 @@ type PartialFeature = (
     Vec<(String, Vec<String>)>,
 );
 
-/// Liest die Features aus dem XML-Block.
+/// Reads the features from the XML block.
 pub fn parse_features(xml: &str) -> Result<Vec<Feature>> {
     let mut features = Vec::new();
-    // aktuelles Feature: (Name, Typ, Strang, Intervalle, Qualifier); aktueller Qualifier: (Schlüssel, Werte)
+    // current feature: (name, type, strand, intervals, qualifiers); current qualifier: (key, values)
     let mut current: Option<PartialFeature> = None;
     let mut qualifier: Option<(String, Vec<String>)> = None;
     for tag in tags(xml) {
@@ -176,8 +176,8 @@ pub fn parse_features(xml: &str) -> Result<Vec<Feature>> {
     Ok(features)
 }
 
-/// Liest eine SnapGene-Datei. `name` wird der Dokumentname. Fehler `Error::InvalidInput`: keine SnapGene-Datei, abgeschnittener Block,
-/// kein DNA-Block, Sequenz mit ungültigen Zeichen. Ein Feature hinter dem Sequenzende ist ebenfalls ein Fehler.
+/// Reads a SnapGene file. `name` becomes the document name. `Error::InvalidInput`: not a SnapGene file, truncated block,
+/// no DNA block, sequence with invalid characters. A feature beyond the end of the sequence is also an error.
 pub fn parse_snapgene(bytes: &[u8], name: &str) -> Result<SequenceDocument> {
     if !is_snapgene(bytes) {
         return Err(Error::InvalidInput("Not a SnapGene file".to_string()));
@@ -346,14 +346,14 @@ mod tests {
             parse_snapgene(&abgeschnitten, "x"),
             Err(Error::InvalidInput(_))
         ));
-        // ohne DNA-Block
+        // without DNA block
         let mut cookie = b"SnapGene".to_vec();
         cookie.extend_from_slice(&[0, 1, 0, 15, 0, 15]);
         assert!(matches!(
             parse_snapgene(&block(0x09, &cookie), "x"),
             Err(Error::InvalidInput(_))
         ));
-        // Bereich hinter dem Ende
+        // range beyond the end
         let schlecht = r#"<Features><Feature name="a" type="gene"><Segment range="1-99"/></Feature></Features>"#;
         assert!(parse_snapgene(&file(false, "ATGC", Some(schlecht)), "x").is_err());
         assert!(parse_features(r#"<Feature name="a"><Segment range="5-2"/></Feature>"#).is_err());

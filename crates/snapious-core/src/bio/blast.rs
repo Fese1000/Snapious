@@ -1,4 +1,4 @@
-//! Lokales BLAST+ (blastn, blastp): Ausgabe im Tabellenformat 6 lesen und Suchen gegen Projektsequenzen ausführen.
+//! Local BLAST+ (blastn, blastp): read table format 6 output and run searches against project sequences.
 
 use std::time::Duration;
 
@@ -6,7 +6,7 @@ use crate::error::{Error, Result};
 use crate::model::sequence::Sequence;
 use crate::tools::ToolRegistry;
 
-/// Ein Treffer (eine Zeile von `-outfmt 6` mit den Standardfeldern).
+/// One hit (one line of `-outfmt 6` with the default fields).
 #[derive(Clone, Debug, PartialEq)]
 pub struct BlastHit {
     pub query: String,
@@ -15,10 +15,10 @@ pub struct BlastHit {
     pub alignment_length: usize,
     pub mismatches: usize,
     pub gap_opens: usize,
-    /// Start und Ende im Query (1-basiert, Ende eingeschlossen).
+    /// Start and end in the query (1-based, end inclusive).
     pub query_start: usize,
     pub query_end: usize,
-    /// Start und Ende im Subject (1-basiert); bei Treffer auf dem Gegenstrang ist `subject_start > subject_end`.
+    /// Start and end in the subject (1-based); for a hit on the opposite strand, `subject_start > subject_end`.
     pub subject_start: usize,
     pub subject_end: usize,
     pub evalue: f64,
@@ -26,16 +26,16 @@ pub struct BlastHit {
 }
 
 impl BlastHit {
-    /// `true`, wenn der Treffer auf dem Gegenstrang des Subjects liegt (`subject_start > subject_end`).
+    /// `true` if the hit lies on the opposite strand of the subject (`subject_start > subject_end`).
     pub fn reverse_strand(&self) -> bool {
         self.subject_start > self.subject_end
     }
 }
 
-/// Liest BLAST-Tabellenausgabe (`-outfmt 6`, Standardfelder: qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue
-/// bitscore, durch Tabulatoren getrennt). Leere Zeilen und Zeilen mit `#` am Anfang werden übersprungen. Jede andere Zeile muss mindestens
-/// 12 Spalten haben und gültige Zahlen enthalten (`evalue` darf wie `1e-20` oder `0.0` geschrieben sein), sonst
-/// `Error::InvalidInput` mit der 1-basierten Zeilennummer. Zeilenenden `\n` und `\r\n`. Reihenfolge wie in der Eingabe.
+/// Reads BLAST table output (`-outfmt 6`, default fields: qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue
+/// bitscore, tab-separated). Empty lines and lines starting with `#` are skipped. Every other line must have at least
+/// 12 columns and contain valid numbers (`evalue` may be written like `1e-20` or `0.0`), otherwise
+/// `Error::InvalidInput` with the 1-based line number. Line endings `\n` and `\r\n`. Order as in the input.
 pub fn parse_tabular(text: &str) -> Result<Vec<BlastHit>> {
     let mut hits = Vec::new();
     for (line_num, line) in text.lines().enumerate() {
@@ -95,7 +95,7 @@ pub fn parse_tabular(text: &str) -> Result<Vec<BlastHit>> {
     Ok(hits)
 }
 
-/// Sortiert nach Bit-Score absteigend, bei Gleichstand nach E-Wert aufsteigend, dann nach Subject-Name (stabil).
+/// Sorted by bit score descending, on ties by E-value ascending, then by subject name (stable).
 pub fn sort_hits(hits: &mut [BlastHit]) {
     hits.sort_by(|a, b| {
         b.bit_score
@@ -110,9 +110,9 @@ pub fn sort_hits(hits: &mut [BlastHit]) {
     });
 }
 
-/// Sucht `query` gegen `subjects` mit lokalem BLAST+. `program` ist `blastn` oder `blastp`. Legt in einem Wegwerfordner
-/// `subjects.fa`, `query.fa` und mit `makeblastdb` die Datenbank an und liest die Treffer; Sequenznamen werden durch `q`/`s0`, `s1`, …
-/// ersetzt und danach zurückgesetzt. Fehler `Error::Io`, wenn ein Programm fehlt oder scheitert; `Error::InvalidInput` ohne Subjects.
+/// Searches `query` against `subjects` with local BLAST+. `program` is `blastn` or `blastp`. In a throwaway directory creates
+/// `subjects.fa`, `query.fa` and, with `makeblastdb`, the database, and reads the hits; sequence names are replaced by `q`/`s0`, `s1`, …
+/// and restored afterwards. Error `Error::Io` if a program is missing or fails; `Error::InvalidInput` without subjects.
 pub fn blast_local(
     program: &str,
     query: &Sequence,
@@ -169,7 +169,7 @@ pub fn blast_local(
             &["-in", "subjects.fa", "-dbtype", dbtype, "-out", "db"],
         )?;
         let max = max_hits.max(1).to_string();
-        // blastn: empfindlicher als das Standardverfahren (megablast); sehr kurze Anfragen brauchen blastn-short
+        // blastn: more sensitive than the default method (megablast); very short queries need blastn-short
         let task = if query.len() < 30 {
             "blastn-short"
         } else {
@@ -304,7 +304,7 @@ q1\ts2\t90.5\t40\t4\t0\t5\t44\t300\t261\t0.0\t80\n";
         assert_eq!(hits[0].subject, "b gen");
         assert!(hits[0].identity_percent > 99.0);
         assert_eq!((hits[0].subject_start, hits[0].subject_end), (21, 70));
-        // Gegenstrang
+        // opposite strand
         let rev = Sequence::new(
             "rev",
             "rev",

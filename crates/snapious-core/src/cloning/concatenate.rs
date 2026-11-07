@@ -1,4 +1,4 @@
-//! Sequenzdokumente hintereinander zu einer neuen Sequenz zusammenfügen (Features wandern mit).
+//! Join sequence documents one after another into a new sequence (features move along).
 
 use crate::error::{Error, Result};
 use crate::model::document::{SequenceDocument, Topology};
@@ -7,12 +7,12 @@ use crate::model::sequence::Sequence;
 use crate::util::{new_id, now_secs};
 use std::collections::BTreeMap;
 
-/// Fügt die Dokumente in der gegebenen Reihenfolge zusammen. Die Basen werden direkt aneinandergehängt. Die Features jedes
-/// Dokuments übernimmt das Ergebnis mit dem Versatz der bisher angehängten Basen (`Location::shifted`, ein Feature behält Typ,
-/// Name und Qualifier; `with_location`). Das Ergebnis hat eine neue ID, `name` als Namen (leer: `"Joined"`), den
-/// Sequenztyp der Eingaben (`Sequence::new(&new_id(), name, &bases, typ)`), `Topology::Circular`, wenn `circular`, sonst
-/// `Linear`, keine Metadaten (`BTreeMap::new()`) und `now_secs()` als Erstellzeit (`SequenceDocument::new`).
-/// Fehler `Error::InvalidInput`: keine Dokumente, oder die Sequenztypen (`doc.sequence().seq_type()`) sind nicht alle gleich.
+/// Joins the documents in the given order. The bases are directly concatenated. The result takes over the features of each
+/// document with the offset of the bases appended so far (`Location::shifted`; a feature keeps type,
+/// name and qualifiers; `with_location`). The result has a new ID, `name` as its name (empty: `"Joined"`), the
+/// sequence type of the inputs (`Sequence::new(&new_id(), name, &bases, type)`), `Topology::Circular` if `circular`, otherwise
+/// `Linear`, no metadata (`BTreeMap::new()`) and `now_secs()` as creation time (`SequenceDocument::new`).
+/// Error `Error::InvalidInput`: no documents, or the sequence types (`doc.sequence().seq_type()`) are not all equal.
 pub fn concatenate(
     docs: &[SequenceDocument],
     name: &str,

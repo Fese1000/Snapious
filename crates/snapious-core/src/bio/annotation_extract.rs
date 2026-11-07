@@ -1,28 +1,28 @@
-//! Sequenzabschnitte von Annotationen ausschneiden (mit Rand, auf Wunsch revers-komplementiert).
+//! Cut sequence segments for annotations (with flanks, reverse-complemented on request).
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 
-/// Schneidet je Bereich `(start, ende, reverse)` die Basen aus: `bases[start - flank .. ende + flank]`, an den Rändern der Sequenz
-/// begrenzt (`start.saturating_sub(flank)` und `min(ende + flank, len)`). Bei `reverse` wird das Reverskomplement
-/// (`iupac_reverse_complement`) geliefert. Ist `start >= ende` oder `start >= len`, ist der Eintrag ein leerer Text. Das Ergebnis hat
-/// so viele Einträge wie `spans`. Zugriff mit `str::get`, damit Sonderzeichen nicht abstürzen (dann leerer Text).
-/// Beispiel `AACCGGTT`: `(2, 4, false)` ohne Rand → `CC`, mit Rand 1 → `ACCG`, `(2, 4, true)` → `GG`.
+/// For each range `(start, end, reverse)`, cuts out the bases: `bases[start - flank .. end + flank]`, clamped at the sequence
+/// boundaries (`start.saturating_sub(flank)` and `min(end + flank, len)`). With `reverse`, the reverse complement
+/// (`iupac_reverse_complement`) is returned. If `start >= end` or `start >= len`, the entry is an empty string. The result has
+/// as many entries as `spans`. Access via `str::get` so that special characters do not panic (the result is then an empty string).
+/// Example `AACCGGTT`: `(2, 4, false)` without flank → `CC`, with flank 1 → `ACCG`, `(2, 4, true)` → `GG`.
 pub fn extract_sequences(bases: &str, spans: &[(usize, usize, bool)], flank: usize) -> Vec<String> {
     let len = bases.len();
 
     spans
         .iter()
         .map(|&(start, end, reverse)| {
-            // Ist `start >= ende` oder `start >= len`, ist der Eintrag ein leerer Text.
+            // If `start >= end` or `start >= len`, the entry is an empty string.
             if start >= end || start >= len {
                 return String::new();
             }
 
-            // Begrenzung an den Rändern der Sequenz
+            // Clamping at the sequence boundaries
             let actual_start = start.saturating_sub(flank);
             let actual_end = (end + flank).min(len);
 
-            // Zugriff mit `str::get`, damit Sonderzeichen nicht abstürzen (dann leerer Text).
+            // Access via `str::get` so that special characters do not panic (the result is then an empty string).
             match bases.get(actual_start..actual_end) {
                 Some(seq) => {
                     if reverse {

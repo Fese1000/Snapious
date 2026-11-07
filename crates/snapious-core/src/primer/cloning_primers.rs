@@ -1,4 +1,4 @@
-//! Klonierungsprimer: bindender Teil am Fragmentende plus Klammer und Erkennungsstelle eines Restriktionsenzyms.
+//! Cloning primers: binding part at the fragment end plus clamp and recognition site of a restriction enzyme.
 
 use crate::cloning::enzymes::iupac_reverse_complement;
 use crate::error::{Error, Result};
@@ -6,30 +6,30 @@ use crate::primer::picker::{
     pick_forward_at, pick_reverse_ending_at, PickedPair, PrimerConstraints,
 };
 
-/// Primerpaar mit Schwänzen und Hinweisen.
+/// Primer pair with tails and warnings.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CloningPrimerResult {
-    /// Bindende Teile (wie von der Primerwahl geliefert, ohne Schwanz); `product_size` und `penalty` gehören dazu.
+    /// Binding parts (as supplied by primer picking, without tail); `product_size` and `penalty` belong to it.
     pub pair: PickedPair,
-    /// Vollständiger Vorwärtsprimer 5'→3': Klammer + Erkennungsstelle + bindender Teil.
+    /// Complete forward primer 5'->3': clamp + recognition site + binding part.
     pub forward_full: String,
-    /// Vollständiger Rückwärtsprimer 5'→3': Klammer + Erkennungsstelle + bindender Teil (Reverse-Komplement der Vorlage).
+    /// Complete reverse primer 5'->3': clamp + recognition site + binding part (reverse complement of the template).
     pub reverse_full: String,
     pub warnings: Vec<String>,
 }
 
-/// Entwirft Klonierungsprimer für das Fragment `template[start..end]`.
+/// Designs cloning primers for the fragment `template[start..end]`.
 ///
-/// 1. Vorlage, Klammer und Erkennungsstellen in Uppercase mit `T` statt `U`. Jede Erkennungsstelle muss nicht leer sein und nur aus
-///    A, C, G, T bestehen, ebenso die Klammer (darf leer sein), sonst `Error::InvalidInput`. Ungültiger Bereich
-///    (`start >= end` oder `end > Länge`) → `Error::InvalidInput`.
-/// 2. Bindender Teil vorwärts: `pick_forward_at(template, start, c)`; rückwärts: `pick_reverse_ending_at(template, end, c)`. Findet sich
-///    einer nicht, `Error::InvalidInput("No suitable primer at the fragment end")`.
-/// 3. `forward_full = klammer + forward_site + forward.sequence`, `reverse_full = klammer + reverse_site + reverse.sequence`.
-/// 4. `pair.product_size = end − start`; `pair.penalty` = Summe der beiden Einzelstrafen. Vorwärts- und Rückwärtsprimer stammen unverändert
-///    aus der Primerwahl.
-/// 5. Warnungen (in dieser Reihenfolge): für `forward_site`, dann `reverse_site` (nur eine Warnung je verschiedener Stelle): wenn die Stelle
-///    oder ihr Reverse-Komplement im Fragment `template[start..end]` vorkommt:
+/// 1. Template, clamp and recognition sites in uppercase with `T` instead of `U`. Each recognition site must be non-empty and consist only of
+///    A, C, G, T, as must the clamp (may be empty), otherwise `Error::InvalidInput`. Invalid range
+///    (`start >= end` or `end > length`) -> `Error::InvalidInput`.
+/// 2. Binding part forward: `pick_forward_at(template, start, c)`; reverse: `pick_reverse_ending_at(template, end, c)`. If
+///    one is not found, `Error::InvalidInput("No suitable primer at the fragment end")`.
+/// 3. `forward_full = clamp + forward_site + forward.sequence`, `reverse_full = clamp + reverse_site + reverse.sequence`.
+/// 4. `pair.product_size = end - start`; `pair.penalty` = sum of the two individual penalties. Forward and reverse primers come unchanged
+///    from primer picking.
+/// 5. Warnings (in this order): for `forward_site`, then `reverse_site` (only one warning per distinct site): if the site
+///    or its reverse complement occurs in the fragment `template[start..end]`:
 ///    `Erkennungsstelle {stelle} liegt im Fragment`.
 pub fn with_restriction_sites(
     template: &str,
@@ -40,7 +40,7 @@ pub fn with_restriction_sites(
     reverse_site: &str,
     clamp: &str,
 ) -> Result<CloningPrimerResult> {
-    // 1. Validierung der Eingaben
+    // 1. Validate the inputs
     if forward_site.is_empty() || !is_valid_dna(forward_site) {
         return Err(Error::InvalidInput("Invalid recognition site".into()));
     }
@@ -55,17 +55,17 @@ pub fn with_restriction_sites(
         .get(start..end)
         .ok_or_else(|| Error::InvalidInput("Invalid range".into()))?;
 
-    // 2. Primerwahl
+    // 2. Primer picking
     let forward = pick_forward_at(template, start, c)
         .ok_or_else(|| Error::InvalidInput("No suitable primer at the fragment end".into()))?;
     let reverse = pick_reverse_ending_at(template, end, c)
         .ok_or_else(|| Error::InvalidInput("No suitable primer at the fragment end".into()))?;
 
-    // 3. Vollständige Primer zusammenstellen
+    // 3. Assemble complete primers
     let forward_full = format!("{}{}{}", clamp, forward_site, forward.sequence);
     let reverse_full = format!("{}{}{}", clamp, reverse_site, reverse.sequence);
 
-    // 4. Paar-Eigenschaften setzen
+    // 4. Set pair properties
     let pair_penalty = forward.penalty + reverse.penalty;
     let pair = PickedPair {
         forward,
@@ -74,7 +74,7 @@ pub fn with_restriction_sites(
         penalty: pair_penalty,
     };
 
-    // 5. Warnungen generieren
+    // 5. Generate warnings
     let mut warnings: Vec<String> = Vec::new();
 
     if fragment.contains(forward_site) || fragment.contains(&iupac_reverse_complement(forward_site))
@@ -100,7 +100,7 @@ pub fn with_restriction_sites(
     })
 }
 
-/// Prüft, ob eine Sequenz nur aus den Buchstaben A, C, G und T besteht.
+/// Checks whether a sequence consists only of the letters A, C, G and T.
 fn is_valid_dna(s: &str) -> bool {
     s.chars().all(|c| matches!(c, 'A' | 'C' | 'G' | 'T'))
 }
@@ -121,8 +121,8 @@ mod tests {
             .collect()
     }
 
-    /// 300 Basen ohne EcoRI (GAATTC) und BamHI (GGATCC), bei denen am Fragmentanfang 50 und am Fragmentende 250 zulässige Primer
-    /// existieren (der kleinste Startwert, für den das gilt).
+    /// 300 bases without EcoRI (GAATTC) and BamHI (GGATCC), in which 50 at the fragment start and 250 at the fragment end allow valid primers
+    /// (the smallest start value for which this holds).
     fn template() -> String {
         let c = PrimerConstraints::standard();
         (1u64..2000)
@@ -175,7 +175,7 @@ mod tests {
             r.warnings,
             vec!["Recognition site GAATTC lies within the fragment".to_string()]
         );
-        // Stelle außerhalb des Fragments zählt nicht
+        // Site outside the fragment does not count
         let mut u = template();
         u.replace_range(10..16, "GGATCC");
         let r = with_restriction_sites(&u, 50, 250, &c, "GAATTC", "GGATCC", "").unwrap();
@@ -203,7 +203,7 @@ mod tests {
         assert!(e(with_restriction_sites(
             &t, 50, 999, &c, "GAATTC", "GGATCC", "GC"
         )));
-        // Fragmentende ohne zulässigen Primer (nur A)
+        // Fragment end without a valid primer (only A)
         let poly = "A".repeat(300);
         assert!(e(with_restriction_sites(
             &poly, 50, 250, &c, "GAATTC", "GGATCC", "GC"

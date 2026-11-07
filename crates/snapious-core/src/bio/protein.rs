@@ -1,14 +1,14 @@
-//! Eigenschaften von Proteinsequenzen: Masse, Ladung, isoelektrischer Punkt, Extinktion, Hydropathie.
+//! Properties of protein sequences: mass, charge, isoelectric point, extinction, hydropathy.
 //!
-//! Eingaben sind Einbuchstabencodes in beliebiger Schreibweise; es zählen nur die 20 Standard-Aminosäuren
-//! `ACDEFGHIKLMNPQRSTVWY`. Alle anderen Zeichen (z. B. `X`, `B`, `*`, Leerzeichen) werden ignoriert, soweit nicht anders gesagt.
+//! Inputs are one-letter codes in any case; only the 20 standard amino acids
+//! `ACDEFGHIKLMNPQRSTVWY` count. All other characters (e.g. `X`, `B`, `*`, spaces) are ignored unless stated otherwise.
 
 use std::collections::BTreeMap;
 
-/// Durchschnittliche Restmassen in Da: G 57.0519, A 71.0788, S 87.0782, P 97.1167, V 99.1326, T 101.1051, C 103.1388,
+/// Average residue masses in Da: G 57.0519, A 71.0788, S 87.0782, P 97.1167, V 99.1326, T 101.1051, C 103.1388,
 /// L 113.1594, I 113.1594, N 114.1038, D 115.0886, Q 128.1307, K 128.1741, E 129.1155, M 131.1926, H 137.1411,
 /// F 147.1766, R 156.1875, Y 163.1760, W 186.2132.
-/// Rückgabe: Masse des Restes oder `None` für ein Zeichen, das keine Standard-Aminosäure ist (Uppercase erwartet).
+/// Returns: mass of the residue, or `None` for a character that is not a standard amino acid (uppercase expected).
 pub fn residue_mass(aa: char) -> Option<f64> {
     match aa {
         'A' => Some(71.0788),
@@ -35,8 +35,8 @@ pub fn residue_mass(aa: char) -> Option<f64> {
     }
 }
 
-/// Kyte-Doolittle-Wert: A 1.8, R −4.5, N −3.5, D −3.5, C 2.5, Q −3.5, E −3.5, G −0.4, H −3.2, I 4.5, L 3.8, K −3.9,
-/// M 1.9, F 2.8, P −1.6, S −0.8, T −0.7, W −0.9, Y −1.3, V 4.2. Sonst `None` (Uppercase erwartet).
+/// Kyte-Doolittle value: A 1.8, R −4.5, N −3.5, D −3.5, C 2.5, Q −3.5, E −3.5, G −0.4, H −3.2, I 4.5, L 3.8, K −3.9,
+/// M 1.9, F 2.8, P −1.6, S −0.8, T −0.7, W −0.9, Y −1.3, V 4.2. Otherwise `None` (uppercase expected).
 pub fn hydropathy_value(aa: char) -> Option<f64> {
     match aa {
         'A' => Some(1.8),
@@ -63,8 +63,8 @@ pub fn hydropathy_value(aa: char) -> Option<f64> {
     }
 }
 
-/// Durchschnittliche Masse in Da: Summe der Restmassen aller Standard-Aminosäuren plus Wasser (18.0153).
-/// Ohne eine einzige Standard-Aminosäure: 0.0.
+/// Average mass in Da: sum of the residue masses of all standard amino acids plus water (18.0153).
+/// Without a single standard amino acid: 0.0.
 pub fn molecular_weight(protein: &str) -> f64 {
     let mut mass = 0.0_f64;
     let mut has_standard = false;
@@ -83,7 +83,7 @@ pub fn molecular_weight(protein: &str) -> f64 {
     }
 }
 
-/// Anzahl je Standard-Aminosäure (Uppercase als Schlüssel); nur Aminosäuren, die vorkommen.
+/// Count per standard amino acid (uppercase as key); only amino acids that occur.
 pub fn composition(protein: &str) -> BTreeMap<char, usize> {
     let mut map = BTreeMap::new();
 
@@ -96,9 +96,9 @@ pub fn composition(protein: &str) -> BTreeMap<char, usize> {
     map
 }
 
-/// Nettoladung bei `ph` mit den pKa-Werten N-Terminus 8.6, C-Terminus 3.6, D 3.9, E 4.1, C 8.5, Y 10.1, H 6.5, K 10.8, R 12.5.
-/// Positive Gruppen (N-Terminus, K, R, H) tragen je `1 / (1 + 10^(ph − pKa))`, negative (C-Terminus, D, E, C, Y) je
-/// `−1 / (1 + 10^(pKa − ph))`. Die beiden Termini zählen nur, wenn mindestens eine Standard-Aminosäure vorhanden ist; sonst 0.0.
+/// Net charge at `ph` with the pKa values N-terminus 8.6, C-terminus 3.6, D 3.9, E 4.1, C 8.5, Y 10.1, H 6.5, K 10.8, R 12.5.
+/// Positive groups (N-terminus, K, R, H) each contribute `1 / (1 + 10^(ph − pKa))`, negative ones (C-terminus, D, E, C, Y) each
+/// `−1 / (1 + 10^(pKa − ph))`. The two termini count only if at least one standard amino acid is present; otherwise 0.0.
 pub fn charge_at_ph(protein: &str, ph: f64) -> f64 {
     let upper = protein.to_ascii_uppercase();
     let mut counts: BTreeMap<char, u32> = BTreeMap::new();
@@ -115,7 +115,7 @@ pub fn charge_at_ph(protein: &str, ph: f64) -> f64 {
 
     // Termini
     let mut charge = 1.0 / (1.0 + 10.0_f64.powf(ph - 8.6)) - 1.0 / (1.0 + 10.0_f64.powf(3.6 - ph));
-    // Seitenketten: (Aminosäure, pKa, positiv)
+    // Side chains: (amino acid, pKa, positive)
     let groups = [
         ('D', 3.9, false),
         ('E', 4.1, false),
@@ -136,8 +136,8 @@ pub fn charge_at_ph(protein: &str, ph: f64) -> f64 {
     charge
 }
 
-/// Isoelektrischer Punkt: der pH zwischen 0 und 14, bei dem `charge_at_ph` 0 ist (Bisektion; Abbruch, wenn das Intervall
-/// kleiner als 0.0001 ist). Die Ladung nimmt mit steigendem pH ab. Ohne Standard-Aminosäure: 7.0.
+/// Isoelectric point: the pH between 0 and 14 at which `charge_at_ph` is 0 (bisection; stops when the interval
+/// is smaller than 0.0001). The charge decreases with rising pH. Without a standard amino acid: 7.0.
 pub fn isoelectric_point(protein: &str) -> f64 {
     let upper = protein.to_ascii_uppercase();
 
@@ -160,8 +160,8 @@ pub fn isoelectric_point(protein: &str) -> f64 {
     (lo + hi) / 2.0
 }
 
-/// Extinktionskoeffizient bei 280 nm in M⁻¹ cm⁻¹ nach Pace et al. (1995): `nW · 5500 + nY · 1490 + (nC / 2) · 125`, wobei
-/// `nC / 2` ganzzahlig geteilt wird; der Cystin-Term entfällt, wenn `reduced_cysteines` wahr ist.
+/// Extinction coefficient at 280 nm in M⁻¹ cm⁻¹ after Pace et al. (1995): `nW · 5500 + nY · 1490 + (nC / 2) · 125`, where
+/// `nC / 2` is integer division; the cystine term is omitted if `reduced_cysteines` is true.
 pub fn extinction_coefficient_280(protein: &str, reduced_cysteines: bool) -> f64 {
     let mut n_w = 0u32;
     let mut n_y = 0u32;
@@ -184,7 +184,7 @@ pub fn extinction_coefficient_280(protein: &str, reduced_cysteines: bool) -> f64
     ext
 }
 
-/// Anteil der aromatischen Reste (F, W, Y) an allen Standard-Aminosäuren; ohne Aminosäuren 0.0.
+/// Fraction of aromatic residues (F, W, Y) among all standard amino acids; without amino acids 0.0.
 pub fn aromaticity(protein: &str) -> f64 {
     let mut total = 0u32;
     let mut arom = 0u32;
@@ -206,9 +206,9 @@ pub fn aromaticity(protein: &str) -> f64 {
     }
 }
 
-/// Kyte-Doolittle-Verlauf: ein Wert je Zeichen von `protein`. Zeichen ohne Wert (`hydropathy_value` ist `None`) zählen als 0.0.
-/// Der Wert an Position `i` ist der Mittelwert über das zentrierte Fenster. Das Fenster wird auf eine ungerade Größe gebracht
-/// (gerade Größe + 1, 0 wird 1); am Rand wird es gekürzt (nur vorhandene Positionen werden gemittelt). Leere Eingabe → leerer Vektor.
+/// Kyte-Doolittle profile: one value per character of `protein`. Characters without a value (`hydropathy_value` is `None`) count as 0.0.
+/// The value at position `i` is the mean over the centered window. The window is made odd
+/// (even size + 1, 0 becomes 1); at the edges it is truncated (only existing positions are averaged). Empty input → empty vector.
 pub fn kyte_doolittle(protein: &str, window: usize) -> Vec<f64> {
     let win = if window == 0 {
         1
@@ -301,7 +301,7 @@ mod tests {
         assert!(close(charge_at_ph("K", 7.0), 0.9757, 0.005));
         assert_eq!(charge_at_ph("", 7.0), 0.0);
         assert_eq!(charge_at_ph("XX", 7.0), 0.0);
-        // bei sehr hohem pH negativ, bei sehr niedrigem positiv
+        // negative at very high pH, positive at very low pH
         assert!(charge_at_ph("GGGG", 14.0) < -0.9);
         assert!(charge_at_ph("GGGG", 0.0) > 0.9);
     }
@@ -347,11 +347,11 @@ mod tests {
         assert!(close(b[0], 1.8, 1e-12));
         assert!(close(b[1], (1.8 + 1.8 - 4.5) / 3.0, 1e-12));
         assert!(close(b[2], (1.8 - 4.5) / 2.0, 1e-12));
-        // gerade Fenster wird ungerade gemacht, Fenster 0 wie 1
+        // even window is made odd, window 0 acts as 1
         assert_eq!(kyte_doolittle("AR", 0), vec![1.8, -4.5]);
         assert_eq!(kyte_doolittle("AAR", 2), kyte_doolittle("AAR", 3));
         assert!(kyte_doolittle("", 5).is_empty());
-        // unbekanntes Zeichen zählt als 0
+        // unknown character counts as 0
         assert_eq!(kyte_doolittle("X", 1), vec![0.0]);
     }
 }

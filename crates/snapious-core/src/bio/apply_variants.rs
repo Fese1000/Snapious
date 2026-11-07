@@ -1,18 +1,18 @@
-//! Varianten auf eine Referenzsequenz anwenden (neue Sequenz aus Alignment-Varianten).
+//! Apply variants to a reference sequence (new sequence from alignment variants).
 
 use crate::bio::variants::{Variant, VariantKind};
 use crate::error::{Error, Result};
 
-/// Wendet alle Varianten, deren `row == row` ist, auf `reference` (Basen ohne Lücken, Uppercase) an und gibt die neue
-/// Sequenz zurück. `reference_position` ist die 0-basierte Position in `reference`:
-/// * `Substitution`: die Base dort wird durch `alt_base` ersetzt,
-/// * `Deletion`: die Base dort entfällt,
-/// * `Insertion`: `alt_base` wird vor der Base an `reference_position` eingefügt (gleich `reference.len()` = am Ende);
-///   mehrere Einsertionen an derselben Position kommen in der Reihenfolge ihrer `column` (aufsteigend).
+/// Applies all variants with `row == row` to `reference` (bases without gaps, uppercase) and returns the new
+/// sequence. `reference_position` is the 0-based position in `reference`:
+/// * `Substitution`: the base there is replaced by `alt_base`,
+/// * `Deletion`: the base there is dropped,
+/// * `Insertion`: `alt_base` is inserted before the base at `reference_position` (equal to `reference.len()` = at the end);
+///   multiple insertions at the same position appear in the order of their `column` (ascending).
 ///
-/// Fehler `Error::InvalidInput`, wenn bei Substitution/Deletion `reference_position >= reference.len()`, wenn bei
-/// Substitution/Deletion `reference_base` nicht zur Referenz an dieser Position passt oder bei Insertion
-/// `reference_position > reference.len()`. Varianten anderer Zeilen werden ignoriert.
+/// Error `Error::InvalidInput` if for substitution/deletion `reference_position >= reference.len()`, if for
+/// substitution/deletion `reference_base` does not match the reference at that position, or for insertion
+/// `reference_position > reference.len()`. Variants of other rows are ignored.
 pub fn apply_variants(reference: &str, variants: &[Variant], row: usize) -> Result<String> {
     let mut filtered = variants
         .iter()
@@ -24,8 +24,8 @@ pub fn apply_variants(reference: &str, variants: &[Variant], row: usize) -> Resu
         return Ok(reference.to_string());
     }
 
-    // Sortierung nach reference_position, dann column (aufsteigend).
-    // Verarbeitung in umgekehrter Reihenfolge vermeidet Indexverschiebungen für niedrigere Positionen.
+    // Sorted by reference_position, then column (ascending).
+    // Processing in reverse order avoids index shifts for lower positions.
     filtered.sort_by_key(|v| (v.reference_position, v.column));
 
     let mut chars: Vec<char> = reference.chars().collect();
@@ -117,7 +117,7 @@ mod tests {
             var(0, 0, 'A', 'G', VariantKind::Substitution, 1),
             var(2, 2, '-', 'T', VariantKind::Insertion, 1),
             var(4, 3, 'T', '-', VariantKind::Deletion, 1),
-            var(1, 1, 'C', 'A', VariantKind::Substitution, 2), // andere Zeile
+            var(1, 1, 'C', 'A', VariantKind::Substitution, 2), // other row
         ];
         assert_eq!(apply_variants("ACGT", &list, 1).unwrap(), "GCTG");
         let zwei = vec![

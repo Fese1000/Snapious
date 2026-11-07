@@ -1,5 +1,5 @@
 #!/bin/sh
-# wt.sh <testfilter> [clippy]: prüft in einer Kopie (kollidiert nicht mit laufenden Qwen-Läufen)
+# wt.sh <testfilter> [clippy]: checks in a copy (does not collide with running Qwen runs)
 cd "$(dirname "$0")/../.." || exit 1
 python3 scripts/qwen/workcopy.py
 cd /tmp/gen/work || exit 1

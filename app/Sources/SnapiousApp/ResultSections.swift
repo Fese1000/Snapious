@@ -1,32 +1,32 @@
 import SnapiousFFI
 import SwiftUI
 
-/// Ergebnisse externer Programme lesen: BLAST-Tabelle ansehen, Domänen (hmmscan, InterProScan) als Features eintragen.
+/// Read results of external programs: view a BLAST table, add domains (hmmscan, InterProScan) as features.
 struct ExternalResultsSection: View {
     @ObservedObject var model: AppModel
     @State private var hits: [BlastTableRow] = []
     @State private var message: String?
 
     var body: some View {
-        GroupBox(tr("Ergebnisse externer Programme lesen")) {
+        GroupBox(tr("Read results of external programs")) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Button(tr("BLAST-Tabelle ansehen …")) { openBlast() }
-                    Button(tr("Domänen aus hmmscan eintragen …")) { importDomains(format: "hmmer") }
+                    Button(tr("View BLAST table …")) { openBlast() }
+                    Button(tr("Add domains from hmmscan …")) { importDomains(format: "hmmer") }
                         .disabled(model.selection == nil)
-                    Button(tr("Domänen aus InterProScan eintragen …")) { importDomains(format: "interpro") }
+                    Button(tr("Add domains from InterProScan …")) { importDomains(format: "interpro") }
                         .disabled(model.selection == nil)
                 }
-                Text(tr("BLAST: `-outfmt 6`. Domänen: `hmmscan --domtblout` oder InterProScan-TSV; sie werden als Features „domain“ in die gewählte Sequenz eingetragen."))
+                Text(tr("BLAST: `-outfmt 6`. Domains: `hmmscan --domtblout` or InterProScan TSV; they are added as “domain” features to the selected sequence."))
                     .font(.caption).foregroundStyle(.secondary)
                 if let message { Text(message).font(.callout) }
                 if !hits.isEmpty {
                     Table(hits) {
-                        TableColumn(tr("Treffer")) { h in Text(h.dto.subject) }
-                        TableColumn(tr("Identität")) { h in Text(String(format: "%.1f %%", h.dto.identityPercent)) }.width(80)
-                        TableColumn(tr("Länge")) { h in Text("\(h.dto.alignmentLength)") }.width(60)
+                        TableColumn(tr("Hits")) { h in Text(h.dto.subject) }
+                        TableColumn(tr("Identity")) { h in Text(String(format: "%.1f %%", h.dto.identityPercent)) }.width(80)
+                        TableColumn(tr("Length")) { h in Text("\(h.dto.alignmentLength)") }.width(60)
                         TableColumn("Query") { h in Text("\(h.dto.queryStart)–\(h.dto.queryEnd)") }.width(90)
-                        TableColumn(tr("E-Wert")) { h in Text(String(format: "%.1e", h.dto.evalue)) }.width(80)
+                        TableColumn(tr("E-value")) { h in Text(String(format: "%.1e", h.dto.evalue)) }.width(80)
                         TableColumn("Bit") { h in Text(String(format: "%.1f", h.dto.bitScore)) }.width(60)
                     }
                     .frame(minHeight: 120, maxHeight: 220)
@@ -37,10 +37,10 @@ struct ExternalResultsSection: View {
     }
 
     private func openBlast() {
-        guard let url = FilePick.open(tr("BLAST-Tabelle wählen (-outfmt 6)")) else { return }
+        guard let url = FilePick.open(tr("Choose BLAST table (-outfmt 6)")) else { return }
         do {
             hits = try blastTableOpen(path: url.path).enumerated().map { BlastTableRow(index: $0.offset, dto: $0.element) }
-            message = tr("%@ Treffer.", "\(hits.count)")
+            message = tr("%@ hits.", "\(hits.count)")
         } catch {
             hits = []
             message = error.localizedDescription
@@ -48,11 +48,11 @@ struct ExternalResultsSection: View {
     }
 
     private func importDomains(format: String) {
-        guard let project = model.project, let id = model.selection, let url = FilePick.open(tr("Domänentabelle wählen")) else { return }
+        guard let project = model.project, let id = model.selection, let url = FilePick.open(tr("Choose domain table")) else { return }
         do {
             let n = try project.importDomainTable(id: id, path: url.path, format: format)
             model.reloadCurrent()
-            message = tr("%@ Domänen als Features eingetragen.", "\(n)")
+            message = tr("%@ domains added as features.", "\(n)")
         } catch {
             message = error.localizedDescription
         }
@@ -65,7 +65,7 @@ struct BlastTableRow: Identifiable {
     var id: Int { index }
 }
 
-/// Statistik für Expressionsdaten: p-Werte korrigieren und Zählwerte normalisieren.
+/// Statistics for expression data: correct p-values and normalize counts.
 struct StatsSection: View {
     @State private var pText = "0.01\n0.04\n0.03\n0.005"
     @State private var adjusted: [Double] = []
@@ -77,23 +77,23 @@ struct StatsSection: View {
     }
 
     var body: some View {
-        GroupBox(tr("Statistik (Expression)")) {
+        GroupBox(tr("Statistics (expression)")) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(tr("p-Werte korrigieren (Benjamini-Hochberg), ein Wert je Zeile")).font(.caption).foregroundStyle(.secondary)
+                Text(tr("Correct p-values (Benjamini-Hochberg), one value per line")).font(.caption).foregroundStyle(.secondary)
                 TextEditor(text: $pText).font(.system(.body, design: .monospaced)).frame(height: 60)
                     .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.separator))
                 HStack {
-                    Button(tr("Korrigieren")) {
+                    Button(tr("Correct")) {
                         adjusted = pAdjustBh(p: pText.split(whereSeparator: \.isNewline).compactMap { numbers($0).first })
                     }
                     if !adjusted.isEmpty { Text(adjusted.map { String(format: "%.4g", $0) }.joined(separator: " · ")).font(.callout) }
                 }
                 Divider()
-                Text(tr("Größenfaktoren (Median der Verhältnisse): je Zeile ein Gen, je Spalte eine Probe")).font(.caption).foregroundStyle(.secondary)
+                Text(tr("Size factors (median of ratios): one gene per row, one sample per column")).font(.caption).foregroundStyle(.secondary)
                 TextEditor(text: $countsText).font(.system(.body, design: .monospaced)).frame(height: 70)
                     .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.separator))
                 HStack {
-                    Button(tr("Faktoren berechnen")) {
+                    Button(tr("Calculate factors")) {
                         factors = sizeFactors(counts: countsText.split(whereSeparator: \.isNewline).map { numbers($0) }.filter { !$0.isEmpty })
                     }
                     if !factors.isEmpty { Text(factors.map { String(format: "%.3f", $0) }.joined(separator: " · ")).font(.callout) }
@@ -104,7 +104,7 @@ struct StatsSection: View {
     }
 }
 
-/// Abdeckungs-Kennzahlen und Duplikate aus SAM/BAM gegen die gewählte Sequenz.
+/// Coverage metrics and duplicates from SAM/BAM against the selected sequence.
 struct CoverageReportSection: View {
     @ObservedObject var model: AppModel
     @State private var report: CoverageReportDto?
@@ -112,23 +112,23 @@ struct CoverageReportSection: View {
     @State private var busy = false
 
     var body: some View {
-        GroupBox(tr("Abdeckung und Duplikate (SAM/BAM gegen die gewählte Sequenz)")) {
+        GroupBox(tr("Coverage and duplicates (SAM/BAM against the selected sequence)")) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Button(tr("Alignment-Datei wählen …")) { run() }.disabled(busy || model.selection == nil)
+                    Button(tr("Choose alignment file …")) { run() }.disabled(busy || model.selection == nil)
                     if busy { ProgressView().controlSize(.small) }
                 }
                 if let message { Text(message).foregroundStyle(.red) }
                 if let r = report {
                     Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 3) {
-                        GridRow { Text(tr("Mittlere Tiefe")).foregroundStyle(.secondary); Text(String(format: "%.1f×", r.mean)) }
-                        GridRow { Text(tr("Median / Min / Max")).foregroundStyle(.secondary); Text(String(format: "%.1f× / %d× / %d×", r.median, r.min, r.max)) }
-                        GridRow { Text(tr("Positionen mit ≥ 1×")).foregroundStyle(.secondary); Text(String(format: "%.1f %%", (r.fractions.first ?? 0) * 100)) }
-                        GridRow { Text(tr("Positionen mit ≥ 10×")).foregroundStyle(.secondary); Text(String(format: "%.1f %%", (r.fractions.dropFirst().first ?? 0) * 100)) }
-                        GridRow { Text(tr("Positionen mit ≥ 30×")).foregroundStyle(.secondary); Text(String(format: "%.1f %%", (r.fractions.dropFirst(2).first ?? 0) * 100)) }
+                        GridRow { Text(tr("Mean depth")).foregroundStyle(.secondary); Text(String(format: "%.1f×", r.mean)) }
+                        GridRow { Text(tr("Median / min / max")).foregroundStyle(.secondary); Text(String(format: "%.1f× / %d× / %d×", r.median, r.min, r.max)) }
+                        GridRow { Text(tr("Positions with ≥ 1×")).foregroundStyle(.secondary); Text(String(format: "%.1f %%", (r.fractions.first ?? 0) * 100)) }
+                        GridRow { Text(tr("Positions with ≥ 10×")).foregroundStyle(.secondary); Text(String(format: "%.1f %%", (r.fractions.dropFirst().first ?? 0) * 100)) }
+                        GridRow { Text(tr("Positions with ≥ 30×")).foregroundStyle(.secondary); Text(String(format: "%.1f %%", (r.fractions.dropFirst(2).first ?? 0) * 100)) }
                         GridRow {
-                            Text(tr("Duplikate")).foregroundStyle(.secondary)
-                            Text(tr("%@ von %@ Reads", "\(r.duplicateReads)", "\(r.mappedReads)") + (r.mappedReads > 0 ? String(format: " (%.1f %%)", 100 * Double(r.duplicateReads) / Double(r.mappedReads)) : ""))
+                            Text(tr("Duplicate reads")).foregroundStyle(.secondary)
+                            Text(tr("%@ of %@ reads", "\(r.duplicateReads)", "\(r.mappedReads)") + (r.mappedReads > 0 ? String(format: " (%.1f %%)", 100 * Double(r.duplicateReads) / Double(r.mappedReads)) : ""))
                         }
                     }
                 }
@@ -138,7 +138,7 @@ struct CoverageReportSection: View {
     }
 
     private func run() {
-        guard let project = model.project, let id = model.selection, let url = FilePick.open(tr("SAM- oder BAM-Datei wählen")) else { return }
+        guard let project = model.project, let id = model.selection, let url = FilePick.open(tr("Choose SAM or BAM file")) else { return }
         busy = true
         message = nil
         Task.detached {
@@ -152,18 +152,18 @@ struct CoverageReportSection: View {
     }
 }
 
-/// Fragmentlängen gepaarter Reads als Balkendiagramm.
+/// Fragment lengths of paired reads as a bar chart.
 struct InsertSizeSection: View {
     @State private var report: InsertReportDto?
     @State private var message: String?
 
     var body: some View {
-        GroupBox(tr("Fragmentlängen gepaarter Reads (SAM/BAM)")) {
+        GroupBox(tr("Fragment lengths of paired reads (SAM/BAM)")) {
             VStack(alignment: .leading, spacing: 8) {
-                Button(tr("Alignment-Datei wählen …")) { run() }
+                Button(tr("Choose alignment file …")) { run() }
                 if let message { Text(message).foregroundStyle(.red) }
                 if let r = report {
-                    Text(String(format: tr("%d Paare · Mittel %.1f bp · Median %.1f bp · Standardabweichung %.1f bp"), r.count, r.mean, r.median, r.stdDev)).font(.callout)
+                    Text(String(format: tr("%d pairs · mean %.1f bp · median %.1f bp · standard deviation %.1f bp"), r.count, r.mean, r.median, r.stdDev)).font(.callout)
                     let maxCount = max(r.bins.map { Int($0.count) }.max() ?? 1, 1)
                     Canvas { ctx, size in
                         guard !r.bins.isEmpty else { return }
@@ -187,10 +187,10 @@ struct InsertSizeSection: View {
     }
 
     private func run() {
-        guard let url = FilePick.open(tr("SAM- oder BAM-Datei wählen")) else { return }
+        guard let url = FilePick.open(tr("Choose SAM or BAM file")) else { return }
         do {
             report = try insertSizeReport(path: url.path)
-            message = report?.count == 0 ? tr("Keine gepaarten Reads gefunden.") : nil
+            message = report?.count == 0 ? tr("No paired reads found.") : nil
         } catch {
             report = nil
             message = error.localizedDescription
@@ -198,7 +198,7 @@ struct InsertSizeSection: View {
     }
 }
 
-/// Häufigste k-mer einer FASTQ-Datei (zum Erkennen von Adaptern).
+/// Most frequent k-mers of a FASTQ file (for detecting adapters).
 struct KmerSection: View {
     @State private var k = 12
     @State private var rows: [KmerDto] = []
@@ -206,14 +206,14 @@ struct KmerSection: View {
     @State private var busy = false
 
     var body: some View {
-        GroupBox(tr("Häufige k-mer (Adapter und Verunreinigungen erkennen)")) {
+        GroupBox(tr("Frequent k-mers (detect adapters and contaminants)")) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Stepper("k = \(k)", value: $k, in: 4...32).frame(width: 110)
-                    Button(tr("FASTQ wählen …")) { run() }.disabled(busy)
+                    Button(tr("Choose FASTQ …")) { run() }.disabled(busy)
                     if busy { ProgressView().controlSize(.small) }
                 }
-                Text(tr("Gelesen werden die ersten 100 000 Reads. Ein k-mer, das in sehr vielen Reads vorkommt, deutet oft auf einen Adapter hin."))
+                Text(tr("The first 100,000 reads are read. A k-mer that occurs in very many reads often indicates an adapter."))
                     .font(.caption).foregroundStyle(.secondary)
                 if let message { Text(message).foregroundStyle(.red) }
                 ForEach(rows, id: \.kmer) { r in
@@ -228,7 +228,7 @@ struct KmerSection: View {
     }
 
     private func run() {
-        guard let url = FilePick.open(tr("FASTQ-Datei wählen")) else { return }
+        guard let url = FilePick.open(tr("Choose FASTQ file")) else { return }
         busy = true
         message = nil
         let kk = UInt64(k)

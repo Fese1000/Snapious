@@ -1,13 +1,13 @@
-//! Paarweise Alignments: Needleman-Wunsch (global), Smith-Waterman (lokal) und semiglobal.
+//! Pairwise alignments: Needleman-Wunsch (global), Smith-Waterman (local) and semi-global.
 //!
-//! Quellen: Needleman & Wunsch, J. Mol. Biol. 48 (1970); Smith & Waterman, J. Mol. Biol. 147 (1981).
-//! Lineare Lückenstrafe. Speicher: zwei Score-Zeilen plus ein Byte Rückverfolgung je Zelle.
-//! Bei Gleichstand gilt im Traceback die Reihenfolge: Diagonale, Lücke in Sequenz 2 (Schritt in Sequenz 1),
-//! Lücke in Sequenz 1.
+//! Sources: Needleman & Wunsch, J. Mol. Biol. 48 (1970); Smith & Waterman, J. Mol. Biol. 147 (1981).
+//! Linear gap penalty. Memory: two score rows plus one traceback byte per cell.
+//! On ties, the traceback order is: diagonal, gap in sequence 2 (step in sequence 1),
+//! gap in sequence 1.
 
 use crate::error::{Error, Result};
 
-/// Art des Alignments.
+/// Kind of alignment.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlignType {
     Global,
@@ -15,25 +15,25 @@ pub enum AlignType {
     SemiGlobal,
 }
 
-/// Ergebnis eines paarweisen Alignments.
+/// Result of a pairwise alignment.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AlignResult {
     pub seq1_aln: String,
     pub seq2_aln: String,
     pub score: i32,
     pub align_type: AlignType,
-    /// Start in Sequenz 2 (Referenz) bei lokalem/semiglobalem Alignment, sonst 0.
+    /// Start in sequence 2 (reference) for local/semi-global alignment, otherwise 0.
     pub seq2_start: usize,
-    /// Ende (exklusiv) in Sequenz 2 bei lokalem/semiglobalem Alignment, sonst Länge von Sequenz 2.
+    /// End (exclusive) in sequence 2 for local/semi-global alignment, otherwise the length of sequence 2.
     pub seq2_end: usize,
-    /// Start in Sequenz 1 bei lokalem Alignment, sonst 0.
+    /// Start in sequence 1 for local alignment, otherwise 0.
     pub seq1_start: usize,
-    /// Ende (exklusiv) in Sequenz 1 bei lokalem Alignment, sonst Länge von Sequenz 1.
+    /// End (exclusive) in sequence 1 for local alignment, otherwise the length of sequence 1.
     pub seq1_end: usize,
 }
 
 impl AlignResult {
-    /// Textdarstellung in Blöcken zu 60 Spalten: Sequenz 1, Markierung (`|` gleich, `:` ungleich), Sequenz 2.
+    /// Text rendering in blocks of 60 columns: sequence 1, match line (`|` equal, `:` unequal), sequence 2.
     pub fn format(&self) -> String {
         let a = self.seq1_aln.as_bytes();
         let b = self.seq2_aln.as_bytes();
@@ -68,7 +68,7 @@ impl AlignResult {
     }
 }
 
-/// Alignment-Parameter (Standard für DNA: +2 / -1 / -1).
+/// Alignment parameters (DNA default: +2 / -1 / -1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Aligner {
     pub match_score: i32,
@@ -84,10 +84,10 @@ impl Default for Aligner {
 
 const STOP: u8 = 0;
 const DIAG: u8 = 1;
-const UP: u8 = 2; // Schritt in Sequenz 1, Lücke in Sequenz 2
-const LEFT: u8 = 3; // Schritt in Sequenz 2, Lücke in Sequenz 1
+const UP: u8 = 2; // Step in sequence 1, gap in sequence 2
+const LEFT: u8 = 3; // Step in sequence 2, gap in sequence 1
 
-/// Höchstzahl an Matrixzellen (Schutz vor unbeabsichtigtem Speicherverbrauch).
+/// Maximum number of matrix cells (guards against unintended memory use).
 const MAX_CELLS: usize = 4_000_000_000;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -115,18 +115,18 @@ impl Aligner {
         }
     }
 
-    /// Globales Alignment (Needleman-Wunsch).
+    /// Global alignment (Needleman-Wunsch).
     pub fn needleman_wunsch(&self, seq1: &str, seq2: &str) -> Result<AlignResult> {
         self.run(seq1.as_bytes(), seq2.as_bytes(), Mode::Global)
     }
 
-    /// Lokales Alignment (Smith-Waterman).
+    /// Local alignment (Smith-Waterman).
     pub fn smith_waterman(&self, seq1: &str, seq2: &str) -> Result<AlignResult> {
         self.run(seq1.as_bytes(), seq2.as_bytes(), Mode::Local)
     }
 
-    /// Semiglobales Alignment: `read` wird vollständig ausgerichtet, Lücken am Anfang und Ende der
-    /// `reference` kosten nichts. Ergebnis: `seq1` = Read, `seq2` = Referenz.
+    /// Semi-global alignment: `read` is aligned in full, gaps at the start and end of the
+    /// `reference` cost nothing. Result: `seq1` = read, `seq2` = reference.
     pub fn semi_global(&self, read: &str, reference: &str) -> Result<AlignResult> {
         self.run(read.as_bytes(), reference.as_bytes(), Mode::SemiGlobal)
     }
@@ -145,7 +145,7 @@ impl Aligner {
         let mut prev = vec![0i32; w];
         let mut cur = vec![0i32; w];
 
-        // Erste Zeile (i = 0)
+        // First row (i = 0)
         for j in 1..=m {
             match mode {
                 Mode::Global => {
@@ -161,7 +161,7 @@ impl Aligner {
 
         let (mut best, mut best_i, mut best_j) = (0i32, 0usize, 0usize);
         for i in 1..=n {
-            // Erste Spalte (j = 0)
+            // First column (j = 0)
             match mode {
                 Mode::Global | Mode::SemiGlobal => {
                     cur[0] = prev[0] + self.gap;
@@ -177,7 +177,7 @@ impl Aligner {
                 let d = prev[j - 1] + self.sub(ai, b[j - 1]);
                 let u = prev[j] + self.gap;
                 let l = cur[j - 1] + self.gap;
-                // Global/semiglobal starten mit der Diagonale; lokal mit 0 (Abbruch).
+                // Global/semi-global start with the diagonal; local starts with 0 (abort).
                 let (mut score, mut dir) = if mode == Mode::Local {
                     (0, STOP)
                 } else {
@@ -205,7 +205,7 @@ impl Aligner {
             }
             std::mem::swap(&mut prev, &mut cur);
         }
-        // Nach dem Tausch steht die letzte Zeile in `prev`.
+        // After the swap, the last row is in `prev`.
 
         let (end_i, end_j, score) = match mode {
             Mode::Global => (n, m, prev[m]),
@@ -225,7 +225,7 @@ impl Aligner {
             }
         };
 
-        // Rückverfolgung
+        // Traceback
         let (mut i, mut j) = (end_i, end_j);
         let mut ra: Vec<u8> = Vec::new();
         let mut rb: Vec<u8> = Vec::new();
@@ -285,8 +285,8 @@ impl Aligner {
     }
 }
 
-/// Konsensus aus alignierten Zeilen: häufigstes Zeichen ohne Lücke je Spalte; bei Gleichstand das
-/// alphabetisch kleinste; `N`, wenn die Spalte nur Lücken enthält. Leere Eingabe ergibt `""`.
+/// Consensus from aligned rows: most frequent non-gap character per column; on ties the
+/// alphabetically smallest; `N` if the column contains only gaps. Empty input gives `""`.
 pub fn create_consensus(rows: &[String]) -> String {
     let Some(first) = rows.first() else {
         return String::new();
@@ -313,7 +313,7 @@ pub fn create_consensus(rows: &[String]) -> String {
     out
 }
 
-/// Levenshtein-Distanz (Einfügen, Löschen, Ersetzen kosten je 1).
+/// Levenshtein distance (insert, delete, substitute cost 1 each).
 pub fn edit_distance(a: &str, b: &str) -> usize {
     let (a, b) = (a.as_bytes(), b.as_bytes());
     let mut prev: Vec<usize> = (0..=b.len()).collect();
@@ -329,7 +329,7 @@ pub fn edit_distance(a: &str, b: &str) -> usize {
     prev[b.len()]
 }
 
-/// Prozent-Identität über die gemeinsame Länge. Zwei leere Sequenzen: 100, eine leere: 0.
+/// Percent identity over the common length. Two empty sequences: 100, one empty: 0.
 pub fn percent_identity(a: &str, b: &str) -> f64 {
     let len = a.len().min(b.len());
     if len == 0 {
@@ -387,7 +387,7 @@ mod tests {
     #[test]
     fn global_mismatch_senkt_score() {
         let r = dna().needleman_wunsch("ATCG", "AACG").unwrap();
-        assert_eq!(r.score, 5); // 3 Treffer * 2 - 1
+        assert_eq!(r.score, 5); // 3 hits * 2 - 1
     }
 
     #[test]
@@ -444,11 +444,11 @@ mod tests {
 
     #[test]
     fn semiglobal_mit_fehler_und_luecke() {
-        // Read mit einer Substitution (C -> T an Position 2)
+        // Read with one substitution (C -> T at position 2)
         let r = dna().semi_global("ACTT", "GGACGTGG").unwrap();
         assert_eq!(r.score, 5);
         assert_eq!((r.seq2_start, r.seq2_end), (2, 6));
-        // Read mit fehlender Base
+        // Read with a missing base
         let r = dna().semi_global("ACT", "GGACGTGG").unwrap();
         assert_eq!(r.seq1_aln.len(), r.seq2_aln.len());
         assert_eq!(r.seq1_aln.replace('-', ""), "ACT");
@@ -504,7 +504,7 @@ mod tests {
         assert!(t.elapsed().as_secs() < 5);
     }
 
-    /// Leistungsmessung: `cargo test --release -p snapious-core -- --ignored leistung`
+    /// Performance measurement: `cargo test --release -p snapious-core -- --ignored leistung`
     #[test]
     #[ignore = "Performance measurement, only meaningful in release builds"]
     fn leistung_5000_mal_5000() {
@@ -535,7 +535,7 @@ mod tests {
         let s = "A".repeat(130);
         let r = dna().needleman_wunsch(&s, &s).unwrap();
         let blocks = r.format().split("\n\n").count();
-        assert_eq!(blocks, 1 + 3); // Kopf + 3 Blöcke
+        assert_eq!(blocks, 1 + 3); // Header + 3 blocks
     }
 
     #[test]

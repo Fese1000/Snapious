@@ -1,20 +1,20 @@
-//! SAM-Dateien (Textformat) lesen. BAM folgt mit Phase 5.
+//! Read SAM files (text format). BAM follows in phase 5.
 
 use std::path::Path;
 
 use crate::error::{Error, Result};
 
-/// Ein Alignment-Eintrag (11 Pflichtspalten).
+/// An alignment record (11 mandatory columns).
 #[derive(Clone, Debug, PartialEq)]
 pub struct SamRecord {
     pub read_name: String,
     pub flag: u16,
-    /// Name der Referenz oder `*`.
+    /// Name of the reference or `*`.
     pub reference: String,
-    /// 1-basiert wie in der Datei; 0 = nicht ausgerichtet.
+    /// 1-based as in the file; 0 = not aligned.
     pub position: usize,
     pub mapq: u8,
-    /// CIGAR-Text oder `*`.
+    /// CIGAR text or `*`.
     pub cigar: String,
     pub mate_reference: String,
     pub mate_position: usize,
@@ -44,17 +44,17 @@ impl SamRecord {
         self.flag & 0x400 != 0
     }
 
-    /// Startposition 0-basiert (None, wenn nicht ausgerichtet).
+    /// Start position 0-based (None if not aligned).
     pub fn position0(&self) -> Option<usize> {
         (!self.is_unmapped() && self.position > 0).then(|| self.position - 1)
     }
 
-    /// CIGAR als Liste `(Länge, Operation)`.
+    /// CIGAR as a list `(length, operation)`.
     pub fn cigar_ops(&self) -> Result<Vec<(usize, char)>> {
         parse_cigar(&self.cigar)
     }
 
-    /// Länge auf der Referenz (Summe von M, D, N, =, X).
+    /// Length on the reference (sum of M, D, N, =, X).
     pub fn reference_length(&self) -> Result<usize> {
         Ok(self
             .cigar_ops()?
@@ -65,7 +65,7 @@ impl SamRecord {
     }
 }
 
-/// Zerlegt einen CIGAR-Text (`3S4M2D5M`). `*` ergibt eine leere Liste.
+/// Parses a CIGAR text (`3S4M2D5M`). `*` yields an empty list.
 pub fn parse_cigar(cigar: &str) -> Result<Vec<(usize, char)>> {
     if cigar == "*" || cigar.is_empty() {
         return Ok(Vec::new());
@@ -91,10 +91,10 @@ pub fn parse_cigar(cigar: &str) -> Result<Vec<(usize, char)>> {
     Ok(ops)
 }
 
-/// Inhalt einer SAM-Datei.
+/// Content of a SAM file.
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct SamFile {
-    /// Referenzen aus `@SQ`-Zeilen: (Name, Länge).
+    /// References from `@SQ` lines: (name, length).
     pub references: Vec<(String, usize)>,
     pub records: Vec<SamRecord>,
 }
@@ -108,7 +108,7 @@ fn num<T: std::str::FromStr>(s: &str, what: &str, line: usize) -> Result<T> {
     })
 }
 
-/// Liest SAM-Text. Zeilen mit weniger als 11 Spalten sind Fehler.
+/// Reads SAM text. Lines with fewer than 11 columns are errors.
 pub fn parse(text: &str) -> Result<SamFile> {
     let mut file = SamFile::default();
     for (i, raw) in text.lines().enumerate() {

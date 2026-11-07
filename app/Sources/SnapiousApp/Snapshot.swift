@@ -2,8 +2,8 @@ import AppKit
 import SnapiousFFI
 import SwiftUI
 
-/// Rendert Ansichten ohne Fenster in PNG-Dateien (zum Prüfen der Oberfläche ohne Bildschirmzugriff).
-/// Aufruf:  Snapious --snapshot <Projektdatei> <Ausgabeordner>
+/// Renders views without a window into PNG files (to check the UI without screen access).
+/// Usage:  Snapious --snapshot <project file> <output folder>
 @MainActor
 enum Snapshot {
     static func run(project: String, outDir: String) {
@@ -15,11 +15,11 @@ enum Snapshot {
             renderer.scale = 2
             guard let image = renderer.nsImage, let tiff = image.tiffRepresentation,
                   let rep = NSBitmapImageRep(data: tiff), let png = rep.representation(using: .png, properties: [:]) else {
-                print(tr("Keine Grafik für %@", "\(name)"))
+                print(tr("No graphic for %@", "\(name)"))
                 return
             }
             try? png.write(to: URL(fileURLWithPath: outDir).appendingPathComponent("\(name).png"))
-            print(tr("geschrieben: %@.png", "\(name)"))
+            print(tr("written: %@.png", "\(name)"))
         }
         if let pdb = try? pdbOpen(path: "/tmp/gen/test.pdb") {
             render("struktur", width: 560, height: 420) { StructureView(pdb: pdb, name: "test.pdb").chart }

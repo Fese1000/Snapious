@@ -1,8 +1,8 @@
 import Foundation
 import SnapiousFFI
 
-/// Selbsttest ohne Fenster: prüft die Verbindung Swift ↔ Rust.
-/// Aufruf:  Snapious --selftest [Pfad/zu/mini.gb]
+/// Self-test without a window: checks the Swift ↔ Rust connection.
+/// Usage:  Snapious --selftest [path/to/mini.gb]
 enum SelfTest {
     static func run(arguments: [String]) -> Int32 {
         var failures = 0
@@ -49,7 +49,7 @@ enum SelfTest {
                 check(true, "fehlende Datei → ApiError")
             }
 
-            // Ansichtsdaten
+            // View data
             let id = neu[0].id
             check(!(try project.featureLanes(id: id)).isEmpty, "Feature-Spuren")
             check(try project.selectionStats(id: id, start: 0, end: 8).length == 8, "Auswahl-Kennzahlen")
@@ -59,7 +59,7 @@ enum SelfTest {
             check(try gelLadder(name: "generic_1kb", agarosePercent: 1.0).count == 13, "Gel-Leiter")
             _ = try project.findGuides(id: id, nuclease: "spcas9")
 
-            // Bearbeiten mit Rückgängig
+            // Editing with undo
             try project.editInsert(id: id, position: 0, bases: "AAA")
             check(try project.summary(id: id).length == 63, "Einfügen")
             check(try project.editUndo(id: id), "Rückgängig")
@@ -67,7 +67,7 @@ enum SelfTest {
             check(try project.editRedo(id: id), "Wiederholen")
             check(try project.editUndo(id: id), "Rückgängig (2)")
 
-            // Alignment und Baum
+            // Alignment and tree
             let fa = dir.appendingPathComponent("x.fa")
             try ">a\nACGTACGTACGTAAAA\n>b\nACGTACGTACGTAAAT\n>c\nACGAACGTACCTAAAA\n".write(to: fa, atomically: true, encoding: .utf8)
             let seqs = try project.importFile(path: fa.path)
@@ -85,7 +85,7 @@ enum SelfTest {
             try project.workflowDelete(name: "rc+ins")
             check(try project.workflowList().isEmpty, "Workflow gelöscht")
 
-            // BLAST und RNA-Faltung (nur wenn die Programme installiert sind)
+            // BLAST and RNA folding (only if the programs are installed)
             let blastIds = seqs.map { $0.id }
             if let hits = try? project.blastSearch(queryId: blastIds[0], subjectIds: Array(blastIds.dropFirst()), program: "blastn", maxHits: 5) {
                 check(!hits.isEmpty, "BLAST findet Treffer")
@@ -98,7 +98,7 @@ enum SelfTest {
                 print("  --  RNAfold übersprungen")
             }
 
-            // NCBI (braucht Internet; ein Netzwerkfehler zählt nicht als Fehler)
+            // NCBI (needs internet; a network error does not count as a failure)
             do {
                 let found = try project.ncbiSearch(term: "L09137", maxResults: 3)
                 check(found.total >= 1 && !found.records.isEmpty, "NCBI-Suche liefert Treffer")
@@ -153,7 +153,7 @@ enum SelfTest {
             check((try? project.createSequence(name: "x", text: "123 456", kind: "AUTO", circular: false)) == nil, "Text ohne Buchstaben abgelehnt")
             for d in made + rv { try project.deleteDocument(id: d.id) }
 
-            // Zusammenbau: zwei Fragmente mit 20 bp Überlappung → 100 bp
+            // Assembly: two fragments with 20 bp overlap → 100 bp
             let overlap = "GATTACAGGCTTAACCGGAT"
             let left = "ACGTTGCAAGGCTTAACCGGATATCGCGATTAGCCTAGGA" + overlap
             let right = overlap + "TTGCATGCCGTAAGCTTGACCGATCAGTCTAGGCATCCAA"
@@ -163,14 +163,14 @@ enum SelfTest {
                 check(try project.summary(id: r.document.id).length == 100, "Zusammenbau \(method): 100 bp")
                 try project.deleteDocument(id: r.document.id)
             }
-            // SLIC braucht mindestens 25 bp Überlappung: 30 bp → 110 bp, mit 20 bp wird abgelehnt
+            // SLIC needs at least 25 bp overlap: 30 bp → 110 bp, with 20 bp it is rejected
             let ov30 = overlap + "TTGCAGGCAT"
             let slicFrags = try project.createSequence(name: "slic", text: ">l\nACGTTGCAAGGCTTAACCGGATATCGCGATTAGCCTAGGA\(ov30)\n>r\n\(ov30)TTGCATGCCGTAAGCTTGACCGATCAGTCTAGGCATCCAA\n", kind: "DNA", circular: false)
             let sl = try project.assembleOverlap(ids: slicFrags.map { $0.id }, method: "slic", circular: false)
             check(try project.summary(id: sl.document.id).length == 110, "Zusammenbau slic: 110 bp")
             check((try? project.assembleOverlap(ids: frags.map { $0.id }, method: "slic", circular: false)) == nil, "SLIC lehnt 20 bp Überlappung ab")
             for d in slicFrags + [sl.document] { try project.deleteDocument(id: d.id) }
-            // Golden Gate: BsaI-Stellen GGTCTC(N1)/4-nt-Überhang an den Fragmentenden
+            // Golden Gate: BsaI sites GGTCTC(N1)/4-nt overhang at the fragment ends
             let gl = "GGTCTCA" + "AATG" + "ACGTACGTACGTACGTACGT" + "GCTT" + "T" + "GAGACC"
             let gr = "GGTCTCA" + "GCTT" + "TTGGCCAATTGGCCAATTGG" + "CGAA" + "T" + "GAGACC"
             let gg = try project.createSequence(name: "gg", text: ">l\n\(gl)\n>r\n\(gr)\n", kind: "DNA", circular: false)
@@ -182,7 +182,7 @@ enum SelfTest {
             }
             for d in frags + gg { try project.deleteDocument(id: d.id) }
 
-            // Rückübersetzung, Zusammenfügen, stille Mutationen, Alignment-Spalten
+            // Back-translation, joining, silent mutations, alignment columns
             check(try backTranslate(protein: "MKV", mode: "degenerate") == "ATGAARGTN", "Rückübersetzung mehrdeutig")
             let pr = try project.createSequence(name: "p", text: "MKV", kind: "PROTEIN", circular: false)
             let bt = try project.backTranslateDocument(id: pr[0].id, mode: "preferred", name: "")
@@ -204,7 +204,7 @@ enum SelfTest {
             check(try project.bases(id: sv.id, start: 0, end: 100) == "ACCTAC", "Sequenz mit Varianten")
             check(enzymeSets().count >= 3, "Enzymsets vorhanden")
 
-            // Neue Formate, Tabellen und NGS-Werkzeuge
+            // New formats, tables and NGS tools
             let nd = dir.appendingPathComponent("neu"); try FileManager.default.createDirectory(at: nd, withIntermediateDirectories: true)
             try "#mega\n!Title t;\n#a\nACGT\n#b\nAC-T\n".write(to: nd.appendingPathComponent("a.meg"), atomically: true, encoding: .utf8)
             check(try project.importFile(path: nd.appendingPathComponent("a.meg").path).first?.docType == "alignment", "MEGA-Import als Alignment")
@@ -224,7 +224,7 @@ enum SelfTest {
             try "3\nwater\nO 0 0 0\nH 0.757 0.586 0\nH -0.757 0.586 0\n".write(to: nd.appendingPathComponent("w.xyz"), atomically: true, encoding: .utf8)
             check(try structureOpen(path: nd.appendingPathComponent("w.xyz").path).elements == ["O", "H", "H"], "Molekül aus XYZ")
 
-            // Neue Formate und Auswertungen (Runde 3)
+            // New formats and evaluations (round 3)
             try "# x\n>r1\nT0123\n".write(to: nd.appendingPathComponent("a.csfasta"), atomically: true, encoding: .utf8)
             let cs = try project.importFile(path: nd.appendingPathComponent("a.csfasta").path)
             check(try project.bases(id: cs[0].id, start: 0, end: 100) == "TTGAT", "csfasta-Import (Farbraum → Basen)")
@@ -241,7 +241,7 @@ enum SelfTest {
             try project.addFeatures(id: fs[0].id, features: [FeatureInfo(featureType: "gene", name: "g", start: 2, end: 4, strand: "REVERSE")])
             check(try project.extractFeatures(id: fs[0].id, featureType: "gene", flank: 0).count == 1, "Feature als neue Sequenz")
 
-            // Runde 4: Schwachstellen, Statistik, Oberflächen-Logik
+            // Round 4: weak spots, statistics, UI logic
             let lp = try project.createSequence(name: "lp", text: "ANSTGDSMWC", kind: "PROTEIN", circular: false)
             check(try project.proteinLiabilities(id: lp[0].id).count == 6, "Schwachstellen im Protein")
             check(abs(project.proteinProperties(protein: "AVIL").aliphaticIndex - 292.5) < 1e-9, "Aliphatic Index")

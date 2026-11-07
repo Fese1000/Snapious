@@ -1,5 +1,5 @@
-//! Alignment- und Baum-Operationen für Registry und Workflows: Profil verbinden, Translations-Alignment, Bereich neu ausrichten,
-//! Baum wurzeln, Baum einklappen.
+//! Alignment and tree operations for registry and workflows: join profiles, translation alignment, realign region,
+//! root tree, collapse tree.
 
 use crate::bio::align_tools::{align_profiles, realign_region, translation_align};
 use crate::bio::backends::{align_with, AlignBackend};
@@ -9,12 +9,12 @@ use crate::model::document::Document;
 use crate::model::sequence::{Sequence, SequenceType};
 use crate::ops::operation::{required_usize, Operation, OperationContext, OperationResult, Params};
 
-/// Fehlertext der Kernfunktionen als `Error::Operation`.
+/// Error text of the core functions as `Error::Operation`.
 fn op_err(e: impl std::fmt::Display) -> Error {
     Error::Operation(e.to_string())
 }
 
-/// Zerlegt eine Liste wie `0, 2;3` (Trenner Komma, Semikolon oder Leerzeichen) in nicht leere Teile.
+/// Splits a list like `0, 2;3` (separator comma, semicolon or space) into non-empty parts.
 fn split_list(text: &str) -> Vec<String> {
     text.split(|c: char| c == ',' || c == ';' || c.is_whitespace())
         .filter(|p| !p.is_empty())
@@ -22,10 +22,10 @@ fn split_list(text: &str) -> Vec<String> {
         .collect()
 }
 
-/// Verwendet das eingebaute Alignment (`align_with(AlignBackend::Builtin, ...)`) für Zeilenlisten.
-/// Die Zeilen werden als DNA-Sequenzen mit den Namen `s1`, `s2`, … übergeben (Uppercase, nur A, C, G, T, sonst Fehler
-/// `Error::Operation`); Rückgabe: die ausgerichteten Zeilen in Eingabereihenfolge. Weniger als zwei Zeilen: unverändert
-/// (ungapped) zurückgeben.
+/// Uses the built-in alignment (`align_with(AlignBackend::Builtin, ...)`) for row lists.
+/// The rows are passed as DNA sequences named `s1`, `s2`, … (uppercase, only A, C, G, T, otherwise error
+/// `Error::Operation`); returns: the aligned rows in input order. Fewer than two rows: return unchanged
+/// (ungapped).
 fn builtin_rows(rows: &[String]) -> Result<Vec<String>> {
     if rows.len() < 2 {
         return Ok(rows.to_vec());
@@ -43,8 +43,8 @@ fn builtin_rows(rows: &[String]) -> Result<Vec<String>> {
     Ok(aligned.into_iter().map(|(_, r)| r).collect())
 }
 
-/// `align.profile`: zwei Alignments verbinden. Eingaben: genau zwei Alignment-Dokumente `a`, `b` (gleicher Sequenztyp), sonst
-/// `Error::Operation`. Ergebnis: ein Alignment `{a} + {b} (Profil)` mit den Zeilennamen von `a`, dann `b`, Zeilen aus `align_profiles`;
+/// `align.profile`: join two alignments. Inputs: exactly two alignment documents `a`, `b` (same sequence type), otherwise
+/// `Error::Operation`. Result: one alignment `{a} + {b} (Profil)` with the row names of `a`, then `b`, rows from `align_profiles`;
 /// `summary` = `"Profile verbunden: {n} Zeilen, {m} Spalten"`.
 pub struct ProfileOperation;
 
@@ -95,10 +95,10 @@ impl Operation for ProfileOperation {
     }
 }
 
-/// `align.translate`: Translations-Alignment. Eingaben: mindestens zwei Sequenzdokumente (DNA). Verwendet `translation_align`
-/// mit einem Aligner, der die Proteine mit `align_with(AlignBackend::Builtin, ...)` ausrichtet (Proteinsequenzen als
-/// `SequenceType::Protein`). Ergebnis: ein DNA-Alignment `Translations-Alignment` mit den Dokumentnamen als Zeilennamen;
-/// `summary` = `"Translations-Alignment: {n} Zeilen"`. Fehler der Kernfunktionen als `Error::Operation`.
+/// `align.translate`: translation alignment. Inputs: at least two sequence documents (DNA). Uses `translation_align`
+/// with an aligner that aligns the proteins with `align_with(AlignBackend::Builtin, ...)` (protein sequences as
+/// `SequenceType::Protein`). Result: one DNA alignment `Translations-Alignment` with the document names as row names;
+/// `summary` = `"Translations-Alignment: {n} Zeilen"`. Errors of the core functions as `Error::Operation`.
 pub struct TranslateAlignOperation;
 
 impl Operation for TranslateAlignOperation {
@@ -149,10 +149,10 @@ impl Operation for TranslateAlignOperation {
     }
 }
 
-/// `align.realign`: Bereich neu ausrichten. Eingabe: ein Alignment. Parameter `from` und `to` (Pflicht, Spalten 0-basiert,
-/// `to` exklusiv), optional `rows` (Liste von Zeilenindizes, Standard alle). Verwendet `realign_region` mit `builtin_rows`.
-/// Ergebnis: Alignment `{Name} (neu ausgerichtet)`, gleiche Zeilennamen und Typ; `summary` = `"Bereich {from}–{to} neu ausgerichtet"`.
-/// Ungültige Zahlen oder Bereiche → `Error::Operation`.
+/// `align.realign`: realign a region. Input: one alignment. Parameters `from` and `to` (required, columns 0-based,
+/// `to` exclusive), optional `rows` (list of row indices, default all). Uses `realign_region` with `builtin_rows`.
+/// Result: alignment `{Name} (neu ausgerichtet)`, same row names and type; `summary` = `"Bereich {from}–{to} neu ausgerichtet"`.
+/// Invalid numbers or ranges → `Error::Operation`.
 pub struct RealignOperation;
 
 impl Operation for RealignOperation {

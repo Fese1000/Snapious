@@ -1,7 +1,7 @@
 import SnapiousFFI
 import SwiftUI
 
-/// RNA-Faltung (ViennaRNA) für die Auswahl oder die ganze Sequenz: Punkt-Klammer-Struktur und Bogendiagramm.
+/// RNA folding (ViennaRNA) for the selection or the whole sequence: dot-bracket structure and arc diagram.
 struct RnaView: View {
     @ObservedObject var model: AppModel
     @State private var result: RnaFoldDto?
@@ -12,13 +12,13 @@ struct RnaView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Button(model.hasSelection ? tr("Auswahl falten") : tr("Ganze Sequenz falten")) { fold() }
+                Button(model.hasSelection ? tr("Fold selection") : tr("Fold whole sequence")) { fold() }
                     .disabled(busy)
-                Button(tr("Einfache Faltung (ohne Energie)")) { simpleFold() }
-                    .help(tr("Größte Zahl nicht kreuzender Basenpaare nach Nussinov, auch für DNA; ohne ViennaRNA"))
+                Button(tr("Simple folding (no energy)")) { simpleFold() }
+                    .help(tr("Largest number of non-crossing base pairs by Nussinov, also for DNA; without ViennaRNA"))
                 if busy { ProgressView().controlSize(.small) }
                 if let r = result {
-                    Text(String(format: tr("Freie Energie %.2f kcal/mol, %d Basenpaare"), r.energy, r.pairs.count))
+                    Text(String(format: tr("Free energy %.2f kcal/mol, %d base pairs"), r.energy, r.pairs.count))
                         .foregroundStyle(Theme.inkSoft)
                 }
                 Spacer()
@@ -27,7 +27,7 @@ struct RnaView: View {
             if let r = result {
                 ArcDiagram(length: r.sequence.count, pairs: r.pairs)
                     .frame(height: 220)
-                GroupBox(tr("Sequenz und Struktur")) {
+                GroupBox(tr("Sequence and structure")) {
                     ScrollView(.horizontal) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(r.sequence)
@@ -39,7 +39,7 @@ struct RnaView: View {
                 }
             }
             if let s = simple {
-                GroupBox(tr("Einfache Faltung: %@ Basenpaare", "\(s.pairs)")) {
+                GroupBox(tr("Simple folding: %@ base pairs", "\(s.pairs)")) {
                     ScrollView(.horizontal) {
                         Text(s.structure).font(Theme.mono(13)).textSelection(.enabled)
                     }
@@ -89,7 +89,7 @@ struct RnaView: View {
     }
 }
 
-/// Bogendiagramm: die Sequenz als Linie, jedes Basenpaar als Halbkreis darüber.
+/// Arc diagram: the sequence as a line, each base pair as a semicircle above it.
 struct ArcDiagram: View {
     let length: Int
     let pairs: [BasePairDto]

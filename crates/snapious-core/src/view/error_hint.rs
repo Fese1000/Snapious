@@ -1,19 +1,19 @@
-//! Verständliche Fehlermeldungen: übersetzt technische Meldungen in Titel und Lösungsvorschlag.
+//! Friendly error messages: translates technical messages into a title and a suggested fix.
 
-/// Titel und Hinweis für die Anzeige.
+/// Title and hint for display.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ErrorHelp {
     pub title: String,
     pub hint: String,
 }
 
-/// Wählt anhand der Meldung (Groß-/Kleinschreibung egal, Teilstring-Suche, Regeln in dieser Reihenfolge, erste passende gilt):
+/// Chooses by message (case-insensitive substring search, rules in this order, first match wins):
 /// 1. `database is locked` → Titel „Project locked“, Hinweis „The project is open in another instance. Close it and try again.“
 /// 2. `permission denied` → „No access“, „The app is not allowed to read or write this file. Check the permissions.“
-/// 3. `no such file` oder `nicht gefunden` → „File not found“, „Check whether the file was moved or deleted.“
-/// 4. `curl`, `network`, `timed out` oder `could not resolve` → „No connection“, „Check your internet connection and try again later.“
-/// 5. `invalid` oder `ungültig` → „Invalid input“, „Check your input for typos and allowed characters.“
-/// 6. sonst Titel „Something went wrong“, Hinweis `"Details: "` + Meldung (getrimmt; länger als 200 Zeichen → die ersten 200 Zeichen + `…`).
+/// 3. `no such file` or `nicht gefunden` → „File not found“, „Check whether the file was moved or deleted.“
+/// 4. `curl`, `network`, `timed out` or `could not resolve` → „No connection“, „Check your internet connection and try again later.“
+/// 5. `invalid` or `ungültig` → „Invalid input“, „Check your input for typos and allowed characters.“
+/// 6. otherwise title „Something went wrong“, hint `"Details: "` + message (trimmed; longer than 200 characters → the first 200 characters + `…`).
 pub fn friendly_error(message: &str) -> ErrorHelp {
     let lower = message.to_lowercase();
 
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn reihenfolge_und_fallback() {
-        // "permission denied" steht vor "no such file"
+        // "permission denied" comes before "no such file"
         assert_eq!(
             friendly_error("no such file: permission denied").title,
             "No access"

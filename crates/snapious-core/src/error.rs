@@ -1,23 +1,23 @@
-//! Gemeinsamer Fehlertyp des Kerns.
+//! Shared error type of the core.
 
 use thiserror::Error;
 
-/// Fehler des Kerns. Meldungen sind für Nutzer gedacht (deutsch).
+/// Core errors. Messages are meant for users (German).
 #[derive(Debug, Error, PartialEq)]
 pub enum Error {
-    /// Invalid input (falscher Wert, leere Sequenz, unbekannter Name).
+    /// Invalid input (wrong value, empty sequence, unknown name).
     #[error("Invalid input: {0}")]
     InvalidInput(String),
-    /// Aufruf im falschen Zustand.
+    /// Call in the wrong state.
     #[error("Invalid state: {0}")]
     InvalidState(String),
-    /// Position oder Range outside the sequence.
+    /// Position or range outside the sequence.
     #[error("Out of range: {0}")]
     OutOfRange(String),
-    /// Fehler beim Lesen oder Schreiben von Dateien.
+    /// Error while reading or writing files.
     #[error("File error: {0}")]
     Io(String),
-    /// Eine Operation ist fehlgeschlagen (Meldung für die Oberfläche).
+    /// An operation failed (message for the UI).
     #[error("{0}")]
     Operation(String),
 }
@@ -28,7 +28,7 @@ impl From<std::io::Error> for Error {
     }
 }
 
-/// Ergebnis mit dem Kern-Fehlertyp.
+/// Result with the core error type.
 pub type Result<T> = std::result::Result<T, Error>;
 
 impl From<rusqlite::Error> for Error {

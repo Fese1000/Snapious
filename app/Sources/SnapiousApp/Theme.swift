@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// Gemeinsame Gestaltung: alle Farben, Schriften und Maße der App kommen von hier.
+/// Shared styling: all colors, fonts and dimensions of the app come from here.
 enum Theme {
-    // MARK: Farben (hell / dunkel)
+    // MARK: Colors (light / dark)
     static let ink = Color.primary
     static let inkSoft = Color.secondary
     static let paper = Color(nsColor: .windowBackgroundColor)
@@ -15,7 +15,7 @@ enum Theme {
     static let danger = Color.red
     static let good = Color.green
 
-    /// Basenfarben (A grün, C blau, G bernstein, T rot).
+    /// Base colors (A green, C blue, G amber, T red).
     static func base(_ c: Character) -> Color {
         switch c {
         case "A", "a": return dynamic(light: 0x2E8B57, dark: 0x58C486)
@@ -26,10 +26,10 @@ enum Theme {
         }
     }
 
-    /// Farbe je Dokumenttyp (Seitenleiste).
+    /// Color per document type (sidebar).
     static func docColor(_ type: String) -> Color { accent }
 
-    /// Farbe je Feature-Typ (Karte und Sequenzansicht).
+    /// Color per feature type (map and sequence view).
     static func feature(_ type: String) -> Color {
         switch type.lowercased() {
         case "cds", "gene": return dynamic(light: 0x3B5BA9, dark: 0x7C9CF0)
@@ -42,13 +42,13 @@ enum Theme {
         }
     }
 
-    // MARK: Maße
+    // MARK: Dimensions
     static let radius: CGFloat = 8
     static let radiusSmall: CGFloat = 6
     static let gap: CGFloat = 12
     static let pad: CGFloat = 16
 
-    // MARK: Schriften
+    // MARK: Fonts
     static func title(_ size: CGFloat = 26) -> Font { .system(size: size, weight: .bold) }
     static func heading(_ size: CGFloat = 15) -> Font { .system(size: size, weight: .semibold) }
     static func label(_ size: CGFloat = 12) -> Font { .system(size: size) }

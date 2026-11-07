@@ -1,7 +1,7 @@
 import SnapiousFFI
 import SwiftUI
 
-/// Protein eines Features (meist CDS): Aminosäuresequenz, Eigenschaften und Peptide eines Proteaseverdaus.
+/// Protein of a feature (usually CDS): amino acid sequence, properties and peptides of a protease digest.
 struct ProteinView: View {
     @ObservedObject var model: AppModel
     @State private var featureIndex: Int = -1
@@ -23,7 +23,7 @@ struct ProteinView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Picker(tr("Feature"), selection: $featureIndex) {
-                    Text(tr("Bitte wählen")).tag(-1)
+                    Text(tr("Please choose")).tag(-1)
                     ForEach(candidates, id: \.0) { Text("\($0.1.name) (\($0.1.featureType), \($0.1.start + 1)–\($0.1.end))").tag($0.0) }
                 }
                 .frame(width: 380)
@@ -32,7 +32,7 @@ struct ProteinView: View {
             }
             if let message { Text(message).foregroundStyle(Theme.danger) }
             if !protein.isEmpty {
-                GroupBox(tr("Aminosäuresequenz")) {
+                GroupBox(tr("Amino acid sequence")) {
                     ScrollView {
                         Text(protein).font(Theme.mono(13)).textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -41,23 +41,23 @@ struct ProteinView: View {
                 }
                 if let p = props {
                     Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 4) {
-                        GridRow { Text(tr("Länge")).foregroundStyle(Theme.inkSoft); Text("\(p.length) aa") }
-                        GridRow { Text(tr("Masse")).foregroundStyle(Theme.inkSoft); Text(String(format: "%.2f Da", p.molecularWeight)) }
+                        GridRow { Text(tr("Length")).foregroundStyle(Theme.inkSoft); Text("\(p.length) aa") }
+                        GridRow { Text(tr("Mass")).foregroundStyle(Theme.inkSoft); Text(String(format: "%.2f Da", p.molecularWeight)) }
                         GridRow { Text("pI").foregroundStyle(Theme.inkSoft); Text(String(format: "%.2f", p.isoelectricPoint)) }
-                        GridRow { Text(tr("Ladung bei pH 7")).foregroundStyle(Theme.inkSoft); Text(String(format: "%.2f", p.chargePh7)) }
+                        GridRow { Text(tr("Charge at pH 7")).foregroundStyle(Theme.inkSoft); Text(String(format: "%.2f", p.chargePh7)) }
                         GridRow { Text("ε280").foregroundStyle(Theme.inkSoft); Text(String(format: "%.0f M⁻¹cm⁻¹", p.extinction280)) }
-                        GridRow { Text(tr("Aromatizität")).foregroundStyle(Theme.inkSoft); Text(String(format: "%.1f %%", p.aromaticity * 100)) }
+                        GridRow { Text(tr("Aromaticity")).foregroundStyle(Theme.inkSoft); Text(String(format: "%.1f %%", p.aromaticity * 100)) }
                         GridRow { Text("Aliphatic Index").foregroundStyle(Theme.inkSoft); Text(String(format: "%.1f", p.aliphaticIndex)) }
-                        GridRow { Text(tr("GRAVY (Hydrophobie)")).foregroundStyle(Theme.inkSoft); Text(String(format: "%.2f", p.gravy)) }
+                        GridRow { Text(tr("GRAVY (hydrophobicity)")).foregroundStyle(Theme.inkSoft); Text(String(format: "%.2f", p.gravy)) }
                     }
                 }
                 if !liabilities.isEmpty {
-                    GroupBox(tr("Schwachstellen (%@)", "\(liabilities.count)")) {
+                    GroupBox(tr("Liabilities (%@)", "\(liabilities.count)")) {
                         VStack(alignment: .leading, spacing: 2) {
                             ForEach(Array(liabilities.prefix(40).enumerated()), id: \.offset) { _, l in
                                 Text("\(l.position + 1): \(l.motif) – \(l.kind)").font(.callout)
                             }
-                            if liabilities.count > 40 { Text(tr("… und %@ weitere", "\(liabilities.count - 40)")).font(.caption).foregroundStyle(.secondary) }
+                            if liabilities.count > 40 { Text(tr("… and %@ more", "\(liabilities.count - 40)")).font(.caption).foregroundStyle(.secondary) }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -69,18 +69,18 @@ struct ProteinView: View {
                         Text("Arg-C").tag("argc")
                         Text("Glu-C").tag("gluc")
                         Text("Chymotrypsin").tag("chymotrypsin")
-                        Text(tr("Bromcyan")).tag("cnbr")
+                        Text(tr("Cyanogen bromide")).tag("cnbr")
                     }
                     .frame(width: 220)
                     .onChange(of: protease) { _, _ in digest() }
-                    Stepper(tr("Ausgelassene Schnitte: %@", "\(missed)"), value: $missed, in: 0...3)
+                    Stepper(tr("Missed cleavages: %@", "\(missed)"), value: $missed, in: 0...3)
                         .onChange(of: missed) { _, _ in digest() }
                 }
                 Table(peptides) {
-                    TableColumn(tr("Bereich")) { r in Text("\(r.dto.start + 1)–\(r.dto.end)") }.width(90)
-                    TableColumn(tr("Peptid")) { r in Text(r.dto.sequence).font(Theme.mono(13)) }
-                    TableColumn(tr("Masse")) { r in Text(String(format: "%.2f", r.dto.mass)) }.width(90)
-                    TableColumn(tr("Ausgel.")) { r in Text("\(r.dto.missedCleavages)") }.width(60)
+                    TableColumn(tr("Range")) { r in Text("\(r.dto.start + 1)–\(r.dto.end)") }.width(90)
+                    TableColumn(tr("Peptide")) { r in Text(r.dto.sequence).font(Theme.mono(13)) }
+                    TableColumn(tr("Mass")) { r in Text(String(format: "%.2f", r.dto.mass)) }.width(90)
+                    TableColumn(tr("Missed")) { r in Text("\(r.dto.missedCleavages)") }.width(60)
                 }
             } else {
                 Spacer()
@@ -100,7 +100,7 @@ struct ProteinView: View {
         }
     }
 
-    /// Bei einem Protein-Dokument gilt die ganze Sequenz als Protein.
+    /// For a protein document the whole sequence counts as the protein.
     private func loadWholeProtein() {
         guard let project = model.project, model.summary?.seqType == "PROTEIN" else { return }
         protein = model.fullBases

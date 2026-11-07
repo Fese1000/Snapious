@@ -1,22 +1,22 @@
-//! FASTQ lesen und schreiben (vier Zeilen je Eintrag, Qualität Phred+33).
+//! Read and write FASTQ (four lines per record, quality Phred+33).
 
 use std::path::Path;
 
 use crate::error::{Error, Result};
 use crate::model::sequence::{Sequence, SequenceType};
 
-/// Ein Sequenzierlauf-Eintrag (Read).
+/// A sequencing run record (read).
 #[derive(Clone, Debug, PartialEq)]
 pub struct FastqRecord {
     pub id: String,
-    /// Rest der Kopfzeile nach der ID.
+    /// Remainder of the header line after the ID.
     pub comment: String,
     pub sequence: String,
     pub quality: String,
 }
 
 impl FastqRecord {
-    /// Mittlere Phred-Qualität (Phred+33); 0 bei leerer Qualität.
+    /// Mean Phred quality (Phred+33); 0 for empty quality.
     pub fn avg_quality(&self) -> f64 {
         if self.quality.is_empty() {
             return 0.0;
@@ -24,7 +24,7 @@ impl FastqRecord {
         self.quality.bytes().map(|b| b as f64 - 33.0).sum::<f64>() / self.quality.len() as f64
     }
 
-    /// Kleinste Phred-Qualität (Phred+33); 0 bei leerer Qualität.
+    /// Lowest Phred quality (Phred+33); 0 for empty quality.
     pub fn min_quality(&self) -> i32 {
         self.quality
             .bytes()
@@ -33,13 +33,13 @@ impl FastqRecord {
             .unwrap_or(0)
     }
 
-    /// Als DNA-Sequenz (ohne Qualität).
+    /// As a DNA sequence (without quality).
     pub fn to_sequence(&self) -> Result<Sequence> {
         Sequence::new(&self.id, &self.id, &self.sequence, SequenceType::Dna)
     }
 }
 
-/// Liest alle Einträge. Jeder Eintrag hat genau vier Zeilen; Länge von Sequenz und Qualität muss gleich sein.
+/// Reads all records. Each record has exactly four lines; sequence and quality must have the same length.
 pub fn parse(text: &str) -> Result<Vec<FastqRecord>> {
     let lines: Vec<&str> = text.lines().map(|l| l.trim_end_matches('\r')).collect();
     let mut out = Vec::new();
@@ -93,7 +93,7 @@ pub fn read(path: &Path) -> Result<Vec<FastqRecord>> {
     parse(&std::fs::read_to_string(path)?)
 }
 
-/// FASTQ-Text.
+/// FASTQ text.
 pub fn format(records: &[FastqRecord]) -> String {
     let mut out = String::new();
     for r in records {
@@ -139,7 +139,7 @@ mod tests {
         let r = parse(TEXT).unwrap();
         assert_eq!(r[0].avg_quality(), 40.0);
         assert_eq!(r[0].min_quality(), 40);
-        // '!' = 0, '5' = 20, 'I' = 40, '+' = 10 → Mittel 17.5
+        // '!' = 0, '5' = 20, 'I' = 40, '+' = 10 -> mean 17.5
         assert_eq!(r[1].avg_quality(), 17.5);
         assert_eq!(r[1].min_quality(), 0);
         assert_eq!(

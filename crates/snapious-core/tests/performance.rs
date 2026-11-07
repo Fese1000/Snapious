@@ -1,4 +1,4 @@
-//! Leistungstests mit großzügigen Zeitgrenzen (Fehlerfall: die Rechnung wird merklich zu langsam).
+//! Performance tests with generous time limits (failure case: the computation becomes noticeably too slow).
 
 use std::time::Instant;
 

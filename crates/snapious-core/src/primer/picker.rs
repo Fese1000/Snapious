@@ -1,8 +1,8 @@
-//! Primer-Auswahl für ein Zielfragment einer Vorlage.
+//! Primer selection for a target fragment of a template.
 //!
-//! Kandidaten sind alle Teilsequenzen passender Länge links (Vorwärtsprimer) bzw. rechts (Rückwärtsprimer)
-//! des Ziels. Ein Kandidat ist gültig, wenn Tm, GC-Anteil, GC-Klammer, Wiederholungen, Haarnadel und
-//! Selbst-Dimer die Vorgaben erfüllen. Paare werden nach Strafe sortiert.
+//! Candidates are all subsequences of suitable length on the left (forward primer) or right (reverse primer)
+//! of the target. A candidate is valid if Tm, GC fraction, GC clamp, repeats, hairpin and
+//! self-dimer meet the requirements. Pairs are sorted by penalty.
 
 use rayon::prelude::*;
 
@@ -13,7 +13,7 @@ use crate::primer::checks::{
 };
 use crate::primer::tm;
 
-/// Vorgaben für die Auswahl.
+/// Requirements for the selection.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrimerConstraints {
     pub min_length: usize,
@@ -35,7 +35,7 @@ pub struct PrimerConstraints {
 }
 
 impl PrimerConstraints {
-    /// 18–27 nt, Tm 57–63 °C (Soll 60), GC 40–60 %, ΔTm ≤ 3 °C, Produkt 100–3000 bp, GC-Klammer.
+    /// 18-27 nt, Tm 57-63 °C (target 60), GC 40-60 %, dTm <= 3 °C, product 100-3000 bp, GC clamp.
     pub fn standard() -> Self {
         Self {
             min_length: 18,
@@ -58,12 +58,12 @@ impl PrimerConstraints {
     }
 }
 
-/// Ein ausgewählter Primer.
+/// A selected primer.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PickedPrimer {
-    /// Sequenz 5'→3' (beim Rückwärtsprimer das Reverse-Komplement der Vorlage).
+    /// Sequence 5'->3' (for the reverse primer the reverse complement of the template).
     pub sequence: String,
-    /// Bereich auf der Vorlage `[start, end)`.
+    /// Range on the template `[start, end)`.
     pub start: usize,
     pub end: usize,
     pub forward: bool,
@@ -72,7 +72,7 @@ pub struct PickedPrimer {
     pub penalty: f64,
 }
 
-/// Ein Primerpaar.
+/// A primer pair.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PickedPair {
     pub forward: PickedPrimer,
@@ -148,8 +148,8 @@ fn check_template(template: &str) -> String {
     template.to_ascii_uppercase().replace('U', "T")
 }
 
-/// Bis zu `max_results` beste Primerpaare, deren Produkt das Ziel `[target_start, target_end)` einschließt.
-/// Ergebnis nach Strafe aufsteigend (bei Gleichstand nach Position). Leere Liste, wenn nichts passt.
+/// Up to `max_results` best primer pairs whose product encloses the target `[target_start, target_end)`.
+/// Result ascending by penalty (ties by position). Empty list if nothing fits.
 pub fn pick_pairs(
     template: &str,
     target_start: usize,
@@ -236,7 +236,7 @@ pub fn pick_pairs(
     Ok(pairs)
 }
 
-/// Bester Vorwärtsprimer, der bei `start` beginnt (beliebige zulässige Länge).
+/// Best forward primer starting at `start` (any valid length).
 pub fn pick_forward_at(
     template: &str,
     start: usize,
@@ -251,7 +251,7 @@ pub fn pick_forward_at(
     v.into_iter().next()
 }
 
-/// Bester Rückwärtsprimer, dessen Bereich auf der Vorlage bei `end_exclusive` endet.
+/// Best reverse primer whose range on the template ends at `end_exclusive`.
 pub fn pick_reverse_ending_at(
     template: &str,
     end_exclusive: usize,
@@ -294,9 +294,9 @@ mod tests {
             }
             assert!((p.forward.tm - p.reverse.tm).abs() <= c.max_tm_difference);
             assert!(p.product_size >= c.min_product && p.product_size <= c.max_product);
-            // Ziel liegt im Produkt
+            // Target lies within the product
             assert!(p.forward.start <= 150 && p.reverse.end >= 250);
-            // Sequenzen stimmen mit der Vorlage überein
+            // Sequences match the template
             assert_eq!(p.forward.sequence, t[p.forward.start..p.forward.end]);
             assert_eq!(
                 p.reverse.sequence,
@@ -304,7 +304,7 @@ mod tests {
             );
             assert_eq!(p.product_size, p.reverse.end - p.forward.start);
         }
-        // sortiert nach Strafe
+        // sorted by penalty
         assert!(pairs.windows(2).all(|w| w[0].penalty <= w[1].penalty));
     }
 
@@ -322,7 +322,7 @@ mod tests {
     fn primer_an_fester_position() {
         let t = zufall(400, 42);
         let c = PrimerConstraints::standard();
-        // erste Startposition ab 100, an der ein gültiger Primer beginnt
+        // first start position from 100 at which a valid primer begins
         let (start, p) = (100..300)
             .find_map(|s| pick_forward_at(&t, s, &c).map(|p| (s, p)))
             .expect("irgendein Primer");
