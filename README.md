@@ -25,7 +25,7 @@ The app is not notarized: on first launch right-click → Open, or run `xattr -c
 * **Workflows**: save chains of operations as JSON and apply them
 
 Open items and plans: [`docs/plan/OPEN-QUESTIONS.md`](docs/plan/OPEN-QUESTIONS.md); comparison with Geneious: [`docs/plan/15-GENEIOUS-COMPARISON.md`](docs/plan/15-GENEIOUS-COMPARISON.md).
-Phylogenetic trees, taxonomy and population genetics are deliberately out of scope. The app interface is English by default; German can be selected in Settings (⌘,). The planning documents under `docs/` are in German.
+Phylogenetic trees, taxonomy and population genetics are deliberately out of scope. The app interface is English by default; German can be selected in Settings (⌘,).
 
 ## Layout
 
