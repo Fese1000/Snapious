@@ -18,7 +18,7 @@ pub fn parse_nexus(text: &str) -> Result<Vec<(String, String)>> {
     let bad = |m: &str| Error::InvalidInput(m.to_string());
     let first = text.lines().find(|l| !l.trim().is_empty()).unwrap_or("");
     if !first.trim().to_ascii_lowercase().starts_with("#nexus") {
-        return Err(bad("Keine NEXUS-Datei (#NEXUS fehlt)"));
+        return Err(bad("Not a NEXUS file (#NEXUS missing)"));
     }
     // Kommentare entfernen
     let mut clean = String::with_capacity(text.len());
@@ -52,7 +52,7 @@ pub fn parse_nexus(text: &str) -> Result<Vec<(String, String)>> {
             break;
         }
     }
-    let matrix = matrix.ok_or_else(|| bad("Kein DATA-/CHARACTERS-Block mit MATRIX gefunden"))?;
+    let matrix = matrix.ok_or_else(|| bad("No DATA/CHARACTERS block with MATRIX found"))?;
     let mut rows: Vec<(String, String)> = Vec::new();
     for line in matrix.lines() {
         let mut parts = line.split_whitespace();
@@ -64,7 +64,7 @@ pub fn parse_nexus(text: &str) -> Result<Vec<(String, String)>> {
         }
     }
     if rows.is_empty() {
-        return Err(bad("Die MATRIX ist leer"));
+        return Err(bad("The MATRIX is empty"));
     }
     validate_alignment(&rows)?;
     Ok(rows)

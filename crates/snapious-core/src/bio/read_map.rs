@@ -13,7 +13,7 @@ pub struct Mapping {
     pub mismatches: usize,
 }
 
-/// Bildet `read` lückenlos auf `reference` ab (Großbuchstaben, A/C/G/T; Groß-/Kleinschreibung egal).
+/// Bildet `read` lückenlos auf `reference` ab (Uppercase, A/C/G/T; Groß-/Kleinschreibung egal).
 /// Geprüft werden alle Positionen für den Read vorwärts und für sein Reverskomplement (`iupac_reverse_complement`).
 /// Gewinner ist die Position mit den wenigsten Fehlpaarungen, `<= max_mismatches`; bei Gleichstand zählt: vorwärts vor
 /// rückwärts, dann die kleinere Position. `None`, wenn nichts passt, der Read leer oder länger als die Referenz ist.
@@ -74,7 +74,7 @@ pub fn map_reads(reference: &str, reads: &[String], max_mismatches: usize) -> Ve
 /// Konsens und Tiefe: Für jede Referenzposition werden die Basen aller abgebildeten Reads gezählt (bei `reverse`
 /// ist es das Reverskomplement des Reads; Basen außer A, C, G, T zählen nicht). Konsensbase = häufigste Base;
 /// bei Gleichstand die Referenzbase, falls sie unter den Gleichständen ist, sonst die in der Reihenfolge A, C, G, T erste.
-/// Ohne Abdeckung gilt die Referenzbase. Rückgabe: (Konsens in Großbuchstaben, Tiefe je Position = Zahl der gezählten Basen).
+/// Ohne Abdeckung gilt die Referenzbase. Rückgabe: (Konsens in Uppercase, Tiefe je Position = Zahl der gezählten Basen).
 /// `reads` und `mappings` sind gleich lang; Einträge `None` werden übersprungen.
 pub fn pileup_consensus(
     reference: &str,

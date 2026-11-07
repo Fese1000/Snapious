@@ -74,7 +74,7 @@ impl PcrSimulator {
         }
     }
 
-    /// Alle Bindungen von `primer` an `template` (Großbuchstaben, `U` wie `T`; Basen außerhalb von A, C, G, T passen nie).
+    /// Alle Bindungen von `primer` an `template` (Uppercase, `U` wie `T`; Basen außerhalb von A, C, G, T passen nie).
     ///
     /// Vorwärtsprimer (Länge `m`, `k = min_three_prime_match`, Primer kürzer als `k` → keine Bindung): Für jede Endposition
     /// `e` (exklusives Ende der Bindung, nicht zirkulär `k..=Länge`, zirkulär `1..=Länge` mit Umlauf) müssen die letzten `k`

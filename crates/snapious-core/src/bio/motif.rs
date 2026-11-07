@@ -48,7 +48,7 @@ pub fn find_motif(
     let m: Vec<u8> = motif.trim().bytes().collect();
     if m.is_empty() || m.iter().any(|c| mask(*c).is_none()) {
         return Err(Error::InvalidInput(
-            "Ungültiges Motiv (erlaubt sind IUPAC-Codes)".to_string(),
+            "Invalid motif (IUPAC codes are allowed)".to_string(),
         ));
     }
     let seq: Vec<u8> = bases.bytes().map(|b| b.to_ascii_uppercase()).collect();

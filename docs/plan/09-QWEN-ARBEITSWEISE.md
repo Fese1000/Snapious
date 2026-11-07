@@ -1,70 +1,70 @@
-# Arbeitsweise mit Qwen3.6-35B-A3B (lokal)
+# Working with Qwen3.6-35B-A3B (local)
 
-Ziel dieses Dokuments: Aufgaben so zuschneiden, dass ein Modell mit **35 Mrd. Parametern insgesamt, aber nur ca. 3 Mrd. aktiv pro Token** sie zuverlässig umsetzt.
-*Einschätzung (ohne eigene Messung an diesem Modell):* Solche Mixture-of-Experts-Modelle sind breit gebildet und schnell, aber bei langen mehrstufigen Herleitungen,
-feinen Details in langen Texten und strenger Typlogik (Rust-Borrow-Checker) anfälliger als dichte Modelle gleicher Größe. Deshalb gilt:
-**wenig Kontext, kleine Schritte, fertige Tests, mechanische Prüfung.** Wenn sich in der Praxis zeigt, dass das Modell mehr schafft, können die Schritte größer werden.
+Purpose of this document: cut tasks so that a model with **35B parameters in total but only about 3B active per token** implements them reliably.
+*Assessment (without own measurements on this model):* Such mixture-of-experts models are broadly knowledgeable and fast, but are more prone than dense models of the same size to failing at long multi-step derivations,
+fine details in long texts, and strict type logic (Rust borrow checker). Therefore:
+**little context, small steps, ready-made tests, mechanical verification.** If it turns out in practice that the model can handle more, the steps can get bigger.
 
-## Grundprinzipien
+## Basic Principles
 
-1. **Test zuerst, von Claude geschrieben.** Für jede Aufgabe legt Claude (oder du) das Gerüst an: Datei mit Typen, Funktionssignaturen mit `todo!()` im Rumpf und **fertigen Tests**. Qwen füllt nur die Funktionsrümpfe,
-   bis `cargo test` grün ist. Das ist die wirksamste Hilfe für kleine Modelle, weil „grün/rot" ein eindeutiges Ziel ist.
-2. **Ein Prompt = eine Aufgabenkarte** (höchstens ca. 200 Zeilen neuer Code, eine Datei, ein Thema). Größere Aufgaben aus `01`–`07` werden vorher in Karten zerlegt (Regeln unten).
-3. **Kleiner Kontext.** Im Prompt stehen nur: Systemtext (`00-ARBEITSANWEISUNG.md`), die Aufgabenkarte, die betroffene Datei, höchstens zwei Hilfsdateien (z. B. `error.rs`, ein Typ, den die Karte nutzt).
-   Nicht die ganze Phasen-Datei, nicht das Java-Projekt (außer die Karte nennt genau eine Java-Methode als Referenz und fügt sie ein).
-4. **Mechanische Prüfung statt Urteilskraft.** Qwen führt `cargo check`/`test`/`clippy`/`fmt` selbst aus und liest die Fehlermeldungen. Kein „sieht gut aus".
-5. **Drei Versuche, dann Schluss.** Bei hängenbleibenden Fehlern nicht weiterraten, sondern in `OFFENE_FRAGEN.md` eintragen (siehe Systemtext). Claude schaut dann nach.
-6. **Review durch Claude** nach jeder Aufgabe (Checkliste unten), bevor die nächste Karte vergeben wird.
-7. Empfohlene Einstellungen (anpassen, falls das Modell anders reagiert): niedrige Temperatur (ca. 0,2–0,3), Antworten nicht abschneiden (ausreichend `max_tokens`),
-   Denkmodus – falls vorhanden – für Zerlegung und Fehlersuche an, fürs reine Ausfüllen von Rümpfen aus.
+1. **Tests first, written by Claude.** For each task, Claude (or you) sets up the skeleton: a file with types, function signatures with `todo!()` in the body, and **finished tests**. Qwen only fills in the function bodies
+   until `cargo test` is green. This is the most effective help for small models because "green/red" is an unambiguous goal.
+2. **One prompt = one task card** (at most about 200 lines of new code, one file, one topic). Larger tasks from `01`–`07` are broken into cards beforehand (rules below).
+3. **Small context.** The prompt contains only: system text (`00-ARBEITSANWEISUNG.md`), the task card, the affected file, at most two helper files (e.g. `error.rs`, a type the card uses).
+   Not the whole phase file, not the Java project (unless the card names exactly one Java method as a reference and inlines it).
+4. **Mechanical verification instead of judgment.** Qwen runs `cargo check`/`test`/`clippy`/`fmt` itself and reads the error messages. No "looks good".
+5. **Three attempts, then stop.** If errors persist, do not keep guessing; record them in `OFFENE_FRAGEN.md` (see system text). Claude then takes a look.
+6. **Review by Claude** after each task (checklist below) before the next card is handed out.
+7. Recommended settings (adjust if the model reacts differently): low temperature (about 0.2–0.3), do not truncate responses (sufficient `max_tokens`),
+   thinking mode – if available – on for decomposition and debugging, off for plain body filling.
 
-## Aufgabenkarte (Vorlage)
-
-```
-# Karte <Nr>: <Titel>
-Datei(en): crates/snapious-core/src/<pfad>.rs      (bereits mit Gerüst und Tests vorhanden)
-Voraussetzung: <welche Karten fertig sein müssen>
-Ziel: <ein Satz>
-Funktionen: <Liste mit Signatur und je einem Satz Verhalten>
-Regeln/Formeln: <genau die nötigen, mit Zahlenbeispiel>
-Randfälle: <Liste>
-Referenz: <optional: genau eine Java-Methode, eingefügt>
-Fertig, wenn: `cargo test -p snapious-core <modul>` grün, fmt/clippy sauber.
-Nicht tun: <was typischerweise schiefgeht: andere Dateien ändern, Tests ändern, neue Crates>
-```
-
-### Beispiel: Karte 1.1 „Zeilenlayout" (geprüft: Gerüst kompiliert, mit Referenzlösung sind alle 6 Tests grün)
+## Task Card (Template)
 
 ```
-# Karte 1.1: Zeilenlayout der Sequenzansicht
-Datei: crates/snapious-core/src/view/seq_layout.rs (Gerüst und Tests vorhanden)
-Voraussetzung: keine (nur `error.rs`)
-Ziel: Eine Sequenz wird in Zeilen fester Länge aufgeteilt; Positionen und sichtbare Zeilen lassen sich berechnen.
-Funktionen:
+# Card <No>: <Title>
+File(s): crates/snapious-core/src/<path>.rs      (skeleton and tests already present)
+Prerequisite: <which cards must be done>
+Goal: <one sentence>
+Functions: <list with signature and one sentence of behavior each>
+Rules/formulas: <exactly the necessary ones, with a numeric example>
+Edge cases: <list>
+Reference: <optional: exactly one Java method, inlined>
+Done when: `cargo test -p snapious-core <module>` green, fmt/clippy clean.
+Do not: <what typically goes wrong: change other files, change tests, new crates>
+```
+
+### Example: Card 1.1 "Line layout" (verified: skeleton compiles, with the reference solution all 6 tests are green)
+
+```
+# Card 1.1: Line layout of the sequence view
+File: crates/snapious-core/src/view/seq_layout.rs (skeleton and tests present)
+Prerequisite: none (only `error.rs`)
+Goal: A sequence is split into lines of fixed length; positions and visible lines can be computed.
+Functions:
   SequenceLayout::new(length, bases_per_line) -> Result<Self>   // bases_per_line == 0 → Err(InvalidInput)
-  line_count() -> usize            // ceil(length / bases_per_line), bei length 0: 0
+  line_count() -> usize            // ceil(length / bases_per_line), for length 0: 0
   line_of(position) -> usize       // position / bases_per_line
   column_of(position) -> usize     // position % bases_per_line
   line_start(line) -> usize        // line * bases_per_line
   line_end(line) -> usize          // min(line_start + bases_per_line, length)
-  first_visible_line(scroll_y, line_height) -> usize      // floor(scroll_y / line_height), bei scroll_y <= 0 oder line_height <= 0: 0
+  first_visible_line(scroll_y, line_height) -> usize      // floor(scroll_y / line_height), for scroll_y <= 0 or line_height <= 0: 0
   last_visible_line(&self, scroll_y, view_height, line_height) -> usize
-                                   // floor((scroll_y + view_height) / line_height), begrenzt auf line_count() - 1 (bei 0 Zeilen: 0)
+                                   // floor((scroll_y + view_height) / line_height), capped at line_count() - 1 (for 0 lines: 0)
   bases_per_line_for(view_width, char_width, margin_width, group_size) -> usize
-                                   // Gruppenbreite = (group_size + 1) * char_width; verfügbar = view_width - margin_width (mind. 0)
-                                   // Gruppen = floor(verfügbar / Gruppenbreite), mindestens 1; Ergebnis = Gruppen * group_size
-Randfälle: Länge 0, Position genau am Zeilenanfang, Letzte Zeile kürzer, group_size 0 → wie 1 behandeln.
-Fertig, wenn: `cargo test -p snapious-core seq_layout` grün.
-Nicht tun: Tests ändern; andere Dateien ändern; `unwrap()`.
+                                   // group width = (group_size + 1) * char_width; available = view_width - margin_width (at least 0)
+                                   // groups = floor(available / group width), at least 1; result = groups * group_size
+Edge cases: length 0, position exactly at the start of a line, last line shorter, group_size 0 → treated like 1.
+Done when: `cargo test -p snapious-core seq_layout` green.
+Do not: change tests; change other files; `unwrap()`.
 ```
 
-**Gerüst, das Claude vorher anlegt** (Rümpfe leer, Tests fertig):
+**Skeleton that Claude sets up beforehand** (bodies empty, tests finished):
 
 ```rust
-//! Zeilenlayout der Sequenzansicht (reine Rechenlogik, ohne Oberfläche).
+//! Line layout of the sequence view (pure computation logic, no UI).
 use crate::error::{Error, Result};
 
-/// Aufteilung einer Sequenz in Zeilen fester Länge.
+/// Splitting of a sequence into lines of fixed length.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SequenceLayout { length: usize, bases_per_line: usize }
 
@@ -108,14 +108,14 @@ mod tests {
 
     #[test]
     fn sichtbare_zeilen_bei_scrollposition_250() {
-        let l = SequenceLayout::new(6000, 60).unwrap(); // genau 100 Zeilen
+        let l = SequenceLayout::new(6000, 60).unwrap(); // exactly 100 lines
         assert_eq!(SequenceLayout::first_visible_line(250.0, 20.0), 12);
         assert_eq!(l.last_visible_line(250.0, 100.0, 20.0), 17);
     }
 
     #[test]
     fn letzte_zeile_wird_auf_vorhandene_zeilen_begrenzt() {
-        let l = SequenceLayout::new(125, 60).unwrap(); // 3 Zeilen
+        let l = SequenceLayout::new(125, 60).unwrap(); // 3 lines
         assert_eq!(l.last_visible_line(0.0, 10_000.0, 20.0), 2);
     }
 
@@ -127,80 +127,80 @@ mod tests {
 }
 ```
 
-*(`error.rs` mit `Error::InvalidInput(String)` und `type Result<T>` legt Phase 0 an.)*
+*(`error.rs` with `Error::InvalidInput(String)` and `type Result<T>` is created in Phase 0.)*
 
-## So zerlegt Claude die Aufgaben aus `01`–`07` in Karten
+## How Claude Breaks the Tasks from `01`–`07` into Cards
 
-| Regel | Beispiel |
+| Rule | Example |
 |---|---|
-| Eine Karte pro **Datei** und **Thema**, höchstens ca. 200 Zeilen Code | 2.1 Virtueller Verdau → 2.1a `End`/`Fragment`-Typen, 2.1b `cut_positions` (nur Treffer und Schnitte), 2.1c `digest_linear`, 2.1d `digest_circular`, 2.1e Features in Fragmenten |
-| Typen und Konstruktoren zuerst, Algorithmen danach | 2.3 → 2.3a Datentypen, 2.3b `find_overlap`, 2.3c `assemble_linear`, 2.3d zirkulär, 2.3e Warnungen, 2.3f Primerdesign |
-| Reine Funktionen vor Zustand | `EditSession` erst nach `SequenceDocument::insert/delete` |
-| Jede Karte hat Tests mit **konkreten Zahlen** (aus den Phasen-Dateien oder Java-Tests) | siehe Beispiel oben |
-| Komplexe Formeln stehen **ausgeschrieben** auf der Karte | Nearest-Neighbor-Tm: Tabelle und Formel in der Karte, nicht „siehe Paper" |
-| Fließkommazahlen im Test immer mit Toleranz | `assert!((a - b).abs() < 1e-4)` |
-| Aufgaben, die mehrere Module berühren, werden getrennt: erst Kern-API, dann Verbraucher | 2.2 Restriktionsklonierung nach 2.1 |
+| One card per **file** and **topic**, at most about 200 lines of code | 2.1 Virtual digest → 2.1a `End`/`Fragment` types, 2.1b `cut_positions` (only hits and cuts), 2.1c `digest_linear`, 2.1d `digest_circular`, 2.1e features in fragments |
+| Types and constructors first, algorithms afterwards | 2.3 → 2.3a data types, 2.3b `find_overlap`, 2.3c `assemble_linear`, 2.3d circular, 2.3e warnings, 2.3f primer design |
+| Pure functions before state | `EditSession` only after `SequenceDocument::insert/delete` |
+| Every card has tests with **concrete numbers** (from the phase files or Java tests) | see example above |
+| Complex formulas are **written out** on the card | Nearest-neighbor Tm: table and formula on the card, not "see paper" |
+| Floating-point numbers in tests always with a tolerance | `assert!((a - b).abs() < 1e-4)` |
+| Tasks touching several modules are separated: core API first, then consumers | 2.2 Restriction cloning after 2.1 |
 
-**Reihenfolge der Karten** folgt `08-RUST-KERN-SWIFT-APP.md`, Abschnitt „Reihenfolge". Claude legt Gerüst + Tests **eine Karte im Voraus** an (so liegt immer die nächste Karte bereit).
+**The order of the cards** follows `08-RUST-KERN-SWIFT-APP.md`, section "Order". Claude sets up skeleton + tests **one card in advance** (so the next card is always ready).
 
-## Spickzettel: typische Rust-Fehler und was zu tun ist
+## Cheat Sheet: Typical Rust Errors and What to Do
 
-| Fehler | Ursache | Lösung |
+| Error | Cause | Solution |
 |---|---|---|
-| `E0382 borrow of moved value` | Wert wurde verschoben | `.clone()` an der ersten Verwendung, oder Funktion nimmt `&T` statt `T` |
-| `E0502/E0499 cannot borrow as mutable` | gleichzeitige Leih-Zugriffe | Wert vorher in lokale Variable kopieren (`let n = v.len();`), dann mutieren |
-| `E0308 mismatched types` | `usize`/`i32`/`f64` vermischt | explizit umwandeln: `x as usize`, `x as f64`; bei Subtraktion `usize`: `checked_sub`/`saturating_sub` |
-| `E0599 no method named …` | Trait nicht importiert oder Typ falsch | `use` ergänzen; mit `.iter()` bzw. `.as_bytes()` auf den richtigen Typ gehen |
-| `E0106 missing lifetime specifier` | Referenz in Struktur/Rückgabe | **nicht** `'a` einführen: Strukturfelder als `String`/`Vec<u8>` besitzen; Rückgabe als eigener Wert |
-| `E0277 the trait bound … is not satisfied` | fehlende `derive`s | `#[derive(Clone, Debug, PartialEq)]` ergänzen (bei `f64`: kein `Eq`/`Hash`) |
-| `unused …`-Warnungen mit `-D warnings` | clippy | entfernen oder `_name` |
-| `attempt to subtract with overflow` im Test | `usize`-Unterlauf | `saturating_sub` bzw. vorher vergleichen |
-| `index out of bounds` | ungeprüfter Index | `get(i)` + `ok_or(...)?`, oder vorher `if i >= len { return Err(...) }` |
-| Test hängt (Endlosschleife) | Schleife ohne Fortschritt (z. B. Schnitt an Position 0) | Schleifenvariable muss in **jedem** Durchlauf wachsen; Fall `pos == last` ausdrücklich behandeln |
-| `clippy::needless_range_loop` | Schleife über Index | `for (i, x) in v.iter().enumerate()` |
-| Sequenz als `String` indiziert | UTF-8 | Sequenzen als `&[u8]` behandeln (`bases[i]`) |
+| `E0382 borrow of moved value` | Value was moved | `.clone()` at the first use, or the function takes `&T` instead of `T` |
+| `E0502/E0499 cannot borrow as mutable` | simultaneous borrows | Copy the value into a local variable beforehand (`let n = v.len();`), then mutate |
+| `E0308 mismatched types` | `usize`/`i32`/`f64` mixed | convert explicitly: `x as usize`, `x as f64`; for `usize` subtraction: `checked_sub`/`saturating_sub` |
+| `E0599 no method named …` | trait not imported or wrong type | add `use`; get to the right type with `.iter()` or `.as_bytes()` |
+| `E0106 missing lifetime specifier` | reference in a struct/return | do **not** introduce `'a`: struct fields own `String`/`Vec<u8>`; return an owned value |
+| `E0277 the trait bound … is not satisfied` | missing `derive`s | add `#[derive(Clone, Debug, PartialEq)]` (for `f64`: no `Eq`/`Hash`) |
+| `unused …` warnings with `-D warnings` | clippy | remove or use `_name` |
+| `attempt to subtract with overflow` in the test | `usize` underflow | `saturating_sub` or compare beforehand |
+| `index out of bounds` | unchecked index | `get(i)` + `ok_or(...)?`, or beforehand `if i >= len { return Err(...) }` |
+| Test hangs (infinite loop) | loop without progress (e.g. cut at position 0) | the loop variable must grow in **every** iteration; handle the case `pos == last` explicitly |
+| `clippy::needless_range_loop` | loop over an index | `for (i, x) in v.iter().enumerate()` |
+| Sequence indexed as a `String` | UTF-8 | treat sequences as `&[u8]` (`bases[i]`) |
 
-## Typische Fallen bei kleinen Modellen (und Gegenmaßnahmen)
+## Typical Pitfalls with Small Models (and Countermeasures)
 
-| Falle | Gegenmaßnahme |
+| Pitfall | Countermeasure |
 |---|---|
-| ändert die vorgegebenen Tests, bis sie grün sind | Karte: „Nicht tun: Tests ändern"; Claude prüft per `git diff`/Dateivergleich, dass Testcode unverändert ist (Datei-Hash der `mod tests`) |
-| erfindet Funktionen/Crates, die es nicht gibt | nur Standardbibliothek + erlaubte Crates (`08`, Tabelle); `cargo check` entlarvt es sofort |
-| löst ein einfacheres Problem als gefragt | Karte enthält Zahlenbeispiele; Tests prüfen exakte Werte |
-| bricht bei langen Antworten ab oder wiederholt sich | kleine Karten; Rumpf für Rumpf ausfüllen lassen; ggf. Funktion einzeln als Prompt |
-| ändert Formatierung/benennt um | `cargo fmt` am Ende; Karte nennt die erlaubten Dateien |
-| hängt in Fehlerschleifen | Drei-Versuche-Regel (Systemtext Nr. 12) |
-| vergisst Randfälle | Karte listet Randfälle; Tests decken sie ab |
-| Mischt Java-Syntax in Rust | Karten enthalten **nur Rust-Signaturen**; Java nur als Referenzstück, ausdrücklich so markiert |
+| changes the given tests until they are green | Card: "Do not: change tests"; Claude checks via `git diff`/file comparison that the test code is unchanged (file hash of `mod tests`) |
+| invents functions/crates that do not exist | only the standard library + allowed crates (`08`, table); `cargo check` exposes it immediately |
+| solves a simpler problem than asked | Card contains numeric examples; tests check exact values |
+| aborts on long answers or repeats itself | small cards; have it fill in body by body; if needed, one function per prompt |
+| changes formatting/renames | `cargo fmt` at the end; the card names the allowed files |
+| gets stuck in error loops | three-attempts rule (system text no. 12) |
+| forgets edge cases | card lists edge cases; tests cover them |
+| mixes Java syntax into Rust | cards contain **only Rust signatures**; Java only as a reference snippet, explicitly marked as such |
 
-## Prüfliste für Claude nach jeder Qwen-Karte
+## Checklist for Claude After Each Qwen Card
 
-1. Wurden nur die erlaubten Dateien geändert? (Dateiliste vergleichen)
-2. Ist der Testcode unverändert? (`mod tests` mit Vorlage vergleichen)
-3. `cargo test -p snapious-core`, `cargo clippy -p snapious-core -- -D warnings`, `cargo fmt --check` ohne Fehler?
-4. Stichprobe: ein zusätzlicher eigener Test mit einem anderen Zahlenbeispiel (Randfall). Falls rot → Karte zurück.
-5. Keine `unwrap()`/`expect()`/`panic!`/`unsafe` im Bibliothekscode? (`grep`)
-6. Keine neuen Abhängigkeiten in `Cargo.toml`? Keine macOS-spezifischen Aufrufe?
-7. Dokumentationskommentare auf Deutsch, Quelle bei Algorithmen genannt?
-8. Fortschritt in `00-ARBEITSANWEISUNG.md` bzw. Kartenliste aktualisieren.
+1. Were only the allowed files changed? (compare file list)
+2. Is the test code unchanged? (compare `mod tests` with the template)
+3. `cargo test -p snapious-core`, `cargo clippy -p snapious-core -- -D warnings`, `cargo fmt --check` without errors?
+4. Spot check: one additional own test with a different numeric example (edge case). If red → card goes back.
+5. No `unwrap()`/`expect()`/`panic!`/`unsafe` in library code? (`grep`)
+6. No new dependencies in `Cargo.toml`? No macOS-specific calls?
+7. Documentation comments in German, source named for algorithms?
+8. Update progress in `00-ARBEITSANWEISUNG.md` or the card list.
 
-## Vorschlag für die Zusammenarbeit
+## Proposal for Collaboration
 
-| Wer | Aufgabe |
+| Who | Task |
 |---|---|
-| Claude | Phase 0 und 0.9, FFI (F.0), alle Swift-Aufgaben (S.x), Gerüste + Tests der Qwen-Karten, Review |
-| Qwen | Funktionsrümpfe der Rust-Karten ab Phase 1 (Layout, Formate, Algorithmen, Klonierung, Primer, Bäume, Netz, …) |
-| Felix | Xcode/Programme installieren, Qwen starten und Ausgaben weiterreichen, visuelles Feedback zur App |
+| Claude | Phase 0 and 0.9, FFI (F.0), all Swift tasks (S.x), skeletons + tests of the Qwen cards, review |
+| Qwen | Function bodies of the Rust cards from Phase 1 onward (layout, formats, algorithms, cloning, primers, trees, network, …) |
+| Felix | Install Xcode/programs, start Qwen and pass on outputs, visual feedback on the app |
 
-Wenn das Modell sich als zuverlässiger erweist als angenommen: Karten zusammenfassen (z. B. eine ganze Aufgabe `2.x` pro Karte). Wenn es oft scheitert: Karten weiter verkleinern (eine Funktion pro Prompt).
+If the model proves more reliable than assumed: merge cards (e.g. a whole task `2.x` per card). If it often fails: shrink cards further (one function per prompt).
 
-## Pilotlauf Karte 1.1 (25.10.2026) – Ergebnis
+## Pilot Run of Card 1.1 (25.10.2026) – Result
 
-- **Zugang:** LM Studio läuft auf `http://localhost:1234/v1` (OpenAI-kompatibel), Modell-ID `qwen3.6-35b-a3b`. Claude ruft es direkt per `chat/completions` auf (Skript `scripts/qwen/run_card_1.1.py`).
-- **Arbeitsweise im Lauf:** Qwen hat keinen Dateizugriff; es bekommt Systemtext + Karte + Dateien und liefert die **vollständige Datei in einem Codeblock**. Das Skript prüft, dass der Testblock **buchstäblich unverändert** ist,
-  schreibt die Datei, führt `cargo test` aus und reicht Fehlermeldungen (bis zu 3 Versuche) zurück.
-- **Ergebnis:** Alle 6 Tests grün nach **2 Versuchen**. Versuch 1: Tests grün, aber `clippy` bemängelte eine von Hand geschriebene Aufrufsumme (`manual_div_ceil`); Versuch 2 korrigierte das nach Rückmeldung.
-  Der Testblock blieb unverändert. Meine zusätzlichen Randfalltests (negative Scrollwerte, Zeichenbreite 0, `group_size` 0, Fenster kleiner als Rand, Grenzfälle bei der Gruppenzahl) bestanden alle.
-- **Beobachtungen:** Antwort 1 dauerte 148 s und nutzte ca. 5 100 Denk-Token (Denkmodus an) – für eine so einfache Karte viel; Antwort 2 dauerte 34 s. Die Karte hätte etwas größer sein können (z. B. zwei Dateien).
-  Qwen hat die `///`-Kommentare für die Funktionen weggelassen (Regel 9). Das prüft die Prüfliste künftig mit `grep -L "///"`.
-- **Folgerung:** Kartengröße ca. 1,5- bis 2-fach erhöhen; Denkmodus für reines Ausfüllen möglichst abschalten; Regel „Dokumentationskommentare für alle `pub`-Elemente" in der Karte ausdrücklich wiederholen.
+- **Access:** LM Studio runs on `http://localhost:1234/v1` (OpenAI-compatible), model ID `qwen3.6-35b-a3b`. Claude calls it directly via `chat/completions` (script `scripts/qwen/run_card_1.1.py`).
+- **Working mode during the run:** Qwen has no file access; it receives system text + card + files and returns the **complete file in a code block**. The script checks that the test block is **literally unchanged**,
+  writes the file, runs `cargo test`, and passes error messages back (up to 3 attempts).
+- **Result:** All 6 tests green after **2 attempts**. Attempt 1: tests green, but `clippy` complained about a hand-written call sum (`manual_div_ceil`); attempt 2 fixed that after feedback.
+  The test block remained unchanged. My additional edge-case tests (negative scroll values, character width 0, `group_size` 0, window smaller than margin, boundary cases in the group count) all passed.
+- **Observations:** Answer 1 took 148 s and used about 5,100 thinking tokens (thinking mode on) – a lot for such a simple card; answer 2 took 34 s. The card could have been somewhat larger (e.g. two files).
+  Qwen omitted the `///` comments for the functions (rule 9). The checklist will check this in future with `grep -L "///"`.
+- **Conclusion:** Increase card size by about 1.5 to 2 times; turn thinking mode off for plain filling in where possible; explicitly repeat the rule "documentation comments for all `pub` items" in the card.

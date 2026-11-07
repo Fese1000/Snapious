@@ -113,7 +113,7 @@ impl Fragment {
                 let new_e = len.saturating_sub(s);
                 if new_s > new_e {
                     return Err(Error::InvalidInput(
-                        "Feature kann nicht gespiegelt werden".to_string(),
+                        "Feature cannot be mirrored".to_string(),
                     ));
                 }
                 new_intervals.push(Interval::new(new_s, new_e)?);
@@ -177,7 +177,7 @@ pub fn digest(
 ) -> Result<Vec<Fragment>> {
     for name in enzyme_names {
         if db.get(name).is_none() {
-            return Err(Error::InvalidInput(format!("Unbekanntes Enzym: {}", name)));
+            return Err(Error::InvalidInput(format!("Unknown enzyme: {}", name)));
         }
     }
     let bases = doc.bases();

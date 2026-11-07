@@ -46,7 +46,7 @@ impl ProjectStore {
         let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
         if version != 0 && version != SCHEMA_VERSION {
             return Err(Error::Io(format!(
-                "Projektdatei hat die Schema-Version {} (erwartet {})",
+                "Project file has schema version {} (expected {})",
                 version, SCHEMA_VERSION
             )));
         }
@@ -133,7 +133,7 @@ impl ProjectStore {
                 }
                 // Stammbäume gibt es nicht mehr; alte Projekte behalten die Zeilen, die Dokumente werden aber nicht angezeigt
                 "tree" => Ok(None),
-                other => Err(Error::Io(format!("Unbekannter Dokumenttyp: {}", other))),
+                other => Err(Error::Io(format!("Unknown document type: {}", other))),
             },
         }
     }
@@ -362,12 +362,12 @@ fn from_payload(
         "DNA" => SequenceType::Dna,
         "RNA" => SequenceType::Rna,
         "PROTEIN" => SequenceType::Protein,
-        other => return Err(Error::Io(format!("Unbekannter Sequenztyp: {}", other))),
+        other => return Err(Error::Io(format!("Unknown sequence type: {}", other))),
     };
     let topology = match p.topology.as_str() {
         "LINEAR" => Topology::Linear,
         "CIRCULAR" => Topology::Circular,
-        other => return Err(Error::Io(format!("Unbekannte Topologie: {}", other))),
+        other => return Err(Error::Io(format!("Unknown topology: {}", other))),
     };
     let mut sequence = Sequence::new(&p.sequence_id, &p.sequence_name, &p.bases, seq_type)?;
     sequence.set_description(&p.description);
@@ -377,7 +377,7 @@ fn from_payload(
             "FORWARD" => Strand::Forward,
             "REVERSE" => Strand::Reverse,
             "NONE" => Strand::None,
-            other => return Err(Error::Io(format!("Unbekannter Strang: {}", other))),
+            other => return Err(Error::Io(format!("Unknown strand: {}", other))),
         };
         let intervals = f
             .intervals

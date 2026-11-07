@@ -147,7 +147,7 @@ impl SequenceDocument {
     pub fn insert(&self, position: usize, bases: &str) -> Result<Self> {
         if position > self.len() {
             return Err(Error::OutOfRange(format!(
-                "Einfügeposition {} bei Länge {}",
+                "Insert position {} with length {}",
                 position,
                 self.len()
             )));
@@ -245,7 +245,7 @@ impl SequenceDocument {
     fn check_range(&self, start: usize, end: usize) -> Result<()> {
         if end > self.len() {
             return Err(Error::OutOfRange(format!(
-                "Bereich {}-{} bei Länge {}",
+                "Range {}-{} with length {}",
                 start,
                 end,
                 self.len()
@@ -253,7 +253,7 @@ impl SequenceDocument {
         }
         if start > end {
             return Err(Error::InvalidInput(format!(
-                "Ungültiger Bereich {}-{}",
+                "Invalid range {}-{}",
                 start, end
             )));
         }

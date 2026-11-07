@@ -67,7 +67,7 @@ pub fn required<'a>(params: &'a Params, key: &str) -> Result<&'a str> {
     params
         .get(key)
         .map(|s| s.as_str())
-        .ok_or_else(|| Error::Operation(format!("Parameter '{}' fehlt", key)))
+        .ok_or_else(|| Error::Operation(format!("Parameter '{}' is missing", key)))
 }
 
 /// Pflichtparameter als nicht-negative ganze Zahl lesen.
@@ -75,7 +75,7 @@ pub fn required_usize(params: &Params, key: &str) -> Result<usize> {
     let v = required(params, key)?;
     v.trim().parse::<usize>().map_err(|_| {
         Error::Operation(format!(
-            "Parameter '{}' ist keine nicht-negative ganze Zahl: {}",
+            "Parameter '{}' is not a non-negative integer: {}",
             key, v
         ))
     })

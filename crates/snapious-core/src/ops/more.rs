@@ -26,14 +26,14 @@ fn sequences(inputs: &[Document]) -> Result<Vec<&SequenceDocument>> {
             Document::Sequence(s) => out.push(s),
             _ => {
                 return Err(Error::Operation(
-                    "Alle Eingaben müssen Sequenzen sein".to_string(),
+                    "All inputs must be sequences".to_string(),
                 ))
             }
         }
     }
     if out.is_empty() {
         return Err(Error::Operation(
-            "Es wurde keine Sequenz übergeben".to_string(),
+            "No sequence was provided".to_string(),
         ));
     }
     Ok(out)
@@ -43,7 +43,7 @@ fn first_alignment(inputs: &[Document]) -> Result<&AlignmentDocument> {
     match inputs.first() {
         Some(Document::Alignment(a)) => Ok(a),
         _ => Err(Error::Operation(
-            "Es wurde kein Alignment übergeben".to_string(),
+            "No alignment was provided".to_string(),
         )),
     }
 }
@@ -90,7 +90,7 @@ macro_rules! simple_op {
 simple_op!(
     DeleteOperation,
     "edit.delete",
-    "Basen löschen",
+    "Delete bases",
     |inputs, params, _ctx| {
         let d = sequences(inputs)?[0];
         let (s, e) = (
@@ -100,10 +100,10 @@ simple_op!(
         let out = d
             .delete(s, e)
             .map_err(op_err)?
-            .derive(&format!("{} (bearbeitet)", d.name()));
+            .derive(&format!("{} (edited)", d.name()));
         result(
             Document::Sequence(out),
-            format!("{} Basen gelöscht", e.saturating_sub(s)),
+            format!("{} bases deleted", e.saturating_sub(s)),
         )
     }
 );
@@ -111,7 +111,7 @@ simple_op!(
 simple_op!(
     ReplaceOperation,
     "edit.replace",
-    "Basen ersetzen",
+    "Replace bases",
     |inputs, params, _ctx| {
         let d = sequences(inputs)?[0];
         let (s, e) = (
@@ -121,10 +121,10 @@ simple_op!(
         let out = d
             .replace(s, e, required(params, "bases")?)
             .map_err(op_err)?
-            .derive(&format!("{} (bearbeitet)", d.name()));
+            .derive(&format!("{} (edited)", d.name()));
         result(
             Document::Sequence(out),
-            format!("Bereich {}-{} ersetzt", s, e),
+            format!("Range {}-{} replaced", s, e),
         )
     }
 );
@@ -132,7 +132,7 @@ simple_op!(
 simple_op!(
     ExtractOperation,
     "edit.extract",
-    "Bereich ausschneiden",
+    "Cut out range",
     |inputs, params, _ctx| {
         let d = sequences(inputs)?[0];
         let (s, e) = (
@@ -147,7 +147,7 @@ simple_op!(
         ));
         result(
             Document::Sequence(out),
-            format!("Bereich {}-{} extrahiert", s + 1, e),
+            format!("Range {}-{} extracted", s + 1, e),
         )
     }
 );
@@ -155,7 +155,7 @@ simple_op!(
 simple_op!(
     TopologyOperation,
     "edit.topology",
-    "Topologie ändern",
+    "Change topology",
     |inputs, params, _ctx| {
         let d = sequences(inputs)?[0];
         let t = match required(params, "value")?.trim() {
@@ -163,7 +163,7 @@ simple_op!(
             "linear" => Topology::Linear,
             other => {
                 return Err(Error::Operation(format!(
-                    "Unbekannte Topologie '{}' (circular oder linear)",
+                    "Unknown topology '{}' (circular or linear)",
                     other
                 )))
             }
@@ -172,25 +172,25 @@ simple_op!(
             "{} ({})",
             d.name(),
             if t == Topology::Circular {
-                "zirkulär"
+                "circular"
             } else {
                 "linear"
             }
         ));
-        result(Document::Sequence(out), "Topologie geändert".to_string())
+        result(Document::Sequence(out), "Topology changed".to_string())
     }
 );
 
 simple_op!(
     AlignOperation,
     "align.multiple",
-    "Mehrfachalignment",
+    "Multiple alignment",
     |inputs, params, _ctx| {
         let docs = sequences(inputs)?;
         let backend_name = params.get("backend").map_or("builtin", |s| s.as_str());
         let backend = AlignBackend::from_name(backend_name).ok_or_else(|| {
             Error::Operation(format!(
-                "Unbekanntes Alignment-Verfahren '{}'",
+                "Unknown alignment method '{}'",
                 backend_name
             ))
         })?;
@@ -206,7 +206,7 @@ simple_op!(
         .map_err(op_err)?;
         result(
             Document::Alignment(doc),
-            format!("{} Sequenzen ausgerichtet ({})", seqs.len(), backend_name),
+            format!("{} sequences aligned ({})", seqs.len(), backend_name),
         )
     }
 );
@@ -214,7 +214,7 @@ simple_op!(
 simple_op!(
     ConsensusOperation,
     "align.consensus",
-    "Konsens",
+    "Consensus",
     |inputs, params, _ctx| {
         let a = first_alignment(inputs)?;
         let threshold = params
@@ -226,11 +226,11 @@ simple_op!(
             .chars()
             .filter(|c| *c != '-')
             .collect();
-        let name = format!("{} Konsens", a.name());
+        let name = format!("{} consensus", a.name());
         let seq = Sequence::new(&name, &name, &text, a.seq_type()).map_err(op_err)?;
         result(
             Document::Sequence(SequenceDocument::of(&name, seq)),
-            "Konsens berechnet".to_string(),
+            "Consensus calculated".to_string(),
         )
     }
 );
@@ -238,7 +238,7 @@ simple_op!(
 simple_op!(
     StripOperation,
     "align.strip",
-    "Lückenspalten entfernen",
+    "Remove gap columns",
     |inputs, params, _ctx| {
         let a = first_alignment(inputs)?;
         let threshold = params
@@ -247,20 +247,20 @@ simple_op!(
             .unwrap_or(1.0);
         let rows = strip_columns(a.rows(), threshold).map_err(op_err)?;
         let doc = AlignmentDocument::of(
-            &format!("{} (bereinigt)", a.name()),
+            &format!("{} (cleaned)", a.name()),
             a.seq_type(),
             a.row_names().to_vec(),
             rows,
         )
         .map_err(op_err)?;
-        result(Document::Alignment(doc), "Spalten entfernt".to_string())
+        result(Document::Alignment(doc), "Columns removed".to_string())
     }
 );
 
 simple_op!(
     DigestOperation,
     "clone.digest",
-    "Restriktionsverdau",
+    "Restriction digest",
     |inputs, params, _ctx| {
         let d = sequences(inputs)?[0];
         let enzymes = names(required(params, "enzymes")?);
@@ -268,7 +268,7 @@ simple_op!(
         let fragments = digest(d, &EnzymeDb::standard(), &refs).map_err(op_err)?;
         let mut outputs = Vec::new();
         for (i, f) in fragments.iter().enumerate() {
-            let name = format!("{} Fragment {}", d.name(), i + 1);
+            let name = format!("{} fragment {}", d.name(), i + 1);
             let seq = Sequence::new(&name, &name, &f.top, SequenceType::Dna).map_err(op_err)?;
             let doc = SequenceDocument::of(&name, seq).with_features(f.features.clone());
             outputs.push(Document::Sequence(doc));
@@ -276,7 +276,7 @@ simple_op!(
         let n = outputs.len();
         Ok(OperationResult {
             outputs,
-            summary: format!("{} Fragmente", n),
+            summary: format!("{} fragments", n),
         })
     }
 );
@@ -284,21 +284,21 @@ simple_op!(
 simple_op!(
     OverlapOperation,
     "clone.overlap",
-    "Gibson-Zusammenbau",
+    "Gibson assembly",
     |inputs, params, _ctx| {
         let docs: Vec<SequenceDocument> = sequences(inputs)?.into_iter().cloned().collect();
         let assembly = match params.get("method").map_or("gibson", |s| s.as_str()) {
             "gibson" => OverlapAssembly::gibson(),
             "infusion" => OverlapAssembly::in_fusion(),
             "slic" => OverlapAssembly::slic(),
-            other => return Err(Error::Operation(format!("Unbekannte Methode '{}'", other))),
+            other => return Err(Error::Operation(format!("Unknown method '{}'", other))),
         };
         let r = assembly
             .assemble(&docs, flag(params, "circular", true))
             .map_err(op_err)?;
         result(
             Document::Sequence(r.construct),
-            format!("Zusammenbau mit {} Überlappen", r.overlaps.len()),
+            format!("Assembly with {} overlaps", r.overlaps.len()),
         )
     }
 );
@@ -306,7 +306,7 @@ simple_op!(
 simple_op!(
     GoldenGateOperation,
     "clone.goldengate",
-    "Golden-Gate-Zusammenbau",
+    "Golden Gate assembly",
     |inputs, params, _ctx| {
         let docs: Vec<SequenceDocument> = sequences(inputs)?.into_iter().cloned().collect();
         let enzyme = params.get("enzyme").map_or("BsaI", |s| s.as_str());
@@ -319,7 +319,7 @@ simple_op!(
         .map_err(op_err)?;
         result(
             Document::Sequence(r.construct),
-            format!("Golden Gate mit {}", enzyme),
+            format!("Golden Gate with {}", enzyme),
         )
     }
 );
@@ -327,24 +327,24 @@ simple_op!(
 simple_op!(
     TranslateOperation,
     "translate.cds",
-    "CDS übersetzen",
+    "Translate CDS",
     |inputs, params, _ctx| {
         let d = sequences(inputs)?[0];
         let index = match params.get("feature") {
             Some(v) => v
                 .trim()
                 .parse::<usize>()
-                .map_err(|_| Error::Operation("Parameter 'feature' ist keine Zahl".to_string()))?,
+                .map_err(|_| Error::Operation("Parameter 'feature' is not a number".to_string()))?,
             None => d
                 .features()
                 .iter()
                 .position(|f| f.feature_type().eq_ignore_ascii_case("CDS"))
-                .ok_or_else(|| Error::Operation("Das Dokument hat kein CDS-Feature".to_string()))?,
+                .ok_or_else(|| Error::Operation("The document has no CDS feature".to_string()))?,
         };
         let feature = d
             .features()
             .get(index)
-            .ok_or_else(|| Error::Operation(format!("Feature {} gibt es nicht", index)))?;
+            .ok_or_else(|| Error::Operation(format!("Feature {} does not exist", index)))?;
         let cells = translate_feature(d.bases(), feature).map_err(op_err)?;
         let protein: String = cells
             .iter()
@@ -352,13 +352,13 @@ simple_op!(
             .filter(|c| *c != '*')
             .collect();
         if protein.is_empty() {
-            return Err(Error::Operation("Die Übersetzung ist leer".to_string()));
+            return Err(Error::Operation("The translation is empty".to_string()));
         }
-        let name = format!("{} Protein", feature.name());
+        let name = format!("{} protein", feature.name());
         let seq = Sequence::new(&name, &name, &protein, SequenceType::Protein).map_err(op_err)?;
         result(
             Document::Sequence(SequenceDocument::of(&name, seq)),
-            format!("{} Aminosäuren", protein.len()),
+            format!("{} amino acids", protein.len()),
         )
     }
 );

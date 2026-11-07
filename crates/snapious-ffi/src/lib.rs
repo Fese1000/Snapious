@@ -757,7 +757,7 @@ pub struct Project {
 impl Project {
     fn lock(&self) -> Result<MutexGuard<'_, ProjectStore>, ApiError> {
         self.store.lock().map_err(|_| ApiError::Internal {
-            message: "Projektspeicher ist gesperrt (vorheriger Fehler)".to_string(),
+            message: "Project store is locked (previous error)".to_string(),
         })
     }
 
@@ -787,14 +787,14 @@ impl Project {
         F: FnOnce(&mut EditSession) -> snapious_core::error::Result<()>,
     {
         let mut sessions = self.sessions.lock().map_err(|_| ApiError::Internal {
-            message: "Bearbeitungssitzungen sind gesperrt (vorheriger Fehler)".to_string(),
+            message: "Editing sessions are locked (previous error)".to_string(),
         })?;
         if !sessions.contains_key(id) {
             let doc = self.sequence_doc(id)?;
             sessions.insert(id.to_string(), EditSession::new(doc));
         }
         let session = sessions.get_mut(id).ok_or_else(|| ApiError::Internal {
-            message: "Bearbeitungssitzung fehlt".to_string(),
+            message: "Editing session is missing".to_string(),
         })?;
         change(session)?;
         let doc = Document::Sequence(session.document().clone());
@@ -807,7 +807,7 @@ impl Project {
         if recent {
             store.save(&doc)?;
         } else {
-            store.save_versioned(&doc, "Bearbeitet")?;
+            store.save_versioned(&doc, "Edited")?;
         }
         Ok(())
     }
@@ -823,10 +823,10 @@ impl Project {
         match self.lock()?.load(id)? {
             Some(Document::Alignment(d)) => Ok(d),
             Some(_) => Err(ApiError::InvalidInput {
-                message: "Das Dokument ist kein Alignment".to_string(),
+                message: "The document is not an alignment".to_string(),
             }),
             None => Err(ApiError::NotFound {
-                message: format!("Dokument '{}' nicht gefunden", id),
+                message: format!("Document '{}' not found", id),
             }),
         }
     }
@@ -915,10 +915,10 @@ impl Project {
         match self.lock()?.load(id)? {
             Some(Document::Sequence(d)) => Ok(d),
             Some(_) => Err(ApiError::InvalidInput {
-                message: "Das Dokument ist keine Sequenz".to_string(),
+                message: "The document is not a sequence".to_string(),
             }),
             None => Err(ApiError::NotFound {
-                message: format!("Dokument '{}' nicht gefunden", id),
+                message: format!("Document '{}' not found", id),
             }),
         }
     }
@@ -967,12 +967,12 @@ impl Project {
         let d = self.sequence_doc(&id)?;
         if d.sequence().seq_type() != SequenceType::Protein {
             return Err(ApiError::InvalidInput {
-                message: "Rückübersetzung geht nur von einem Protein aus".to_string(),
+                message: "Back-translation only works from a protein".to_string(),
             });
         }
         let dna = back_translate(d.bases().to_string(), mode)?;
         let title = if name.trim().is_empty() {
-            format!("{} (rückübersetzt)", d.name())
+            format!("{} (back-translated)", d.name())
         } else {
             name.trim().to_string()
         };
@@ -981,7 +981,7 @@ impl Project {
             Document::Sequence(SequenceDocument::of(&title, seq)),
             "sequence.backtranslate",
             vec![id],
-            "Rückübersetzung".to_string(),
+            "Back-translation".to_string(),
         )
     }
 
@@ -999,11 +999,11 @@ impl Project {
             .features()
             .get(feature_index as usize)
             .ok_or_else(|| ApiError::InvalidInput {
-                message: format!("Feature {} gibt es nicht", feature_index),
+                message: format!("Feature {} does not exist", feature_index),
             })?;
         if f.location().strand() == Strand::Reverse {
             return Err(ApiError::InvalidInput {
-                message: "Stille Änderungen gibt es nur für CDS auf dem Vorwärtsstrang".to_string(),
+                message: "Silent mutations are only available for CDS on the forward strand".to_string(),
             });
         }
         let start = f.location().start();
@@ -1012,7 +1012,7 @@ impl Project {
             .bases()
             .get(start..end)
             .ok_or_else(|| ApiError::InvalidInput {
-                message: "Der Bereich des Features liegt außerhalb der Sequenz".to_string(),
+                message: "The range of the feature lies outside the sequence".to_string(),
             })?;
         let motif = {
             let t = site.trim().to_uppercase();
@@ -1024,7 +1024,7 @@ impl Project {
                     .map(|e| e.recognition().to_uppercase())
                     .ok_or_else(|| ApiError::InvalidInput {
                         message: format!(
-                            "'{}' ist weder eine DNA-Folge noch ein bekanntes Enzym",
+                            "'{}' is neither a DNA sequence nor a known enzyme",
                             site.trim()
                         ),
                     })?
@@ -1032,7 +1032,7 @@ impl Project {
         };
         if mode != "all" && motif.is_empty() {
             return Err(ApiError::InvalidInput {
-                message: "Für diese Auswahl ist eine Erkennungsstelle nötig".to_string(),
+                message: "A recognition site is required for this selection".to_string(),
             });
         }
         let list = match mode.as_str() {
@@ -1064,7 +1064,7 @@ impl Project {
             Document::Sequence(result),
             "sequence.concatenate",
             ids,
-            "Sequenzen zusammengefügt".to_string(),
+            "Sequences joined".to_string(),
         )
     }
 
@@ -1124,26 +1124,26 @@ impl Project {
                 let pos = param as usize;
                 if !(1..=3).contains(&pos) {
                     return Err(ApiError::InvalidInput {
-                        message: "Die Codonposition muss 1, 2 oder 3 sein".to_string(),
+                        message: "The codon position must be 1, 2 or 3".to_string(),
                     });
                 }
                 columns_codon_position(len, start as usize, pos - 1)
             }
             other => {
                 return Err(ApiError::InvalidInput {
-                    message: format!("Unbekannte Auswahl '{}'", other),
+                    message: format!("Unknown selection '{}'", other),
                 })
             }
         };
         let removed = mask.iter().filter(|b| **b).count();
         if removed == len && len > 0 {
             return Err(ApiError::InvalidInput {
-                message: "Es würden alle Spalten entfernt".to_string(),
+                message: "All columns would be removed".to_string(),
             });
         }
         let new_rows = remove_columns(rows, &mask);
         let title = if name.trim().is_empty() {
-            format!("{} (gekürzt)", a.name())
+            format!("{} (trimmed)", a.name())
         } else {
             name.trim().to_string()
         };
@@ -1152,7 +1152,7 @@ impl Project {
             Document::Alignment(doc),
             "alignment.strip_columns",
             vec![id],
-            format!("{} Spalten entfernt", removed),
+            format!("{} columns removed", removed),
         )
     }
 
@@ -1170,7 +1170,7 @@ impl Project {
         let ref_row = rows
             .get(reference as usize)
             .ok_or_else(|| ApiError::InvalidInput {
-                message: "Die Referenzzeile gibt es nicht".to_string(),
+                message: "The reference row does not exist".to_string(),
             })?;
         let vars = find_variants(rows, reference as usize)?;
         let ungapped: String = ref_row
@@ -1181,7 +1181,7 @@ impl Project {
         let bases = apply_variants(&ungapped, &vars, row as usize)?;
         let title = if name.trim().is_empty() {
             format!(
-                "{} mit Varianten von {}",
+                "{} with variants from {}",
                 a.row_names()
                     .get(reference as usize)
                     .cloned()
@@ -1196,7 +1196,7 @@ impl Project {
             Document::Sequence(SequenceDocument::of(&title, seq)),
             "alignment.apply_variants",
             vec![id],
-            "Varianten angewendet".to_string(),
+            "Variants applied".to_string(),
         )
     }
 
@@ -1228,12 +1228,12 @@ impl Project {
             .collect();
         if picked.is_empty() {
             return Err(ApiError::InvalidInput {
-                message: "Keine passenden Features".to_string(),
+                message: "No matching features".to_string(),
             });
         }
         if picked.len() > 1000 {
             return Err(ApiError::InvalidInput {
-                message: "Zu viele Features (höchstens 1000)".to_string(),
+                message: "Too many features (at most 1000)".to_string(),
             });
         }
         let spans: Vec<(usize, usize, bool)> = picked
@@ -1258,7 +1258,7 @@ impl Project {
                 Document::Sequence(SequenceDocument::of(&title, seq)),
                 "sequence.extract",
                 vec![id.clone()],
-                format!("Feature {} extrahiert", f.name()),
+                format!("Feature {} extracted", f.name()),
             )?;
             out.push(info);
         }
@@ -1363,7 +1363,7 @@ impl Project {
         let n = infos.len() as u64;
         if n == 0 {
             return Err(ApiError::InvalidInput {
-                message: "Keine passenden Treffer in der Datei (Länge oder Name passen nicht)"
+                message: "No matching hits in the file (length or name do not match)"
                     .to_string(),
             });
         }
@@ -1384,11 +1384,11 @@ impl Project {
         let s0 = (start as usize).min(e);
         if e - s0 > 2000 {
             return Err(ApiError::InvalidInput {
-                message: "Für die einfache Faltung höchstens 2000 Basen wählen".to_string(),
+                message: "Select at most 2000 bases for simple folding".to_string(),
             });
         }
         let part = d.bases().get(s0..e).ok_or_else(|| ApiError::InvalidInput {
-            message: "Bereich außerhalb der Sequenz".to_string(),
+            message: "Range outside the sequence".to_string(),
         })?;
         let (pairs, structure) = max_pairs(part, 3);
         Ok(SimpleFoldDto {
@@ -1473,7 +1473,7 @@ impl Project {
             Document::Sequence(d),
             "clone.topo",
             vec![vector_id, insert_id],
-            "Gerichtetes TOPO-Klonieren".to_string(),
+            "Directional TOPO cloning".to_string(),
         )
     }
 
@@ -1499,7 +1499,7 @@ impl Project {
         let (a1, a2) = (site(att1), site(att2));
         if a1.core.is_empty() || a2.core.is_empty() {
             return Err(ApiError::InvalidInput {
-                message: "Für beide att-Stellen wird der Kern gebraucht".to_string(),
+                message: "The core is needed for both att sites".to_string(),
             });
         }
         let gw = Gateway::new(a1, a2);
@@ -1510,7 +1510,7 @@ impl Project {
             "lr" => (gw.lr_reaction(&first, &second)?, "clone.gateway.lr"),
             other => {
                 return Err(ApiError::InvalidInput {
-                    message: format!("Unbekannte Reaktion '{}'", other),
+                    message: format!("Unknown reaction '{}'", other),
                 })
             }
         };
@@ -1533,7 +1533,7 @@ impl Project {
     ) -> Result<DocumentInfoDto, ApiError> {
         if ids.len() < 2 {
             return Err(ApiError::InvalidInput {
-                message: "Für einen Konsens mindestens zwei Reads wählen".to_string(),
+                message: "Select at least two reads for a consensus".to_string(),
             });
         }
         let docs = self.sequence_docs(&ids)?;
@@ -1575,11 +1575,11 @@ impl Project {
         let cons = quality_consensus(&rows, &quals, min_quality);
         if cons.bases.is_empty() {
             return Err(ApiError::InvalidInput {
-                message: "Aus den Reads ließ sich kein Konsens bilden".to_string(),
+                message: "No consensus could be built from the reads".to_string(),
             });
         }
         let aln = AlignmentDocument::of(
-            &format!("Reads ({} Sequenzierungen)", ids.len()),
+            &format!("Reads ({} sequencings)", ids.len()),
             docs[0].sequence().seq_type(),
             names,
             rows,
@@ -1588,10 +1588,10 @@ impl Project {
             Document::Alignment(aln),
             "sequence.read_alignment",
             ids.clone(),
-            "Reads ausgerichtet".to_string(),
+            "Reads aligned".to_string(),
         )?;
         let title = if name.trim().is_empty() {
-            format!("Konsens ({} Reads)", ids.len())
+            format!("Consensus ({} reads)", ids.len())
         } else {
             name.trim().to_string()
         };
@@ -1607,7 +1607,7 @@ impl Project {
             Document::Sequence(SequenceDocument::of(&title, seq)),
             "sequence.read_consensus",
             ids,
-            format!("Konsens aus Reads, mittlere Qualität {:.0}", mean_q),
+            format!("Consensus from reads, mean quality {:.0}", mean_q),
         )
     }
 
@@ -1624,7 +1624,7 @@ impl Project {
         let records = parse_pasted(&text);
         if records.is_empty() {
             return Err(ApiError::InvalidInput {
-                message: "Der Text enthält keine Sequenz".to_string(),
+                message: "The text contains no sequence".to_string(),
             });
         }
         let many = records.len() > 1;
@@ -1649,7 +1649,7 @@ impl Project {
             } else if !r.name.is_empty() {
                 r.name.clone()
             } else {
-                "Neue Sequenz".to_string()
+                "New sequence".to_string()
             };
             let seq = Sequence::new(&new_id(), &doc_name, &r.residues, seq_type)?;
             let mut doc = SequenceDocument::of(&doc_name, seq);
@@ -1679,7 +1679,7 @@ impl Project {
             input_ids: Vec::new(),
             output_ids: ids,
             time: now_secs(),
-            summary: format!("{} Sequenz(en) angelegt", infos.len()),
+            summary: format!("{} sequence(s) created", infos.len()),
         })?;
         Ok(infos)
     }
@@ -1689,7 +1689,7 @@ impl Project {
     pub fn translate_frame(&self, id: String, frame: i32) -> Result<Vec<AminoAcidDto>, ApiError> {
         if frame == 0 || frame.abs() > 3 {
             return Err(ApiError::InvalidInput {
-                message: "Leserahmen muss 1–3 oder −1 bis −3 sein".to_string(),
+                message: "Reading frame must be 1–3 or −1 to −3".to_string(),
             });
         }
         let d = self.sequence_doc(&id)?;
@@ -1723,7 +1723,7 @@ impl Project {
         let docs = io::read_documents(Path::new(&path))?;
         if docs.is_empty() {
             return Err(ApiError::InvalidInput {
-                message: format!("Die Datei '{}' enthält keine Sequenzen", path),
+                message: format!("The file '{}' contains no sequences", path),
             });
         }
         let mut store = self.lock()?;
@@ -1792,7 +1792,7 @@ impl Project {
             input_ids: Vec::new(),
             output_ids: ids,
             time: now_secs(),
-            summary: format!("{} Dokument(e) importiert", infos.len()),
+            summary: format!("{} document(s) imported", infos.len()),
         })?;
         Ok(infos)
     }
@@ -1816,7 +1816,7 @@ impl Project {
         let seqs = sequences_from_table(&rows, name_col as usize, seq_col as usize, has_header);
         if seqs.is_empty() {
             return Err(ApiError::InvalidInput {
-                message: "In den gewählten Spalten steht keine Sequenz".to_string(),
+                message: "There is no sequence in the selected columns".to_string(),
             });
         }
         let fasta: String = seqs
@@ -1943,7 +1943,7 @@ impl Project {
         let (s, e) = (start as usize, (end as usize).min(d.len()));
         if s > e {
             return Err(ApiError::InvalidInput {
-                message: format!("Ungültiger Bereich {}-{}", start, end),
+                message: format!("Invalid range {}-{}", start, end),
             });
         }
         Ok(d.bases()[s..e].to_string())
@@ -2001,7 +2001,7 @@ impl Project {
             "fasta" => Ok(as_fasta(&name, &b)),
             "reverse_complement" => Ok(as_reverse_complement(&b)),
             other => Err(ApiError::InvalidInput {
-                message: format!("Unbekanntes Textformat '{}'", other),
+                message: format!("Unknown text format '{}'", other),
             }),
         }
     }
@@ -2020,7 +2020,7 @@ impl Project {
             "none" => EnzymeFilter::NonCutters,
             other => {
                 return Err(ApiError::InvalidInput {
-                    message: format!("Unbekannter Enzymfilter '{}'", other),
+                    message: format!("Unknown enzyme filter '{}'", other),
                 })
             }
         };
@@ -2047,7 +2047,7 @@ impl Project {
             .features()
             .get(feature_index as usize)
             .ok_or_else(|| ApiError::InvalidInput {
-                message: format!("Feature {} gibt es nicht", feature_index),
+                message: format!("Feature {} does not exist", feature_index),
             })?;
         let cells = translate_feature(d.bases(), f)?;
         Ok(cells
@@ -2104,7 +2104,7 @@ impl Project {
             "cas12a" => PamSpec::cas12a(),
             other => {
                 return Err(ApiError::InvalidInput {
-                    message: format!("Unbekannte Nuklease '{}'", other),
+                    message: format!("Unknown nuclease '{}'", other),
                 })
             }
         };
@@ -2160,7 +2160,7 @@ impl Project {
         let c = list
             .get(index as usize)
             .ok_or_else(|| ApiError::InvalidInput {
-                message: format!("Produkt {} gibt es nicht", index),
+                message: format!("Product {} does not exist", index),
             })?;
         let doc = if name.trim().is_empty() {
             c.construct.clone()
@@ -2183,7 +2183,7 @@ impl Project {
             input_ids: vec![vector_id, insert_id],
             output_ids: vec![document.id().to_string()],
             time: now_secs(),
-            summary: "Restriktionsklonierung".to_string(),
+            summary: "Restriction cloning".to_string(),
         })?;
         Ok(DocumentInfoDto {
             id: document.id().to_string(),
@@ -2270,7 +2270,7 @@ impl Project {
     /// Zahl der möglichen Rückgängig- und Wiederholen-Schritte `(undo, redo)`.
     pub fn edit_state(&self, id: String) -> Result<Vec<u64>, ApiError> {
         let sessions = self.sessions.lock().map_err(|_| ApiError::Internal {
-            message: "Bearbeitungssitzungen sind gesperrt (vorheriger Fehler)".to_string(),
+            message: "Editing sessions are locked (previous error)".to_string(),
         })?;
         Ok(match sessions.get(&id) {
             Some(s) => vec![s.undo_depth() as u64, u64::from(s.can_redo())],
@@ -2287,11 +2287,11 @@ impl Project {
     ) -> Result<DocumentInfoDto, ApiError> {
         if ids.len() < 2 {
             return Err(ApiError::InvalidInput {
-                message: "Für ein Alignment sind mindestens zwei Sequenzen nötig".to_string(),
+                message: "An alignment needs at least two sequences".to_string(),
             });
         }
         let engine = AlignBackend::from_name(&backend).ok_or_else(|| ApiError::InvalidInput {
-            message: format!("Unbekanntes Alignment-Verfahren '{}'", backend),
+            message: format!("Unknown alignment method '{}'", backend),
         })?;
         let mut seqs = Vec::new();
         for id in &ids {
@@ -2315,7 +2315,7 @@ impl Project {
             Document::Alignment(doc),
             "align.multiple",
             ids,
-            format!("{} Sequenzen ausgerichtet ({})", n, backend),
+            format!("{} sequences aligned ({})", n, backend),
         )
     }
 
@@ -2348,7 +2348,7 @@ impl Project {
             "slic" => OverlapAssembly::slic(),
             other => {
                 return Err(ApiError::InvalidInput {
-                    message: format!("Unbekannte Methode '{}'", other),
+                    message: format!("Unknown method '{}'", other),
                 })
             }
         };
@@ -2357,7 +2357,7 @@ impl Project {
             Document::Sequence(result.construct),
             "clone.overlap",
             ids,
-            format!("Zusammenbau ({})", method),
+            format!("Assembly ({})", method),
         )?;
         Ok(AssemblyDto {
             document: info,
@@ -2455,7 +2455,7 @@ impl Project {
         let docs = io::genbank::parse(&text)?;
         if docs.is_empty() {
             return Err(ApiError::InvalidInput {
-                message: format!("NCBI lieferte keine Sequenz für {}", id),
+                message: format!("NCBI returned no sequence for {}", id),
             });
         }
         let mut store = self.lock()?;
@@ -2479,7 +2479,7 @@ impl Project {
             input_ids: Vec::new(),
             output_ids: ids,
             time: now_secs(),
-            summary: format!("{} Sequenz(en) von NCBI", infos.len()),
+            summary: format!("{} sequence(s) from NCBI", infos.len()),
         })?;
         Ok(infos)
     }
@@ -2524,7 +2524,7 @@ impl Project {
             "cnbr" => Protease::CyanogenBromide,
             other => {
                 return Err(ApiError::InvalidInput {
-                    message: format!("Unbekannte Protease '{}'", other),
+                    message: format!("Unknown protease '{}'", other),
                 })
             }
         };
@@ -2578,10 +2578,10 @@ impl Project {
         format: String,
     ) -> Result<(), ApiError> {
         let doc = self.lock()?.load(&id)?.ok_or_else(|| ApiError::NotFound {
-            message: format!("Dokument '{}' nicht gefunden", id),
+            message: format!("Document '{}' not found", id),
         })?;
         let bad = |what: &str| ApiError::InvalidInput {
-            message: format!("{} kann nicht als '{}' gespeichert werden", what, format),
+            message: format!("{} cannot be saved as '{}'", what, format),
         };
         let text = match (&doc, format.as_str()) {
             (Document::Sequence(d), "genbank") => io::genbank::format(d),
@@ -2649,11 +2649,11 @@ impl Project {
                 }
                 out
             }
-            (Document::Sequence(_), _) => return Err(bad("Die Sequenz")),
-            (Document::Alignment(_), _) => return Err(bad("Das Alignment")),
+            (Document::Sequence(_), _) => return Err(bad("The sequence")),
+            (Document::Alignment(_), _) => return Err(bad("The alignment")),
         };
         std::fs::write(&path, text).map_err(|e| ApiError::Io {
-            message: format!("Datei '{}' konnte nicht geschrieben werden: {}", path, e),
+            message: format!("File '{}' could not be written: {}", path, e),
         })?;
         Ok(())
     }
@@ -2747,7 +2747,7 @@ impl Project {
             input_ids: Vec::new(),
             output_ids: ids,
             time: now_secs(),
-            summary: format!("{} Protein(e) von UniProt", infos.len()),
+            summary: format!("{} protein(s) from UniProt", infos.len()),
         })?;
         Ok(infos)
     }
@@ -2892,11 +2892,11 @@ impl Project {
         let program = tools
             .executable(&mapper)
             .ok_or_else(|| ApiError::NotFound {
-                message: format!("Das Programm '{}' ist nicht installiert", mapper),
+                message: format!("The program '{}' is not installed", mapper),
             })?;
         if read_paths.is_empty() || read_paths.len() > 2 {
             return Err(ApiError::InvalidInput {
-                message: "Es werden eine oder zwei Read-Dateien erwartet".to_string(),
+                message: "One or two read files expected".to_string(),
             });
         }
         let dir = std::path::PathBuf::from(&output_dir);
@@ -3080,7 +3080,7 @@ impl Project {
             "motif" => project_search::by_sequence_motif(&store, &text)?,
             other => {
                 return Err(ApiError::InvalidInput {
-                    message: format!("Unbekannte Suchart '{}'", other),
+                    message: format!("Unknown search type '{}'", other),
                 })
             }
         };
@@ -3185,7 +3185,7 @@ impl Project {
                 Ok(to_delimited(&rows, sep))
             }
             other => Err(ApiError::InvalidInput {
-                message: format!("Unbekannte Exportart '{}'", other),
+                message: format!("Unknown export type '{}'", other),
             }),
         }
     }
@@ -3204,12 +3204,12 @@ impl Project {
         );
         if s >= e {
             return Err(ApiError::InvalidInput {
-                message: format!("Ungültiger Bereich {}-{}", start, end),
+                message: format!("Invalid range {}-{}", start, end),
             });
         }
         if e - s > 5000 {
             return Err(ApiError::InvalidInput {
-                message: "Für die RNA-Faltung sind höchstens 5000 Basen erlaubt".to_string(),
+                message: "At most 5000 bases are allowed for RNA folding".to_string(),
             });
         }
         let text = d.bases().get(s..e).unwrap_or("");
@@ -3248,7 +3248,7 @@ impl Project {
         let a = self.alignment_doc(&id)?;
         let rows = strip_columns(a.rows(), threshold)?;
         let doc = AlignmentDocument::of(
-            &format!("{} (bereinigt)", a.name()),
+            &format!("{} (cleaned)", a.name()),
             a.seq_type(),
             a.row_names().to_vec(),
             rows,
@@ -3257,7 +3257,7 @@ impl Project {
             Document::Alignment(doc),
             "align.strip",
             vec![id],
-            format!("Spalten mit Lücken ≥ {:.0} % entfernt", threshold * 100.0),
+            format!("Columns with gaps ≥ {:.0} % removed", threshold * 100.0),
         )
     }
 
@@ -3325,7 +3325,7 @@ impl Project {
                     kind: "inverted".to_string(),
                     start: r.start as u64,
                     end: r.end() as u64,
-                    detail: format!("Arm {} bp, Spacer {} bp", r.arm, r.spacer),
+                    detail: format!("Arm {} bp, spacer {} bp", r.arm, r.spacer),
                 }),
         );
         Ok(out)
@@ -3382,7 +3382,7 @@ impl Project {
                 Document::Sequence(SequenceDocument::of(&format!("Contig {}", i + 1), seq)),
                 "assemble.reads",
                 ids.clone(),
-                format!("Contig {} aus {} Reads", i + 1, placed),
+                format!("Contig {} from {} reads", i + 1, placed),
             )?);
         }
         Ok(out)
@@ -3472,16 +3472,16 @@ impl Project {
             .collect();
         if text.is_empty() {
             return Err(ApiError::InvalidInput {
-                message: "Der Konsens ist leer".to_string(),
+                message: "The consensus is empty".to_string(),
             });
         }
-        let name = format!("{} Konsens", a.name());
+        let name = format!("{} consensus", a.name());
         let seq = snapious_core::model::Sequence::new(&name, &name, &text, a.seq_type())?;
         self.save_new(
             Document::Sequence(SequenceDocument::of(&name, seq)),
             "align.consensus",
             vec![id],
-            "Konsens".to_string(),
+            "Consensus".to_string(),
         )
     }
 
@@ -3542,13 +3542,13 @@ impl Project {
             .find(|(n, _)| *n == name)
             .map(|(_, j)| j)
             .ok_or_else(|| ApiError::NotFound {
-                message: format!("Workflow '{}' nicht gefunden", name),
+                message: format!("Workflow '{}' not found", name),
             })?;
         let wf = Workflow::from_json(&json)?;
         let mut inputs = Vec::new();
         for id in &input_ids {
             inputs.push(self.lock()?.load(id)?.ok_or_else(|| ApiError::NotFound {
-                message: format!("Dokument '{}' nicht gefunden", id),
+                message: format!("Document '{}' not found", id),
             })?);
         }
         let registry = registry_with_plugins();
@@ -3597,7 +3597,7 @@ impl Project {
     pub fn import_annotations(&self, id: String, path: String) -> Result<u64, ApiError> {
         let d = self.sequence_doc(&id)?;
         let text = std::fs::read_to_string(&path).map_err(|e| ApiError::Io {
-            message: format!("Datei '{}' konnte nicht gelesen werden: {}", path, e),
+            message: format!("File '{}' could not be read: {}", path, e),
         })?;
         let lower = path.to_lowercase();
         let wanted = [
@@ -3618,11 +3618,11 @@ impl Project {
             match unique.as_slice() {
                 [one] => Ok(one.clone()),
                 [] => Err(ApiError::InvalidInput {
-                    message: "Die Datei enthält keine Annotationen".to_string(),
+                    message: "The file contains no annotations".to_string(),
                 }),
                 many => Err(ApiError::InvalidInput {
                     message: format!(
-                        "Keine Kennung passt zum Dokument; in der Datei: {}",
+                        "No identifier matches the document; in the file: {}",
                         many.join(", ")
                     ),
                 }),
@@ -3638,7 +3638,7 @@ impl Project {
             gff3_to_features(&records, &seqid)?
         } else {
             return Err(ApiError::InvalidInput {
-                message: "Unbekannte Endung (erwartet .gff, .gff3 oder .bed)".to_string(),
+                message: "Unknown extension (expected .gff, .gff3 or .bed)".to_string(),
             });
         };
         let count = features.len() as u64;
@@ -3708,7 +3708,7 @@ impl BlastTransport for CurlTransport {
             .map_err(|e| snapious_core::error::Error::Io(format!("curl: {}", e)))?;
         if !out.status.success() {
             return Err(snapious_core::error::Error::Io(format!(
-                "Abruf fehlgeschlagen: {}",
+                "Fetch failed: {}",
                 String::from_utf8_lossy(&out.stderr).trim()
             )));
         }
@@ -3822,7 +3822,7 @@ pub fn structure_open(path: String) -> Result<PdbDto, ApiError> {
             .into_iter()
             .next()
             .ok_or_else(|| ApiError::InvalidInput {
-                message: "Keine Moleküle in der SDF-Datei".to_string(),
+                message: "No molecules in the SDF file".to_string(),
             })?;
         for x in first.atoms {
             atoms.extend([x.x, x.y, x.z]);
@@ -3953,18 +3953,18 @@ pub fn enzyme_set_save(name: String, enzymes: String) -> Result<(), ApiError> {
     let name = name.trim().to_string();
     if name.is_empty() {
         return Err(ApiError::InvalidInput {
-            message: "Das Set braucht einen Namen".to_string(),
+            message: "The set needs a name".to_string(),
         });
     }
     if builtin_sets().iter().any(|s: &EnzymeSet| s.name == name) {
         return Err(ApiError::InvalidInput {
-            message: "Dieser Name gehört zu einem eingebauten Set".to_string(),
+            message: "This name belongs to a built-in set".to_string(),
         });
     }
     let list = parse_enzyme_list(&enzymes);
     if list.is_empty() {
         return Err(ApiError::InvalidInput {
-            message: "Das Set braucht mindestens ein Enzym".to_string(),
+            message: "The set needs at least one enzyme".to_string(),
         });
     }
     let path = enzyme_sets_path();
@@ -4056,7 +4056,7 @@ pub fn split_fastq_by_barcode(
             _ => {
                 return Err(ApiError::InvalidInput {
                     message: format!(
-                        "Barcode-Zeile nicht lesbar: '{}' (erwartet: Name,Sequenz)",
+                        "Barcode line not readable: '{}' (expected: name,sequence)",
                         line
                     ),
                 })
@@ -4065,7 +4065,7 @@ pub fn split_fastq_by_barcode(
     }
     if list.is_empty() {
         return Err(ApiError::InvalidInput {
-            message: "Keine Barcodes angegeben".to_string(),
+            message: "No barcodes given".to_string(),
         });
     }
     std::fs::create_dir_all(&out_dir).map_err(|e| ApiError::Io {
@@ -4099,7 +4099,7 @@ pub fn split_fastq_by_barcode(
         )
         .pop()
         .ok_or_else(|| ApiError::Internal {
-            message: "Barcode-Zuordnung ohne Ergebnis".to_string(),
+            message: "Barcode assignment without result".to_string(),
         })?;
         let (slot, seq, qual) = match hit.barcode {
             Some(i) => {
@@ -4442,7 +4442,7 @@ pub fn plugins_list() -> Vec<String> {
             )
         })
         .collect();
-    out.extend(warnings.into_iter().map(|w| format!("Warnung: {}", w)));
+    out.extend(warnings.into_iter().map(|w| format!("Warning: {}", w)));
     out
 }
 
@@ -4568,7 +4568,7 @@ pub fn gel_ladder(name: String, agarose_percent: f64) -> Result<Vec<GelBandDto>,
         "generic_100bp" => Ladder::generic_100bp(),
         other => {
             return Err(ApiError::InvalidInput {
-                message: format!("Unbekannter Größenstandard '{}'", other),
+                message: format!("Unknown size standard '{}'", other),
             })
         }
     };
@@ -4588,7 +4588,7 @@ pub fn gel_ladder(name: String, agarose_percent: f64) -> Result<Vec<GelBandDto>,
 #[uniffi::export]
 pub fn read_trace(path: String) -> Result<TraceDto, ApiError> {
     let bytes = std::fs::read(&path).map_err(|e| ApiError::Io {
-        message: format!("Datei '{}' konnte nicht gelesen werden: {}", path, e),
+        message: format!("File '{}' could not be read: {}", path, e),
     })?;
     if bytes.starts_with(b".scf") {
         let r = snapious_core::io::scf::parse_scf(&bytes)?;

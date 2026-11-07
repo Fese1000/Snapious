@@ -11,9 +11,9 @@ use crate::ops::operation::{Operation, OperationContext, OperationResult, Params
 
 /// `protein.properties`: Eigenschaften einer Proteinsequenz. Eingabe: genau ein Sequenzdokument (sonst `Error::Operation`).
 /// `outputs` ist leer. `summary` (eine Zeile, Zahlen mit `format!`):
-/// `"{n} aa, {mw:.1} Da, pI {pi:.2}, ε280 {eps:.0} M⁻¹cm⁻¹, Aromatizität {arom:.3}"` mit `n` = Länge der Sequenz,
+/// `"{n} aa, {mw:.1} Da, pI {pi:.2}, ε280 {eps:.0} M⁻¹cm⁻¹, Aromaticity {arom:.3}"` mit `n` = Länge der Sequenz,
 /// `mw = molecular_weight`, `pi = isoelectric_point`, `eps = extinction_coefficient_280(.., false)`, `arom = aromaticity`
-/// (jeweils für `bases()` des Dokuments). Eine leere Sequenz → `Error::Operation("Die Sequenz ist leer")`.
+/// (jeweils für `bases()` des Dokuments). Eine leere Sequenz → `Error::Operation("The sequence is empty")`.
 pub struct ProteinPropertiesOperation;
 
 impl Operation for ProteinPropertiesOperation {
@@ -22,7 +22,7 @@ impl Operation for ProteinPropertiesOperation {
     }
 
     fn label(&self) -> &str {
-        "Proteineigenschaften"
+        "Protein properties"
     }
 
     fn run(
@@ -33,17 +33,17 @@ impl Operation for ProteinPropertiesOperation {
     ) -> Result<OperationResult> {
         if inputs.len() != 1 {
             return Err(Error::Operation(
-                "Genau ein Sequenzdokument erwartet".into(),
+                "Exactly one sequence document expected".into(),
             ));
         }
 
         let seq = match &inputs[0] {
             Document::Sequence(doc) => doc.sequence().bases(),
-            _ => return Err(Error::Operation("Unerwarteter Dokumenttyp".into())),
+            _ => return Err(Error::Operation("Unexpected document type".into())),
         };
 
         if seq.is_empty() {
-            return Err(Error::Operation("Die Sequenz ist leer".into()));
+            return Err(Error::Operation("The sequence is empty".into()));
         }
 
         let n = seq.len();
@@ -53,7 +53,7 @@ impl Operation for ProteinPropertiesOperation {
         let arom = aromaticity(seq);
 
         let summary = format!(
-            "{} aa, {:.1} Da, pI {:.2}, ε280 {:.0} M⁻¹cm⁻¹, Aromatizität {:.3}",
+            "{} aa, {:.1} Da, pI {:.2}, ε280 {:.0} M⁻¹cm⁻¹, Aromaticity {:.3}",
             n, mw, pi, eps, arom
         );
 
@@ -75,7 +75,7 @@ impl Operation for RnaFoldOperation {
     }
 
     fn label(&self) -> &str {
-        "RNA falten"
+        "Fold RNA"
     }
 
     fn run(
@@ -86,13 +86,13 @@ impl Operation for RnaFoldOperation {
     ) -> Result<OperationResult> {
         if inputs.len() != 1 {
             return Err(Error::Operation(
-                "Genau ein Sequenzdokument erwartet".into(),
+                "Exactly one sequence document expected".into(),
             ));
         }
 
         let seq = match &inputs[0] {
             Document::Sequence(doc) => doc.sequence().bases(),
-            _ => return Err(Error::Operation("Unerwarteter Dokumenttyp".into())),
+            _ => return Err(Error::Operation("Unexpected document type".into())),
         };
 
         match fold_rna(seq) {
@@ -135,7 +135,7 @@ mod tests {
         let mw = molecular_weight("GGWYK");
         assert!(r.summary.starts_with(&format!("5 aa, {:.1} Da, pI ", mw)));
         assert!(r.summary.contains("ε280 "));
-        assert!(r.summary.contains("Aromatizität 0.400"));
+        assert!(r.summary.contains("Aromaticity 0.400"));
     }
 
     #[test]

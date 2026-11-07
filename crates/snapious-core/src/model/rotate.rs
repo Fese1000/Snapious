@@ -18,14 +18,14 @@ use crate::model::sequence::{Sequence, SequenceType};
 pub fn rotate_document(doc: &SequenceDocument, new_origin: usize) -> Result<SequenceDocument> {
     if doc.topology() != Topology::Circular {
         return Err(Error::InvalidState(
-            "Dokument ist nicht zirkulär".to_string(),
+            "Document is not circular".to_string(),
         ));
     }
 
     let len = doc.len();
     if new_origin >= len {
         return Err(Error::OutOfRange(
-            "Ursprung liegt außerhalb der Sequenz".to_string(),
+            "Origin lies outside the sequence".to_string(),
         ));
     }
 

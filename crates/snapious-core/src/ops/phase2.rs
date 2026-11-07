@@ -17,7 +17,7 @@ fn sequences(inputs: &[Document]) -> Result<Vec<&SequenceDocument>> {
         .map(|d| match d {
             Document::Sequence(s) => Ok(s),
             _ => Err(Error::Operation(
-                "Alle Eingaben müssen Sequenzen sein".to_string(),
+                "All inputs must be sequences".to_string(),
             )),
         })
         .collect()
@@ -40,8 +40,8 @@ fn split_list(text: &str) -> Vec<String> {
 /// clone.restriction: Restriktionsklonierung. Eingaben: zuerst der Vektor, dann das Insert (zwei Sequenzen, sonst Error::Operation).
 /// Parameter: vector_enzymes und insert_enzymes (Pflicht, Listen wie bei split_list), candidate (optional, 0-basierter Index in
 /// der sortierten Kandidatenliste von restriction_candidates, Standard 0; ungültiger Wert oder Index außerhalb -> Error::Operation).
-/// Ergebnis: ein Ausgabedokument, das construct des gewählten Kandidaten; summary = "Konstrukt {len} bp ({gerichtet|ungerichtet})".
-/// Gibt es keine Kandidaten: Error::Operation("Keine passenden Enden: es entsteht kein Konstrukt"). Fehler der Kernfunktion
+/// Ergebnis: ein Ausgabedokument, das construct des gewählten Kandidaten; summary = "Construct {len} bp ({directional|non-directional})".
+/// Gibt es keine Kandidaten: Error::Operation("No matching ends: no construct results"). Fehler der Kernfunktion
 /// werden als Error::Operation mit deren Text weitergegeben (EnzymeDb::standard() verwenden).
 pub struct RestrictionCloneOperation;
 
@@ -51,7 +51,7 @@ impl Operation for RestrictionCloneOperation {
     }
 
     fn label(&self) -> &str {
-        "Restriktionsklonierung"
+        "Restriction cloning"
     }
 
     fn run(
@@ -63,7 +63,7 @@ impl Operation for RestrictionCloneOperation {
         let seqs = sequences(inputs)?;
         if seqs.len() != 2 {
             return Err(Error::Operation(
-                "Genau zwei Eingaben erwartet: Vektor und Insert".to_string(),
+                "Exactly two inputs expected: vector and insert".to_string(),
             ));
         }
 
@@ -91,20 +91,20 @@ impl Operation for RestrictionCloneOperation {
 
         if candidates.is_empty() {
             return Err(Error::Operation(
-                "Keine passenden Enden: es entsteht kein Konstrukt".to_string(),
+                "No matching ends: no construct results".to_string(),
             ));
         }
 
         let candidate_idx: usize = match params.get("candidate") {
             Some(s) => s
                 .parse::<usize>()
-                .map_err(|_| Error::Operation("Ungültiger Kandidaten-Index".to_string()))?,
+                .map_err(|_| Error::Operation("Invalid candidate index".to_string()))?,
             None => 0,
         };
 
         if candidate_idx >= candidates.len() {
             return Err(Error::Operation(
-                "Kandidaten-Index außerhalb des gültigen Bereichs".to_string(),
+                "Candidate index outside the valid range".to_string(),
             ));
         }
 
@@ -113,12 +113,12 @@ impl Operation for RestrictionCloneOperation {
         let construct_doc = selected.construct.clone();
 
         let summary = format!(
-            "Konstrukt {} bp ({})",
+            "Construct {} bp ({})",
             construct_doc.bases().len(),
             if selected.directional {
-                "gerichtet"
+                "directional"
             } else {
-                "ungerichtet"
+                "non-directional"
             }
         );
 
@@ -134,7 +134,7 @@ impl Operation for RestrictionCloneOperation {
 /// lassen -> Error::Operation. PcrSimulator::new(min_match, max_mismatches, max_length), Primernamen forward und reverse,
 /// zirkulär, wenn die Vorlage Topology::Circular hat. Jedes Produkt wird ein lineares DNA-Dokument namens PCR-Produkt {n}
 /// (n ab 1, Reihenfolge wie die Kernfunktion sie liefert), Metadaten source = "pcr.simulate".
-/// Kein Produkt -> Error::Operation("Kein PCR-Produkt: die Primer binden nicht passend"). summary = "{n} PCR-Produkt(e)".
+/// Kein Produkt -> Error::Operation("No PCR product: the primers do not bind suitably"). summary = "{n} PCR-Produkt(e)".
 pub struct PcrOperation;
 
 impl Operation for PcrOperation {
@@ -143,7 +143,7 @@ impl Operation for PcrOperation {
     }
 
     fn label(&self) -> &str {
-        "PCR simulieren"
+        "Simulate PCR"
     }
 
     fn run(
@@ -155,7 +155,7 @@ impl Operation for PcrOperation {
         let seqs = sequences(inputs)?;
         if seqs.len() != 1 {
             return Err(Error::Operation(
-                "Genau eine Eingabe erwartet: Vorlage".to_string(),
+                "Exactly one input expected: template".to_string(),
             ));
         }
 
@@ -169,7 +169,7 @@ impl Operation for PcrOperation {
             Ok(s) => s
                 .trim()
                 .parse::<usize>()
-                .map_err(|_| Error::Operation("Ungültiger Wert für max_mismatches".to_string()))?,
+                .map_err(|_| Error::Operation("Invalid value for max_mismatches".to_string()))?,
             Err(_) => 2,
         };
 
@@ -177,7 +177,7 @@ impl Operation for PcrOperation {
             Ok(s) => s
                 .trim()
                 .parse::<usize>()
-                .map_err(|_| Error::Operation("Ungültiger Wert für min_match".to_string()))?,
+                .map_err(|_| Error::Operation("Invalid value for min_match".to_string()))?,
             Err(_) => 12,
         };
 
@@ -185,7 +185,7 @@ impl Operation for PcrOperation {
             Ok(s) => s
                 .trim()
                 .parse::<usize>()
-                .map_err(|_| Error::Operation("Ungültiger Wert für max_length".to_string()))?,
+                .map_err(|_| Error::Operation("Invalid value for max_length".to_string()))?,
             Err(_) => 10000,
         };
 
@@ -210,13 +210,13 @@ impl Operation for PcrOperation {
 
         if products.is_empty() {
             return Err(Error::Operation(
-                "Kein PCR-Produkt: die Primer binden nicht passend".to_string(),
+                "No PCR product: the primers do not bind suitably".to_string(),
             ));
         }
 
         let mut outputs = Vec::with_capacity(products.len());
         for (i, prod) in products.iter().enumerate() {
-            let name = format!("PCR-Produkt {}", i + 1);
+            let name = format!("PCR product {}", i + 1);
             // Assuming PcrProduct has 'sequence' field (String)
             let seq = Sequence::new(&name, &name, &prod.sequence, SequenceType::Dna)
                 .map_err(|e| Error::Operation(e.to_string()))?; // Assuming Sequence::new returns Result
@@ -228,14 +228,14 @@ impl Operation for PcrOperation {
 
         Ok(OperationResult {
             outputs,
-            summary: format!("{} PCR-Produkt(e)", products.len()),
+            summary: format!("{} PCR product(s)", products.len()),
         })
     }
 }
 
 /// codon.optimize: Codon-Optimierung. Eingaben: zuerst die codierende DNA, dann ein Referenzdokument, aus dessen Codon-Häufigkeiten
 /// (count_codons auf bases() des Referenzdokuments, dann CodonTable::from_counts) die Tabelle entsteht (zwei Sequenzen, sonst
-/// Error::Operation). Parameter (alle optional): avoid (Liste wie bei split_list, Großbuchstaben, Erkennungsstellen),
+/// Error::Operation). Parameter (alle optional): avoid (Liste wie bei split_list, Uppercase, Erkennungsstellen),
 /// max_homopolymer (Standard 6). Sonst OptimizationOptions::standard() (Felder avoid_sites, max_homopolymer setzen).
 /// Ergebnis: ein lineares DNA-Dokument {Name} (optimiert), Metadaten source = "codon.optimize"; summary = "Codon-optimiert, {len} bp".
 /// Fehler der Kernfunktion optimize_dna als Error::Operation mit deren Text.
@@ -247,7 +247,7 @@ impl Operation for CodonOptimizeOperation {
     }
 
     fn label(&self) -> &str {
-        "Codons optimieren"
+        "Optimize codons"
     }
 
     fn run(
@@ -259,7 +259,7 @@ impl Operation for CodonOptimizeOperation {
         let seqs = sequences(inputs)?;
         if seqs.len() != 2 {
             return Err(Error::Operation(
-                "Genau zwei Eingaben erwartet: DNA und Referenz".to_string(),
+                "Exactly two inputs expected: DNA and reference".to_string(),
             ));
         }
 
@@ -277,7 +277,7 @@ impl Operation for CodonOptimizeOperation {
             Ok(s) => s
                 .trim()
                 .parse::<usize>()
-                .map_err(|_| Error::Operation("Ungültiger Wert für max_homopolymer".to_string()))?,
+                .map_err(|_| Error::Operation("Invalid value for max_homopolymer".to_string()))?,
             Err(_) => 6,
         };
 
@@ -294,7 +294,7 @@ impl Operation for CodonOptimizeOperation {
         let optimized_seq = optimize_dna(&table, coding_dna.sequence().bases(), &options)
             .map_err(|e| Error::Operation(e.to_string()))?;
 
-        let name = format!("{} (optimiert)", coding_dna.name());
+        let name = format!("{} (optimized)", coding_dna.name());
         let seq = Sequence::new(&name, &name, &optimized_seq, SequenceType::Dna)
             .map_err(|e| Error::Operation(e.to_string()))?;
         let mut meta = Params::new();
@@ -303,7 +303,7 @@ impl Operation for CodonOptimizeOperation {
 
         Ok(OperationResult {
             outputs: vec![doc],
-            summary: format!("Codon-optimiert, {} bp", optimized_seq.len()),
+            summary: format!("Codon-optimized, {} bp", optimized_seq.len()),
         })
     }
 }
@@ -370,8 +370,8 @@ mod tests {
         assert_eq!(r.outputs.len(), 1);
         let c = only_sequence(&r);
         assert_eq!(c.topology(), Topology::Circular);
-        assert!(r.summary.starts_with("Konstrukt "));
-        assert!(r.summary.contains("(gerichtet)"));
+        assert!(r.summary.starts_with("Construct "));
+        assert!(r.summary.contains("(directional)"));
         let doubled = format!("{}{}", c.bases(), c.bases());
         assert!(doubled.contains("GGATCC") && doubled.contains("GAATTC"));
     }
@@ -394,7 +394,7 @@ mod tests {
         assert!(run(&RestrictionCloneOperation, &[vector(), insert()], &bad).is_err());
         let x = params(&[("vector_enzymes", "EcoRI"), ("insert_enzymes", "BamHI")]);
         let e = run(&RestrictionCloneOperation, &[vector(), insert()], &x).unwrap_err();
-        assert!(e.to_string().contains("Keine passenden Enden"));
+        assert!(e.to_string().contains("No matching ends"));
     }
 
     const T: &str = "ATGCCGTAGCTAGCATCGATCGGATCCGATCGATCGTAGCTAGCTAGGCTAGC";
@@ -407,9 +407,9 @@ mod tests {
         assert_eq!(r.outputs.len(), 1);
         let prod = only_sequence(&r);
         assert_eq!(prod.bases(), T);
-        assert_eq!(prod.name(), "PCR-Produkt 1");
+        assert_eq!(prod.name(), "PCR product 1");
         assert_eq!(prod.topology(), Topology::Linear);
-        assert_eq!(r.summary, "1 PCR-Produkt(e)");
+        assert_eq!(r.summary, "1 PCR product(s)");
     }
 
     #[test]
@@ -417,7 +417,7 @@ mod tests {
         let t = doc("t", T, Topology::Linear);
         let p = params(&[("forward", "ATGCCGTAGCTAGC"), ("reverse", "TTTTTTTTTTTTTT")]);
         let e = run(&PcrOperation, std::slice::from_ref(&t), &p).unwrap_err();
-        assert!(e.to_string().contains("Kein PCR-Produkt"));
+        assert!(e.to_string().contains("No PCR product"));
         assert!(run(&PcrOperation, std::slice::from_ref(&t), &Params::new()).is_err());
         let bad = params(&[
             ("forward", "ATGCCGTAGCTAGC"),
@@ -442,8 +442,8 @@ mod tests {
         let r = run(&CodonOptimizeOperation, &inputs, &Params::new()).unwrap();
         let o = only_sequence(&r);
         assert_eq!(o.bases(), "ATGAAGTTCGGT");
-        assert_eq!(o.name(), "gen (optimiert)");
-        assert_eq!(r.summary, "Codon-optimiert, 12 bp");
+        assert_eq!(o.name(), "gen (optimized)");
+        assert_eq!(r.summary, "Codon-optimized, 12 bp");
         // verbotene Stelle
         let p = params(&[("avoid", "AAGTTC")]);
         let r2 = run(&CodonOptimizeOperation, &inputs, &p).unwrap();

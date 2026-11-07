@@ -80,6 +80,6 @@ fn pcr_ueber_den_ursprung_und_primerwahl() {
         .iter()
         .filter(|p| p.sequence.len() == best.product_size)
         .collect();
-    assert_eq!(wanted.len(), 1, "genau ein Produkt der erwarteten Größe");
+    assert_eq!(wanted.len(), 1, "exactly one product of the expected size");
     assert!(wanted[0].sequence.starts_with(&best.forward.sequence));
 }

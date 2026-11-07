@@ -30,27 +30,27 @@ pub fn parse_bed(text: &str) -> Result<Vec<BedRecord>> {
         {
             continue;
         }
-        let bad = |what: &str| Error::InvalidInput(format!("Zeile {}: {}", i + 1, what));
+        let bad = |what: &str| Error::InvalidInput(format!("Line {}: {}", i + 1, what));
         let cols: Vec<&str> = line.split_whitespace().collect();
         let (chrom, start, end) = match (cols.first(), cols.get(1), cols.get(2)) {
             (Some(c), Some(s), Some(e)) => (*c, *s, *e),
-            _ => return Err(bad("weniger als 3 Spalten")),
+            _ => return Err(bad("fewer than 3 columns")),
         };
-        let start: usize = start.parse().map_err(|_| bad("Start ist keine Zahl"))?;
-        let end: usize = end.parse().map_err(|_| bad("Ende ist keine Zahl"))?;
+        let start: usize = start.parse().map_err(|_| bad("Start is not a number"))?;
+        let end: usize = end.parse().map_err(|_| bad("End is not a number"))?;
         if start > end {
-            return Err(bad("Start liegt hinter dem Ende"));
+            return Err(bad("Start lies beyond the end"));
         }
         let name = cols.get(3).filter(|n| **n != ".").map(|n| n.to_string());
         let score = match cols.get(4) {
             None | Some(&".") => None,
-            Some(v) => Some(v.parse::<f64>().map_err(|_| bad("Score ist keine Zahl"))?),
+            Some(v) => Some(v.parse::<f64>().map_err(|_| bad("Score is not a number"))?),
         };
         let strand = match cols.get(5) {
             None | Some(&".") => Strand::None,
             Some(&"+") => Strand::Forward,
             Some(&"-") => Strand::Reverse,
-            Some(_) => return Err(bad("ungültiger Strang")),
+            Some(_) => return Err(bad("invalid strand")),
         };
         out.push(BedRecord {
             chrom: chrom.to_string(),

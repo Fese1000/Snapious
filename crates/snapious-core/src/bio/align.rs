@@ -136,7 +136,7 @@ impl Aligner {
         let cells = (n + 1).saturating_mul(m + 1);
         if cells > MAX_CELLS {
             return Err(Error::InvalidInput(format!(
-                "Sequenzen zu lang für ein Alignment ({} x {})",
+                "Sequences too long for an alignment ({} x {})",
                 n, m
             )));
         }
@@ -506,7 +506,7 @@ mod tests {
 
     /// Leistungsmessung: `cargo test --release -p snapious-core -- --ignored leistung`
     #[test]
-    #[ignore = "Leistungsmessung, nur im Release-Build sinnvoll"]
+    #[ignore = "Performance measurement, only meaningful in release builds"]
     fn leistung_5000_mal_5000() {
         let a = crate::util::Rng::new(1);
         let mut r = a;

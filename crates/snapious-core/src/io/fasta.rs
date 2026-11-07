@@ -27,7 +27,7 @@ pub fn parse(text: &str) -> Result<Vec<Sequence>> {
      -> Result<()> {
         if let Some((line, h)) = header.take() {
             let s = Sequence::from_fasta(&extract_id(&h), &h, body)
-                .map_err(|e| Error::Io(format!("Zeile {}: {}", line, e)))?;
+                .map_err(|e| Error::Io(format!("Line {}: {}", line, e)))?;
             out.push(s);
         }
         body.clear();
@@ -108,7 +108,7 @@ mod tests {
     #[test]
     fn ungueltiges_zeichen_meldet_zeile() {
         match parse(">ok\nACGT\n>kaputt\nAC1T\n") {
-            Err(Error::Io(m)) => assert!(m.contains("Zeile 3"), "{}", m),
+            Err(Error::Io(m)) => assert!(m.contains("Line 3"), "{}", m),
             other => panic!("unerwartet: {:?}", other.map(|v| v.len())),
         }
     }

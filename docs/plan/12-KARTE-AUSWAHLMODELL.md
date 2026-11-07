@@ -1,21 +1,21 @@
-# Karte 1.2: Auswahlmodell (Selection)
+# Card 1.2: Selection model
 
-Datei: `crates/snapious-core/src/view/selection.rs` (Gerüst und Tests vorhanden)
-Voraussetzung: keine (nur `error.rs`)
-Ziel: Eine textcursor-artige Auswahl auf einer Sequenz verwalten: Cursorposition (caret), Anker, Bereichsberechnung, Verkleinern auf Sequenzgrenzen.
+File: `crates/snapious-core/src/view/selection.rs` (skeleton and tests exist)
+Prerequisite: none (only `error.rs`)
+Goal: Manage a text-cursor-like selection on a sequence: caret position, anchor, range computation, clamping to sequence bounds.
 
-Funktionen:
-  `Selection::none() -> Self`                              // anchor = caret = -1 (oder ein spezieller „leer"-Zustand)
+Functions:
+  `Selection::none() -> Self`                              // anchor = caret = -1 (or a special "empty" state)
   `Selection::caret_at(position: usize) -> Self`            // anchor = caret = position
-  `Selection::range(start: usize, end: usize) -> Self`     // anchor = min, caret = max (Reihenfolge der Argumente egal)
-  `is_empty(&self) -> bool`                                // anchor == caret oder initial leer
+  `Selection::range(start: usize, end: usize) -> Self`     // anchor = min, caret = max (argument order does not matter)
+  `is_empty(&self) -> bool`                                // anchor == caret or initially empty
   `start(&self) -> usize`                                  // min(anchor, caret)
   `end(&self) -> usize`                                    // max(anchor, caret)
   `length(&self) -> usize`                                 // end - start
-  `extend_to(&self, position: usize) -> Self`              // anchor bleibt, caret wird position (neues Selection-Objekt)
-  `clamp(&self, sequence_length: usize) -> Self`           // anchor und caret auf [0, sequence_length] beschränkt
+  `extend_to(&self, position: usize) -> Self`              // anchor stays, caret becomes position (new Selection object)
+  `clamp(&self, sequence_length: usize) -> Self`           // anchor and caret limited to [0, sequence_length]
 
-Randfälle: `range(5, 2)` → start=2, end=5 (Argumente können vertauscht sein); `clamp(10)` auf Bereich [8, 15] → [8, 10]; leere Selection (`none()`) hat `length == 0`; `extend_to` ändert nicht das Original (immutabel).
+Edge cases: `range(5, 2)` → start=2, end=5 (arguments may be swapped); `clamp(10)` on range [8, 15] → [8, 10]; an empty selection (`none()`) has `length == 0`; `extend_to` does not modify the original (immutable).
 
-Fertig, wenn: `cargo test -p snapious-core selection` grün.
-Nicht tun: Tests ändern; andere Dateien ändern; `unwrap()`.
+Done when: `cargo test -p snapious-core selection` is green.
+Do not: change tests; change other files; use `unwrap()`.

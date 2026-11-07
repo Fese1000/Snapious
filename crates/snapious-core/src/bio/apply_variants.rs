@@ -3,7 +3,7 @@
 use crate::bio::variants::{Variant, VariantKind};
 use crate::error::{Error, Result};
 
-/// Wendet alle Varianten, deren `row == row` ist, auf `reference` (Basen ohne Lücken, Großbuchstaben) an und gibt die neue
+/// Wendet alle Varianten, deren `row == row` ist, auf `reference` (Basen ohne Lücken, Uppercase) an und gibt die neue
 /// Sequenz zurück. `reference_position` ist die 0-basierte Position in `reference`:
 /// * `Substitution`: die Base dort wird durch `alt_base` ersetzt,
 /// * `Deletion`: die Base dort entfällt,
@@ -35,13 +35,13 @@ pub fn apply_variants(reference: &str, variants: &[Variant], row: usize) -> Resu
             VariantKind::Substitution => {
                 if v.reference_position >= chars.len() {
                     return Err(Error::InvalidInput(format!(
-                        "Substitution außerhalb des gültigen Bereichs: {}",
+                        "Substitution outside the valid range: {}",
                         v.reference_position
                     )));
                 }
                 if chars[v.reference_position] != v.reference_base {
                     return Err(Error::InvalidInput(format!(
-                        "Referenzbase passt nicht: erwartet {}, gefunden {}",
+                        "Reference base does not match: expected {}, found {}",
                         v.reference_base, chars[v.reference_position]
                     )));
                 }
@@ -50,13 +50,13 @@ pub fn apply_variants(reference: &str, variants: &[Variant], row: usize) -> Resu
             VariantKind::Deletion => {
                 if v.reference_position >= chars.len() {
                     return Err(Error::InvalidInput(format!(
-                        "Deletion außerhalb des gültigen Bereichs: {}",
+                        "Deletion outside the valid range: {}",
                         v.reference_position
                     )));
                 }
                 if chars[v.reference_position] != v.reference_base {
                     return Err(Error::InvalidInput(format!(
-                        "Referenzbase passt nicht: erwartet {}, gefunden {}",
+                        "Reference base does not match: expected {}, found {}",
                         v.reference_base, chars[v.reference_position]
                     )));
                 }
@@ -65,7 +65,7 @@ pub fn apply_variants(reference: &str, variants: &[Variant], row: usize) -> Resu
             VariantKind::Insertion => {
                 if v.reference_position > chars.len() {
                     return Err(Error::InvalidInput(format!(
-                        "Insertion außerhalb des gültigen Bereichs: {}",
+                        "Insertion outside the valid range: {}",
                         v.reference_position
                     )));
                 }

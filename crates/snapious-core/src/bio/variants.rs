@@ -23,9 +23,9 @@ pub struct Variant {
     pub reference_position: usize,
     /// Index der abweichenden Zeile.
     pub row: usize,
-    /// Base der Referenz in Großbuchstaben, `'-'` bei Insertion.
+    /// Base der Referenz in Uppercase, `'-'` bei Insertion.
     pub reference_base: char,
-    /// Base der Zeile in Großbuchstaben, `'-'` bei Deletion.
+    /// Base der Zeile in Uppercase, `'-'` bei Deletion.
     pub alt_base: char,
     pub kind: VariantKind,
 }
@@ -39,17 +39,17 @@ pub struct Variant {
 /// Fehler `Error::InvalidInput`, wenn `rows` leer ist, die Zeilen verschieden lang sind oder `reference >= rows.len()`.
 pub fn find_variants(rows: &[String], reference: usize) -> Result<Vec<Variant>> {
     if rows.is_empty() {
-        return Err(Error::InvalidInput("Leere Sequenz".into()));
+        return Err(Error::InvalidInput("Empty sequence".into()));
     }
     if reference >= rows.len() {
-        return Err(Error::InvalidInput("Ungültiger Referenzindex".into()));
+        return Err(Error::InvalidInput("Invalid reference index".into()));
     }
 
     let len = rows[0].len();
     for row in rows.iter().skip(1) {
         if row.len() != len {
             return Err(Error::InvalidInput(
-                "Zeilen haben verschiedene Längen".into(),
+                "Rows have different lengths".into(),
             ));
         }
     }

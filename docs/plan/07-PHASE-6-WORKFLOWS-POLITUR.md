@@ -1,51 +1,51 @@
-# Phase 6: Workflows, Plugins, Dokumentverwaltung und Politur
+# Phase 6: Workflows, Plugins, Document Management, and Polish
 
-> **Hinweis zur Umsetzung:** Die Signaturen in diesem Dokument sind in Java-Schreibweise. Umgesetzt wird in **Rust** (Abbildung: `08-RUST-KERN-SWIFT-APP.md`, Tabelle „Abbildung Java-Anleitung → Rust").
-> Aufgaben, die JavaFX/Maven/JDBC/`jpackage` erwähnen, sind **ersetzt** (Swift-Aufgaben S.x bzw. `rusqlite`, `cargo`); sie sind unten mit „→ ersetzt" markiert. Zuerst `00-ARBEITSANWEISUNG.md` lesen.
+> **Implementation note:** The signatures in this document are written in Java notation. Implementation is in **Rust** (mapping: `08-RUST-KERN-SWIFT-APP.md`, table "Mapping Java guide → Rust").
+> Tasks that mention JavaFX/Maven/JDBC/`jpackage` are **replaced** (Swift tasks S.x or `rusqlite`, `cargo`); they are marked "→ replaced" below. Read `00-ARBEITSANWEISUNG.md` first.
 
 
-Ziel: Operationen zu Workflows verketten, Plugins nachladen, Dokumente verwalten (Ordner, Suche, Versionen), Einstellungen, Export, Installationspaket und Qualitätswerkzeuge.
+Goal: chain operations into workflows, load plugins, manage documents (folders, search, versions), settings, export, installer package, and quality tooling.
 
-Neue Pakete: `workflow/`, `plugin/`, `project/` (Verwaltung), `settings/`, `export/`.
+New packages: `workflow/`, `plugin/`, `project/` (management), `settings/`, `export/`.
 
 ---
 
-## Aufgabe 6.1: Operationen registrieren (Operation-Registry)
+## Task 6.1: Registering Operations (Operation Registry)
 
-**Voraussetzung:** Phasen 0–5 (soweit umgesetzt).
+**Prerequisite:** Phases 0–5 (as far as implemented).
 
-**Dateien:** `ops/OperationRegistry.java`, Test.
+**Files:** `ops/OperationRegistry.java`, test.
 
 ```java
 public final class OperationRegistry {
-    public static OperationRegistry withBuiltins(ToolRegistry tools, HttpFetcher fetcher);    // registriert alle vorhandenen Operationen
-    public void register(Operation op);                          // doppelte ID → IllegalArgumentException
+    public static OperationRegistry withBuiltins(ToolRegistry tools, HttpFetcher fetcher);    // registers all existing operations
+    public void register(Operation op);                          // duplicate ID → IllegalArgumentException
     public Optional<Operation> find(String id);
-    public List<Operation> all();                                // nach id sortiert
+    public List<Operation> all();                                // sorted by id
 }
 ```
 
-`withBuiltins` registriert alle in den Phasen 0–5 entstandenen Operationen (nur die, die bereits existieren; Liste in `OperationRegistry` als Konstante halten und bei jeder neuen Operation ergänzen).
+`withBuiltins` registers all operations created in Phases 0–5 (only those that already exist; keep the list as a constant in `OperationRegistry` and extend it with every new operation).
 
-**Tests:** Registrieren zweier Operationen mit gleicher ID → Exception; `find("edit.insert")` vorhanden; `all()` sortiert; `withBuiltins` enthält keine doppelten IDs.
+**Tests:** Registering two operations with the same ID → exception; `find("edit.insert")` present; `all()` sorted; `withBuiltins` contains no duplicate IDs.
 
 ---
 
-## Aufgabe 6.2: Workflows
+## Task 6.2: Workflows
 
-**Voraussetzung:** 6.1.
+**Prerequisite:** 6.1.
 
-**Dateien:** `workflow/Workflow.java`, `workflow/WorkflowStep.java`, `workflow/WorkflowRunner.java`, `workflow/WorkflowJson.java`, Tests.
+**Files:** `workflow/Workflow.java`, `workflow/WorkflowStep.java`, `workflow/WorkflowRunner.java`, `workflow/WorkflowJson.java`, tests.
 
 ```java
-public record StepInput(String reference) {}     // "$in:0" (Eingabedokument 0), "$step:2:1" (Ausgabe 1 des Schritts 2, 0-basiert)
+public record StepInput(String reference) {}     // "$in:0" (input document 0), "$step:2:1" (output 1 of step 2, 0-based)
 public record WorkflowStep(String id, String operationId, Map<String,String> parameters, List<StepInput> inputs) {}
-public record Workflow(String name, String description, int inputCount, List<WorkflowStep> steps, List<String> outputs /* Verweise wie bei StepInput */) {}
+public record Workflow(String name, String description, int inputCount, List<WorkflowStep> steps, List<String> outputs /* references as in StepInput */) {}
 
 public final class WorkflowRunner {
     public WorkflowRunner(OperationRegistry registry, OperationRunner runner);
     public WorkflowResult run(Workflow wf, List<Document> inputs, OperationContext ctx) throws OperationException;
-    public List<WorkflowResult> runBatch(Workflow wf, List<Document> inputs, OperationContext ctx);   // jeweils ein Dokument als Eingabe, Fehler eines Laufs stoppen die anderen nicht
+    public List<WorkflowResult> runBatch(Workflow wf, List<Document> inputs, OperationContext ctx);   // one document as input each, an error in one run does not stop the others
 }
 public record WorkflowResult(List<Document> outputs, List<HistoryEntry> history, List<String> errors) {}
 
@@ -55,26 +55,26 @@ public final class WorkflowJson {
 }
 ```
 
-**Regeln:** Schritte laufen in Reihenfolge; Verweise nur auf frühere Schritte (Vorwärtsverweis → `IllegalArgumentException` beim Validieren). Vor der Ausführung validieren: alle `operationId` bekannt, Verweise gültig,
-`inputCount` stimmt mit der Anzahl übergebener Dokumente überein. Jeder Schritt erzeugt über `OperationRunner` seinen `HistoryEntry`. Fehler in einem Schritt → `OperationException` mit Schrittnummer; `runBatch` sammelt Fehler pro Eingabe.
-JSON-Format selbst definieren und dokumentieren (`{"name":…, "steps":[{"id":…,"operation":…,"parameters":{…},"inputs":["$in:0"]}], "outputs":["$step:2:0"]}`), mit der `Json`-Hilfsklasse aus Phase 0/4.
+**Rules:** Steps run in order; references only to earlier steps (forward reference → `IllegalArgumentException` during validation). Validate before execution: all `operationId`s known, references valid,
+`inputCount` matches the number of documents passed. Each step creates its `HistoryEntry` via `OperationRunner`. Error in a step → `OperationException` with step number; `runBatch` collects errors per input.
+Define and document the JSON format yourself (`{"name":…, "steps":[{"id":…,"operation":…,"parameters":{…},"inputs":["$in:0"]}], "outputs":["$step:2:0"]}`), using the `Json` helper class from Phase 0/4.
 
 **Tests:**
-- Workflow `edit.reverseComplement` → `edit.insert` (position=1, bases=GG) auf `AATT`: Ergebnis `rc(AATT)`=`AATT` → Insert `A` `GG` `ATT` → `AGGATT`.
-- Zwei Eingaben mit `runBatch` (`ATGC`, `GGGG`) → zwei Ergebnisse.
-- Unbekannte Operation → `IllegalArgumentException` beim Validieren (vor jeder Ausführung; keine Historie).
-- JSON round-trip: `read(write(wf)).equals(wf)`.
-- Fehler im zweiten Schritt (ungültiger Parameter) → Ausnahme nennt `Schritt 2`; `runBatch` meldet den Fehler für diese Eingabe, die anderen laufen weiter.
+- Workflow `edit.reverseComplement` → `edit.insert` (position=1, bases=GG) on `AATT`: result `rc(AATT)`=`AATT` → insert `A` `GG` `ATT` → `AGGATT`.
+- Two inputs with `runBatch` (`ATGC`, `GGGG`) → two results.
+- Unknown operation → `IllegalArgumentException` during validation (before any execution; no history).
+- JSON round trip: `read(write(wf)).equals(wf)`.
+- Error in the second step (invalid parameter) → exception mentions `Schritt 2` (the message text itself stays German); `runBatch` reports the error for that input, the others continue.
 
 ---
 
-## Aufgabe 6.3: Plugin-API
+## Task 6.3: Plugin API
 
-> **→ ersetzt:** Plugins sind **externe Programme** (`plugin.json`), siehe `08-RUST-KERN-SWIFT-APP.md`, Abschnitt „Abweichungen pro Phase". `ServiceLoader`/JAR entfällt.
+> **→ replaced:** Plugins are **external programs** (`plugin.json`), see `08-RUST-KERN-SWIFT-APP.md`, section "Deviations per phase". `ServiceLoader`/JAR is dropped.
 
-**Voraussetzung:** 6.1.
+**Prerequisite:** 6.1.
 
-**Dateien:** `plugin/SnapiousPlugin.java`, `plugin/PluginLoader.java`, `plugin/Importer.java`, `plugin/Exporter.java`, Beispiel-Plugin unter `examples/hello-plugin/` (eigenes kleines Maven-Projekt), Tests.
+**Files:** `plugin/SnapiousPlugin.java`, `plugin/PluginLoader.java`, `plugin/Importer.java`, `plugin/Exporter.java`, example plugin under `examples/hello-plugin/` (its own small Maven project), tests.
 
 ```java
 public interface SnapiousPlugin {
@@ -88,78 +88,78 @@ public interface Importer { String name(); List<String> extensions(); List<Docum
 public interface Exporter { String name(); String extension(); boolean accepts(Document d); void write(Document d, Path file) throws IOException; }
 
 public final class PluginLoader {
-    public static List<SnapiousPlugin> load(Path directory);             // alle *.jar im Ordner per URLClassLoader + ServiceLoader<SnapiousPlugin>
+    public static List<SnapiousPlugin> load(Path directory);             // all *.jar in the folder via URLClassLoader + ServiceLoader<SnapiousPlugin>
     public static void register(List<SnapiousPlugin> plugins, OperationRegistry ops, FormatRegistry formats);
 }
 ```
 
-Fehlerhafte JARs werden übersprungen (Warnung im Log-Interface `PluginLog`), nie ein Absturz. Plugin-Ordner: `~/.snapious/plugins`. Plugins laufen **ohne Sandbox** — Hinweis in der README und im Einstellungsdialog.
+Faulty JARs are skipped (warning in the log interface `PluginLog`), never a crash. Plugin folder: `~/.snapious/plugins`. Plugins run **without a sandbox** — note in the README and in the settings dialog.
 
-**Tests:** Im Test ein Mini-JAR bauen (`javax.tools.JavaCompiler` kompiliert eine Plugin-Klasse im `@TempDir`; `META-INF/services/com.snapious.plugin.SnapiousPlugin` mit dem Klassennamen; mit `JarOutputStream` verpacken) →
-`load` findet das Plugin mit `name()`, dessen Operation ist nach `register` in der Registry. Defektes JAR (Zufallsbytes) → übersprungen, kein Fehler. Doppelte Operations-ID aus Plugin → wird übersprungen, Warnung.
+**Tests:** Build a mini JAR in the test (`javax.tools.JavaCompiler` compiles a plugin class in the `@TempDir`; `META-INF/services/com.snapious.plugin.SnapiousPlugin` with the class name; package with `JarOutputStream`) →
+`load` finds the plugin with `name()`, and its operation is in the registry after `register`. Defective JAR (random bytes) → skipped, no error. Duplicate operation ID from a plugin → skipped, warning.
 
 ---
 
-## Aufgabe 6.4: Dokumentverwaltung (Ordner, Suche, Stapelaktionen)
+## Task 6.4: Document Management (Folders, Search, Batch Actions)
 
-**Voraussetzung:** Phase 0.5.
+**Prerequisite:** Phase 0.5.
 
-**Dateien:** Erweiterung `store/ProjectStore` (Schema-Version 2: Spalte `folder_id`, Tabelle `folders`, Tabelle `notes`, Tabelle `favorites`), `project/ProjectService.java`, `project/DocumentSearch.java`, `project/BatchRename.java`, `project/Duplicates.java`, Tests.
+**Files:** Extension of `store/ProjectStore` (schema version 2: column `folder_id`, table `folders`, table `notes`, table `favorites`), `project/ProjectService.java`, `project/DocumentSearch.java`, `project/BatchRename.java`, `project/Duplicates.java`, tests.
 
 ```java
 public record Folder(String id, String name, String parentId) {}
 public final class ProjectService {
     public ProjectService(ProjectStore store);
     public Folder createFolder(String name, String parentId);
-    public void moveDocument(String documentId, String folderId);          // null = Wurzel
+    public void moveDocument(String documentId, String folderId);          // null = root
     public void renameFolder(String id, String name); public void deleteFolder(String id, boolean deleteContents);
     public void setNote(String documentId, String text); public Optional<String> note(String documentId);
     public void setFavorite(String documentId, boolean favorite); public List<DocumentInfo> favorites();
     public List<DocumentInfo> list(String folderId);
 }
 public final class DocumentSearch {
-    public static List<DocumentInfo> byName(ProjectStore store, String text);                 // enthält, case-insensitiv
+    public static List<DocumentInfo> byName(ProjectStore store, String text);                 // contains, case-insensitive
     public static List<DocumentInfo> byType(ProjectStore store, String type);
-    public static List<DocumentInfo> byFeatureText(ProjectStore store, String text);          // in Feature-Name/-Typ/-Qualifiern
+    public static List<DocumentInfo> byFeatureText(ProjectStore store, String text);          // in feature name/type/qualifiers
     public static List<DocumentInfo> byMetadata(ProjectStore store, String key, String value);
-    public static List<DocumentInfo> bySequenceMotif(ProjectStore store, String motifIupac);   // Motiv (IUPAC) in Sequenzen, beide Stränge
+    public static List<DocumentInfo> bySequenceMotif(ProjectStore store, String motifIupac);   // motif (IUPAC) in sequences, both strands
 }
 public final class BatchRename {
-    /** Muster: {name} Ursprungsname, {n} Zähler ab 1, {n:03} Zähler mit führenden Nullen, {type}. */
-    public static Map<String,String> plan(List<DocumentInfo> docs, String pattern);           // id → neuer Name
+    /** Pattern: {name} original name, {n} counter from 1, {n:03} counter with leading zeros, {type}. */
+    public static Map<String,String> plan(List<DocumentInfo> docs, String pattern);           // id → new name
 }
 public final class Duplicates {
-    public static List<List<DocumentInfo>> findSequenceDuplicates(ProjectStore store);        // gleiche Basen (SHA-256 der normalisierten Großbuchstaben-Sequenz), gleiche Typ
+    public static List<List<DocumentInfo>> findSequenceDuplicates(ProjectStore store);        // same bases (SHA-256 of the normalized uppercase sequence), same type
 }
 ```
 
-Migration von Schema 1 auf 2 beim Öffnen: `ALTER TABLE documents ADD COLUMN folder_id TEXT`, neue Tabellen anlegen, `PRAGMA user_version = 2`. Schema 1-Dateien müssen sich öffnen lassen (Test mit einer im Test erzeugten Version-1-Datei).
+Migration from schema 1 to 2 on opening: `ALTER TABLE documents ADD COLUMN folder_id TEXT`, create new tables, `PRAGMA user_version = 2`. Schema 1 files must remain openable (test with a version 1 file created in the test).
 
-**Tests:** Ordner anlegen, Dokument verschieben, `list(folderId)` zeigt es; Löschen eines Ordners mit `deleteContents=false` verschiebt Inhalte in die Wurzel. `byFeatureText("lacZ")` findet das Dokument mit Feature `lacZα`. `bySequenceMotif` findet `GAATTC` auch im Reverse-Komplement
-(Dokument enthält `GAATTC`, Suche nach `GAATTC` findet es; Dokument enthält nur `GGATTC`-Reverse-Komplement `GAATCC`, Suche nach `GGATTC` findet es ebenfalls). Motiv `RGATCY` findet ein Dokument mit `GGATCC` und eines mit `AGATCT`.
-`BatchRename.plan` mit Muster `Konstrukt_{n:03}` für 3 Dokumente → `Konstrukt_001` … `Konstrukt_003`. `findSequenceDuplicates` gruppiert zwei Dokumente mit gleicher Sequenz (unterschiedliche Namen), nicht aber DNA mit identischem Text als RNA.
-
----
-
-## Aufgabe 6.5: Dokumentversionen
-
-**Voraussetzung:** 6.4.
-
-**Dateien:** Erweiterung `store/ProjectStore` (Tabelle `versions(doc_id, version, time, payload, summary)`), `project/Versions.java`, Tests.
-
-- Bei jedem `save(doc)`, dessen `payload` sich vom zuletzt gespeicherten unterscheidet, wird die **vorherige** Fassung in `versions` abgelegt (höchstens 50 pro Dokument, älteste fallen weg).
-- `List<VersionInfo> versions(String docId)`; `Document loadVersion(String docId, int version)`; `void restore(String docId, int version)` (aktuelle Fassung wird dabei selbst zur Version).
-
-**Tests:** Dokument speichern, ändern, speichern → eine Version (die erste Fassung); `restore` bringt den Ursprungszustand zurück und legt die zwischenzeitliche Fassung als weitere Version ab; 60 Änderungen → 50 Versionen.
-Gleiche Fassung erneut speichern erzeugt keine neue Version.
+**Tests:** Create a folder, move a document, `list(folderId)` shows it; deleting a folder with `deleteContents=false` moves contents to the root. `byFeatureText("lacZ")` finds the document with feature `lacZα`. `bySequenceMotif` finds `GAATTC` also in the reverse complement
+(document contains `GAATTC`, search for `GAATTC` finds it; document contains only the reverse complement `GAATCC` of `GGATTC`, search for `GGATTC` finds it as well). Motif `RGATCY` finds a document with `GGATCC` and one with `AGATCT`.
+`BatchRename.plan` with pattern `Construct_{n:03}` for 3 documents → `Construct_001` … `Construct_003`. `findSequenceDuplicates` groups two documents with the same sequence (different names), but not DNA with identical text as RNA.
 
 ---
 
-## Aufgabe 6.6: Einstellungen
+## Task 6.5: Document Versions
 
-**Voraussetzung:** 0.6.
+**Prerequisite:** 6.4.
 
-**Dateien:** `settings/Settings.java`, `settings/SettingsStore.java`, Test.
+**Files:** Extension of `store/ProjectStore` (table `versions(doc_id, version, time, payload, summary)`), `project/Versions.java`, tests.
+
+- On every `save(doc)` whose `payload` differs from the last saved one, the **previous** version is stored in `versions` (at most 50 per document, the oldest drop off).
+- `List<VersionInfo> versions(String docId)`; `Document loadVersion(String docId, int version)`; `void restore(String docId, int version)` (the current version itself becomes a version in the process).
+
+**Tests:** Save a document, change it, save → one version (the first version); `restore` brings back the original state and stores the intermediate version as another version; 60 changes → 50 versions.
+Saving the same version again creates no new version.
+
+---
+
+## Task 6.6: Settings
+
+**Prerequisite:** 0.6.
+
+**Files:** `settings/Settings.java`, `settings/SettingsStore.java`, test.
 
 ```java
 public record Settings(Map<String,String> toolPaths, String ncbiEmail, String ncbiApiKey, String defaultOrganism, boolean darkMode,
@@ -167,70 +167,70 @@ public record Settings(Map<String,String> toolPaths, String ncbiEmail, String nc
     public static Settings defaults();
 }
 public final class SettingsStore {
-    public SettingsStore(Path file);                 // JSON-Datei ~/.snapious/settings.json
+    public SettingsStore(Path file);                 // JSON file ~/.snapious/settings.json
     public Settings load(); public void save(Settings s);
 }
 ```
 
-Datei mit Berechtigungen nur für den Nutzer (`PosixFilePermissions rw-------`), falls Dateisystem es erlaubt (sonst ignorieren). API-Schlüssel nie im Log ausgeben (`toString` maskiert ihn).
-Einstellungsdialog in JavaFX (Presenter testbar): Werkzeugpfade mit Knopf „Prüfen" (`ToolRegistry.run(tool, ["--version"])`) und Statusanzeige.
+File with permissions for the user only (`PosixFilePermissions rw-------`), if the file system allows it (otherwise ignore). Never print the API key to the log (`toString` masks it).
+Settings dialog in JavaFX (presenter testable): tool paths with a "Check" button (`ToolRegistry.run(tool, ["--version"])`) and status display.
 
-**Tests:** Round-trip; fehlende Datei → Standardwerte; beschädigte Datei → Standardwerte und die defekte Datei wird als `.bak` gesichert; `toString()` enthält den Schlüssel nicht.
-
----
-
-## Aufgabe 6.7: Export (Bild, SVG, Text)
-
-**Voraussetzung:** Phase 1, 3.8.
-
-**Dateien:** `export/MapSvg.java`, `export/SequenceTextExport.java`, `export/ReportBuilder.java`, Tests.
-
-- `MapSvg.circular(SequenceDocument, CircularMapLayout, EnzymeMapModel, int size)` und `MapSvg.linear(...)`: SVG mit Features (Pfeile/Bögen), Enzymbeschriftungen, Titel (Name, Länge). Ausgabe wohlgeformtes XML.
-- `SequenceTextExport.format(doc, int basesPerLine, boolean numbers, boolean features)`: Textdarstellung mit Positionszahlen, optional Translation und Feature-Liste.
-- `ReportBuilder`: erzeugt aus einem `SequenceDocument` einen Textbericht (Länge, GC-Gehalt, Features-Tabelle, Enzym-Einzelschneider) als Markdown; für Klonierungsergebnisse zusätzlich Verlauf (`HistoryEntry`) mit Parametern.
-- PDF: bewusst **nicht** mit einer neuen Bibliothek; Anleitung in der README: SVG im Browser oder Vorschau als PDF drucken.
-
-**Tests:** SVG der zirkulären Karte parsen (`DocumentBuilder`), Anzahl `<path`/`<text` plausibel (ein Feature → mindestens ein `path`); `SequenceTextExport` bei 10 Basen pro Zeile und Positionszahlen: Zeile 1 beginnt mit `1`, Zeile 2 mit `11`.
-Markdown-Bericht enthält die Überschriften `# <Name>` und `## Features`.
+**Tests:** Round trip; missing file → default values; corrupt file → default values and the defective file is backed up as `.bak`; `toString()` does not contain the key.
 
 ---
 
-## Aufgabe 6.8: Oberfläche (Politur)
+## Task 6.7: Export (Image, SVG, Text)
 
-> **→ ersetzt:** Oberfläche in Swift (**S.9**); Presenter-Logik im Kern.
+**Prerequisite:** Phase 1, 3.8.
 
-**Voraussetzung:** alle bisherigen.
+**Files:** `export/MapSvg.java`, `export/SequenceTextExport.java`, `export/ReportBuilder.java`, tests.
 
-- **Hauptfenster:** linke Projektleiste mit Ordnerbaum, Suchfeld, Favoriten; Tabs für geöffnete Dokumente; Menü „Operationen" (aus `OperationRegistry`, nach Kategorien gruppiert über das Präfix der ID); Menü „Workflow" (aufzeichnen aus Verlauf, ausführen, importieren/exportieren); Menü „Plugins".
-- **Verlaufsansicht:** Tabelle der `HistoryEntry` pro Dokument; „Wiederherstellen" ruft `Versions.restore`.
-- **Tastenkürzel:** Strg/Cmd+O öffnen, S speichern, Z/Y Undo/Redo, F Suche, +/− Zoom, E Enzym-Seitenleiste, L Feature-Seitenleiste.
-- **Dunkelmodus:** zwei CSS-Dateien (`light.css`, `dark.css`) in `src/main/resources/fx/`; Umschalten in den Einstellungen; Zeichenfarben (Canvas) aus einer `Theme`-Klasse beziehen, nicht fest codiert.
-- **Fehleranzeige:** `OperationException` → Dialog mit deutscher Meldung; unerwartete Fehler → Dialog mit Kurzmeldung + Logdatei `~/.snapious/log.txt` (einfacher Datei-Logger, kein neues Framework).
+- `MapSvg.circular(SequenceDocument, CircularMapLayout, EnzymeMapModel, int size)` and `MapSvg.linear(...)`: SVG with features (arrows/arcs), enzyme labels, title (name, length). Output is well-formed XML.
+- `SequenceTextExport.format(doc, int basesPerLine, boolean numbers, boolean features)`: text representation with position numbers, optionally translation and feature list.
+- `ReportBuilder`: generates a text report from a `SequenceDocument` (length, GC content, features table, single-cutter enzymes) as Markdown; for cloning results additionally the history (`HistoryEntry`) with parameters.
+- PDF: deliberately **not** with a new library; instructions in the README: print the SVG to PDF from the browser or Preview.
 
-**Presenter-Tests:** Menüaufbau aus Registry (Anzahl der Einträge pro Kategorie), Workflow-Aufzeichnung (aus 3 History-Einträgen entsteht ein Workflow mit 3 Schritten und passenden Verweisen).
-
----
-
-## Aufgabe 6.9: Qualität und Verpackung
-
-> **→ ersetzt:** JaCoCo → `cargo llvm-cov`; `jpackage` → `scripts/bundle-app.sh` (`.app`); TestFX entfällt.
-
-- **Testabdeckung:** JaCoCo (`org.jacoco:jacoco-maven-plugin`, Report `target/site/jacoco`). Ziel: ≥ 80 % Zeilenabdeckung in `model`, `ops`, `store`, `cloning`, `primer`, `align`, `tree`; Lücken in einem Bericht `docs/plan/ABDECKUNG.md` festhalten.
-- **Leistung:** Tests mit Zeitgrenze (großzügig, z. B. 5 s): `SequenceDocument.insert` auf 1-Mb-Sequenz, `findAllCutSites` auf 1 Mb, NJ-Baum mit 100 Sequenzen à 500 bp, Gel für 1000 Fragmente.
-- **Sprache der Meldungen:** Einheitlich Deutsch; ein Test prüft, dass `OperationException`-Nachrichten nicht leer sind.
-- **UI-Smoketests** (optional): TestFX nur lokal, nicht im Standardlauf (`-Pui`). Mindestens ein Test startet `SnapiousFxApp`, öffnet `mini.gb` und prüft, dass die Dokumentliste einen Eintrag zeigt.
-- **Installationspaket:** `jpackage --type dmg --name Snapious --input target --main-jar snapious-biotools-1.0.0.jar --main-class com.snapious.fx.SnapiousFxApp --module-path <javafx-jmods> --add-modules javafx.controls`
-  (macOS); als Skript `scripts/package-mac.sh`. Das Skript prüft zuerst `jpackage -version` und gibt eine verständliche Meldung, wenn JavaFX-JMODs fehlen. **Kein** Signieren/Notarisieren (privates Projekt) — Hinweis in der README.
-- **README:** Funktionsliste pro Phase mit Screenshots (optional), Abschnitt „Externe Programme" (welche, wofür, wo eintragen), Abschnitt „Grenzen" (z. B. kein Ersatz für Geneious/SnapGene).
+**Tests:** Parse the SVG of the circular map (`DocumentBuilder`), number of `<path`/`<text` plausible (one feature → at least one `path`); `SequenceTextExport` at 10 bases per line and position numbers: line 1 starts with `1`, line 2 with `11`.
+Markdown report contains the headings `# <Name>` and `## Features`.
 
 ---
 
-## Gesamtabnahme Phase 6
+## Task 6.8: User Interface (Polish)
 
-Szenario (manuell, mit Protokoll in `docs/plan/ABNAHME.md`):
-1. Neues Projekt, Ordner „Test" anlegen, `puc19.gb` importieren.
-2. Workflow aus dem Verlauf aufzeichnen: Verdau → Klonierung → Export; auf drei Insert-Dateien im Stapel ausführen.
-3. Version eines Dokuments wiederherstellen.
-4. Beispiel-Plugin laden; seine Operation erscheint im Menü und läuft.
-5. Dunkelmodus an/aus, Einstellungen speichern und neu starten.
-6. `mvn clean package` grün, `scripts/package-mac.sh` erzeugt (falls JavaFX-JMODs vorhanden) ein DMG.
+> **→ replaced:** User interface in Swift (**S.9**); presenter logic in the core.
+
+**Prerequisite:** all previous.
+
+- **Main window:** left project bar with folder tree, search field, favorites; tabs for open documents; "Operations" menu (from `OperationRegistry`, grouped by category via the ID prefix); "Workflow" menu (record from history, run, import/export); "Plugins" menu.
+- **History view:** Table of `HistoryEntry` per document; "Restore" calls `Versions.restore`.
+- **Keyboard shortcuts:** Ctrl/Cmd+O open, S save, Z/Y undo/redo, F search, +/− zoom, E enzyme sidebar, L feature sidebar.
+- **Dark mode:** two CSS files (`light.css`, `dark.css`) in `src/main/resources/fx/`; toggle in the settings; obtain drawing colors (canvas) from a `Theme` class, not hard-coded.
+- **Error display:** `OperationException` → dialog with a German message; unexpected errors → dialog with a short message + log file `~/.snapious/log.txt` (simple file logger, no new framework).
+
+**Presenter tests:** Menu construction from the registry (number of entries per category), workflow recording (3 history entries yield a workflow with 3 steps and matching references).
+
+---
+
+## Task 6.9: Quality and Packaging
+
+> **→ replaced:** JaCoCo → `cargo llvm-cov`; `jpackage` → `scripts/bundle-app.sh` (`.app`); TestFX is dropped.
+
+- **Test coverage:** JaCoCo (`org.jacoco:jacoco-maven-plugin`, report `target/site/jacoco`). Goal: ≥ 80 % line coverage in `model`, `ops`, `store`, `cloning`, `primer`, `align`, `tree`; record gaps in a report `docs/plan/ABDECKUNG.md`.
+- **Performance:** Tests with a time limit (generous, e.g. 5 s): `SequenceDocument.insert` on a 1 Mb sequence, `findAllCutSites` on 1 Mb, NJ tree with 100 sequences of 500 bp, gel for 1000 fragments.
+- **Language of messages:** Uniformly German; a test checks that `OperationException` messages are not empty.
+- **UI smoke tests** (optional): TestFX only locally, not in the default run (`-Pui`). At least one test starts `SnapiousFxApp`, opens `mini.gb`, and checks that the document list shows one entry.
+- **Installer package:** `jpackage --type dmg --name Snapious --input target --main-jar snapious-biotools-1.0.0.jar --main-class com.snapious.fx.SnapiousFxApp --module-path <javafx-jmods> --add-modules javafx.controls`
+  (macOS); as a script `scripts/package-mac.sh`. The script first checks `jpackage -version` and prints an understandable message if JavaFX JMODs are missing. **No** signing/notarization (private project) — note in the README.
+- **README:** Feature list per phase with screenshots (optional), section "External programs" (which, for what, where to configure), section "Limitations" (e.g. no replacement for Geneious/SnapGene).
+
+---
+
+## Overall Acceptance of Phase 6
+
+Scenario (manual, with a log in `docs/plan/ABNAHME.md`):
+1. New project, create folder "Test", import `puc19.gb`.
+2. Record a workflow from the history: digest → cloning → export; run it in batch on three insert files.
+3. Restore a version of a document.
+4. Load the example plugin; its operation appears in the menu and runs.
+5. Dark mode on/off, save settings and restart.
+6. `mvn clean package` green, `scripts/package-mac.sh` produces a DMG (if JavaFX JMODs are present).

@@ -22,7 +22,7 @@ pub struct FaiEntry {
 /// Baut den Index aus dem Bytestrom einer FASTA-Datei. Kopfzeilen beginnen mit `>`; leere Zeilen vor dem ersten Eintrag werden
 /// ignoriert. `offset` = Position des ersten Bytes hinter der Kopfzeile (einschließlich ihres Zeilenendes). `bases_per_line` ist die
 /// Länge der ersten Sequenzzeile (ohne Zeilenende), `bytes_per_line` ihre Länge mit Zeilenende (`\n` oder `\r\n`, erkannt an der ersten
-/// Sequenzzeile). Fehler `Error::InvalidInput`: Sequenzzeile vor der ersten Kopfzeile; eine Zeile eines Eintrags ist länger als die erste
+/// Sequenzzeile). Fehler `Error::InvalidInput`: Sequence line before the first header line; eine Zeile eines Eintrags ist länger als die erste
 /// oder eine Zeile außer der letzten ist kürzer (Meldung enthält den Namen); doppelter Name. Ein Eintrag ohne Sequenz hat `length 0`,
 /// `offset` hinter der Kopfzeile und `bases_per_line = bytes_per_line = 0`. Die letzte Zeile darf ohne Zeilenende enden.
 pub fn build_fai(fasta: &[u8]) -> Result<Vec<FaiEntry>> {
@@ -37,7 +37,7 @@ pub fn build_fai(fasta: &[u8]) -> Result<Vec<FaiEntry>> {
         if let Some(c) = c {
             if entries.iter().any(|e| e.name == c.entry.name) {
                 return Err(Error::InvalidInput(format!(
-                    "Doppelter Name '{}'",
+                    "Duplicate name '{}'",
                     c.entry.name
                 )));
             }
@@ -75,7 +75,7 @@ pub fn build_fai(fasta: &[u8]) -> Result<Vec<FaiEntry>> {
         } else if !content.is_empty() {
             let Some(c) = cur.as_mut() else {
                 return Err(Error::InvalidInput(
-                    "Sequenzzeile vor der ersten Kopfzeile".to_string(),
+                    "Sequence line before the first header line".to_string(),
                 ));
             };
             let len = content.len() as u64;
@@ -84,7 +84,7 @@ pub fn build_fai(fasta: &[u8]) -> Result<Vec<FaiEntry>> {
                 c.entry.bytes_per_line = len + eol as u64;
             } else if c.short_seen || len > c.entry.bases_per_line {
                 return Err(Error::InvalidInput(format!(
-                    "Unregelmäßige Zeilenlänge im Eintrag '{}'",
+                    "Irregular line length in entry '{}'",
                     c.entry.name
                 )));
             } else if len < c.entry.bases_per_line {
@@ -122,14 +122,14 @@ pub fn parse_fai(text: &str) -> Result<Vec<FaiEntry>> {
         let cols: Vec<&str> = line.split('\t').collect();
         if cols.len() != 5 {
             return Err(Error::InvalidInput(format!(
-                "Zeile {}: erwartet 5 Spalten, gefunden {}",
+                "Line {}: expected 5 columns, found {}",
                 n + 1,
                 cols.len()
             )));
         }
         let num = |i: usize| -> Result<u64> {
             cols[i].trim().parse::<u64>().map_err(|_| {
-                Error::InvalidInput(format!("Zeile {}: ungültige Zahl '{}'", n + 1, cols[i]))
+                Error::InvalidInput(format!("Line {}: invalid number '{}'", n + 1, cols[i]))
             })
         };
         out.push(FaiEntry {
@@ -149,7 +149,7 @@ pub fn parse_fai(text: &str) -> Result<Vec<FaiEntry>> {
 pub fn fetch_from_bytes(data: &[u8], entry: &FaiEntry, start: u64, end: u64) -> Result<String> {
     if start > end || end > entry.length {
         return Err(Error::OutOfRange(format!(
-            "Bereich {}..{} liegt nicht in 0..{}",
+            "Range {}..{} is not within 0..{}",
             start, end, entry.length
         )));
     }
@@ -160,7 +160,7 @@ pub fn fetch_from_bytes(data: &[u8], entry: &FaiEntry, start: u64, end: u64) -> 
             + i % entry.bases_per_line;
         let b = data
             .get(at as usize)
-            .ok_or_else(|| Error::OutOfRange(format!("Byte {} liegt außerhalb der Daten", at)))?;
+            .ok_or_else(|| Error::OutOfRange(format!("Byte {} lies outside the data", at)))?;
         out.push(*b as char);
     }
     Ok(out)
@@ -171,7 +171,7 @@ pub fn fetch_from_file(path: &Path, entry: &FaiEntry, start: u64, end: u64) -> R
     use std::io::{Read, Seek, SeekFrom};
     if start > end || end > entry.length {
         return Err(Error::OutOfRange(format!(
-            "Bereich {}..{} liegt nicht in 0..{}",
+            "Range {}..{} is not within 0..{}",
             start, end, entry.length
         )));
     }

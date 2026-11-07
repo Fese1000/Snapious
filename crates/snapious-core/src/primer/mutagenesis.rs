@@ -8,7 +8,7 @@ use crate::primer::tm::nearest_neighbor;
 /// Ergebnis der Mutagenese-Primer-Planung.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MutagenesisPrimers {
-    /// Vorwärtsprimer 5'→3': linke Flanke + Ersatz + rechte Flanke (Großbuchstaben).
+    /// Vorwärtsprimer 5'→3': linke Flanke + Ersatz + rechte Flanke (Uppercase).
     pub forward: String,
     /// Rückwärtsprimer 5'→3': Reverskomplement von `forward`.
     pub reverse: String,
@@ -23,7 +23,7 @@ pub struct MutagenesisPrimers {
 /// Plant Primer, die in `seq` den Bereich `[start, end)` durch `replacement` ersetzen
 /// (`start == end`: Einfügung; leeres `replacement`: Deletion).
 ///
-/// * `seq` und `replacement` werden in Großbuchstaben umgewandelt; `replacement` darf nur A, C, G, T enthalten (leer ist erlaubt).
+/// * `seq` und `replacement` werden in Uppercase umgewandelt; `replacement` darf nur A, C, G, T enthalten (leer ist erlaubt).
 /// * Beide Flanken beginnen mit `min_flank` Basen, begrenzt auf das Vorhandene (`start` links, `seq.len() - end` rechts).
 /// * Solange der Tm von `forward` kleiner als `target_tm` ist und mindestens eine Flanke noch wachsen darf
 ///   (Grenze: `max_flank` und das Vorhandene), wird jede Flanke, die noch wachsen darf, um 1 Base verlängert.
@@ -44,22 +44,22 @@ pub fn design_mutagenesis(
 ) -> Result<MutagenesisPrimers> {
     if start > end {
         return Err(Error::OutOfRange(
-            "start darf nicht größer als end sein".to_string(),
+            "start must not be greater than end".to_string(),
         ));
     }
     if end > seq.len() {
         return Err(Error::OutOfRange(
-            "end liegt außerhalb der Sequenzlänge".to_string(),
+            "end lies outside the sequence length".to_string(),
         ));
     }
     if min_flank == 0 {
         return Err(Error::InvalidInput(
-            "min_flank muss größer als 0 sein".to_string(),
+            "min_flank must be greater than 0".to_string(),
         ));
     }
     if max_flank < min_flank {
         return Err(Error::InvalidInput(
-            "max_flank muss mindestens so groß wie min_flank sein".to_string(),
+            "max_flank must be at least as large as min_flank".to_string(),
         ));
     }
 
@@ -68,13 +68,13 @@ pub fn design_mutagenesis(
 
     if !replacement.is_empty() && replacement.chars().any(|c| !"ACGT".contains(c)) {
         return Err(Error::InvalidInput(
-            "replacement enthält ungültige Zeichen (nur A, C, G, T erlaubt)".to_string(),
+            "replacement contains invalid characters (only A, C, G, T allowed)".to_string(),
         ));
     }
 
     if start == 0 && end == seq.len() {
         return Err(Error::InvalidInput(
-            "Keine Basen für Flanken verfügbar".to_string(),
+            "No bases available for flanks".to_string(),
         ));
     }
 

@@ -8,7 +8,7 @@ use serde_json;
 /// Liest die Textdarstellung der Kazusa-Codon-Nutzungstabelle („Codon Usage Database“).
 /// Jede Zeile enthält mehrere Einträge der Form `UUU 17.1( 1234)` (Codon mit `U` statt `T`, Häufigkeit je Tausend,
 /// absolute Anzahl in Klammern, die Anzahl darf Leerzeichen innerhalb der Klammer haben), getrennt durch Leerraum.
-/// Gelesen wird je Eintrag Codon und Anzahl; Codons werden in Großbuchstaben mit `T` statt `U` gespeichert.
+/// Gelesen wird je Eintrag Codon und Anzahl; Codons werden in Uppercase mit `T` statt `U` gespeichert.
 /// Zeilen ohne solche Einträge (Kopfzeilen, Leerzeilen) werden ignoriert.
 /// Fehler `Error::InvalidInput`, wenn kein einziger Eintrag gefunden wird oder eine Anzahl keine ganze Zahl ist.
 pub fn parse_kazusa(text: &str) -> Result<CodonCounts> {
@@ -49,7 +49,7 @@ pub fn parse_kazusa(text: &str) -> Result<CodonCounts> {
                                     counts.insert(codon, count);
                                 }
                             }
-                            Err(_) => return Err(Error::InvalidInput("Ungültige Anzahl".into())),
+                            Err(_) => return Err(Error::InvalidInput("Invalid count".into())),
                         }
                     }
                 }
@@ -59,7 +59,7 @@ pub fn parse_kazusa(text: &str) -> Result<CodonCounts> {
     }
     if counts.is_empty() {
         return Err(Error::InvalidInput(
-            "Keine gültigen Einträge gefunden".into(),
+            "No valid entries found".into(),
         ));
     }
     Ok(counts)
@@ -70,13 +70,13 @@ pub fn parse_kazusa(text: &str) -> Result<CodonCounts> {
 /// JSON, fehlendem `codons` oder ungültigen Codons/Häufigkeiten (Meldung der Kernfunktion weitergeben).
 pub fn table_from_json(json: &str) -> Result<CodonTable> {
     let val: serde_json::Value = serde_json::from_str(json)
-        .map_err(|e| Error::InvalidInput(format!("Ungültiges JSON: {}", e)))?;
+        .map_err(|e| Error::InvalidInput(format!("Invalid JSON: {}", e)))?;
     let codons_obj = val
         .get("codons")
-        .ok_or_else(|| Error::InvalidInput("Fehlendes Feld 'codons'".into()))?;
+        .ok_or_else(|| Error::InvalidInput("Missing field 'codons'".into()))?;
     let obj = codons_obj
         .as_object()
-        .ok_or_else(|| Error::InvalidInput("Feld 'codons' ist kein Objekt".into()))?;
+        .ok_or_else(|| Error::InvalidInput("Field 'codons' is not an object".into()))?;
     let pairs: Vec<(&str, f64)> = obj
         .iter()
         .map(|(k, v)| (k.as_str(), v.as_f64().unwrap_or(f64::NAN)))

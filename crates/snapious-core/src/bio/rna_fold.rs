@@ -8,7 +8,7 @@ use crate::tools::ToolRegistry;
 /// Ergebnis einer Faltung.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Folding {
-    /// Sequenz (Großbuchstaben, `T` als `U`).
+    /// Sequenz (Uppercase, `T` als `U`).
     pub sequence: String,
     /// Struktur in Punkt-Klammer-Schreibweise, gleich lang wie die Sequenz.
     pub structure: String,
@@ -32,7 +32,7 @@ pub fn parse_rnafold(text: &str) -> Result<Folding> {
     }
     if valid_lines.len() < 2 {
         return Err(Error::InvalidInput(
-            "Zu wenige Zeilen vorhanden".to_string(),
+            "Too few lines present".to_string(),
         ));
     }
 
@@ -41,31 +41,31 @@ pub fn parse_rnafold(text: &str) -> Result<Folding> {
 
     let structure_end = line2
         .rfind(" (")
-        .ok_or_else(|| Error::InvalidInput("Format der Strukturzeile ungültig".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("Invalid structure line format".to_string()))?;
     let structure = &line2[..structure_end];
 
     if !structure.chars().all(|c| matches!(c, '.' | '(' | ')')) {
         return Err(Error::InvalidInput(
-            "Struktur enthält ungültige Zeichen".to_string(),
+            "Structure contains invalid characters".to_string(),
         ));
     }
 
     if sequence.len() != structure.len() {
         return Err(Error::InvalidInput(
-            "Sequenz und Struktur haben unterschiedliche Länge".to_string(),
+            "Sequence and structure have different lengths".to_string(),
         ));
     }
 
     let energy_part = &line2[structure_end + 1..];
     let close_paren = energy_part
         .rfind(')')
-        .ok_or_else(|| Error::InvalidInput("Energie-Klammer fehlt".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("Energy bracket is missing".to_string()))?;
     let energy_str = &energy_part[1..close_paren];
 
     let energy: f64 = energy_str
         .trim()
         .parse::<f64>()
-        .map_err(|_| Error::InvalidInput("Energie ist keine gültige Zahl".to_string()))?;
+        .map_err(|_| Error::InvalidInput("Energy is not a valid number".to_string()))?;
 
     Ok(Folding {
         sequence,
@@ -75,7 +75,7 @@ pub fn parse_rnafold(text: &str) -> Result<Folding> {
 }
 
 /// Basenpaare `(i, j)` mit `i < j` (0-basiert) aus der Punkt-Klammer-Schreibweise, aufsteigend nach `i` sortiert.
-/// Fehler `Error::InvalidInput`, wenn eine Klammer nicht geschlossen oder ohne Partner geschlossen wird oder ein anderes Zeichen als `.`,
+/// Fehler `Error::InvalidInput`, wenn eine Bracket not closed oder ohne Partner geschlossen wird oder ein anderes Zeichen als `.`,
 /// `(` und `)` vorkommt.
 pub fn pairs_from_dot_bracket(structure: &str) -> Result<Vec<(usize, usize)>> {
     let mut stack: Vec<usize> = Vec::new();
@@ -87,20 +87,20 @@ pub fn pairs_from_dot_bracket(structure: &str) -> Result<Vec<(usize, usize)>> {
             ')' => {
                 let open = stack
                     .pop()
-                    .ok_or_else(|| Error::InvalidInput("Klammer nicht geschlossen".to_string()))?;
+                    .ok_or_else(|| Error::InvalidInput("Bracket not closed".to_string()))?;
                 pairs.push((open, i));
             }
             '.' => {}
             _ => {
                 return Err(Error::InvalidInput(
-                    "Ungültiges Zeichen in Struktur".to_string(),
+                    "Invalid character in structure".to_string(),
                 ))
             }
         }
     }
 
     if !stack.is_empty() {
-        return Err(Error::InvalidInput("Offene Klammern vorhanden".to_string()));
+        return Err(Error::InvalidInput("Open brackets present".to_string()));
     }
 
     pairs.sort_by_key(|p| p.0);
@@ -116,12 +116,12 @@ pub fn fold_rna(sequence: &str) -> Result<Folding> {
             .chars()
             .all(|c| matches!(c, 'A' | 'C' | 'G' | 'U' | 'N'))
     {
-        return Err(Error::InvalidInput("Ungültige RNA-Sequenz".to_string()));
+        return Err(Error::InvalidInput("Invalid RNA sequence".to_string()));
     }
     let reg = ToolRegistry::defaults();
     if !reg.is_available("RNAfold") {
         return Err(Error::Io(
-            "Programm 'RNAfold' ist nicht installiert".to_string(),
+            "Program 'RNAfold' is not installed".to_string(),
         ));
     }
     let r = reg.run(
@@ -133,7 +133,7 @@ pub fn fold_rna(sequence: &str) -> Result<Folding> {
     )?;
     if !r.ok() {
         return Err(Error::Io(format!(
-            "'RNAfold' meldete einen Fehler: {}",
+            "'RNAfold' reported an error: {}",
             r.stderr.trim()
         )));
     }
@@ -220,7 +220,7 @@ mod tests {
     #[test]
     fn faltung_mit_programm() {
         if !is_available("RNAfold") {
-            eprintln!("übersprungen: RNAfold nicht installiert");
+            eprintln!("skipped: RNAfold not installed");
             return;
         }
         let f = fold_rna("GGGGAAAACCCC").unwrap();

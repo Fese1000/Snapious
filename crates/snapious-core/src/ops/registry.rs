@@ -38,7 +38,7 @@ impl OperationRegistry {
         let id = op.id().to_string();
         if self.ops.contains_key(&id) {
             return Err(Error::InvalidInput(format!(
-                "Die Operation '{}' ist schon registriert",
+                "The operation '{}' is already registered",
                 id
             )));
         }

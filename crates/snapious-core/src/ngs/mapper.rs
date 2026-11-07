@@ -56,13 +56,13 @@ pub fn run_to_file(program: &str, args: &[String], out: &Path) -> Result<()> {
         .stdout(std::process::Stdio::from(file))
         .stderr(std::process::Stdio::piped())
         .output()
-        .map_err(|e| Error::Io(format!("{} konnte nicht gestartet werden: {}", program, e)))?;
+        .map_err(|e| Error::Io(format!("{} could not be started: {}", program, e)))?;
     if !result.status.success() {
         let err = String::from_utf8_lossy(&result.stderr);
         let lines: Vec<&str> = err.lines().collect();
         let tail = lines[lines.len().saturating_sub(20)..].join("\n");
         return Err(Error::Io(format!(
-            "{} endete mit Fehler: {}",
+            "{} exited with an error: {}",
             program, tail
         )));
     }

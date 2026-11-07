@@ -93,10 +93,10 @@ pub struct Guide {
 }
 
 /// Bewertet einen Protospacer (bewusst einfach, kein Vorhersagemodell). Start 100 Punkte:
-/// - GC-Anteil unter 40 % oder über 70 %: −20, Warnung `GC-Anteil außerhalb von 40–70 %`
-/// - enthält `TTTT`: −30, Warnung `TTTT im Protospacer (Abbruchsignal der U6-Polymerase)`
+/// - GC-Anteil unter 40 % oder über 70 %: −20, Warnung `GC fraction outside 40–70 %`
+/// - enthält `TTTT`: −30, Warnung `TTTT in the protospacer (termination signal of U6 polymerase)`
 /// - fünf oder mehr gleiche Buchstaben hintereinander (unabhängig von der TTTT-Regel): −10,
-///   Warnung `Homopolymer-Lauf von mindestens 5 Basen`
+///   Warnung `Homopolymer run of at least 5 bases`
 ///
 /// Rückgabe: (GC-Anteil in Prozent, Punkte, Warnungen in der Reihenfolge der Regeln oben).
 /// Groß-/Kleinschreibung egal. Leerer Text: GC 0, 100 Punkte abzüglich der GC-Regel.
@@ -115,12 +115,12 @@ pub fn score_protospacer(protospacer: &str) -> (f64, f64, Vec<String>) {
 
     if len > 0.0 && (gc_percent < 40.0 || gc_percent > 70.0) {
         score -= 20.0;
-        warnings.push("GC-Anteil außerhalb von 40–70 %".to_string());
+        warnings.push("GC fraction outside 40–70 %".to_string());
     }
 
     if s.contains("TTTT") {
         score -= 30.0;
-        warnings.push("TTTT im Protospacer (Abbruchsignal der U6-Polymerase)".to_string());
+        warnings.push("TTTT in the protospacer (termination signal of U6 polymerase)".to_string());
     }
 
     let mut max_run: usize = 0;
@@ -144,14 +144,14 @@ pub fn score_protospacer(protospacer: &str) -> (f64, f64, Vec<String>) {
 
     if max_run >= 5 {
         score -= 10.0;
-        warnings.push("Homopolymer-Lauf von mindestens 5 Basen".to_string());
+        warnings.push("Homopolymer run of at least 5 bases".to_string());
     }
 
     (gc_percent, score, warnings)
 }
 
 /// Findet Guides auf beiden Strängen.
-/// - `bases` wird in Großbuchstaben mit `T` statt `U` gelesen. `to` wird auf die Länge begrenzt.
+/// - `bases` wird in Uppercase mit `T` statt `U` gelesen. `to` wird auf die Länge begrenzt.
 /// - Vorwärtsstrang: Für jede Startposition `st` mit Platz für Protospacer plus PAM (`guide_length + pattern.len()`)
 ///   wird die PAM passend zum Muster geprüft (IUPAC). Bei `pam_three_prime` steht der Protospacer vor der PAM, sonst dahinter.
 ///   `start = st`, `end = st + guide_length + pattern.len()`.
@@ -429,7 +429,7 @@ mod tests {
         assert!(w[0].contains("TTTT"));
         let (gc, s, w) = score_protospacer("ATATATATATATATATATAT");
         assert!((gc - 0.0).abs() < 1e-9 && (s - 80.0).abs() < 1e-9);
-        assert!(w[0].contains("GC-Anteil"));
+        assert!(w[0].contains("GC fraction"));
         let (_, s, w) = score_protospacer("gcgcaaaaagcgctagctag");
         assert!((s - 90.0).abs() < 1e-9);
         assert!(w[0].contains("Homopolymer"));

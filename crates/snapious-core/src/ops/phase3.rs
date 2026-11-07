@@ -23,7 +23,7 @@ fn split_list(text: &str) -> Vec<String> {
 }
 
 /// Verwendet das eingebaute Alignment (`align_with(AlignBackend::Builtin, ...)`) für Zeilenlisten.
-/// Die Zeilen werden als DNA-Sequenzen mit den Namen `s1`, `s2`, … übergeben (Großbuchstaben, nur A, C, G, T, sonst Fehler
+/// Die Zeilen werden als DNA-Sequenzen mit den Namen `s1`, `s2`, … übergeben (Uppercase, nur A, C, G, T, sonst Fehler
 /// `Error::Operation`); Rückgabe: die ausgerichteten Zeilen in Eingabereihenfolge. Weniger als zwei Zeilen: unverändert
 /// (ungapped) zurückgeben.
 fn builtin_rows(rows: &[String]) -> Result<Vec<String>> {
@@ -54,7 +54,7 @@ impl Operation for ProfileOperation {
     }
 
     fn label(&self) -> &str {
-        "Profile verbinden"
+        "Join profiles"
     }
 
     fn run(
@@ -65,26 +65,26 @@ impl Operation for ProfileOperation {
     ) -> Result<OperationResult> {
         let [Document::Alignment(a), Document::Alignment(b)] = inputs else {
             return Err(Error::Operation(
-                "Es werden genau zwei Alignments erwartet".to_string(),
+                "Exactly two alignments expected".to_string(),
             ));
         };
         if a.seq_type() != b.seq_type() {
             return Err(Error::Operation(
-                "Die Alignments haben verschiedene Sequenztypen".to_string(),
+                "The alignments have different sequence types".to_string(),
             ));
         }
         let rows = align_profiles(a.rows(), b.rows()).map_err(op_err)?;
         let mut names = a.row_names().to_vec();
         names.extend(b.row_names().iter().cloned());
         let out = AlignmentDocument::of(
-            &format!("{} + {} (Profil)", a.name(), b.name()),
+            &format!("{} + {} (profile)", a.name(), b.name()),
             a.seq_type(),
             names,
             rows,
         )
         .map_err(op_err)?;
         let summary = format!(
-            "Profile verbunden: {} Zeilen, {} Spalten",
+            "Profiles joined: {} rows, {} columns",
             out.row_count(),
             out.column_count()
         );
@@ -107,7 +107,7 @@ impl Operation for TranslateAlignOperation {
     }
 
     fn label(&self) -> &str {
-        "Translations-Alignment"
+        "Translation alignment"
     }
 
     fn run(
@@ -118,14 +118,14 @@ impl Operation for TranslateAlignOperation {
     ) -> Result<OperationResult> {
         if inputs.len() < 2 {
             return Err(Error::Operation(
-                "Mindestens zwei Sequenzen nötig".to_string(),
+                "At least two sequences required".to_string(),
             ));
         }
         let mut rows = Vec::new();
         for d in inputs {
             let Document::Sequence(s) = d else {
                 return Err(Error::Operation(
-                    "Alle Eingaben müssen Sequenzen sein".to_string(),
+                    "All inputs must be sequences".to_string(),
                 ));
             };
             rows.push((s.name().to_string(), s.bases().to_ascii_uppercase()));
@@ -140,11 +140,11 @@ impl Operation for TranslateAlignOperation {
         let aligned = translation_align(&rows, &aligner).map_err(op_err)?;
         let (names, lines): (Vec<String>, Vec<String>) = aligned.into_iter().unzip();
         let n = names.len();
-        let out = AlignmentDocument::of("Translations-Alignment", SequenceType::Dna, names, lines)
+        let out = AlignmentDocument::of("Translation alignment", SequenceType::Dna, names, lines)
             .map_err(op_err)?;
         Ok(OperationResult {
             outputs: vec![Document::Alignment(out)],
-            summary: format!("Translations-Alignment: {} Zeilen", n),
+            summary: format!("Translation alignment: {} rows", n),
         })
     }
 }
@@ -161,7 +161,7 @@ impl Operation for RealignOperation {
     }
 
     fn label(&self) -> &str {
-        "Bereich neu ausrichten"
+        "Realign range"
     }
 
     fn run(
@@ -172,7 +172,7 @@ impl Operation for RealignOperation {
     ) -> Result<OperationResult> {
         let [Document::Alignment(a)] = inputs else {
             return Err(Error::Operation(
-                "Es wird genau ein Alignment erwartet".to_string(),
+                "Exactly one alignment expected".to_string(),
             ));
         };
         let from = required_usize(params, "from")?;
@@ -182,14 +182,14 @@ impl Operation for RealignOperation {
                 .iter()
                 .map(|p| {
                     p.parse::<usize>()
-                        .map_err(|_| Error::Operation(format!("Ungültiger Zeilenindex '{}'", p)))
+                        .map_err(|_| Error::Operation(format!("Invalid row index '{}'", p)))
                 })
                 .collect::<Result<Vec<_>>>()?,
             None => (0..a.row_count()).collect(),
         };
         let rows = realign_region(a.rows(), from, to, &selected, &builtin_rows).map_err(op_err)?;
         let out = AlignmentDocument::of(
-            &format!("{} (neu ausgerichtet)", a.name()),
+            &format!("{} (realigned)", a.name()),
             a.seq_type(),
             a.row_names().to_vec(),
             rows,
@@ -197,7 +197,7 @@ impl Operation for RealignOperation {
         .map_err(op_err)?;
         Ok(OperationResult {
             outputs: vec![Document::Alignment(out)],
-            summary: format!("Bereich {}–{} neu ausgerichtet", from, to),
+            summary: format!("Range {}–{} realigned", from, to),
         })
     }
 }
@@ -255,10 +255,10 @@ mod tests {
         let b = aln("B", &["m1"], &["AGT"]);
         let r = run(&ProfileOperation, &[a, b], &Params::new()).unwrap();
         let out = alignment_of(&r);
-        assert_eq!(out.name(), "A + B (Profil)");
+        assert_eq!(out.name(), "A + B (profile)");
         assert_eq!(out.row_names(), ["n1", "n2", "m1"]);
         assert_eq!(out.rows(), ["ACGT", "ACGT", "A-GT"]);
-        assert_eq!(r.summary, "Profile verbunden: 3 Zeilen, 4 Spalten");
+        assert_eq!(r.summary, "Profiles joined: 3 rows, 4 columns");
         assert!(run(
             &ProfileOperation,
             &[aln("A", &["n"], &["AC"])],
@@ -274,7 +274,7 @@ mod tests {
         let out = alignment_of(&r);
         assert_eq!(out.row_names(), ["a", "b"]);
         assert_eq!(out.rows(), ["ATGAAATTT", "ATGAAGTTT"]);
-        assert_eq!(r.summary, "Translations-Alignment: 2 Zeilen");
+        assert_eq!(r.summary, "Translation alignment: 2 rows");
         let bad = [dna("a", "ATGAAATTT"), dna("kurz", "ATGA")];
         let e = run(&TranslateAlignOperation, &bad, &Params::new()).unwrap_err();
         assert!(e.to_string().contains("kurz"));
@@ -287,12 +287,12 @@ mod tests {
         let p = params(&[("from", "2"), ("to", "6")]);
         let r = run(&RealignOperation, std::slice::from_ref(&a), &p).unwrap();
         let out = alignment_of(&r);
-        assert_eq!(out.name(), "A (neu ausgerichtet)");
+        assert_eq!(out.name(), "A (realigned)");
         assert_eq!(out.rows()[0].len(), out.rows()[1].len());
         for i in 0..2 {
             assert_eq!(out.ungapped(i).unwrap(), "AAAATTTT");
         }
-        assert_eq!(r.summary, "Bereich 2–6 neu ausgerichtet");
+        assert_eq!(r.summary, "Range 2–6 realigned");
         let bad = params(&[("from", "6"), ("to", "2")]);
         assert!(run(&RealignOperation, std::slice::from_ref(&a), &bad).is_err());
         assert!(run(&RealignOperation, &[a], &Params::new()).is_err());

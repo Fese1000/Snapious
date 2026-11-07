@@ -18,20 +18,20 @@ impl HttpGet for CurlClient {
         let out = Command::new("curl")
             .args(["-sS", "-L", "--max-time", "60", "--fail", url])
             .output()
-            .map_err(|e| Error::Io(format!("curl konnte nicht gestartet werden: {}", e)))?;
+            .map_err(|e| Error::Io(format!("curl could not be started: {}", e)))?;
         if !out.status.success() {
             return Err(Error::Io(format!(
-                "Abruf fehlgeschlagen: {}",
+                "Fetch failed: {}",
                 String::from_utf8_lossy(&out.stderr).trim()
             )));
         }
         String::from_utf8(out.stdout)
-            .map_err(|_| Error::Io("Antwort ist kein UTF-8-Text".to_string()))
+            .map_err(|_| Error::Io("Response is not UTF-8 text".to_string()))
     }
 }
 
 /// Prozentkodierung für Adressteile: Buchstaben, Ziffern und `-`, `_`, `.`, `~` bleiben; alle anderen Bytes (UTF-8) werden zu `%XX`
-/// mit Großbuchstaben-Hex (Leerzeichen also `%20`).
+/// mit Uppercase-Hex (Leerzeichen also `%20`).
 pub fn percent_encode(text: &str) -> String {
     let mut out = String::with_capacity(text.len() * 3);
     for byte in text.bytes() {
@@ -86,11 +86,11 @@ pub struct SearchResult {
 /// (Text), ist das ebenfalls `Error::InvalidInput` mit diesem Text.
 pub fn parse_esearch(json: &str) -> Result<SearchResult> {
     let root = serde_json::from_str::<Value>(json)
-        .map_err(|_| Error::InvalidInput("Ungültiges JSON".to_string()))?;
+        .map_err(|_| Error::InvalidInput("Invalid JSON".to_string()))?;
 
     let res = root
         .get("esearchresult")
-        .ok_or_else(|| Error::InvalidInput("Fehlendes esearchresult".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("Missing esearchresult".to_string()))?;
 
     if let Some(err) = res.get("ERROR").and_then(|v| v.as_str()) {
         return Err(Error::InvalidInput(err.to_string()));
@@ -99,9 +99,9 @@ pub fn parse_esearch(json: &str) -> Result<SearchResult> {
     let count = res
         .get("count")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| Error::InvalidInput("Fehlender oder ungültiger count".to_string()))?
+        .ok_or_else(|| Error::InvalidInput("Missing or invalid count".to_string()))?
         .parse::<usize>()
-        .map_err(|_| Error::InvalidInput("count ist keine Zahl".to_string()))?;
+        .map_err(|_| Error::InvalidInput("count is not a number".to_string()))?;
 
     let ids = res
         .get("idlist")
@@ -134,21 +134,21 @@ pub struct SummaryRecord {
 /// maßgeblich für `id`, fehlt es, gilt der Schlüssel. Fehler wie bei `parse_esearch` (`result` fehlt oder kein JSON → `Error::InvalidInput`).
 pub fn parse_esummary(json: &str) -> Result<Vec<SummaryRecord>> {
     let root = serde_json::from_str::<Value>(json)
-        .map_err(|_| Error::InvalidInput("Ungültiges JSON".to_string()))?;
+        .map_err(|_| Error::InvalidInput("Invalid JSON".to_string()))?;
 
     let result = root
         .get("result")
-        .ok_or_else(|| Error::InvalidInput("Fehlendes result".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("Missing result".to_string()))?;
     let uids = result
         .get("uids")
         .and_then(|v| v.as_array())
-        .ok_or_else(|| Error::InvalidInput("Fehlende uids".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("Missing uids".to_string()))?;
 
     let mut records = Vec::new();
     for uid_val in uids {
         let uid = uid_val
             .as_str()
-            .ok_or_else(|| Error::InvalidInput("uid ist kein String".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("uid is not a string".to_string()))?;
         let obj = result.get(uid).cloned();
 
         let obj = match obj {
@@ -234,7 +234,7 @@ impl<H: HttpGet> NcbiClient<H> {
         let url = efetch_url("nuccore", id, "gb");
         let text = self.http.get(&url)?;
         if text.trim().is_empty() {
-            return Err(Error::InvalidInput(format!("Leere Antwort für {}", id)));
+            return Err(Error::InvalidInput(format!("Empty response for {}", id)));
         }
         Ok(text)
     }
@@ -266,7 +266,7 @@ mod tests {
             self.replies
                 .get(n)
                 .cloned()
-                .ok_or_else(|| Error::Io("keine Antwort".to_string()))
+                .ok_or_else(|| Error::Io("no response".to_string()))
         }
     }
 
@@ -396,7 +396,7 @@ mod tests {
                 && client.http.calls.borrow()[0].contains("rettype=gb")
         );
         match client.fetch_genbank("X") {
-            Err(Error::InvalidInput(m)) => assert_eq!(m, "Leere Antwort für X"),
+            Err(Error::InvalidInput(m)) => assert_eq!(m, "Empty response for X"),
             other => panic!("unerwartet: {:?}", other),
         }
         let kaputt = NcbiClient::new(Mock::new(&[]));

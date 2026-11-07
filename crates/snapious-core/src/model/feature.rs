@@ -33,7 +33,7 @@ impl Interval {
     pub fn new(start: usize, end: usize) -> Result<Self> {
         if end < start {
             return Err(Error::InvalidInput(format!(
-                "Ungültiges Intervall {}..{}",
+                "Invalid interval {}..{}",
                 start, end
             )));
         }
@@ -77,7 +77,7 @@ impl Location {
     ) -> Result<Self> {
         if intervals.is_empty() {
             return Err(Error::InvalidInput(
-                "Position braucht mindestens ein Intervall".to_string(),
+                "Location needs at least one interval".to_string(),
             ));
         }
         Ok(Self {
@@ -139,7 +139,7 @@ impl Location {
             let e = i.end as isize + delta;
             if s < 0 || e < 0 {
                 return Err(Error::OutOfRange(format!(
-                    "Verschiebung um {} ergibt negative Position",
+                    "Shift by {} results in a negative position",
                     delta
                 )));
             }

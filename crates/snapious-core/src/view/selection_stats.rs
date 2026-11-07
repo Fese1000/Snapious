@@ -51,7 +51,7 @@ pub fn as_fasta(name: &str, bases: &str) -> String {
     result
 }
 
-/// Reverse-Komplement als Text (Großbuchstaben), z. B. `ATGC` → `GCAT`.
+/// Reverse-Komplement als Text (Uppercase), z. B. `ATGC` → `GCAT`.
 /// Verwende `iupac_reverse_complement`.
 pub fn as_reverse_complement(bases: &str) -> String {
     iupac_reverse_complement(bases).to_ascii_uppercase()

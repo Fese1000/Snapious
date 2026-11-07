@@ -47,7 +47,7 @@ impl<R: BufRead> Iterator for FastqReader<R> {
     /// Ein Eintrag besteht aus vier Zeilen: Kopfzeile mit `@` (ID = erstes Wort nach `@`, `comment` = der Rest der Zeile ohne
     /// führenden Leerraum, sonst leer), Sequenz, eine Zeile, die mit `+` beginnt, und Qualität.
     /// Fehler (`Error::InvalidInput`, Meldung beginnt mit `Zeile {n}:` mit der Nummer der fehlerhaften Zeile): Kopfzeile ohne `@`;
-    /// dritte Zeile ohne `+`; Qualität und Sequenz verschieden lang; Datei endet mitten im Eintrag. Nach einem Fehler liefert der Iterator
+    /// dritte Zeile ohne `+`; Qualität und Sequenz verschieden lang; file ends in the middle of an entry. Nach einem Fehler liefert der Iterator
     /// danach nur noch `None`.
     fn next(&mut self) -> Option<Result<FastqRecord>> {
         if self.finished {
@@ -78,11 +78,11 @@ pub fn open_fastq(path: &Path) -> Result<FastqReader<Box<dyn BufRead>>> {
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::null())
             .spawn()
-            .map_err(|e| Error::Io(format!("gzip konnte nicht gestartet werden: {}", e)))?;
+            .map_err(|e| Error::Io(format!("gzip could not be started: {}", e)))?;
         let out = child
             .stdout
             .take()
-            .ok_or_else(|| Error::Io("gzip lieferte keinen Ausgabestrom".to_string()))?;
+            .ok_or_else(|| Error::Io("gzip returned no output stream".to_string()))?;
         Ok(FastqReader::new(Box::new(std::io::BufReader::new(out))))
     } else {
         let f = std::fs::File::open(path)
@@ -92,7 +92,7 @@ pub fn open_fastq(path: &Path) -> Result<FastqReader<Box<dyn BufRead>>> {
 }
 
 fn read_record<R: BufRead>(r: &mut FastqReader<R>) -> Result<Option<FastqRecord>> {
-    let bad = |line: usize, msg: &str| Error::InvalidInput(format!("Zeile {}: {}", line, msg));
+    let bad = |line: usize, msg: &str| Error::InvalidInput(format!("Line {}: {}", line, msg));
     // Kopfzeile, leere Zeilen davor überspringen
     let header = loop {
         match r.next_line()? {
@@ -102,21 +102,21 @@ fn read_record<R: BufRead>(r: &mut FastqReader<R>) -> Result<Option<FastqRecord>
         }
     };
     let Some(rest) = header.strip_prefix('@') else {
-        return Err(bad(r.line, "Kopfzeile beginnt nicht mit '@'"));
+        return Err(bad(r.line, "header line does not start with '@'"));
     };
     let (id, comment) = match rest.split_once(char::is_whitespace) {
         Some((i, c)) => (i.to_string(), c.trim_start().to_string()),
         None => (rest.to_string(), String::new()),
     };
-    let eof = |line: usize| bad(line, "Datei endet mitten im Eintrag");
+    let eof = |line: usize| bad(line, "file ends in the middle of an entry");
     let sequence = r.next_line()?.ok_or_else(|| eof(r.line))?;
     let plus = r.next_line()?.ok_or_else(|| eof(r.line))?;
     if !plus.starts_with('+') {
-        return Err(bad(r.line, "dritte Zeile beginnt nicht mit '+'"));
+        return Err(bad(r.line, "third line does not start with '+'"));
     }
     let quality = r.next_line()?.ok_or_else(|| eof(r.line))?;
     if quality.len() != sequence.len() {
-        return Err(bad(r.line, "Qualität und Sequenz sind verschieden lang"));
+        return Err(bad(r.line, "quality and sequence have different lengths"));
     }
     Ok(Some(FastqRecord {
         id,
@@ -157,15 +157,15 @@ mod tests {
         let mut r = reader(text);
         assert!(r.next().unwrap().is_ok());
         let e = r.next().unwrap().unwrap_err();
-        assert!(e.to_string().contains("Zeile 8"), "{}", e);
+        assert!(e.to_string().contains("Line 8"), "{}", e);
         assert!(r.next().is_none());
         let e = reader("r1\nACGT\n+\nIIII\n").next().unwrap().unwrap_err();
-        assert!(e.to_string().contains("Zeile 1"), "{}", e);
+        assert!(e.to_string().contains("Line 1"), "{}", e);
         let e = reader("@r1\nACGT\nIIII\nIIII\n")
             .next()
             .unwrap()
             .unwrap_err();
-        assert!(e.to_string().contains("Zeile 3"), "{}", e);
+        assert!(e.to_string().contains("Line 3"), "{}", e);
         let e = reader("@r1\nACGT\n").next().unwrap().unwrap_err();
         assert!(matches!(e, Error::InvalidInput(_)));
         assert!(reader("").next().is_none());

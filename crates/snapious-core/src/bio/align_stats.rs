@@ -1,7 +1,7 @@
 //! Kennzahlen zu Alignments: Konsens, Konservierung, Entropie, Identitätsmatrix, Sequenzlogo, Spalten entfernen.
 //!
 //! Ein Alignment ist hier eine Liste gleich langer Zeilen (`&[String]`); `-` und `.` sind Lücken (Gaps).
-//! Groß-/Kleinschreibung wird nicht unterschieden (intern Großbuchstaben, `U` wird nicht verändert).
+//! Groß-/Kleinschreibung wird nicht unterschieden (intern Uppercase, `U` wird nicht verändert).
 
 use crate::error::{Error, Result};
 use std::collections::BTreeMap;
@@ -26,7 +26,7 @@ pub fn column_count(rows: &[String]) -> Result<usize> {
     };
     if rows.iter().any(|r| r.chars().count() != len) {
         return Err(Error::InvalidInput(
-            "Zeilen haben unterschiedliche Länge".into(),
+            "Rows have different lengths".into(),
         ));
     }
     Ok(len)

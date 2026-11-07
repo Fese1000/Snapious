@@ -33,7 +33,7 @@ pub struct CloningCandidate {
 ///   sonst `Error::InvalidInput`.
 pub fn join_fragments(fragments: &[Fragment], circular: bool) -> Result<String> {
     if fragments.is_empty() {
-        return Err(Error::InvalidInput("Leere Fragmentliste".to_string()));
+        return Err(Error::InvalidInput("Empty fragment list".to_string()));
     }
 
     let mut result = String::new();
@@ -43,10 +43,10 @@ pub fn join_fragments(fragments: &[Fragment], circular: bool) -> Result<String> 
         if i < fragments.len() - 1 {
             let next = fragments
                 .get(i + 1)
-                .ok_or_else(|| Error::InvalidInput("Logikfehler".to_string()))?;
+                .ok_or_else(|| Error::InvalidInput("Logic error".to_string()))?;
             if !frag.can_join(next) {
                 return Err(Error::InvalidInput(format!(
-                    "Fragmente {} und {} passen nicht zusammen",
+                    "Fragments {} and {} do not fit together",
                     i + 1,
                     i + 2
                 )));
@@ -57,13 +57,13 @@ pub fn join_fragments(fragments: &[Fragment], circular: bool) -> Result<String> 
     if circular {
         let last = fragments
             .last()
-            .ok_or_else(|| Error::InvalidInput("Logikfehler: leere Liste".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("Logic error: empty list".to_string()))?;
         let first = fragments
             .first()
-            .ok_or_else(|| Error::InvalidInput("Logikfehler".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("Logic error".to_string()))?;
         if !last.can_join(first) {
             return Err(Error::InvalidInput(format!(
-                "Fragmente {} und {} passen nicht zusammen",
+                "Fragments {} and {} do not fit together",
                 fragments.len(),
                 1
             )));
@@ -86,9 +86,9 @@ pub fn join_fragments(fragments: &[Fragment], circular: bool) -> Result<String> 
 ///    letztere um `V.length()` nach rechts verschoben (`Location::shifted`, `Feature::with_location`);
 ///    Metadaten `source = "clone.restriction"`; Erstellzeit `now_secs()`.
 /// 6. Warnungen (in dieser Reihenfolge):
-///    - `Insert-Orientierung nicht gerichtet (beide Orientierungen möglich)`, wenn für dasselbe Insert-Fragment beide
+///    - `Insert orientation not directed (both orientations possible)`, wenn für dasselbe Insert-Fragment beide
 ///      Orientierungen einen Kandidaten ergeben haben (steht an beiden Kandidaten);
-///    - `Vektor-Rückligation möglich`, wenn `V.right.pairs_with(&V.left)`.
+///    - `Vector re-ligation possible`, wenn `V.right.pairs_with(&V.left)`.
 /// 7. Sortierung: gerichtete zuerst, dann weniger Warnungen, dann kürzeres Konstrukt, dann nicht umgekehrt vor umgekehrt,
 ///    dann kleinerer `source_start` des Inserts.
 pub fn restriction_candidates(
@@ -106,7 +106,7 @@ pub fn restriction_candidates(
     if vector_frags.len() == 1 {
         let first_frag = vector_frags
             .first()
-            .ok_or_else(|| Error::InvalidInput("Logikfehler".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("Logic error".to_string()))?;
         if first_frag.source_start == 0 && first_frag.source_end == vec_len {
             return Ok(Vec::new());
         }
@@ -124,7 +124,7 @@ pub fn restriction_candidates(
     }
     let v_frag = vector_frags
         .get(v_idx)
-        .ok_or_else(|| Error::InvalidInput("Logikfehler: kein Vektorfragment".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("Logic error: no vector fragment".to_string()))?;
 
     // Schritt 3: Kandidaten generieren
     let mut raw_candidates: Vec<(usize, Fragment, bool)> = Vec::new();
@@ -164,11 +164,11 @@ pub fn restriction_candidates(
         let mut warnings_list = Vec::new();
         if insert_indices_with_both.contains(idx) {
             warnings_list.push(
-                "Insert-Orientierung nicht gerichtet (beide Orientierungen möglich)".to_string(),
+                "Insert orientation not directed (both orientations possible)".to_string(),
             );
         }
         if v_frag.right.pairs_with(&v_frag.left) {
-            warnings_list.push("Vektor-Rückligation möglich".to_string());
+            warnings_list.push("Vector re-ligation possible".to_string());
         }
 
         let construct_bases = join_fragments(&[v_frag.clone(), frag.clone()], true)?;
@@ -346,8 +346,8 @@ mod tests {
         assert!(c.iter().all(|k| k.construct.len() == 54));
         assert!(c.iter().all(|k| k.warnings
             == vec![
-                "Insert-Orientierung nicht gerichtet (beide Orientierungen möglich)".to_string(),
-                "Vektor-Rückligation möglich".to_string()
+                "Insert orientation not directed (both orientations possible)".to_string(),
+                "Vector re-ligation possible".to_string()
             ]));
         assert!(!c[0].insert_reversed && c[1].insert_reversed);
     }

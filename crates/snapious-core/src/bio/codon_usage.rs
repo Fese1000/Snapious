@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use crate::error::{Error, Result};
 use crate::model::sequence::amino_acid_for;
 
-/// Anzahl je Codon (Großbuchstaben, `T` statt `U`), aufsteigend nach Codon sortiert.
+/// Anzahl je Codon (Uppercase, `T` statt `U`), aufsteigend nach Codon sortiert.
 pub type CodonCounts = BTreeMap<String, usize>;
 
 /// Zählt die Codons im Leseraster ab Position 0 in Dreierschritten.
@@ -114,7 +114,7 @@ pub fn codon_adaptation_index(bases: &str, reference: &CodonCounts) -> Result<f6
     }
     if used == 0 {
         return Err(Error::InvalidInput(
-            "Keine Codons für den CAI verwendbar".to_string(),
+            "No codons usable for the CAI".to_string(),
         ));
     }
     Ok((log_sum / used as f64).exp())

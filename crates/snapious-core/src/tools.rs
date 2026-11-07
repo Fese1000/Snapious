@@ -100,7 +100,7 @@ impl ToolRegistry {
     ) -> Result<ToolResult> {
         let exe = self
             .executable(tool)
-            .ok_or_else(|| Error::Io(format!("Programm '{}' wurde nicht gefunden", tool)))?;
+            .ok_or_else(|| Error::Io(format!("Program '{}' was not found", tool)))?;
         let mut cmd = Command::new(exe);
         cmd.args(args)
             .stdin(if stdin.is_some() {
@@ -116,7 +116,7 @@ impl ToolRegistry {
         let start = Instant::now();
         let mut child = cmd
             .spawn()
-            .map_err(|e| Error::Io(format!("'{}' konnte nicht gestartet werden: {}", tool, e)))?;
+            .map_err(|e| Error::Io(format!("'{}' could not be started: {}", tool, e)))?;
 
         let stdin_thread = match (stdin, child.stdin.take()) {
             (Some(text), Some(mut pipe)) => {
@@ -143,7 +143,7 @@ impl ToolRegistry {
                 }
                 Err(e) => {
                     return Err(Error::Io(format!(
-                        "Warten auf '{}' fehlgeschlagen: {}",
+                        "Waiting for '{}' failed: {}",
                         tool, e
                     )))
                 }
@@ -163,7 +163,7 @@ impl ToolRegistry {
                 duration: start.elapsed(),
             }),
             None => Err(Error::Io(format!(
-                "Zeitüberschreitung: '{}' lief länger als {} s",
+                "Timeout: '{}' ran longer than {} s",
                 tool,
                 timeout.as_secs_f64()
             ))),
@@ -241,7 +241,7 @@ mod tests {
         let start = Instant::now();
         let r =
             ToolRegistry::defaults().run("sleep", &["5"], None, None, Duration::from_millis(200));
-        assert!(matches!(r, Err(Error::Io(m)) if m.contains("Zeitüberschreitung")));
+        assert!(matches!(r, Err(Error::Io(m)) if m.contains("Timeout")));
         assert!(start.elapsed() < Duration::from_secs(3));
     }
 

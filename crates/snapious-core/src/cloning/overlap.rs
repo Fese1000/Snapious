@@ -58,7 +58,7 @@ impl OverlapAssembly {
     }
 
     /// Längster Überlapp `k` mit `min_overlap <= k <= max_overlap` (und `k <=` Länge beider Texte), bei dem die letzten
-    /// `k` Basen von `left` gleich den ersten `k` Basen von `right` sind (Großbuchstaben, `U` wie `T`).
+    /// `k` Basen von `left` gleich den ersten `k` Basen von `right` sind (Uppercase, `U` wie `T`).
     /// `None`, wenn es keinen gibt.
     pub fn find_overlap(&self, left: &str, right: &str) -> Option<usize> {
         let l = left.len();
@@ -91,7 +91,7 @@ impl OverlapAssembly {
         circular: bool,
     ) -> Result<AssemblyResult> {
         if fragments.is_empty() {
-            return Err(Error::InvalidInput("Keine Fragmente angegeben".to_string()));
+            return Err(Error::InvalidInput("No fragments given".to_string()));
         }
 
         let n = fragments.len();
@@ -120,7 +120,7 @@ impl OverlapAssembly {
                 }),
                 None => {
                     return Err(Error::InvalidInput(format!(
-                        "Kein Überlapp zwischen '{}' und '{}'",
+                        "No overlap between '{}' and '{}'",
                         fragments[from].name(),
                         fragments[to].name()
                     )));
@@ -167,10 +167,10 @@ impl OverlapAssembly {
 
             let mut ov_warnings = Vec::new();
             if new_ov.tm < 48.0 {
-                ov_warnings.push("Tm unter 48 °C".to_string());
+                ov_warnings.push("Tm below 48 °C".to_string());
             }
             if new_ov.tm > 65.0 {
-                ov_warnings.push("Tm über 65 °C".to_string());
+                ov_warnings.push("Tm above 65 °C".to_string());
             }
 
             // GC content check on overlap sequence
@@ -182,11 +182,11 @@ impl OverlapAssembly {
             if total > 0.0 {
                 let gc_frac = gc / total;
                 if gc_frac < 0.2 || gc_frac > 0.8 {
-                    ov_warnings.push("GC-Gehalt außerhalb von 20–80 %".to_string());
+                    ov_warnings.push("GC content outside 20–80 %".to_string());
                 }
             }
 
-            let header = format!("Überlapp {}→{}: ", ov.from_index + 1, ov.to_index + 1);
+            let header = format!("Overlap {}→{}: ", ov.from_index + 1, ov.to_index + 1);
             for w in &ov_warnings {
                 warnings.push(format!("{}{}", header, w));
             }
@@ -269,7 +269,7 @@ impl OverlapAssembly {
             .collect::<Vec<&str>>()
             .join(" + ");
         let seq = Sequence::new(&name, &name, &construct_bases, SequenceType::Dna)
-            .map_err(|e| Error::InvalidInput(format!("Ungültige Sequenz: {}", e)))?;
+            .map_err(|e| Error::InvalidInput(format!("Invalid sequence: {}", e)))?;
 
         let doc = SequenceDocument::of(&name, seq)
             .with_topology(if circular {
@@ -452,9 +452,9 @@ mod tests {
         let r = OverlapAssembly::gibson().assemble(&[a, b], false).unwrap();
         assert_eq!(r.warnings.len(), 2);
         assert!(
-            r.warnings[0].starts_with("Überlapp 1→2: ") && r.warnings[0].contains("Tm unter 48 °C")
+            r.warnings[0].starts_with("Overlap 1→2: ") && r.warnings[0].contains("Tm below 48 °C")
         );
-        assert!(r.warnings[1].contains("GC-Gehalt außerhalb von 20–80 %"));
+        assert!(r.warnings[1].contains("GC content outside 20–80 %"));
         let gut = OverlapAssembly::gibson()
             .assemble(
                 &[

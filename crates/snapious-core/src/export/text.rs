@@ -5,7 +5,7 @@ use crate::model::feature::Strand;
 use crate::ops::operation::HistoryEntry;
 
 /// Textdarstellung. Die Basen werden in Zeilen zu `bases_per_line` Zeichen (mindestens 10; kleinere Werte gelten als 10) geschrieben,
-/// innerhalb einer Zeile in Blöcken zu 10 Zeichen, durch ein Leerzeichen getrennt (Großbuchstaben).
+/// innerhalb einer Zeile in Blöcken zu 10 Zeichen, durch ein Leerzeichen getrennt (Uppercase).
 /// * `numbers`: jede Zeile beginnt mit der 1-basierten Startposition, rechtsbündig auf die Stellenzahl der Sequenzlänge aufgefüllt, danach zwei Leerzeichen.
 ///   Ohne `numbers` beginnt die Zeile direkt mit den Basen.
 /// * `features`: nach der Sequenz eine Leerzeile, die Zeile `Features:` und je Feature eine Zeile `{Typ} {Name} {start+1}..{ende}` mit ` (-)` am Ende bei
@@ -64,25 +64,25 @@ pub fn format_sequence_text(
 /// # {Name}
 ///
 /// - Länge: {n} bp
-/// - Topologie: zirkulär|linear
+/// - Topology: circular|linear
 /// - GC-Gehalt: {x:.1} %
 ///
 /// ## Features
 ///
-/// | Typ | Name | Bereich | Strang |
+/// | Type | Name | Range | Strand |
 /// |---|---|---|---|
 /// | gene | abc | 5..20 | + |
 /// ```
-/// Strang `+`, `-` oder `.` (kein Strang). Hat das Dokument keine Features, steht unter `## Features` der Satz `Keine Features.` statt der Tabelle.
-/// Ist `history` nicht leer, folgt nach einer Leerzeile `## Verlauf`, eine Leerzeile und je Eintrag eine Zeile `- {summary}` (Einträge in der übergebenen Reihenfolge).
+/// Strang `+`, `-` oder `.` (kein Strang). Hat das Dokument keine Features, steht unter `## Features` der Satz `No features.` statt der Tabelle.
+/// Ist `history` nicht leer, folgt nach einer Leerzeile `## History`, eine Leerzeile und je Eintrag eine Zeile `- {summary}` (Einträge in der übergebenen Reihenfolge).
 /// Der GC-Gehalt ist der Anteil von G und C an allen Basen in Prozent (`doc.sequence().gc_content()` liefert den Anteil 0.0 bis 1.0; mal 100); bei leerer Sequenz 0.0.
 pub fn report_markdown(doc: &SequenceDocument, history: &[HistoryEntry]) -> String {
     let mut out = format!("# {}\n\n", doc.name());
-    out.push_str(&format!("- Länge: {} bp\n", doc.len()));
+    out.push_str(&format!("- Length: {} bp\n", doc.len()));
     out.push_str(&format!(
-        "- Topologie: {}\n",
+        "- Topology: {}\n",
         if doc.topology() == Topology::Circular {
-            "zirkulär"
+            "circular"
         } else {
             "linear"
         }
@@ -92,12 +92,12 @@ pub fn report_markdown(doc: &SequenceDocument, history: &[HistoryEntry]) -> Stri
     } else {
         doc.sequence().gc_content() * 100.0
     };
-    out.push_str(&format!("- GC-Gehalt: {:.1} %\n\n", gc));
+    out.push_str(&format!("- GC content: {:.1} %\n\n", gc));
     out.push_str("## Features\n\n");
     if doc.features().is_empty() {
-        out.push_str("Keine Features.\n");
+        out.push_str("No features.\n");
     } else {
-        out.push_str("| Typ | Name | Bereich | Strang |\n|---|---|---|---|\n");
+        out.push_str("| Type | Name | Range | Strand |\n|---|---|---|---|\n");
         for f in doc.features() {
             let strand = match f.location().strand() {
                 Strand::Forward => "+",
@@ -115,7 +115,7 @@ pub fn report_markdown(doc: &SequenceDocument, history: &[HistoryEntry]) -> Stri
         }
     }
     if !history.is_empty() {
-        out.push_str("\n## Verlauf\n\n");
+        out.push_str("\n## History\n\n");
         for h in history {
             out.push_str(&format!("- {}\n", h.summary));
         }
@@ -199,7 +199,7 @@ mod tests {
                 input_ids: vec![],
                 output_ids: vec![],
                 time: 0,
-                summary: "Einfügen".to_string(),
+                summary: "Insert".to_string(),
             },
             HistoryEntry {
                 id: "2".to_string(),
@@ -208,11 +208,11 @@ mod tests {
                 input_ids: vec![],
                 output_ids: vec![],
                 time: 0,
-                summary: "Verdau".to_string(),
+                summary: "Digest".to_string(),
             },
         ];
         let r = report_markdown(&d, &h);
-        let expected = "# Testplasmid\n\n- Länge: 8 bp\n- Topologie: zirkulär\n- GC-Gehalt: 50.0 %\n\n## Features\n\n| Typ | Name | Bereich | Strang |\n|---|---|---|---|\n| gene | abc | 5..20 | + |\n| misc | x | 1..3 | . |\n\n## Verlauf\n\n- Einfügen\n- Verdau\n";
+        let expected = "# Testplasmid\n\n- Length: 8 bp\n- Topology: circular\n- GC content: 50.0 %\n\n## Features\n\n| Type | Name | Range | Strand |\n|---|---|---|---|\n| gene | abc | 5..20 | + |\n| misc | x | 1..3 | . |\n\n## History\n\n- Insert\n- Digest\n";
         assert_eq!(r, expected);
     }
 
@@ -221,8 +221,8 @@ mod tests {
         let d = doc("ACGT", vec![], Topology::Linear);
         let r = report_markdown(&d, &[]);
         assert!(r.starts_with("# Testplasmid\n"));
-        assert!(r.contains("- Topologie: linear"));
-        assert!(r.contains("## Features\n\nKeine Features.\n"));
-        assert!(!r.contains("## Verlauf"));
+        assert!(r.contains("- Topology: linear"));
+        assert!(r.contains("## Features\n\nNo features.\n"));
+        assert!(!r.contains("## History"));
     }
 }

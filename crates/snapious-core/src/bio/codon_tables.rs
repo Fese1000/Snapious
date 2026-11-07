@@ -20,7 +20,7 @@ pub fn builtin_table(name: &str) -> Result<CodonTable> {
         "mouse" => table_from_json(include_str!("../../data/codon/mouse.json")),
         "yeast" => table_from_json(include_str!("../../data/codon/yeast.json")),
         _ => Err(Error::InvalidInput(format!(
-            "Unbekannte Tabelle '{}'. Gültige Namen: {}",
+            "Unknown table '{}'. Valid names: {}",
             name,
             builtin_names().join(", ")
         ))),

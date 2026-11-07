@@ -78,19 +78,19 @@ pub fn nearest_neighbor(seq: &str, oligo_nm: f64, na_mm: f64) -> Result<f64> {
         .collect();
     if s.len() < 2 {
         return Err(Error::InvalidInput(
-            "Für die Tm-Berechnung sind mindestens 2 Basen nötig".to_string(),
+            "At least 2 bases are needed for the Tm calculation".to_string(),
         ));
     }
     if oligo_nm <= 0.0 || na_mm <= 0.0 {
         return Err(Error::InvalidInput(
-            "Konzentrationen müssen größer als 0 sein".to_string(),
+            "Concentrations must be greater than 0".to_string(),
         ));
     }
     let (mut dh, mut ds) = (0.0f64, 0.0f64);
     for w in s.windows(2) {
         let (h, e) = pair_params(w[0], w[1]).ok_or_else(|| {
             Error::InvalidInput(format!(
-                "Ungültige Basen '{}{}' für die Tm-Berechnung",
+                "Invalid bases '{}{}' for the Tm calculation",
                 w[0] as char, w[1] as char
             ))
         })?;

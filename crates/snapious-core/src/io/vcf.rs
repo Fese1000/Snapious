@@ -61,19 +61,19 @@ pub fn parse(text: &str) -> Result<Vec<VariantCall>> {
         let f: Vec<&str> = line.split('\t').collect();
         if f.len() < 8 {
             return Err(Error::Io(format!(
-                "Zeile {}: {} Spalten gefunden, mindestens 8 erwartet",
+                "Line {}: {} columns found, at least 8 expected",
                 i + 1,
                 f.len()
             )));
         }
         let position = f[1]
             .parse::<usize>()
-            .map_err(|_| Error::Io(format!("Zeile {}: Ungültige Position '{}'", i + 1, f[1])))?;
+            .map_err(|_| Error::Io(format!("Line {}: Invalid position '{}'", i + 1, f[1])))?;
         let quality = if f[5] == "." {
             None
         } else {
             Some(f[5].parse::<f64>().map_err(|_| {
-                Error::Io(format!("Zeile {}: Ungültige Qualität '{}'", i + 1, f[5]))
+                Error::Io(format!("Line {}: Invalid quality '{}'", i + 1, f[5]))
             })?)
         };
         out.push(VariantCall {
@@ -175,7 +175,7 @@ chr2\t12\t.\tA\tG,T\t10\tPASS\t.\n";
 
     #[test]
     fn fehler() {
-        assert!(matches!(parse("chr1\t1\t.\tA\tG\n"), Err(Error::Io(m)) if m.contains("Zeile 1")));
+        assert!(matches!(parse("chr1\t1\t.\tA\tG\n"), Err(Error::Io(m)) if m.contains("Line 1")));
         assert!(parse("chr1\tx\t.\tA\tG\t.\tPASS\t.\n").is_err());
         assert!(parse("chr1\t1\t.\tA\tG\tabc\tPASS\t.\n").is_err());
         assert!(parse("").unwrap().is_empty());

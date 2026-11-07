@@ -26,7 +26,7 @@ pub struct HinBond {
 /// `atom <nummer> - <element> <typ> - <x> <y> <z> <anzahl> <nachbar1> <ordnung1> <nachbar2> <ordnung2> …`
 /// (Felder durch Leerraum getrennt: Index 1 Nummer, 3 Element, 6/7/8 Koordinaten, 9 Zahl der Bindungen, danach Paare). Eine Bindung
 /// wird nur einmal angelegt: bei der Zeile des Atoms mit der kleineren Nummer (also wenn die Nachbarnummer größer ist als die eigene).
-/// Die Nachbarnummern werden in Indizes der Atomliste umgerechnet. Fehler `Error::InvalidInput`: zu wenige Felder, nicht lesbare
+/// Die Nachbarnummern werden in Indizes der Atomliste umgerechnet. Fehler `Error::InvalidInput`: too few fields, nicht lesbare
 /// Zahlen, ein Nachbar, den es nicht gibt, eine unbekannte Ordnung (nicht `s`, `d`, `t`, `a`) oder keine Atome.
 pub fn parse_hin(text: &str) -> Result<(Vec<HinAtom>, Vec<HinBond>)> {
     struct Raw {
@@ -42,15 +42,15 @@ pub fn parse_hin(text: &str) -> Result<(Vec<HinAtom>, Vec<HinBond>)> {
             continue;
         }
         if f.len() < 10 {
-            return Err(bad("zu wenige Felder", line));
+            return Err(bad("too few fields", line));
         }
         let num = |i: usize| {
             f[i].parse::<usize>()
-                .map_err(|_| bad("ungültige Zahl", line))
+                .map_err(|_| bad("invalid number", line))
         };
         let flt = |i: usize| {
             f[i].parse::<f64>()
-                .map_err(|_| bad("ungültige Koordinate", line))
+                .map_err(|_| bad("invalid coordinate", line))
         };
         let number = num(1)?;
         let n_bonds = num(9)?;
@@ -58,13 +58,13 @@ pub fn parse_hin(text: &str) -> Result<(Vec<HinAtom>, Vec<HinBond>)> {
         for b in 0..n_bonds {
             let (ni, oi) = (10 + 2 * b, 11 + 2 * b);
             if oi >= f.len() {
-                return Err(bad("zu wenige Bindungsfelder", line));
+                return Err(bad("too few bond fields", line));
             }
             let order = match f[oi] {
                 "s" | "a" => 1,
                 "d" => 2,
                 "t" => 3,
-                _ => return Err(bad("unbekannte Bindungsordnung", line)),
+                _ => return Err(bad("unknown bond order", line)),
             };
             neighbors.push((num(ni)?, order));
         }
@@ -79,7 +79,7 @@ pub fn parse_hin(text: &str) -> Result<(Vec<HinAtom>, Vec<HinBond>)> {
     }
     if atoms.is_empty() {
         return Err(Error::InvalidInput(
-            "Keine Atome in der HIN-Datei".to_string(),
+            "No atoms in the HIN file".to_string(),
         ));
     }
     let index_of = |n: usize| atoms.iter().position(|a| a.number == n);
@@ -87,7 +87,7 @@ pub fn parse_hin(text: &str) -> Result<(Vec<HinAtom>, Vec<HinBond>)> {
     for (i, r) in raws.iter().enumerate() {
         for &(nb, order) in &r.neighbors {
             let j = index_of(nb).ok_or_else(|| {
-                Error::InvalidInput(format!("HIN: Nachbaratom {nb} gibt es nicht"))
+                Error::InvalidInput(format!("HIN: neighbor atom {nb} does not exist"))
             })?;
             if nb > r.number {
                 bonds.push(HinBond {

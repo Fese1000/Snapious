@@ -1,36 +1,36 @@
-# Architektur: Rust-Kern + native Swift-App (macOS), später zweite Oberfläche für Windows/Linux
+# Architecture: Rust core + native Swift app (macOS), later a second UI for Windows/Linux
 
-**Entscheidung (Felix):** Alle Logik und alles Rechnen in **Rust** (`snapious-core`), die Oberfläche als **native macOS-App in Swift** (AppKit/SwiftUI, Zeichnen mit Core Graphics/Metal).
-Für Windows/Linux kann später eine **zweite Oberfläche** auf demselben Kern entstehen (z. B. Tauri/Web oder egui), ohne den Kern anzufassen.
-Dieses Dokument **ersetzt** `08-HYBRID-JAVA-RUST.md` (Java + Rust-Prozess) und die Java/JavaFX-Vorgaben. Das Java-Projekt `GeneiousRebuild/src` bleibt unverändert als **Referenz**
-(246 geprüfte Tests liefern Erwartungswerte).
+**Decision (Felix):** All logic and computation in **Rust** (`snapious-core`), the user interface as a **native macOS app in Swift** (AppKit/SwiftUI, drawing with Core Graphics/Metal).
+For Windows/Linux a **second UI** can be built later on the same core (e.g. Tauri/web or egui) without touching the core.
+This document **replaces** `08-HYBRID-JAVA-RUST.md` (Java + Rust process) and the Java/JavaFX requirements. The Java project `GeneiousRebuild/src` remains unchanged as a **reference**
+(246 verified tests provide expected values).
 
-Die Anleitungen `01`–`07` gelten weiter für **Aufgaben, Algorithmen und Testwerte**. Es gilt: *Logik-Aufgaben → Rust* (Abschnitt „Abbildung"), *Oberflächen-Aufgaben → Swift* (Abschnitt „Swift-Aufgaben S.x").
+The instructions `01`–`07` continue to apply for **tasks, algorithms and test values**. The rule is: *logic tasks → Rust* (section "Mapping"), *UI tasks → Swift* (section "Swift tasks S.x").
 
-## Schichten
+## Layers
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Swift-App (macOS)      app/                         │  ← dünn: zeigt an, nimmt Eingaben entgegen
-│  Fenster · Ansichten (NSView) · Inspektoren · Menüs │
+│ Swift app (macOS)      app/                         │  ← thin: displays, accepts input
+│  Windows · views (NSView) · inspectors · menus      │
 ├─────────────────────────────────────────────────────┤
-│ snapious-ffi   (UniFFI → Swift-Bindings)            │  ← kleine, stabile Schnittstelle
+│ snapious-ffi   (UniFFI → Swift bindings)            │  ← small, stable interface
 ├─────────────────────────────────────────────────────┤
-│ snapious-core  (reine Rust-Bibliothek)              │  ← ALLE Logik, getestet mit cargo test
-│  Modell · Formate · Operationen · Speicher ·        │
-│  Algorithmen · Klonierung · Layout- und Presenter-  │
-│  Logik · Netz · Werkzeug-Aufrufe                    │
+│ snapious-core  (pure Rust library)                  │  ← ALL logic, tested with cargo test
+│  model · formats · operations · storage ·           │
+│  algorithms · cloning · layout and presenter        │
+│  logic · network · tool invocation                  │
 └─────────────────────────────────────────────────────┘
-                 snapious-cli (Kommandozeile, nutzt nur den Kern)
+                 snapious-cli (command line, uses only the core)
 ```
 
-**Leitregel:** Alles, was nicht unmittelbar Pixel zeichnet oder Betriebssystem-Dialoge öffnet, steht im Kern. Auch Layout-Berechnung (Zeilenumbruch, Spurzuordnung, Kartengeometrie, Baum-Layout),
-Auswahlmodell, Undo/Redo, Filter, Presenter-Zustand. Die Swift-Schicht fragt den Kern „was ist in den Zeilen 10–40 zu zeichnen?" und zeichnet es.
-So bleibt die zweite Oberfläche später dünn und die Logik ist ohne Fenster testbar.
+**Guiding rule:** Everything that does not directly draw pixels or open operating-system dialogs belongs in the core. This includes layout computation (line wrapping, lane assignment, map geometry, tree layout),
+selection model, undo/redo, filters, presenter state. The Swift layer asks the core "what has to be drawn in lines 10–40?" and draws it.
+This keeps the second UI thin later on, and the logic is testable without a window.
 
-## Ordnerstruktur
+## Folder structure
 
-Alles unter `/Users/felixcuntz/Documents/Snapious/GeneiousRebuild/` (neben dem Java-Referenzprojekt):
+Everything under `/Users/felixcuntz/Documents/Snapious/GeneiousRebuild/` (next to the Java reference project):
 
 ```
 Cargo.toml                          # [workspace] members = ["crates/snapious-core", "crates/snapious-ffi", "crates/snapious-cli"]
@@ -49,172 +49,172 @@ crates/
       net/        http.rs  cache.rs  ratelimit.rs  ncbi.rs  uniprot.rs  blast.rs
       tools.rs  gel.rs  crispr.rs  codon_opt.rs  seqcheck.rs  search.rs
     tests/  benches/  testdata/
-  snapious-ffi/                     # UniFFI-Schicht (Bibliothek `libsnapious_ffi.a` + `.dylib`)
+  snapious-ffi/                     # UniFFI layer (library `libsnapious_ffi.a` + `.dylib`)
     src/lib.rs  src/api.rs
-  snapious-cli/                     # `snapious digest puc19.gb --enzymes EcoRI,HindIII` usw.
-app/                                # Swift-Paket (SwiftPM)
+  snapious-cli/                     # `snapious digest puc19.gb --enzymes EcoRI,HindIII` etc.
+app/                                # Swift package (SwiftPM)
   Package.swift
-  Sources/SnapiousApp/              # Oberfläche
-  Sources/SnapiousFFI/              # generierte Bindings (nicht von Hand ändern)
+  Sources/SnapiousApp/              # user interface
+  Sources/SnapiousFFI/              # generated bindings (do not edit by hand)
 scripts/
-  build-ffi.sh                      # baut Rust-Bibliothek, erzeugt Swift-Bindings
-  bundle-app.sh                     # baut .app (Info.plist, Icon, Bibliothek)
-GeneiousRebuild/src/                # (bleibt) Java-Referenz
+  build-ffi.sh                      # builds the Rust library, generates Swift bindings
+  bundle-app.sh                     # builds .app (Info.plist, icon, library)
+GeneiousRebuild/src/                # (remains) Java reference
 ```
 
-## Abhängigkeiten (Rust)
+## Dependencies (Rust)
 
-| Zweck | Crate |
+| Purpose | Crate |
 |---|---|
-| Fehler | `thiserror` (eigenes `Error`-Enum) |
+| Errors | `thiserror` (own `Error` enum) |
 | JSON | `serde`, `serde_json` |
-| SQLite | `rusqlite` mit Feature `bundled` |
-| HTTP | `ureq` (blockierend) |
-| Parallel | `rayon` |
-| Zufall | `rand` (nur mit festem Seed: `StdRng::seed_from_u64`) |
+| SQLite | `rusqlite` with feature `bundled` |
+| HTTP | `ureq` (blocking) |
+| Parallelism | `rayon` |
+| Randomness | `rand` (only with a fixed seed: `StdRng::seed_from_u64`) |
 | Hashing | `sha2`, `hex` |
-| Kompression | `flate2` |
-| Zeit | `time` (UTC, Sekunden als i64 speichern) |
+| Compression | `flate2` |
+| Time | `time` (UTC, store seconds as i64) |
 | Regex | `regex` |
-| FFI | `uniffi` (Proc-Macros: `#[uniffi::export]`, `uniffi::setup_scaffolding!()`) |
-| Pfade | `dirs` (Konfigurations-/Cache-Ordner plattformneutral) |
-| Tests | `tempfile`, `roxmltree` (SVG/XML prüfen), `criterion` (Benchmarks) |
+| FFI | `uniffi` (proc macros: `#[uniffi::export]`, `uniffi::setup_scaffolding!()`) |
+| Paths | `dirs` (platform-neutral config/cache folders) |
+| Tests | `tempfile`, `roxmltree` (check SVG/XML), `criterion` (benchmarks) |
 
-Keine weiteren Crates ohne Eintrag in `OFFENE_FRAGEN.md`. Kein `async`, kein `unsafe` (außer in generierter FFI-Schicht), keine eigenen prozeduralen Makros.
-`[profile.release] lto = "fat"`, `codegen-units = 1`, `panic = "abort"` — **Achtung:** `panic = "abort"` beendet die App bei einem Panic; die FFI-Schicht fängt deshalb Fehler als `Result` ab, Panics gelten als Bugs und bekommen Tests.
+No further crates without an entry in `OFFENE_FRAGEN.md`. No `async`, no `unsafe` (except in the generated FFI layer), no custom procedural macros.
+`[profile.release] lto = "fat"`, `codegen-units = 1`, `panic = "abort"` — **Caution:** `panic = "abort"` terminates the app on a panic; the FFI layer therefore catches errors as `Result`, panics count as bugs and get tests.
 
-## Abbildung Java-Anleitung → Rust
+## Mapping Java instructions → Rust
 
-| Java-Anleitung | Rust |
+| Java instructions | Rust |
 |---|---|
 | `record Foo(a, b)` | `#[derive(Clone, Debug, PartialEq)] pub struct Foo { pub a: A, pub b: B }` |
 | `enum` | `#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum …` |
-| `interface` | `pub trait …` (austauschbar: `Box<dyn Trait>`) |
-| `List<T>` / `Map<K,V>` | `Vec<T>` / `BTreeMap<K,V>` (geordnete Ausgabe), `HashMap` nur intern |
+| `interface` | `pub trait …` (interchangeable: `Box<dyn Trait>`) |
+| `List<T>` / `Map<K,V>` | `Vec<T>` / `BTreeMap<K,V>` (ordered output), `HashMap` only internally |
 | `Optional<T>` | `Option<T>` |
 | `IllegalArgumentException` | `Err(Error::InvalidInput(String))` |
 | `IllegalStateException` | `Err(Error::InvalidState(String))` |
 | `IOException` | `Err(Error::Io(String))` (+ `From<std::io::Error>`) |
-| `OperationException` | `Err(Error::Operation(String))` (deutsche Nutzermeldung) |
+| `OperationException` | `Err(Error::Operation(String))` (German user message) |
 | `IndexOutOfBoundsException` | `Err(Error::OutOfRange(String))` |
-| Intervall `[start, end)` | `std::ops::Range<usize>` |
-| `with…()` bei unveränderlichen Dokumenten | `fn with_…(&self, …) -> Self` |
-| Sequenz als `String` | **`Vec<u8>`/`&[u8]` (ASCII-Großbuchstaben)**, `String` nur für Anzeige/Dateien |
-| `@Test`, `assertEquals` | `#[test]`, `assert_eq!`; Gleitkomma: `assert!((a - b).abs() < eps)` |
+| Interval `[start, end)` | `std::ops::Range<usize>` |
+| `with…()` on immutable documents | `fn with_…(&self, …) -> Self` |
+| Sequence as `String` | **`Vec<u8>`/`&[u8]` (ASCII uppercase)**, `String` only for display/files |
+| `@Test`, `assertEquals` | `#[test]`, `assert_eq!`; floating point: `assert!((a - b).abs() < eps)` |
 | `Assumptions.assumeTrue(tool)` | `if !tools::is_available("mafft") { eprintln!("übersprungen"); return; }` |
-| `@Tag("network")` | `#[ignore = "network"]` (laufen mit `cargo test -- --ignored`) |
+| `@Tag("network")` | `#[ignore = "network"]` (run with `cargo test -- --ignored`) |
 | `@TempDir` | `tempfile::tempdir()` |
-| `Operation`-Interface | `pub trait Operation { fn id(&self) -> &str; fn label(&self) -> &str; fn run(&self, inputs: &[Document], params: &Params, ctx: &mut dyn OperationContext) -> Result<OperationResult>; }` |
-| `Document`-Interface | `pub enum Document { Sequence(SequenceDocument), Alignment(AlignmentDocument), Tree(TreeDocument) }` |
-| `ProjectStore` (JDBC) | `ProjectStore` mit `rusqlite`; JSON-Payload mit `serde_json` (gleiches Schema wie in Phase 0.5) |
-| Methoden `findAllCutSites` | `find_all_cut_sites` (snake_case, Typen `CamelCase`) |
-| „Presenter" (testbar ohne Fenster) | Struktur im Kern mit reinen Methoden (`view/presenters/…`) |
-| Java-Paritätstest | entfällt; stattdessen übernimmt der Rust-Test die **Erwartungswerte der Java-Tests** |
+| `Operation` interface | `pub trait Operation { fn id(&self) -> &str; fn label(&self) -> &str; fn run(&self, inputs: &[Document], params: &Params, ctx: &mut dyn OperationContext) -> Result<OperationResult>; }` |
+| `Document` interface | `pub enum Document { Sequence(SequenceDocument), Alignment(AlignmentDocument), Tree(TreeDocument) }` |
+| `ProjectStore` (JDBC) | `ProjectStore` with `rusqlite`; JSON payload with `serde_json` (same schema as in Phase 0.5) |
+| Methods `findAllCutSites` | `find_all_cut_sites` (snake_case, types `CamelCase`) |
+| "Presenter" (testable without a window) | Struct in the core with pure methods (`view/presenters/…`) |
+| Java parity test | dropped; instead the Rust test adopts the **expected values of the Java tests** |
 
-Namen werden mechanisch übertragen, damit Qwen die Java-Anleitung direkt lesen kann.
+Names are transferred mechanically so that Qwen can read the Java instructions directly.
 
-## Leistungsvorgaben (verbindlich, mit Benchmarks)
+## Performance requirements (binding, with benchmarks)
 
-| Bereich | Technik | Ziel (Apple M-Chip, Release) |
+| Area | Technique | Target (Apple M chip, release) |
 |---|---|---|
-| Alignment (NW/SW) | zwei `i32`-Zeilen für Scores, Traceback 2 Bit/Zelle (gepackt) | 5 000 × 5 000 Basen < 0,3 s |
-| Restriktionsscan | IUPAC-Bitmasken (A=1, C=2, G=4, T=8), Enzyme parallel (`rayon`) | 1 Mb × 79 Enzyme < 50 ms |
-| Distanzen/Bootstrap | Spaltenzählung über Tabellen, `rayon` | 100 Seq. × 1 000 Spalten, 100 Bootstrap < 5 s |
-| Seed-and-Extend | 2-Bit-k-mere in `u64`, `HashMap<u64, Vec<u32>>` | 1 Mb DB, 1 kb Query < 20 ms |
-| Sequenzansicht-Layout | O(sichtbare Zeilen) | 1 Mb: < 1 ms je Aufruf |
-| GenBank/FASTA-Parser | `&str`-Zerlegung, Sequenz direkt in `Vec<u8>` | 100 MB in < 1 s (FASTA) |
-| FFI-Aufruf | Daten in großen Stücken (Zeilenbereiche, nicht Zeichen) | < 0,2 ms für Layout-Abfrage |
+| Alignment (NW/SW) | two `i32` rows for scores, traceback 2 bits/cell (packed) | 5,000 × 5,000 bases < 0.3 s |
+| Restriction scan | IUPAC bitmasks (A=1, C=2, G=4, T=8), enzymes in parallel (`rayon`) | 1 Mb × 79 enzymes < 50 ms |
+| Distances/bootstrap | column counting via tables, `rayon` | 100 seq. × 1,000 columns, 100 bootstrap < 5 s |
+| Seed-and-extend | 2-bit k-mers in `u64`, `HashMap<u64, Vec<u32>>` | 1 Mb DB, 1 kb query < 20 ms |
+| Sequence view layout | O(visible lines) | 1 Mb: < 1 ms per call |
+| GenBank/FASTA parser | `&str` splitting, sequence directly into `Vec<u8>` | 100 MB in < 1 s (FASTA) |
+| FFI call | data in large chunks (line ranges, not characters) | < 0.2 ms for a layout query |
 
-Jede Aufgabe mit einer Zeile aus dieser Tabelle bekommt einen `criterion`-Benchmark und einen groben `#[test]` mit `Instant` (Grenze = 10 × Ziel).
+Every task with a row in this table gets a `criterion` benchmark and a coarse `#[test]` with `Instant` (limit = 10 × target).
 
-## Regeln für Rust-Code (besonders für Qwen)
+## Rules for Rust code (especially for Qwen)
 
-1. `cargo check` nach jeder Datei, `cargo test` nach jeder Aufgabe, `cargo clippy -- -D warnings` und `cargo fmt` vor Abschluss.
-2. Funktionen nehmen `&[u8]`/`&str`/`&T` und geben eigene Werte zurück. **Keine Lebensdauer-Parameter in öffentlichen Strukturen**; klonen statt Referenzen speichern.
-3. Kein `unwrap()`/`expect()` außerhalb von Tests; Fehler mit `?`.
-4. Indizes geprüft oder vorab validiert; `saturating_sub`/`checked_sub` bei `usize`.
-5. Keine Panics bei ungültigen Eingaben (leere Sequenz, Länge 0, Index am Rand): immer `Result`/leere Ergebnisse, plus je ein Test.
-6. Ausgaben deterministisch (kein Iterieren über `HashMap` für Ergebnisse; `BTreeMap` oder sortieren); Zufall nur mit festem Seed.
-7. Tests als `#[cfg(test)] mod tests` unter der Datei; Integrationstests in `crates/snapious-core/tests/`; Testnamen auf Deutsch ohne Umlaute (`fn verdau_ecori_zwei_fragmente()`).
-8. `///`-Doku auf Deutsch mit Quelle des Algorithmus.
-9. **Plattformneutral bleiben:** keine macOS-Aufrufe im Kern; Pfade nur mit `std::path`/`dirs`; Dateinamen von Programmen ohne feste Endung suchen (unter Windows `.exe`);
-   Zeilenenden `\n` und `\r\n` akzeptieren; Text immer UTF-8.
+1. `cargo check` after every file, `cargo test` after every task, `cargo clippy -- -D warnings` and `cargo fmt` before finishing.
+2. Functions take `&[u8]`/`&str`/`&T` and return their own values. **No lifetime parameters in public structs**; clone instead of storing references.
+3. No `unwrap()`/`expect()` outside of tests; propagate errors with `?`.
+4. Indices checked or validated beforehand; `saturating_sub`/`checked_sub` for `usize`.
+5. No panics on invalid input (empty sequence, length 0, index at the boundary): always `Result`/empty results, plus one test each.
+6. Deterministic output (do not iterate over `HashMap` for results; use `BTreeMap` or sort); randomness only with a fixed seed.
+7. Tests as `#[cfg(test)] mod tests` below the file; integration tests in `crates/snapious-core/tests/`; test names in German without umlauts (`fn verdau_ecori_zwei_fragmente()`).
+8. `///` documentation in German with the source of the algorithm.
+9. **Stay platform-neutral:** no macOS calls in the core; paths only with `std::path`/`dirs`; look up program file names without a fixed extension (`.exe` on Windows);
+   accept line endings `\n` and `\r\n`; text always UTF-8.
 
-## Abweichungen pro Phase (Rust statt Java)
+## Deviations per phase (Rust instead of Java)
 
-- **Phase 0:** 0.1–0.6 in Rust (`model`, `io::genbank`, `ops`, `store`, `tools`); JSON mit `serde_json`. 0.6 `tools.rs`: `std::process::Command`, stdout/stderr in zwei Threads, Timeout mit `try_wait`-Schleife (20 ms), dann `kill`.
-  **0.7 entfällt** (JavaFX) und wird durch **S.0** ersetzt. Neue **Aufgabe 0.0:** Workspace anlegen, `cargo fmt`/`clippy`/`test` laufen, `.gitignore`.
-  Neue **Aufgabe 0.9 (Port der Referenzalgorithmen)** in dieser Reihenfolge, jeweils mit den Testwerten der Java-Tests:
-  `model::sequence` → `bio::align` → `bio::msa` → `bio::tree`/`newick` → `cloning::enzymes` (79 Enzyme aus `RestrictionEnzymeDB.java`) → `primer` → `search` → `io` (FASTA/FASTQ/GenBank/SAM/VCF) → `coverage`.
-- **Phase 1:** `view/*` und `features/*` wie beschrieben, im Kern. 1.11 entfällt als JavaFX-Aufgabe; Presenter bleiben im Kern, Zeichnen übernimmt Swift (S.2–S.4).
-- **Phase 2/3:** rein algorithmisch, unverändert; Bootstrap und Distanzen mit `rayon`; Bäume/Gel/SVG-Export liefern `String`/Zahlenlisten. UI-Teile (2.14, 3.9) werden Swift-Aufgaben.
-- **Phase 4:** `ureq` hinter einem `HttpFetcher`-Trait (Fakes in Tests). 4.7: 3D-Ansicht über temporäre HTML-Datei mit 3Dmol.js im Standardbrowser (`open`), keine eingebettete WebView.
-- **Phase 5:** zurückgestellt.
-- **Phase 6:** 6.3 **Plugins** als externe Programme (`~/.snapious/plugins/<name>/plugin.json`; Aufruf mit `--in <datei> --out <ordner> --params <json>`), weil Rust keine stabile ABI hat.
-  6.9 Verpackung: `scripts/bundle-app.sh` erzeugt die `.app`; Abdeckung mit `cargo llvm-cov`. Einstellungen: JSON mit `serde`, Dateirechte `0o600`.
+- **Phase 0:** 0.1–0.6 in Rust (`model`, `io::genbank`, `ops`, `store`, `tools`); JSON with `serde_json`. 0.6 `tools.rs`: `std::process::Command`, stdout/stderr in two threads, timeout with a `try_wait` loop (20 ms), then `kill`.
+  **0.7 is dropped** (JavaFX) and replaced by **S.0**. New **task 0.0:** create the workspace, run `cargo fmt`/`clippy`/`test`, `.gitignore`.
+  New **task 0.9 (port of the reference algorithms)** in this order, each with the test values of the Java tests:
+  `model::sequence` → `bio::align` → `bio::msa` → `bio::tree`/`newick` → `cloning::enzymes` (79 enzymes from `RestrictionEnzymeDB.java`) → `primer` → `search` → `io` (FASTA/FASTQ/GenBank/SAM/VCF) → `coverage`.
+- **Phase 1:** `view/*` and `features/*` as described, in the core. 1.11 is dropped as a JavaFX task; presenters stay in the core, drawing is done by Swift (S.2–S.4).
+- **Phase 2/3:** purely algorithmic, unchanged; bootstrap and distances with `rayon`; trees/gel/SVG export return `String`/number lists. UI parts (2.14, 3.9) become Swift tasks.
+- **Phase 4:** `ureq` behind an `HttpFetcher` trait (fakes in tests). 4.7: 3D view via a temporary HTML file with 3Dmol.js in the default browser (`open`), no embedded WebView.
+- **Phase 5:** postponed.
+- **Phase 6:** 6.3 **plugins** as external programs (`~/.snapious/plugins/<name>/plugin.json`; invocation with `--in <file> --out <folder> --params <json>`), because Rust has no stable ABI.
+  6.9 Packaging: `scripts/bundle-app.sh` produces the `.app`; coverage with `cargo llvm-cov`. Settings: JSON with `serde`, file permissions `0o600`.
 
 ---
 
-## FFI-Schicht (`snapious-ffi`)
+## FFI layer (`snapious-ffi`)
 
-**Aufgabe F.0 (Claude): UniFFI einrichten.**
+**Task F.0 (Claude): set up UniFFI.**
 
-- Crate-Typ `["staticlib", "cdylib"]`, `uniffi::setup_scaffolding!()`, Swift-Bindings erzeugt mit `uniffi-bindgen-swift` (Skript `scripts/build-ffi.sh`: `cargo build --release -p snapious-ffi`, dann Bindings nach `app/Sources/SnapiousFFI/`).
-- **Schnittstellenentwurf (verbindlich):**
-  - Objekt `Project` (Arc, intern `Mutex<ProjectState>`): `open(path)`, `create(path)`, `documents()`, `import_file(path)`, `document(id)`, `delete(id)`, `save()`, `history()`, `undo(id)`, `redo(id)`.
-  - Objekt `SequenceSession` (ein geöffnetes Sequenzdokument mit `EditSession`): `length()`, `topology()`, `line_slices(bases_per_line, first_line, last_line) -> Vec<LineSlice>`, `features_in(range) -> Vec<PlacedFeatureDto>`,
+- Crate type `["staticlib", "cdylib"]`, `uniffi::setup_scaffolding!()`, Swift bindings generated with `uniffi-bindgen-swift` (script `scripts/build-ffi.sh`: `cargo build --release -p snapious-ffi`, then bindings to `app/Sources/SnapiousFFI/`).
+- **Interface design (binding):**
+  - Object `Project` (Arc, internally `Mutex<ProjectState>`): `open(path)`, `create(path)`, `documents()`, `import_file(path)`, `document(id)`, `delete(id)`, `save()`, `history()`, `undo(id)`, `redo(id)`.
+  - Object `SequenceSession` (an opened sequence document with `EditSession`): `length()`, `topology()`, `line_slices(bases_per_line, first_line, last_line) -> Vec<LineSlice>`, `features_in(range) -> Vec<PlacedFeatureDto>`,
     `translation(frame, range)`, `enzyme_sites(filter, names)`, `select(start, end)`, `selection_stats()`, `insert/delete/replace`, `undo/redo`, `circular_map(size) -> MapGeometry`, `linear_map(width) -> MapGeometry`.
-  - Operationen: `run_operation(id, params_json, input_ids, progress: Box<dyn ProgressListener>) -> OperationOutcome`, Abbruch über `CancelToken`-Objekt.
-  - Alle Typen als einfache Records/Enums (UniFFI-fähig): `u32/u64/f64/String/Vec/Option`; Sequenzen als `String` (ASCII) oder `Vec<u8>`.
-  - Fehler als `enum ApiError { InvalidInput(String), Io(String), Operation(String), Internal(String) }` (wird in Swift zu `throws`).
-  - **Keine** Rückrufe pro Zeichen oder pro Pixel; Daten in Blöcken (`LineSlice` enthält Zeilenindex, Startposition und den Basen-String der Zeile).
-- **Tests:** Rust-Tests rufen die FFI-Funktionen wie Swift es täte (ohne Swift). Dazu ein Swift-Smoketest in S.0, der `ping`/`Project.create` aufruft.
+  - Operations: `run_operation(id, params_json, input_ids, progress: Box<dyn ProgressListener>) -> OperationOutcome`, cancellation via a `CancelToken` object.
+  - All types as simple records/enums (UniFFI-compatible): `u32/u64/f64/String/Vec/Option`; sequences as `String` (ASCII) or `Vec<u8>`.
+  - Errors as `enum ApiError { InvalidInput(String), Io(String), Operation(String), Internal(String) }` (becomes `throws` in Swift).
+  - **No** callbacks per character or per pixel; data in blocks (`LineSlice` contains line index, start position and the base string of the line).
+- **Tests:** Rust tests call the FFI functions the way Swift would (without Swift). In addition, a Swift smoke test in S.0 that calls `ping`/`Project.create`.
 
 ---
 
-## Swift-Aufgaben (Oberfläche)
+## Swift tasks (user interface)
 
-Alle Swift-Aufgaben setzt **Claude** um (Rückmeldung per Screenshot/Beschreibung durch Felix), weil sie visuell geprüft werden müssen und Swift für ein lokales Qwen schwerer ist.
-Technik: **SwiftPM** (`app/Package.swift`), Ziel macOS 14+, Swift 6, SwiftUI für Rahmen (Seitenleiste, Inspektoren, Dialoge), **AppKit-`NSView`** für die großen Zeichenflächen (Core Graphics; Metal erst bei Bedarf).
-Gebaut wird mit `swift build -c release` (Command Line Tools genügen; Xcode ist **nicht** erforderlich), Bündelung per `scripts/bundle-app.sh`.
+All Swift tasks are implemented by **Claude** (feedback by screenshot/description from Felix), because they must be checked visually and Swift is harder for a local Qwen.
+Technology: **SwiftPM** (`app/Package.swift`), target macOS 14+, Swift 6, SwiftUI for the frame (sidebar, inspectors, dialogs), **AppKit `NSView`** for the large drawing surfaces (Core Graphics; Metal only when needed).
+Built with `swift build -c release` (Command Line Tools suffice; Xcode is **not** required), bundled via `scripts/bundle-app.sh`.
 
-| Nr. | Aufgabe | Voraussetzung |
+| No. | Task | Prerequisite |
 |---|---|---|
-| **S.0** | SwiftPM-Projekt, UniFFI-Bindings eingebunden, Fenster mit Dokumentliste (Projekt öffnen/neu, Sequenz importieren). Menüleiste, `.app`-Bündelung. Smoketest: `Project.create` + Import von `mini.gb` zeigt einen Eintrag. | F.0, Phase 0 |
-| **S.1** | Hauptfenster-Rahmen: Seitenleiste (Ordner/Dokumente), Tabs für geöffnete Dokumente, Inspektor rechts (SwiftUI). | S.0 |
-| **S.2** | `SequenceView` (`NSView`): zeichnet nur sichtbare Zeilen anhand `line_slices`; Zahlenrand, Gruppen à 10, Komplementärstrang, Farben; Zoom; Maus- und Tastaturauswahl (an `select` übergeben). | S.1, Phase 1.1–1.2 |
-| **S.3** | Annotationsspuren und Translation in der `SequenceView` (`features_in`, `translation`). | S.2, 1.3–1.4 |
-| **S.4** | `MapView` (zirkulär/linear): Features, Enzymschnitte, Auswahlbogen; Klick setzt Auswahl (an Kern). | S.2, 1.6–1.7 |
-| **S.5** | Inspektoren: Auswahlstatistik, Enzymliste (Filter), Featureliste (hinzufügen/löschen), Feature-Erkennung. Undo/Redo, Bearbeiten-Modus. | S.3, 1.5/1.8/1.9 |
-| **S.6** | Verdau-Ansicht mit Gel (`GelView`), Klonierungs-Assistent, PCR-/Primer-Dialog, Sequenzierungsabgleich. | S.5, Phase 2 |
-| **S.7** | `AlignmentView` (Spalten, Farben, Konsens, Identität, Logo) und `TreeView` (Layout aus dem Kern, Export PNG/SVG). | S.5, Phase 3 |
-| **S.8** | NCBI-/BLAST-/UniProt-Dialoge, Protein-Ansicht mit Diagrammen (Swift Charts), RNA-Bogendiagramm, 3D im Browser. | S.5, Phase 4 |
-| **S.9** | Workflows-Menü, Plugin-Verwaltung, Einstellungen (Werkzeugpfade prüfen), Dunkelmodus, Drucken, PDF-Export der Karte (macOS bringt PDF-Erzeugung mit: `NSView.dataWithPDF`), Dock-Icon, `.app`-Signierung entfällt (privat). | S.6–S.8, Phase 6 |
+| **S.0** | SwiftPM project, UniFFI bindings integrated, window with document list (open/new project, import sequence). Menu bar, `.app` bundling. Smoke test: `Project.create` + import of `mini.gb` shows one entry. | F.0, Phase 0 |
+| **S.1** | Main window frame: sidebar (folders/documents), tabs for opened documents, inspector on the right (SwiftUI). | S.0 |
+| **S.2** | `SequenceView` (`NSView`): draws only visible lines based on `line_slices`; number margin, groups of 10, complementary strand, colors; zoom; mouse and keyboard selection (passed to `select`). | S.1, Phase 1.1–1.2 |
+| **S.3** | Annotation tracks and translation in the `SequenceView` (`features_in`, `translation`). | S.2, 1.3–1.4 |
+| **S.4** | `MapView` (circular/linear): features, enzyme cuts, selection arc; click sets the selection (passed to the core). | S.2, 1.6–1.7 |
+| **S.5** | Inspectors: selection statistics, enzyme list (filter), feature list (add/delete), feature detection. Undo/redo, edit mode. | S.3, 1.5/1.8/1.9 |
+| **S.6** | Digest view with gel (`GelView`), cloning wizard, PCR/primer dialog, sequencing comparison. | S.5, Phase 2 |
+| **S.7** | `AlignmentView` (columns, colors, consensus, identity, logo) and `TreeView` (layout from the core, export PNG/SVG). | S.5, Phase 3 |
+| **S.8** | NCBI/BLAST/UniProt dialogs, protein view with charts (Swift Charts), RNA arc diagram, 3D in the browser. | S.5, Phase 4 |
+| **S.9** | Workflows menu, plugin management, settings (check tool paths), dark mode, printing, PDF export of the map (macOS provides PDF generation: `NSView.dataWithPDF`), dock icon, `.app` signing not needed (private). | S.6–S.8, Phase 6 |
 
-**Regeln für die Swift-Schicht:** keine Fachlogik (nichts Rechnen mit Basen, keine Layout-Berechnung); jede Berechnung, die doppelt in der zweiten Oberfläche nötig wäre, gehört in den Kern. `@MainActor` für UI; lange Operationen auf Hintergrund-Tasks mit `ProgressListener` und Abbruch.
+**Rules for the Swift layer:** no domain logic (no computing with bases, no layout computation); any computation that would be needed twice in the second UI belongs in the core. `@MainActor` for UI; long operations on background tasks with `ProgressListener` and cancellation.
 
 ---
 
-## Später: Windows/Linux
+## Later: Windows/Linux
 
-Ja, das ist machbar, **ohne den Kern anzufassen**. Man schreibt dann nur eine zweite, dünne Oberfläche, die dieselben Funktionen aufruft:
+Yes, this is feasible **without touching the core**. You then write only a second, thin UI that calls the same functions:
 
-| Option | Aufwand | Hinweis |
+| Option | Effort | Note |
 |---|---|---|
-| **Tauri + Web-UI** (Svelte/React, Canvas) | mittel | Ruft `snapious-core` direkt (Rust) auf; Canvas-Zeichnung nach den Daten aus `view::*`; bestes Aussehen, viele fertige Bausteine |
-| **egui/eframe** (reines Rust) | mittel | Gleiche Datenstrukturen, Zeichnen mit `Painter`; schneller Einstieg, schlichtere Optik |
-| **Qt/QML** | hoch | Reife Desktop-Toolkit, aber C++-Bindung nötig |
+| **Tauri + web UI** (Svelte/React, canvas) | medium | Calls `snapious-core` directly (Rust); canvas drawing based on the data from `view::*`; best look, many ready-made building blocks |
+| **egui/eframe** (pure Rust) | medium | Same data structures, drawing with `Painter`; quick start, plainer look |
+| **Qt/QML** | high | Mature desktop toolkit, but a C++ binding is needed |
 
-Der Aufwand für die zweite Oberfläche entspricht grob den Swift-Aufgaben S.1–S.9 (ca. 30–40 % des Gesamtprojekts), nicht mehr.
-Damit das so bleibt: Leitregel oben einhalten, keine Apple-APIs im Kern, `cargo build --target x86_64-pc-windows-msvc` und `x86_64-unknown-linux-gnu` gelegentlich prüfen (Kern ohne Oberfläche), Pfade und Programmsuche plattformneutral.
-Externe Programme (MAFFT usw.) gibt es auch für Windows/Linux; die Pfadsuche ist in `tools.rs` zentral.
+The effort for the second UI roughly corresponds to the Swift tasks S.1–S.9 (about 30–40 % of the total project), no more.
+To keep it that way: follow the guiding rule above, no Apple APIs in the core, occasionally check `cargo build --target x86_64-pc-windows-msvc` and `x86_64-unknown-linux-gnu` (core without UI), keep path handling and program lookup platform-neutral.
+External programs (MAFFT etc.) also exist for Windows/Linux; the path lookup is centralized in `tools.rs`.
 
 ---
 
-## Reihenfolge
+## Order
 
-1. **Aufgabe 0.0** (Workspace) und **0.9** (Referenzalgorithmen portieren) – schafft die Basis mit den Java-Testwerten.
-2. **Phase 0** in Rust (0.1–0.6), **F.0** (UniFFI), **S.0** (Swift-Fenster mit Dokumentliste). Danach läuft ein vertikaler Schnitt: importieren, speichern, anzeigen.
-3. **Phase 1** (Kern: Qwen; Oberfläche S.1–S.5: Claude).
-4. **Phase 2 → 3 → 4 → 6** wie in `00`–`07`; Kern-Aufgaben Qwen, Swift-Aufgaben Claude.
-5. Danach optional Phase 5 und die zweite Oberfläche.
+1. **Task 0.0** (workspace) and **0.9** (port reference algorithms) – creates the foundation with the Java test values.
+2. **Phase 0** in Rust (0.1–0.6), **F.0** (UniFFI), **S.0** (Swift window with document list). After that a vertical slice runs: import, save, display.
+3. **Phase 1** (core: Qwen; UI S.1–S.5: Claude).
+4. **Phase 2 → 3 → 4 → 6** as in `00`–`07`; core tasks Qwen, Swift tasks Claude.
+5. After that optionally Phase 5 and the second UI.

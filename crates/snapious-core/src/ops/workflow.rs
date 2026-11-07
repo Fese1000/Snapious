@@ -44,7 +44,7 @@ enum Reference {
 fn parse_reference(text: &str) -> Result<Reference> {
     let bad = || {
         Error::InvalidInput(format!(
-            "Ungültiger Verweis '{}' (erlaubt: $in:N oder $step:S:N)",
+            "Invalid reference '{}' (allowed: $in:N or $step:S:N)",
             text
         ))
     };
@@ -67,20 +67,20 @@ impl Workflow {
     pub fn validate(&self, registry: &OperationRegistry) -> Result<()> {
         if self.outputs.is_empty() {
             return Err(Error::InvalidInput(
-                "Der Workflow hat keine Ausgabe".to_string(),
+                "The workflow has no output".to_string(),
             ));
         }
         for (i, step) in self.steps.iter().enumerate() {
             let no = i + 1;
             if registry.find(&step.operation_id).is_none() {
                 return Err(Error::InvalidInput(format!(
-                    "Schritt {}: unbekannte Operation '{}'",
+                    "Step {}: unknown operation '{}'",
                     no, step.operation_id
                 )));
             }
             if step.inputs.is_empty() {
                 return Err(Error::InvalidInput(format!(
-                    "Schritt {}: keine Eingabe",
+                    "Step {}: no input",
                     no
                 )));
             }
@@ -88,13 +88,13 @@ impl Workflow {
                 match parse_reference(r)? {
                     Reference::Input(n) if n >= self.input_count => {
                         return Err(Error::InvalidInput(format!(
-                            "Schritt {}: Eingabe {} gibt es nicht",
+                            "Step {}: input {} does not exist",
                             no, n
                         )));
                     }
                     Reference::Step(s, _) if s >= i => {
                         return Err(Error::InvalidInput(format!(
-                            "Schritt {}: Verweis '{}' zeigt nicht auf einen früheren Schritt",
+                            "Step {}: reference '{}' does not point to an earlier step",
                             no, r
                         )));
                     }
@@ -106,13 +106,13 @@ impl Workflow {
             match parse_reference(r)? {
                 Reference::Input(n) if n >= self.input_count => {
                     return Err(Error::InvalidInput(format!(
-                        "Ausgabe-Verweis '{}': Eingabe {} gibt es nicht",
+                        "Output reference '{}': input {} does not exist",
                         r, n
                     )));
                 }
                 Reference::Step(s, _) if s >= self.steps.len() => {
                     return Err(Error::InvalidInput(format!(
-                        "Ausgabe-Verweis '{}': Schritt {} gibt es nicht",
+                        "Output reference '{}': step {} does not exist",
                         r, s
                     )));
                 }
@@ -143,12 +143,12 @@ impl Workflow {
     /// `description` und `parameters` dürfen fehlen, `inputCount` fehlt → 1, `id` fehlt → `schritt{N}` (1-basiert). Parameterwerte
     /// dürfen Zahlen, Wahrheitswerte oder Texte sein (alles wird zu Text).
     pub fn from_json(text: &str) -> Result<Workflow> {
-        let bad = |what: &str| Error::InvalidInput(format!("Workflow-JSON: {}", what));
+        let bad = |what: &str| Error::InvalidInput(format!("Workflow JSON: {}", what));
         let v: Value = serde_json::from_str(text).map_err(|e| bad(&e.to_string()))?;
         let name = v
             .get("name")
             .and_then(Value::as_str)
-            .ok_or_else(|| bad("'name' fehlt"))?
+            .ok_or_else(|| bad("'name' is missing"))?
             .to_string();
         let description = v
             .get("description")
@@ -158,36 +158,36 @@ impl Workflow {
         let input_count = match v.get("inputCount") {
             Some(n) => n
                 .as_u64()
-                .ok_or_else(|| bad("'inputCount' ist keine Zahl"))? as usize,
+                .ok_or_else(|| bad("'inputCount' is not a number"))? as usize,
             None => 1,
         };
         let strings = |v: &Value, what: &str| -> Result<Vec<String>> {
             v.as_array()
-                .ok_or_else(|| bad(&format!("'{}' ist keine Liste", what)))?
+                .ok_or_else(|| bad(&format!("'{}' is not a list", what)))?
                 .iter()
                 .map(|x| {
                     x.as_str()
                         .map(str::to_string)
-                        .ok_or_else(|| bad(&format!("'{}' enthält Nicht-Text", what)))
+                        .ok_or_else(|| bad(&format!("'{}' contains non-text", what)))
                 })
                 .collect()
         };
         let outputs = strings(
-            v.get("outputs").ok_or_else(|| bad("'outputs' fehlt"))?,
+            v.get("outputs").ok_or_else(|| bad("'outputs' is missing"))?,
             "outputs",
         )?;
         let mut steps = Vec::new();
         for (i, s) in v
             .get("steps")
             .and_then(Value::as_array)
-            .ok_or_else(|| bad("'steps' fehlt"))?
+            .ok_or_else(|| bad("'steps' is missing"))?
             .iter()
             .enumerate()
         {
             let operation_id = s
                 .get("operation")
                 .and_then(Value::as_str)
-                .ok_or_else(|| bad(&format!("Schritt {}: 'operation' fehlt", i + 1)))?
+                .ok_or_else(|| bad(&format!("Step {}: 'operation' is missing", i + 1)))?
                 .to_string();
             let id = s
                 .get("id")
@@ -195,13 +195,13 @@ impl Workflow {
                 .map_or_else(|| format!("schritt{}", i + 1), str::to_string);
             let inputs = strings(
                 s.get("inputs")
-                    .ok_or_else(|| bad(&format!("Schritt {}: 'inputs' fehlt", i + 1)))?,
+                    .ok_or_else(|| bad(&format!("Step {}: 'inputs' is missing", i + 1)))?,
                 "inputs",
             )?;
             let mut parameters = Params::new();
             if let Some(obj) = s.get("parameters") {
                 for (k, val) in obj.as_object().ok_or_else(|| {
-                    bad(&format!("Schritt {}: 'parameters' ist kein Objekt", i + 1))
+                    bad(&format!("Step {}: 'parameters' is not an object", i + 1))
                 })? {
                     let text = match val {
                         Value::String(t) => t.clone(),
@@ -209,7 +209,7 @@ impl Workflow {
                         Value::Bool(b) => b.to_string(),
                         _ => {
                             return Err(bad(&format!(
-                                "Schritt {}: Parameter '{}' hat einen ungültigen Wert",
+                                "Step {}: parameter '{}' has an invalid value",
                                 i + 1,
                                 k
                             )))
@@ -268,7 +268,7 @@ impl<'a> WorkflowRunner<'a> {
         wf.validate(self.registry)?;
         if inputs.len() != wf.input_count {
             return Err(Error::InvalidInput(format!(
-                "Der Workflow braucht {} Eingabedokument(e), übergeben wurden {}",
+                "The workflow needs {} input document(s), {} were provided",
                 wf.input_count,
                 inputs.len()
             )));
@@ -278,19 +278,19 @@ impl<'a> WorkflowRunner<'a> {
         let lookup =
             |r: &str, step_outputs: &[Vec<Document>], no: Option<usize>| -> Result<Document> {
                 let fail = |m: String| match no {
-                    Some(n) => Error::Operation(format!("Schritt {}: {}", n, m)),
+                    Some(n) => Error::Operation(format!("Step {}: {}", n, m)),
                     None => Error::Operation(m),
                 };
                 match parse_reference(r)? {
                     Reference::Input(n) => inputs
                         .get(n)
                         .cloned()
-                        .ok_or_else(|| fail(format!("Eingabe {} fehlt", n))),
+                        .ok_or_else(|| fail(format!("Input {} is missing", n))),
                     Reference::Step(s, n) => step_outputs
                         .get(s)
                         .and_then(|o| o.get(n))
                         .cloned()
-                        .ok_or_else(|| fail(format!("Verweis {} liefert keine Ausgabe", r))),
+                        .ok_or_else(|| fail(format!("Reference {} yields no output", r))),
                 }
             };
         for (i, step) in wf.steps.iter().enumerate() {
@@ -298,7 +298,7 @@ impl<'a> WorkflowRunner<'a> {
             let op = self
                 .registry
                 .find(&step.operation_id)
-                .ok_or_else(|| Error::Operation(format!("Schritt {}: unbekannte Operation", no)))?;
+                .ok_or_else(|| Error::Operation(format!("Step {}: unknown operation", no)))?;
             let docs: Vec<Document> = step
                 .inputs
                 .iter()
@@ -306,7 +306,7 @@ impl<'a> WorkflowRunner<'a> {
                 .collect::<Result<_>>()?;
             let result = runner
                 .execute(op, &docs, &step.parameters, ctx)
-                .map_err(|e| Error::Operation(format!("Schritt {}: {}", no, e)))?;
+                .map_err(|e| Error::Operation(format!("Step {}: {}", no, e)))?;
             step_outputs.push(result.outputs);
         }
         let outputs = wf
@@ -443,7 +443,7 @@ mod tests {
         wf.steps[1].operation_id = "gibt.es.nicht".to_string();
         let mut runner = OperationRunner::new();
         let e = WorkflowRunner::new(&reg).run(&wf, &[doc("AATT")], &mut runner, &mut NullContext);
-        assert!(matches!(e, Err(Error::InvalidInput(m)) if m.contains("Schritt 2")));
+        assert!(matches!(e, Err(Error::InvalidInput(m)) if m.contains("Step 2")));
         assert!(runner.history().is_empty());
         let mut v = rc_dann_einfuegen();
         v.steps[0].inputs = vec!["$step:1:0".to_string()];
@@ -477,7 +477,7 @@ mod tests {
         let e = WorkflowRunner::new(&reg)
             .run(&wf, &[doc("AATT")], &mut runner, &mut NullContext)
             .unwrap_err();
-        assert!(e.to_string().contains("Schritt 2"), "{}", e);
+        assert!(e.to_string().contains("Step 2"), "{}", e);
         // Stapel: ein gültiger, ein ungültiger Lauf (Position 3 passt nur zur längeren Sequenz)
         let mut wf2 = rc_dann_einfuegen();
         wf2.steps[1]
@@ -491,7 +491,7 @@ mod tests {
         );
         assert!(r[0].errors.is_empty());
         assert_eq!(r[1].errors.len(), 1);
-        assert!(r[1].errors[0].contains("Schritt 2"));
+        assert!(r[1].errors[0].contains("Step 2"));
         assert!(r[1].outputs.is_empty());
     }
 

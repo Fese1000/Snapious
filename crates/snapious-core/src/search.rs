@@ -233,16 +233,16 @@ pub fn search(
 ) -> Result<Vec<Hsp>> {
     if word_size == 0 {
         return Err(Error::InvalidInput(
-            "Wortlänge muss mindestens 1 sein".to_string(),
+            "Word length must be at least 1".to_string(),
         ));
     }
     for s in subjects {
         let max = if s.protein { 12 } else { 32 };
         if word_size > max {
             return Err(Error::InvalidInput(format!(
-                "Wortlänge {} ist für {} zu groß (höchstens {})",
+                "Word length {} is too large for {} (at most {})",
                 word_size,
-                if s.protein { "Proteine" } else { "Nukleotide" },
+                if s.protein { "Proteins" } else { "Nucleotides" },
                 max
             )));
         }
@@ -314,12 +314,12 @@ fn filter_and_sort(hsps: &mut Vec<Hsp>) -> Vec<Hsp> {
     unique
 }
 
-/// Alle verschiedenen k-mere einer Sequenz (Großbuchstaben).
+/// Alle verschiedenen k-mere einer Sequenz (Uppercase).
 pub fn unique_kmers(seq: &str, k: usize) -> BTreeSet<String> {
     kmer_frequencies(seq, k).into_keys().collect()
 }
 
-/// Häufigkeit jedes k-mers (Großbuchstaben).
+/// Häufigkeit jedes k-mers (Uppercase).
 pub fn kmer_frequencies(seq: &str, k: usize) -> BTreeMap<String, usize> {
     let s = seq.to_ascii_uppercase();
     let mut m = BTreeMap::new();
@@ -335,18 +335,18 @@ pub fn kmer_frequencies(seq: &str, k: usize) -> BTreeMap<String, usize> {
 /// Textzusammenfassung der besten Treffer.
 pub fn search_summary(hsps: &[Hsp], query_name: &str) -> String {
     let mut out = format!(
-        "=== BLAST-like Suchergebnisse für: {} ===\n\nFundstellen (HSPs): {}\n",
+        "=== BLAST-like search results for: {} ===\n\nHits (HSPs): {}\n",
         query_name,
         hsps.len()
     );
     if hsps.is_empty() {
-        out.push_str("Keine signifikanten Übereinstimmungen gefunden.\n");
+        out.push_str("No significant matches found.\n");
         return out;
     }
-    out.push_str("\nTop 10 Ergebnisse:\n");
+    out.push_str("\nTop 10 results:\n");
     for (i, h) in hsps.iter().take(10).enumerate() {
         out.push_str(&format!(
-            "{}. {}\n   Länge: {} bp, Identität: {:.0}%\n\n",
+            "{}. {}\n   Length: {} bp, identity: {:.0}%\n\n",
             i + 1,
             h.format(),
             h.length(),
@@ -355,7 +355,7 @@ pub fn search_summary(hsps: &[Hsp], query_name: &str) -> String {
     }
     let n = hsps.len() as f64;
     out.push_str(&format!(
-        "Durchschnittlicher Score: {:.1}\nDurchschnittliche Identität: {:.0}%\n",
+        "Average score: {:.1}\nAverage identity: {:.0}%\n",
         hsps.iter().map(|h| h.score as f64).sum::<f64>() / n,
         hsps.iter().map(|h| h.percent_identity()).sum::<f64>() / n
     ));
@@ -518,9 +518,9 @@ mod tests {
         )
         .unwrap();
         let s = search_summary(&hits, "q");
-        assert!(s.contains("Fundstellen (HSPs): 1"));
-        assert!(s.contains("Identität: 100%"));
-        assert!(search_summary(&[], "q").contains("Keine signifikanten"));
+        assert!(s.contains("Hits (HSPs): 1"));
+        assert!(s.contains("identity: 100%"));
+        assert!(search_summary(&[], "q").contains("No significant"));
         assert!(hits[0].format().starts_with("HSP[q → s (+)"));
     }
 

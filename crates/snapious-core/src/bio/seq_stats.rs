@@ -10,7 +10,7 @@ use crate::error::{Error, Result};
 pub fn gc_windows(bases: &str, window: usize, step: usize) -> Result<Vec<(usize, f64)>> {
     if window == 0 || step == 0 {
         return Err(Error::InvalidInput(
-            "Fenstergröße und Schritt müssen größer als 0 sein".into(),
+            "Window size and step must be greater than 0".into(),
         ));
     }
     let mut result = Vec::new();
@@ -39,7 +39,7 @@ pub fn gc_windows(bases: &str, window: usize, step: usize) -> Result<Vec<(usize,
 pub fn gc_skew(bases: &str, window: usize, step: usize) -> Result<Vec<(usize, f64)>> {
     if window == 0 || step == 0 {
         return Err(Error::InvalidInput(
-            "Fenstergröße und Schritt müssen größer als 0 sein".into(),
+            "Window size and step must be greater than 0".into(),
         ));
     }
     let mut result = Vec::new();
@@ -75,7 +75,7 @@ pub fn gc_skew(bases: &str, window: usize, step: usize) -> Result<Vec<(usize, f6
     Ok(result)
 }
 
-/// Anzahl jedes überlappenden Dinukleotids aus A, C, G, T (Großbuchstaben als Schlüssel, `U` wie `T`). Paare mit anderen Zeichen
+/// Anzahl jedes überlappenden Dinukleotids aus A, C, G, T (Uppercase als Schlüssel, `U` wie `T`). Paare mit anderen Zeichen
 /// werden nicht gezählt. Nur vorkommende Paare erscheinen im Ergebnis.
 pub fn dinucleotide_counts(bases: &str) -> BTreeMap<String, usize> {
     let mut counts = BTreeMap::new();
@@ -116,7 +116,7 @@ pub fn cpg_islands(
 ) -> Result<Vec<Region>> {
     if min_length == 0 {
         return Err(Error::InvalidInput(
-            "min_length muss größer als 0 sein".into(),
+            "min_length must be greater than 0".into(),
         ));
     }
 

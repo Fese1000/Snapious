@@ -20,11 +20,11 @@ pub struct CloningPrimerResult {
 
 /// Entwirft Klonierungsprimer für das Fragment `template[start..end]`.
 ///
-/// 1. Vorlage, Klammer und Erkennungsstellen in Großbuchstaben mit `T` statt `U`. Jede Erkennungsstelle muss nicht leer sein und nur aus
+/// 1. Vorlage, Klammer und Erkennungsstellen in Uppercase mit `T` statt `U`. Jede Erkennungsstelle muss nicht leer sein und nur aus
 ///    A, C, G, T bestehen, ebenso die Klammer (darf leer sein), sonst `Error::InvalidInput`. Ungültiger Bereich
 ///    (`start >= end` oder `end > Länge`) → `Error::InvalidInput`.
 /// 2. Bindender Teil vorwärts: `pick_forward_at(template, start, c)`; rückwärts: `pick_reverse_ending_at(template, end, c)`. Findet sich
-///    einer nicht, `Error::InvalidInput("Kein passender Primer am Fragmentende")`.
+///    einer nicht, `Error::InvalidInput("No suitable primer at the fragment end")`.
 /// 3. `forward_full = klammer + forward_site + forward.sequence`, `reverse_full = klammer + reverse_site + reverse.sequence`.
 /// 4. `pair.product_size = end − start`; `pair.penalty` = Summe der beiden Einzelstrafen. Vorwärts- und Rückwärtsprimer stammen unverändert
 ///    aus der Primerwahl.
@@ -42,24 +42,24 @@ pub fn with_restriction_sites(
 ) -> Result<CloningPrimerResult> {
     // 1. Validierung der Eingaben
     if forward_site.is_empty() || !is_valid_dna(forward_site) {
-        return Err(Error::InvalidInput("Ungültige Erkennungsstelle".into()));
+        return Err(Error::InvalidInput("Invalid recognition site".into()));
     }
     if reverse_site.is_empty() || !is_valid_dna(reverse_site) {
-        return Err(Error::InvalidInput("Ungültige Erkennungsstelle".into()));
+        return Err(Error::InvalidInput("Invalid recognition site".into()));
     }
     if !is_valid_dna(clamp) {
-        return Err(Error::InvalidInput("Ungültige Klammer".into()));
+        return Err(Error::InvalidInput("Invalid bracket".into()));
     }
 
     let fragment = template
         .get(start..end)
-        .ok_or_else(|| Error::InvalidInput("Ungültiger Bereich".into()))?;
+        .ok_or_else(|| Error::InvalidInput("Invalid range".into()))?;
 
     // 2. Primerwahl
     let forward = pick_forward_at(template, start, c)
-        .ok_or_else(|| Error::InvalidInput("Kein passender Primer am Fragmentende".into()))?;
+        .ok_or_else(|| Error::InvalidInput("No suitable primer at the fragment end".into()))?;
     let reverse = pick_reverse_ending_at(template, end, c)
-        .ok_or_else(|| Error::InvalidInput("Kein passender Primer am Fragmentende".into()))?;
+        .ok_or_else(|| Error::InvalidInput("No suitable primer at the fragment end".into()))?;
 
     // 3. Vollständige Primer zusammenstellen
     let forward_full = format!("{}{}{}", clamp, forward_site, forward.sequence);
@@ -80,14 +80,14 @@ pub fn with_restriction_sites(
     if fragment.contains(forward_site) || fragment.contains(&iupac_reverse_complement(forward_site))
     {
         warnings.push(format!(
-            "Erkennungsstelle {} liegt im Fragment",
+            "Recognition site {} lies within the fragment",
             forward_site
         ));
     }
     if fragment.contains(reverse_site) || fragment.contains(&iupac_reverse_complement(reverse_site))
     {
         warnings.push(format!(
-            "Erkennungsstelle {} liegt im Fragment",
+            "Recognition site {} lies within the fragment",
             reverse_site
         ));
     }
@@ -173,7 +173,7 @@ mod tests {
         let r = with_restriction_sites(&t, 50, 250, &c, "GAATTC", "GGATCC", "GCGC").unwrap();
         assert_eq!(
             r.warnings,
-            vec!["Erkennungsstelle GAATTC liegt im Fragment".to_string()]
+            vec!["Recognition site GAATTC lies within the fragment".to_string()]
         );
         // Stelle außerhalb des Fragments zählt nicht
         let mut u = template();

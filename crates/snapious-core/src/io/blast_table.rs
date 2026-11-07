@@ -38,7 +38,7 @@ pub fn parse_blast_table(text: &str) -> Result<Vec<BlastTableRow>> {
         // Mindestens 12 Spalten erforderlich
         if fields.len() < 12 {
             return Err(Error::InvalidInput(format!(
-                "Zeile {}: Mindestens 12 Spalten erwartet, gefunden {}",
+                "Line {}: At least 12 columns expected, found {}",
                 line_num + 1,
                 fields.len()
             )));
@@ -50,49 +50,49 @@ pub fn parse_blast_table(text: &str) -> Result<Vec<BlastTableRow>> {
 
         let identity_percent: f64 = fields[2].parse().map_err(|_| {
             Error::InvalidInput(format!(
-                "Zeile {}: Ungültige identity_percent",
+                "Line {}: Invalid identity_percent",
                 line_num + 1
             ))
         })?;
 
         let alignment_length: usize = fields[3].parse().map_err(|_| {
             Error::InvalidInput(format!(
-                "Zeile {}: Ungültige alignment_length",
+                "Line {}: Invalid alignment_length",
                 line_num + 1
             ))
         })?;
 
         let mismatches: usize = fields[4].parse().map_err(|_| {
-            Error::InvalidInput(format!("Zeile {}: Ungültige mismatches", line_num + 1))
+            Error::InvalidInput(format!("Line {}: Invalid mismatches", line_num + 1))
         })?;
 
         let gap_opens: usize = fields[5].parse().map_err(|_| {
-            Error::InvalidInput(format!("Zeile {}: Ungültige gap_opens", line_num + 1))
+            Error::InvalidInput(format!("Line {}: Invalid gap_opens", line_num + 1))
         })?;
 
         let query_start: usize = fields[6].parse().map_err(|_| {
-            Error::InvalidInput(format!("Zeile {}: Ungültige query_start", line_num + 1))
+            Error::InvalidInput(format!("Line {}: Invalid query_start", line_num + 1))
         })?;
 
         let query_end: usize = fields[7].parse().map_err(|_| {
-            Error::InvalidInput(format!("Zeile {}: Ungültige query_end", line_num + 1))
+            Error::InvalidInput(format!("Line {}: Invalid query_end", line_num + 1))
         })?;
 
         let subject_start: usize = fields[8].parse().map_err(|_| {
-            Error::InvalidInput(format!("Zeile {}: Ungültige subject_start", line_num + 1))
+            Error::InvalidInput(format!("Line {}: Invalid subject_start", line_num + 1))
         })?;
 
         let subject_end: usize = fields[9].parse().map_err(|_| {
-            Error::InvalidInput(format!("Zeile {}: Ungültige subject_end", line_num + 1))
+            Error::InvalidInput(format!("Line {}: Invalid subject_end", line_num + 1))
         })?;
 
         // E-Value Parsing (kann wissenschaftliche Notation enthalten)
         let evalue: f64 = fields[10].parse().map_err(|_| {
-            Error::InvalidInput(format!("Zeile {}: Ungültige evalue", line_num + 1))
+            Error::InvalidInput(format!("Line {}: Invalid evalue", line_num + 1))
         })?;
 
         let bit_score: f64 = fields[11].parse().map_err(|_| {
-            Error::InvalidInput(format!("Zeile {}: Ungültige bit_score", line_num + 1))
+            Error::InvalidInput(format!("Line {}: Invalid bit_score", line_num + 1))
         })?;
 
         rows.push(BlastTableRow {

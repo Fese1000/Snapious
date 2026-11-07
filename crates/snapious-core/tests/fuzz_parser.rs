@@ -153,5 +153,5 @@ fn beschaedigte_dateien_stuerzen_nicht_ab() {
     }
     failures.sort();
     failures.dedup_by(|a, b| a.0 == b.0);
-    assert!(failures.is_empty(), "Abstürze: {:#?}", failures);
+    assert!(failures.is_empty(), "Crashes: {:#?}", failures);
 }

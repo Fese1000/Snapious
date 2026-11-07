@@ -36,12 +36,12 @@ impl AlignmentDocument {
     ) -> Result<Self> {
         if rows.is_empty() {
             return Err(Error::InvalidInput(
-                "Ein Alignment braucht mindestens eine Zeile".to_string(),
+                "An alignment needs at least one row".to_string(),
             ));
         }
         if row_names.len() != rows.len() {
             return Err(Error::InvalidInput(format!(
-                "{} Namen für {} Zeilen",
+                "{} names for {} rows",
                 row_names.len(),
                 rows.len()
             )));
@@ -50,7 +50,7 @@ impl AlignmentDocument {
         for (n, r) in row_names.iter().zip(&rows) {
             if r.chars().count() != width {
                 return Err(Error::InvalidInput(format!(
-                    "Zeile '{}' hat {} statt {} Spalten",
+                    "Row '{}' has {} instead of {} columns",
                     n,
                     r.chars().count(),
                     width
@@ -58,7 +58,7 @@ impl AlignmentDocument {
             }
             if r.chars().any(char::is_whitespace) {
                 return Err(Error::InvalidInput(format!(
-                    "Zeile '{}' enthält Leerraum",
+                    "Row '{}' contains whitespace",
                     n
                 )));
             }
@@ -174,7 +174,7 @@ impl AlignmentDocument {
     /// Entfernt Zeilen; ungültige Indizes → `Error::OutOfRange`; alle Zeilen entfernen → `Error::InvalidInput`.
     pub fn remove_rows(&self, indices: &[usize]) -> Result<Self> {
         if let Some(bad) = indices.iter().find(|i| **i >= self.row_count()) {
-            return Err(Error::OutOfRange(format!("Zeile {} gibt es nicht", bad)));
+            return Err(Error::OutOfRange(format!("Row {} does not exist", bad)));
         }
         let keep = |i: &usize| !indices.contains(i);
         let names = (0..self.row_count())
@@ -191,7 +191,7 @@ impl AlignmentDocument {
     /// Entfernt Spalten; ungültige Indizes → `Error::OutOfRange`.
     pub fn remove_columns(&self, columns: &[usize]) -> Result<Self> {
         if let Some(bad) = columns.iter().find(|c| **c >= self.column_count()) {
-            return Err(Error::OutOfRange(format!("Spalte {} gibt es nicht", bad)));
+            return Err(Error::OutOfRange(format!("Column {} does not exist", bad)));
         }
         let rows = self
             .rows
@@ -211,7 +211,7 @@ impl AlignmentDocument {
     pub fn sub_alignment(&self, from: usize, to: usize) -> Result<Self> {
         if from > to || to > self.column_count() {
             return Err(Error::OutOfRange(format!(
-                "Spaltenbereich {}-{} bei {} Spalten",
+                "Column range {}-{} with {} columns",
                 from,
                 to,
                 self.column_count()
@@ -231,7 +231,7 @@ impl AlignmentDocument {
         sorted.sort_unstable();
         if sorted != (0..self.row_count()).collect::<Vec<_>>() {
             return Err(Error::InvalidInput(
-                "Die Reihenfolge ist keine Permutation der Zeilen".to_string(),
+                "The order is not a permutation of the rows".to_string(),
             ));
         }
         let names = order

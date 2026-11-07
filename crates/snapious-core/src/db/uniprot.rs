@@ -41,13 +41,13 @@ pub struct ProteinRecord {
 /// Einträge ohne `primaryAccession` werden übersprungen. Reihenfolge wie in der Antwort.
 pub fn parse_search(json: &str) -> Result<Vec<ProteinRecord>> {
     let root = serde_json::from_str::<Value>(json)
-        .map_err(|e| Error::InvalidInput(format!("Ungültiges JSON: {}", e)))?;
+        .map_err(|e| Error::InvalidInput(format!("Invalid JSON: {}", e)))?;
     let results = root
         .get("results")
-        .ok_or_else(|| Error::InvalidInput("Kein 'results'-Feld".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("No 'results' field".to_string()))?;
     let arr = results
         .as_array()
-        .ok_or_else(|| Error::InvalidInput("'results' ist keine Liste".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("'results' is not a list".to_string()))?;
 
     let mut records = Vec::with_capacity(arr.len());
     for item in arr {
@@ -129,7 +129,7 @@ impl<H: HttpGet> UniprotClient<H> {
         let text = self.http.get(&url)?;
         let trimmed = text.trim_start();
         if !trimmed.starts_with('>') {
-            return Err(Error::InvalidInput(format!("Kein FASTA für {}", accession)));
+            return Err(Error::InvalidInput(format!("No FASTA for {}", accession)));
         }
         Ok(trimmed.to_string())
     }
@@ -152,7 +152,7 @@ mod tests {
             self.replies
                 .get(n)
                 .cloned()
-                .ok_or_else(|| Error::Io("keine Antwort".to_string()))
+                .ok_or_else(|| Error::Io("no response".to_string()))
         }
     }
 
@@ -227,7 +227,7 @@ mod tests {
         assert!(c.fetch_fasta("P1").unwrap().starts_with(">sp|P1|"));
         assert!(c.http.calls.borrow()[1].ends_with("P1.fasta"));
         match c.fetch_fasta("P2") {
-            Err(Error::InvalidInput(m)) => assert_eq!(m, "Kein FASTA für P2"),
+            Err(Error::InvalidInput(m)) => assert_eq!(m, "No FASTA for P2"),
             other => panic!("unerwartet: {:?}", other),
         }
         let leer = UniprotClient::new(mock(&[]));

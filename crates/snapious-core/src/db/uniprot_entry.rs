@@ -43,19 +43,19 @@ pub struct UniprotEntry {
 /// `location.end.value` (ganze Zahlen). Features ohne `type` oder ohne beide Positionen werden übersprungen; Reihenfolge wie im JSON.
 pub fn parse_entry(json: &str) -> Result<UniprotEntry> {
     let root = serde_json::from_str::<Value>(json)
-        .map_err(|e| Error::InvalidInput(format!("Ungültiges JSON: {}", e)))?;
+        .map_err(|e| Error::InvalidInput(format!("Invalid JSON: {}", e)))?;
 
     let accession = root
         .get("primaryAccession")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| Error::InvalidInput("Fehlendes 'primaryAccession'".to_string()))?
+        .ok_or_else(|| Error::InvalidInput("Missing 'primaryAccession'".to_string()))?
         .to_string();
 
     let sequence = root
         .get("sequence")
         .and_then(|v| v.get("value"))
         .and_then(|v| v.as_str())
-        .ok_or_else(|| Error::InvalidInput("Fehlendes 'sequence.value'".to_string()))?
+        .ok_or_else(|| Error::InvalidInput("Missing 'sequence.value'".to_string()))?
         .to_string();
 
     let entry_name = root
@@ -115,7 +115,7 @@ pub fn parse_entry(json: &str) -> Result<UniprotEntry> {
 }
 
 impl UniprotEntry {
-    /// Protein-Dokument: Name = `entry_name`, falls nicht leer, sonst `accession`; Sequenz = `sequence` (Großbuchstaben, `SequenceType::Protein`);
+    /// Protein-Dokument: Name = `entry_name`, falls nicht leer, sonst `accession`; Sequenz = `sequence` (Uppercase, `SequenceType::Protein`);
     /// Topologie linear; Metadaten `accession`, `organism` (nur wenn nicht leer), `source = "uniprot"`.
     /// Jedes Feature wird ein `Feature` des Typs `kind` mit Name = `description`, falls nicht leer, sonst `kind`, Strang `Strand::None`, Intervall
     /// `[start − 1, end)` (UniProt 1-basiert, eingeschlossen). Features mit `start == 0`, `end < start` oder `end` hinter der Sequenzlänge

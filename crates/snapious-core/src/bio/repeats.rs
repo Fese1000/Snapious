@@ -7,13 +7,13 @@ pub struct TandemRepeat {
     pub start: usize,
     /// Ende (exklusive).
     pub end: usize,
-    /// Wiederholte Einheit in Großbuchstaben.
+    /// Wiederholte Einheit in Uppercase.
     pub unit: String,
     /// Anzahl der Kopien (`(end - start) / unit.len()`).
     pub copies: usize,
 }
 
-/// Sucht Tandem-Wiederholungen in `seq` (Großbuchstaben; nur genaue Wiederholungen).
+/// Sucht Tandem-Wiederholungen in `seq` (Uppercase; nur genaue Wiederholungen).
 /// Ablauf: `i = 0`; solange `i < Länge`: für Einheitenlängen `k = min_unit..=max_unit` (aufsteigend; abbrechen, wenn `i + k > Länge`):
 /// Einheit `u = seq[i..i+k]`; überspringe `k`, wenn `u` selbst aus einer kürzeren Einheit besteht
 /// (z. B. „ACAC“ besteht aus „AC“; es zählt nur die kürzeste Einheit); zähle die aufeinanderfolgenden Kopien `c` von `u` ab `i`;
@@ -109,7 +109,7 @@ impl InvertedRepeat {
     }
 }
 
-/// Sucht invertierte Wiederholungen in `seq` (Großbuchstaben, nur A, C, G, T; andere Zeichen paaren nie).
+/// Sucht invertierte Wiederholungen in `seq` (Uppercase, nur A, C, G, T; andere Zeichen paaren nie).
 /// Für jede Position `p` in `0..=Länge` (Ende des linken Arms, exklusiv) und jede Spacerlänge `s` in `0..=max_spacer`:
 /// zähle `k`, solange `p - k - 1 >= 0`, `p + s + k < Länge` und `seq[p-k-1]` das Komplement von `seq[p+s+k]` ist (A–T, C–G).
 /// Ist `k >= min_arm`, melde `InvertedRepeat { start: p - k, arm: k, spacer: s }`.

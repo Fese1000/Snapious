@@ -17,7 +17,7 @@ pub struct PirRecord {
 /// Liest alle Einträge. Eine Kopfzeile beginnt mit `>`, enthält ein Semikolon: `kind` steht zwischen `>` und `;`, `id` danach
 /// (beide getrimmt). Die nächste Zeile ist die Beschreibung (auch wenn leer). Alle weiteren Zeilen bis zur nächsten Kopfzeile sind
 /// Sequenz: Leerraum, Ziffern und `*` werden entfernt, die übrigen Zeichen bleiben. Zeilen vor der ersten Kopfzeile werden
-/// ignoriert. Fehler `Error::InvalidInput`: eine Kopfzeile ohne Semikolon oder keine Einträge.
+/// ignoriert. Fehler `Error::InvalidInput`: eine Header line without semicolon oder keine Einträge.
 pub fn parse_pir(text: &str) -> Result<Vec<PirRecord>> {
     let lines: Vec<&str> = text.lines().collect();
     let mut records = Vec::new();
@@ -30,14 +30,14 @@ pub fn parse_pir(text: &str) -> Result<Vec<PirRecord>> {
             // Header Zeile i
             let semi_pos = match line.find(';') {
                 Some(pos) => pos,
-                None => return Err(Error::InvalidInput("Kopfzeile ohne Semikolon".into())),
+                None => return Err(Error::InvalidInput("Header line without semicolon".into())),
             };
 
             let kind = line[1..semi_pos].trim().to_string();
             let id = line[semi_pos + 1..].trim().to_string();
 
             if kind.is_empty() || id.is_empty() {
-                return Err(Error::InvalidInput("Kopfzeile ungültig".into()));
+                return Err(Error::InvalidInput("Invalid header line".into()));
             }
 
             // Nächste Zeile (i+1) ist die Beschreibung, falls vorhanden
@@ -84,7 +84,7 @@ pub fn parse_pir(text: &str) -> Result<Vec<PirRecord>> {
 
     if records.is_empty() {
         return Err(Error::InvalidInput(
-            "Keine gültigen Einträge gefunden".into(),
+            "No valid entries found".into(),
         ));
     }
 

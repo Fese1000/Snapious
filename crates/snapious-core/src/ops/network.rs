@@ -21,7 +21,7 @@ impl<H: HttpGet> Operation for NcbiFetchOperation<H> {
     }
 
     fn label(&self) -> &str {
-        "Von NCBI laden"
+        "Load from NCBI"
     }
 
     fn run(
@@ -43,7 +43,7 @@ impl<H: HttpGet> Operation for NcbiFetchOperation<H> {
 
         if docs.is_empty() {
             return Err(Error::Operation(format!(
-                "NCBI lieferte keine Sequenz für {}",
+                "NCBI returned no sequence for {}",
                 id
             )));
         }
@@ -51,7 +51,7 @@ impl<H: HttpGet> Operation for NcbiFetchOperation<H> {
         let n = docs.len();
         Ok(OperationResult {
             outputs: docs.into_iter().map(Document::Sequence).collect(),
-            summary: format!("{} Sequenz(en) von NCBI", n),
+            summary: format!("{} sequence(s) from NCBI", n),
         })
     }
 }
@@ -70,7 +70,7 @@ impl<H: HttpGet> Operation for UniprotFetchOperation<H> {
     }
 
     fn label(&self) -> &str {
-        "Von UniProt laden"
+        "Load from UniProt"
     }
 
     fn run(
@@ -93,7 +93,7 @@ impl<H: HttpGet> Operation for UniprotFetchOperation<H> {
         let k = doc.features().len();
         Ok(OperationResult {
             outputs: vec![Document::Sequence(doc)],
-            summary: format!("{}: {} aa, {} Feature(s)", accession, n, k),
+            summary: format!("{}: {} aa, {} feature(s)", accession, n, k),
         })
     }
 }
@@ -154,7 +154,7 @@ ORIGIN
             .run(&[], &params(&[("id", "L09137")]), &mut NullContext)
             .unwrap();
         assert_eq!(r.outputs.len(), 1);
-        assert_eq!(r.summary, "1 Sequenz(en) von NCBI");
+        assert_eq!(r.summary, "1 sequence(s) from NCBI");
         assert!(op.http.urls.borrow()[0].contains("L09137"));
         match &r.outputs[0] {
             Document::Sequence(s) => assert_eq!(s.len(), 60),
@@ -198,7 +198,7 @@ ORIGIN
         let r = op
             .run(&[], &params(&[("accession", "P12345")]), &mut NullContext)
             .unwrap();
-        assert_eq!(r.summary, "P12345: 22 aa, 1 Feature(s)");
+        assert_eq!(r.summary, "P12345: 22 aa, 1 feature(s)");
         assert_eq!(
             op.http.urls.borrow()[0],
             "https://rest.uniprot.org/uniprotkb/P12345.json"

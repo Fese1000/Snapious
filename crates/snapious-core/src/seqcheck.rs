@@ -69,7 +69,7 @@ impl SequencingCheck {
     /// Richtet `read` gegen `reference` aus.
     ///
     /// 1. Fehler `Error::InvalidInput` bei leerer Referenz, leerem Read oder wenn `quality` weder leer noch so lang wie `read` ist.
-    ///    Eine leere `quality` zählt als „überall 40“. Alle Basen werden in Großbuchstaben mit `T` statt `U` gelesen.
+    ///    Eine leere `quality` zählt als „überall 40“. Alle Basen werden in Uppercase mit `T` statt `U` gelesen.
     /// 2. Der Read und sein Reverse-Komplement (`iupac_reverse_complement`, Qualitäten umgekehrt) werden mit
     ///    `Aligner::new(2, -3, -5).semi_global(read, referenz)` ausgerichtet (Ergebnis: `seq1_aln` = Read, `seq2_aln` = Referenz;
     ///    Bereich in der Referenz: `seq2_start..seq2_end`). Bei zirkulärer Referenz wird `referenz + referenz` verwendet. Gewinnt die
@@ -96,12 +96,12 @@ impl SequencingCheck {
     ) -> Result<CheckResult> {
         if reference.is_empty() || read.is_empty() {
             return Err(Error::InvalidInput(
-                "Referenz oder Read darf nicht leer sein".into(),
+                "Reference or read must not be empty".into(),
             ));
         }
         if !quality.is_empty() && quality.len() != read.len() {
             return Err(Error::InvalidInput(
-                "Qualitätsvektor muss leer oder gleich lang wie Read sein".into(),
+                "Quality vector must be empty or the same length as the read".into(),
             ));
         }
 

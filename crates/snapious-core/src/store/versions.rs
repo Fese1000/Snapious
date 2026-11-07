@@ -92,7 +92,7 @@ impl ProjectStore {
             .optional()?;
         let Some((ty, name, created, payload)) = row else {
             return Err(Error::InvalidInput(format!(
-                "Unbekannte Version {} von {}",
+                "Unknown version {} of {}",
                 version, doc_id
             )));
         };
@@ -102,11 +102,11 @@ impl ProjectStore {
             params![doc_id, ty, name, created, payload],
         )?;
         tmp.load(doc_id)?
-            .ok_or_else(|| Error::InvalidInput("Version nicht lesbar".to_string()))
+            .ok_or_else(|| Error::InvalidInput("Version not readable".to_string()))
     }
 
     /// Stellt eine Version wieder her: die aktuelle Fassung wird (wenn sie sich unterscheidet) selbst als neue Version abgelegt
-    /// (`summary = "vor Wiederherstellung"`), danach wird die Zeile in `documents` (`type`, `name`, `created`, `payload`) durch die der Version ersetzt.
+    /// (`summary = "before restore"`), danach wird die Zeile in `documents` (`type`, `name`, `created`, `payload`) durch die der Version ersetzt.
     /// Die Version bleibt in der Liste. Unbekannte Version oder unbekanntes Dokument → `Error::InvalidInput`.
     pub fn restore_version(&mut self, doc_id: &str, version: i64) -> Result<()> {
         let row: Option<(String, String, i64, String)> = self
@@ -119,7 +119,7 @@ impl ProjectStore {
             .optional()?;
         let Some((ty, name, created, payload)) = row else {
             return Err(Error::InvalidInput(format!(
-                "Unbekannte Version {} von {}",
+                "Unknown version {} of {}",
                 version, doc_id
             )));
         };
@@ -133,7 +133,7 @@ impl ProjectStore {
             .optional()?;
         let Some((cty, cname, ccreated, cpayload)) = current else {
             return Err(Error::InvalidInput(format!(
-                "Unbekanntes Dokument {}",
+                "Unknown document {}",
                 doc_id
             )));
         };
@@ -144,7 +144,7 @@ impl ProjectStore {
                 &cname,
                 ccreated,
                 &cpayload,
-                "vor Wiederherstellung",
+                "before restore",
             )?;
         }
         self.conn.execute(
@@ -268,7 +268,7 @@ mod tests {
         let v = s.versions(&id).unwrap();
         assert_eq!(v.len(), 2);
         assert_eq!(v[0].version, 2);
-        assert_eq!(v[0].summary, "vor Wiederherstellung");
+        assert_eq!(v[0].summary, "before restore");
         assert_eq!(bases_of(&s.load_version(&id, 2).unwrap()), "CCCC");
         assert!(matches!(
             s.restore_version(&id, 9),

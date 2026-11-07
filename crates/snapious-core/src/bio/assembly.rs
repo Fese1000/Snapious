@@ -11,7 +11,7 @@ pub struct ReadPlacement {
     pub reverse: bool,
 }
 
-/// Setzt Reads (Großbuchstaben, nur A, C, G, T) zu Contigs zusammen.
+/// Setzt Reads (Uppercase, nur A, C, G, T) zu Contigs zusammen.
 ///
 /// 1. Entferne jede Sequenz, die als Teilstring (vorwärts oder reverskomplementär) in einer anderen Sequenz steckt.
 ///    Bei gleicher Länge (identisch oder reverskomplementär gleich) bleibt nur die Sequenz mit dem kleineren Index.

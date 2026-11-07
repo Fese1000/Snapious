@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 /// - Rückgabe: genau zwei zirkuläre Dokumente, zuerst Orientierung `+`, dann `−`.
 /// - Oberstrang `+`: `t_vector.bases() + pcr_product.bases()`; `−`: `t_vector.bases() + Reverse-Komplement des PCR-Produkts`
 ///   (nimm dafür `pcr_product.reverse_complement()`, damit die Features des Inserts gespiegelt werden).
-/// - Namen: `"{Vektor} + {Produkt} (Orientierung +)"` bzw. `"… (Orientierung −)"`.
+/// - Namen: `"{Vektor} + {Produkt} (orientation +)"` bzw. `"… (orientation −)"`.
 /// - Features: die des Vektors, danach die des (ggf. gespiegelten) Inserts, um die Vektorlänge nach rechts verschoben
 ///   (`Location::shifted`, `Feature::with_location`).
 /// - Metadaten `source = "clone.ta"`. Neue ID (`new_id()`), Sequenztyp DNA (Id und Name der Sequenz gleich dem Dokumentnamen), Erstellzeit `now_secs()`.
@@ -21,7 +21,7 @@ pub fn ta_cloning(
 ) -> Result<Vec<SequenceDocument>> {
     if t_vector.topology() != Topology::Linear || pcr_product.topology() != Topology::Linear {
         return Err(Error::InvalidInput(
-            "Beide Eingabedokumente müssen linear sein.".to_string(),
+            "Both input documents must be linear.".to_string(),
         ));
     }
 
@@ -49,7 +49,7 @@ pub fn ta_cloning(
     }
 
     doc_plus = doc_plus.with_name(&format!(
-        "{} + {} (Orientierung +)",
+        "{} + {} (orientation +)",
         t_vector.name(),
         pcr_product.name()
     ));
@@ -81,7 +81,7 @@ pub fn ta_cloning(
     }
 
     doc_minus = doc_minus.with_name(&format!(
-        "{} + {} (Orientierung −)",
+        "{} + {} (orientation −)",
         t_vector.name(),
         pcr_product.name()
     ));
@@ -105,14 +105,14 @@ pub fn directional_topo(
 ) -> Result<SequenceDocument> {
     if topo_vector.topology() != Topology::Linear || insert.topology() != Topology::Linear {
         return Err(Error::InvalidInput(
-            "Beide Eingabedokumente müssen linear sein.".to_string(),
+            "Both input documents must be linear.".to_string(),
         ));
     }
 
     let insert_bases = insert.bases();
     if !insert_bases.to_uppercase().starts_with("CACC") {
         return Err(Error::InvalidInput(
-            "Insert muss mit CACC beginnen.".to_string(),
+            "Insert must start with CACC.".to_string(),
         ));
     }
 
@@ -169,8 +169,8 @@ mod tests {
         assert_eq!(r.len(), 2);
         assert_eq!(r[0].bases(), "GGGGTTTTAACCGGTA");
         assert_eq!(r[1].bases(), "GGGGTTTTTACCGGTT");
-        assert_eq!(r[0].name(), "tvec + prod (Orientierung +)");
-        assert_eq!(r[1].name(), "tvec + prod (Orientierung −)");
+        assert_eq!(r[0].name(), "tvec + prod (orientation +)");
+        assert_eq!(r[1].name(), "tvec + prod (orientation −)");
         assert!(r.iter().all(|d| d.topology() == Topology::Circular));
         assert_eq!(
             r[0].metadata().get("source").map(String::as_str),

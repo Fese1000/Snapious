@@ -16,7 +16,7 @@ pub enum SequenceType {
 }
 
 impl SequenceType {
-    /// Erlaubte Zeichen (Großbuchstaben). Nukleotide: A, C, G, T/U und IUPAC-Mehrdeutigkeitscodes.
+    /// Erlaubte Zeichen (Uppercase). Nukleotide: A, C, G, T/U und IUPAC-Mehrdeutigkeitscodes.
     pub fn allowed(&self) -> &'static [u8] {
         match self {
             SequenceType::Dna => b"ACGTRYKMSWBDHVN",
@@ -31,7 +31,7 @@ impl SequenceType {
     }
 }
 
-/// Eine biologische Sequenz. Die Basen werden immer als ASCII-Großbuchstaben gehalten.
+/// Eine biologische Sequenz. Die Basen werden immer als ASCII-Uppercase gehalten.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sequence {
     id: String,
@@ -123,7 +123,7 @@ impl Sequence {
             let u = c.to_ascii_uppercase();
             if !u.is_ascii() || !allowed.contains(&(u as u8)) {
                 return Err(Error::InvalidInput(format!(
-                    "Ungültiges Zeichen '{}' für {:?}",
+                    "Invalid character '{}' for {:?}",
                     c, seq_type
                 )));
             }
@@ -148,7 +148,7 @@ impl Sequence {
         self.seq_type
     }
 
-    /// Basen als Text (ASCII-Großbuchstaben).
+    /// Basen als Text (ASCII-Uppercase).
     pub fn bases(&self) -> &str {
         &self.bases
     }
@@ -198,7 +198,7 @@ impl Sequence {
             .get(index)
             .map(|b| *b as char)
             .ok_or_else(|| {
-                Error::OutOfRange(format!("Index {} bei Länge {}", index, self.bases.len()))
+                Error::OutOfRange(format!("Index {} with length {}", index, self.bases.len()))
             })
     }
 
@@ -206,7 +206,7 @@ impl Sequence {
     pub fn subsequence(&self, start: usize, end: usize) -> Result<Sequence> {
         if end > self.bases.len() {
             return Err(Error::OutOfRange(format!(
-                "Bereich {}-{} außerhalb 0-{}",
+                "Range {}-{} outside 0-{}",
                 start,
                 end,
                 self.bases.len()
@@ -214,7 +214,7 @@ impl Sequence {
         }
         if start > end {
             return Err(Error::InvalidInput(format!(
-                "Ungültiger Bereich: {}-{}",
+                "Invalid range: {}-{}",
                 start, end
             )));
         }
@@ -232,7 +232,7 @@ impl Sequence {
             Ok(())
         } else {
             Err(Error::InvalidState(
-                "Operation nur für DNA/RNA verfügbar".to_string(),
+                "Operation only available for DNA/RNA".to_string(),
             ))
         }
     }
@@ -256,7 +256,7 @@ impl Sequence {
             .iter()
             .map(|b| complement_base(*b, rna) as char)
             .collect();
-        Ok(self.derived("(komplementär)", bases, self.seq_type))
+        Ok(self.derived("(complement)", bases, self.seq_type))
     }
 
     /// Reverse-Komplement.
@@ -275,7 +275,7 @@ impl Sequence {
     /// Transkription DNA → RNA (T wird zu U).
     pub fn transcribe(&self) -> Result<Sequence> {
         if self.seq_type != SequenceType::Dna {
-            return Err(Error::InvalidState("Nur DNA transkribierbar".to_string()));
+            return Err(Error::InvalidState("Only DNA can be transcribed".to_string()));
         }
         Ok(self.derived(
             "(transkribiert)",
@@ -288,7 +288,7 @@ impl Sequence {
     pub fn to_dna(&self) -> Result<Sequence> {
         if self.seq_type != SequenceType::Rna {
             return Err(Error::InvalidState(
-                "Nur RNA rücktranskribierbar".to_string(),
+                "Only RNA can be reverse transcribed".to_string(),
             ));
         }
         Ok(self.derived("(cDNA)", self.bases.replace('U', "T"), SequenceType::Dna))

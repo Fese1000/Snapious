@@ -12,7 +12,7 @@ impl SequenceLayout {
     pub fn new(length: usize, bases_per_line: usize) -> Result<Self> {
         if bases_per_line == 0 {
             return Err(Error::InvalidInput(
-                "bases_per_line darf nicht 0 sein".to_string(),
+                "bases_per_line must not be 0".to_string(),
             ));
         }
         Ok(Self {

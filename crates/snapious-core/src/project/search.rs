@@ -131,7 +131,7 @@ pub fn batch_rename_plan(docs: &[DocumentInfo], pattern: &str) -> BTreeMap<Strin
     plan
 }
 
-/// Gruppen von Sequenzdokumenten mit gleichem Typ der Sequenz (DNA/RNA/Protein) und gleichen Basen (Großbuchstaben); nur Gruppen mit mindestens zwei Dokumenten.
+/// Gruppen von Sequenzdokumenten mit gleichem Typ der Sequenz (DNA/RNA/Protein) und gleichen Basen (Uppercase); nur Gruppen mit mindestens zwei Dokumenten.
 /// Innerhalb einer Gruppe Reihenfolge wie `list`, die Gruppen nach ihrem ersten Dokument geordnet.
 pub fn find_sequence_duplicates(store: &ProjectStore) -> Result<Vec<Vec<DocumentInfo>>> {
     let mut groups: Vec<((String, String), Vec<DocumentInfo>)> = Vec::new();

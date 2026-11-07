@@ -95,7 +95,7 @@ pub fn read_sequence_documents(path: &Path) -> Result<Vec<SequenceDocument>> {
         return Ok(vec![snapgene::parse_snapgene(&bytes, &name)?]);
     }
     let text = String::from_utf8(bytes)
-        .map_err(|_| Error::Io("Die Datei ist kein Text und keine SnapGene-Datei".to_string()))?;
+        .map_err(|_| Error::Io("The file is neither text nor a SnapGene file".to_string()))?;
     match detect_format(&text) {
         Some(Format::GenBank) => genbank::parse(&text),
         Some(Format::Embl) => embl::parse(&text),
@@ -115,7 +115,7 @@ pub fn read_sequence_documents(path: &Path) -> Result<Vec<SequenceDocument>> {
             Ok(docs)
         }
         other => Err(Error::Io(format!(
-            "Das Format {:?} enthält keine Sequenzdokumente",
+            "The format {:?} contains no sequence documents",
             other
         ))),
     }
@@ -299,7 +299,7 @@ fn scf_documents(name: &str, bytes: &[u8]) -> Result<Vec<Document>> {
     let part = r.bases.get(a..b).unwrap_or("");
     if part.is_empty() {
         return Err(Error::InvalidInput(
-            "Die Sequenzierung enthält keine Basen guter Qualität".to_string(),
+            "The sequencing contains no bases of good quality".to_string(),
         ));
     }
     Ok(vec![dna_document(name, &dna_clean(part))?])
@@ -329,7 +329,7 @@ fn sff_documents(bytes: &[u8]) -> Result<Vec<Document>> {
     }
     if out.is_empty() {
         return Err(Error::InvalidInput(
-            "Die SFF-Datei enthält keine Reads".to_string(),
+            "The SFF file contains no reads".to_string(),
         ));
     }
     Ok(out)
@@ -376,7 +376,7 @@ fn abif_documents(name: &str, bytes: &[u8]) -> Result<Vec<Document>> {
     let part = c.bases.get(a..b).unwrap_or("");
     if part.is_empty() {
         return Err(Error::InvalidInput(
-            "Die Sequenzierung enthält keine Basen guter Qualität".to_string(),
+            "The sequencing contains no bases of good quality".to_string(),
         ));
     }
     Ok(vec![dna_document(name, &dna_clean(part))?])

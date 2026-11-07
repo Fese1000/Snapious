@@ -16,7 +16,7 @@ use crate::model::document::SequenceDocument;
 
 /// Liest alle Datensätze aus EMBL-Text. Datensätze ohne `ID`-Zeile werden übersprungen.
 /// Der Name ist das erste Wort der `ID`-Zeile (vor dem Semikolon); die Topologie ist zirkulär, wenn das Wort `circular` vorkommt,
-/// sonst linear. Fehler wie bei `genbank::parse` (z. B. ungültige Positionen), mit `Error::InvalidInput`.
+/// sonst linear. Fehler wie bei `genbank::parse` (z. B. invalid positionen), mit `Error::InvalidInput`.
 pub fn parse(text: &str) -> Result<Vec<SequenceDocument>> {
     let mut docs = Vec::new();
     let mut record: Vec<&str> = Vec::new();

@@ -78,15 +78,15 @@ pub fn parse_cigar(cigar: &str) -> Result<Vec<(usize, char)>> {
         } else if "MIDNSHP=X".contains(c) {
             let n: usize = num
                 .parse()
-                .map_err(|_| Error::Io(format!("Ungültiger CIGAR '{}'", cigar)))?;
+                .map_err(|_| Error::Io(format!("Invalid CIGAR '{}'", cigar)))?;
             ops.push((n, c));
             num.clear();
         } else {
-            return Err(Error::Io(format!("Ungültiger CIGAR '{}'", cigar)));
+            return Err(Error::Io(format!("Invalid CIGAR '{}'", cigar)));
         }
     }
     if !num.is_empty() {
-        return Err(Error::Io(format!("Ungültiger CIGAR '{}'", cigar)));
+        return Err(Error::Io(format!("Invalid CIGAR '{}'", cigar)));
     }
     Ok(ops)
 }
@@ -102,7 +102,7 @@ pub struct SamFile {
 fn num<T: std::str::FromStr>(s: &str, what: &str, line: usize) -> Result<T> {
     s.parse::<T>().map_err(|_| {
         Error::Io(format!(
-            "Zeile {}: Ungültiger Wert für {}: '{}'",
+            "Line {}: Invalid value for {}: '{}'",
             line, what, s
         ))
     })
@@ -138,7 +138,7 @@ pub fn parse(text: &str) -> Result<SamFile> {
         let f: Vec<&str> = line.split('\t').collect();
         if f.len() < 11 {
             return Err(Error::Io(format!(
-                "Zeile {}: {} Spalten gefunden, mindestens 11 erwartet",
+                "Line {}: {} columns found, at least 11 expected",
                 n,
                 f.len()
             )));
@@ -222,7 +222,7 @@ r3\t4\t*\t0\t0\t*\t*\t0\t0\tACGT\tIIII\n";
 
     #[test]
     fn fehler_mit_zeilennummer() {
-        assert!(matches!(parse("r1\t0\tchr1\n"), Err(Error::Io(m)) if m.contains("Zeile 1")));
+        assert!(matches!(parse("r1\t0\tchr1\n"), Err(Error::Io(m)) if m.contains("Line 1")));
         assert!(matches!(
             parse("r1\tX\tchr1\t1\t60\t4M\t*\t0\t0\tACGT\tIIII\n"),
             Err(Error::Io(m)) if m.contains("FLAG")

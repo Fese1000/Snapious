@@ -6,10 +6,10 @@ use crate::model::document::{SequenceDocument, Topology};
 
 /// Meldet Enzyme, die das Insert öfter schneiden als vorgesehen.
 /// * Für jedes Enzym in `enzymes` (Namen, Reihenfolge wie übergeben; doppelte Namen nur einmal) wird die Zahl der Erkennungsstellen im Insert gezählt:
-///   `RestrictionEnzyme::find_matches(bases)` auf den Basen in Großbuchstaben (beide Stränge sind schon enthalten; bei `Topology::Circular` zusätzlich Stellen über den
+///   `RestrictionEnzyme::find_matches(bases)` auf den Basen in Uppercase (beide Stränge sind schon enthalten; bei `Topology::Circular` zusätzlich Stellen über den
 ///   Nullpunkt, indem die Basen hinten um `Erkennungslänge − 1` Zeichen vom Anfang verlängert werden und doppelte Startpositionen modulo Länge nur einmal zählen).
 /// * Vorgesehen sind bei genau einem Enzym höchstens 2 Stellen (beide Enden des Inserts), bei mehreren verschiedenen Enzymen höchstens 1 Stelle je Enzym.
-///   Gibt es mehr, entsteht die Meldung `Insert enthält interne Schnittstelle von {Name}`.
+///   Gibt es mehr, entsteht die Meldung `Insert contains internal cut site of {Name}`.
 ///
 /// Unbekannter Enzymname (`db.get`) → `Error::InvalidInput` mit dem Namen. Leere Enzymliste → leere Meldungsliste.
 pub fn internal_site_warnings(
@@ -30,7 +30,7 @@ pub fn internal_site_warnings(
     for name in names {
         let enzyme = db
             .get(name)
-            .ok_or_else(|| Error::InvalidInput(format!("Unbekanntes Enzym '{}'", name)))?;
+            .ok_or_else(|| Error::InvalidInput(format!("Unknown enzyme '{}'", name)))?;
         let len = bases.len();
         let count = if circular && len > 0 {
             let ext_len = enzyme.recognition().len().saturating_sub(1);
@@ -47,7 +47,7 @@ pub fn internal_site_warnings(
             enzyme.find_matches(bases.as_bytes()).len()
         };
         if count > allowed {
-            warnings.push(format!("Insert enthält interne Schnittstelle von {}", name));
+            warnings.push(format!("Insert contains internal cut site of {}", name));
         }
     }
     Ok(warnings)
@@ -74,7 +74,7 @@ mod tests {
         let three = doc("GAATTCAAAAGAATTCAAAAGAATTC", Topology::Linear);
         assert_eq!(
             internal_site_warnings(&three, &["EcoRI"], &db).unwrap(),
-            vec!["Insert enthält interne Schnittstelle von EcoRI".to_string()]
+            vec!["Insert contains internal cut site of EcoRI".to_string()]
         );
     }
 
@@ -88,7 +88,7 @@ mod tests {
         let inner = doc("GAATTCAAGAATTCAAAGGATCC", Topology::Linear);
         assert_eq!(
             internal_site_warnings(&inner, &["EcoRI", "BamHI"], &db).unwrap(),
-            vec!["Insert enthält interne Schnittstelle von EcoRI".to_string()]
+            vec!["Insert contains internal cut site of EcoRI".to_string()]
         );
         // doppelter Name zählt wie ein Enzym
         let two = doc("GAATTCAAAAGAATTC", Topology::Linear);

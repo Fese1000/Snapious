@@ -12,7 +12,7 @@ pub struct SilentChange {
 }
 
 /// Alle Einzelbasenänderungen, die im Leseraster ab Position 0 dieselbe Aminosäure ergeben (Standardcode, `code_by_id(1)`,
-/// Großbuchstaben, `U` wie `T`). Es zählen nur vollständige Codons mit Basen A, C, G, T; ein unvollständiges Schluss-Codon
+/// Uppercase, `U` wie `T`). Es zählen nur vollständige Codons mit Basen A, C, G, T; ein unvollständiges Schluss-Codon
 /// wird ignoriert. Stopp-Codons zählen als eine Aminosäure (`*`). Sortierung: nach `position`, dann `to` alphabetisch.
 /// Beispiel: `CTGAAA` → (0 C→T), (2 G→A), (2 G→C), (2 G→T), (5 A→G).
 pub fn synonymous_changes(cds: &str) -> Vec<SilentChange> {
@@ -78,7 +78,7 @@ pub fn synonymous_changes(cds: &str) -> Vec<SilentChange> {
     changes
 }
 
-/// Die stillen Änderungen aus `synonymous_changes`, nach deren Anwendung `motif` (nur A, C, G, T; Großbuchstaben) an einer
+/// Die stillen Änderungen aus `synonymous_changes`, nach deren Anwendung `motif` (nur A, C, G, T; Uppercase) an einer
 /// Stelle steht, die die geänderte Base enthält, und die vorher dort nicht stand. Reihenfolge wie `synonymous_changes`.
 /// Beispiel: `cds = GAGTTC`, `motif = GAATTC` → nur (2 G→A).
 pub fn changes_creating_motif(cds: &str, motif: &str) -> Vec<SilentChange> {

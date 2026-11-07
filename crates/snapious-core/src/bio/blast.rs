@@ -48,14 +48,14 @@ pub fn parse_tabular(text: &str) -> Result<Vec<BlastHit>> {
         let parts: Vec<&str> = trimmed.split('\t').collect();
         if parts.len() < 12 {
             return Err(Error::InvalidInput(format!(
-                "Zeile {} hat zu wenige Spalten",
+                "Line {} has too few columns",
                 line_num
             )));
         }
 
         let get = |i: usize, _name: &str| -> Result<&str> {
             parts.get(i).copied().ok_or_else(|| {
-                Error::InvalidInput(format!("Spalte {} fehlt in Zeile {}", i + 1, line_num))
+                Error::InvalidInput(format!("Column {} is missing in line {}", i + 1, line_num))
             })
         };
 
@@ -64,7 +64,7 @@ pub fn parse_tabular(text: &str) -> Result<Vec<BlastHit>> {
                 .get(i)
                 .and_then(|v| v.parse::<f64>().ok())
                 .ok_or_else(|| {
-                    Error::InvalidInput(format!("Ungültiger {} in Zeile {}", name, line_num))
+                    Error::InvalidInput(format!("Invalid {} in line {}", name, line_num))
                 })
         };
 
@@ -73,7 +73,7 @@ pub fn parse_tabular(text: &str) -> Result<Vec<BlastHit>> {
                 .get(i)
                 .and_then(|v| v.parse::<usize>().ok())
                 .ok_or_else(|| {
-                    Error::InvalidInput(format!("Ungültiger {} in Zeile {}", name, line_num))
+                    Error::InvalidInput(format!("Invalid {} in line {}", name, line_num))
                 })
         };
 
@@ -121,7 +121,7 @@ pub fn blast_local(
 ) -> Result<Vec<BlastHit>> {
     if subjects.is_empty() {
         return Err(Error::InvalidInput(
-            "Ohne Zielsequenzen kann nicht gesucht werden".to_string(),
+            "Cannot search without target sequences".to_string(),
         ));
     }
     let (dbtype, make) = match program {
@@ -129,7 +129,7 @@ pub fn blast_local(
         "blastp" => ("prot", "makeblastdb"),
         other => {
             return Err(Error::InvalidInput(format!(
-                "Unbekanntes Programm '{}'",
+                "Unknown program '{}'",
                 other
             )))
         }
@@ -138,7 +138,7 @@ pub fn blast_local(
     for tool in [program, make] {
         if !reg.is_available(tool) {
             return Err(Error::Io(format!(
-                "Programm '{}' ist nicht installiert",
+                "Program '{}' is not installed",
                 tool
             )));
         }
@@ -157,7 +157,7 @@ pub fn blast_local(
             let r = reg.run(tool, args, Some(&dir), None, Duration::from_secs(600))?;
             if !r.ok() {
                 return Err(Error::Io(format!(
-                    "'{}' meldete einen Fehler: {}",
+                    "'{}' reported an error: {}",
                     tool,
                     r.stderr.trim()
                 )));
@@ -277,7 +277,7 @@ q1\ts2\t90.5\t40\t4\t0\t5\t44\t300\t261\t0.0\t80\n";
     #[test]
     fn lokale_suche() {
         if !is_available("blastn") || !is_available("makeblastdb") {
-            eprintln!("übersprungen: BLAST+ nicht installiert");
+            eprintln!("skipped: BLAST+ not installed");
             return;
         }
         let gen = "ATGGCGTACGTTAGCTAGCTAGGATCCGATCGATCGTACGATCGTAGCTAGCTAGCTAGCATCGATCGGCTAAGCTT";

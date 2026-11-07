@@ -5,7 +5,7 @@ use crate::error::{Error, Result};
 
 /// Berechnet die Punkte eines Dotplots. Ein Punkt `(i, j)` gehört dazu, wenn das Fenster `a[i..i+window]`
 /// und das Fenster `b[j..j+window]` an mindestens `min_matches` Stellen (Stelle für Stelle verglichen) übereinstimmen.
-/// * Beide Sequenzen werden in Großbuchstaben verglichen.
+/// * Beide Sequenzen werden in Uppercase verglichen.
 /// * `reverse`: `b` wird vorher durch sein Reverskomplement (`iupac_reverse_complement`) ersetzt; `j` zählt dann im
 ///   Reverskomplement.
 /// * Sortierung zeilenweise: erst nach `i`, dann nach `j`. Ist eine Sequenz kürzer als `window`, ist das Ergebnis leer.
@@ -20,7 +20,7 @@ pub fn dotplot_points(
 ) -> Result<Vec<(usize, usize)>> {
     if window == 0 || min_matches == 0 || min_matches > window {
         return Err(Error::InvalidInput(
-            "Fenstergröße oder Mindestübereinstimmung ungültig".into(),
+            "Window size or minimum match invalid".into(),
         ));
     }
 

@@ -8,7 +8,7 @@ use snapious_core::tools::ToolRegistry;
 fn pruefe(tool: &str, args: &[&str]) {
     let reg = ToolRegistry::defaults();
     if !reg.is_available(tool) {
-        eprintln!("übersprungen: {} nicht installiert", tool);
+        eprintln!("skipped: {} not installed", tool);
         return;
     }
     let r = reg
@@ -16,7 +16,7 @@ fn pruefe(tool: &str, args: &[&str]) {
         .unwrap();
     assert!(
         !(r.stdout.trim().is_empty() && r.stderr.trim().is_empty()),
-        "{} gab keine Ausgabe",
+        "{} produced no output",
         tool
     );
 }
@@ -61,5 +61,5 @@ fn mafft_richtet_sequenzen_aus() {
     let rows: Vec<&str> = r.stdout.lines().filter(|l| !l.starts_with('>')).collect();
     assert_eq!(rows.len(), 3);
     assert!(rows.iter().all(|z| z.len() == rows[0].len()));
-    assert!(rows[2].contains('-'), "kürzere Sequenz braucht eine Lücke");
+    assert!(rows[2].contains('-'), "shorter sequence needs a gap");
 }

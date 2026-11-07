@@ -16,7 +16,7 @@ impl CircularMapLayout {
     /// Fehler `Error::InvalidInput`, wenn `length == 0`.
     pub fn new(length: usize) -> Result<Self> {
         if length == 0 {
-            return Err(Error::InvalidInput("length muss > 0 sein".into()));
+            return Err(Error::InvalidInput("length must be > 0".into()));
         }
         Ok(CircularMapLayout { length })
     }
@@ -95,7 +95,7 @@ impl LinearMapLayout {
     pub fn new(length: usize, width: f64) -> Result<Self> {
         if length == 0 || width <= 0.0 || width.is_nan() {
             return Err(Error::InvalidInput(
-                "length muss > 0 und width muss > 0 sein".into(),
+                "length must be > 0 and width must be > 0".into(),
             ));
         }
         Ok(LinearMapLayout { length, width })

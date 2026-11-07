@@ -113,7 +113,7 @@ impl CoverageRegion {
 
     pub fn format(&self) -> String {
         format!(
-            "{}:{}-{} (Depth {:.1}x, {:.0}% abgedeckt)",
+            "{}:{}-{} (depth {:.1}x, {:.0}% covered)",
             self.seq_id, self.start, self.end, self.mean_depth, self.percent_covered
         )
     }
@@ -170,20 +170,20 @@ pub struct CoverageResult {
 impl CoverageResult {
     pub fn coverage_label(&self) -> &'static str {
         if self.mean_depth >= 30.0 {
-            "Hohe Coverage"
+            "High coverage"
         } else if self.mean_depth >= 10.0 {
-            "Mittlere Coverage"
+            "Medium coverage"
         } else if self.mean_depth >= 5.0 {
-            "Niedrige Coverage"
+            "Low coverage"
         } else {
-            "Unzureichende Coverage"
+            "Insufficient coverage"
         }
     }
 
     /// Textbericht.
     pub fn report(&self) -> String {
         let mut s = format!(
-            "=== Coverage-Analyse: {} ===\n\nReferenz-Länge: {} bp\nDurchschnittliche Depth: {:.1}x\nMedian-Depth: {}x\nCoverage-Bewertung: {}\nAbgedeckte Region (≥{}x): {:.0}%\n",
+            "=== Coverage analysis: {} ===\n\nReference length: {} bp\nAverage depth: {:.1}x\nMedian depth: {}x\nCoverage rating: {}\nCovered region (≥{}x): {:.0}%\n",
             self.seq_id,
             self.region_length,
             self.mean_depth,
@@ -205,7 +205,7 @@ impl CoverageResult {
         }
         if !self.gap_regions.is_empty() {
             s.push_str(&format!(
-                "\nGap-Regionen (0x Coverage): {}\n",
+                "\nGap regions (0x coverage): {}\n",
                 self.gap_regions.len()
             ));
             for g in self.gap_regions.iter().take(10) {
@@ -213,13 +213,13 @@ impl CoverageResult {
             }
             if self.gap_regions.len() > 10 {
                 s.push_str(&format!(
-                    "  ... und {} weitere Gap-Regionen\n",
+                    "  ... and {} more gap regions\n",
                     self.gap_regions.len() - 10
                 ));
             }
             let total: usize = self.gap_regions.iter().map(|g| g.length()).sum();
             s.push_str(&format!(
-                "\nGesamte Gap-Länge: {} bp ({:.0}%)\n",
+                "\nTotal gap length: {} bp ({:.0}%)\n",
                 total,
                 total as f64 * 100.0 / self.region_length.max(1) as f64
             ));
@@ -244,7 +244,7 @@ impl CoverageResult {
     pub fn binned_coverage(&self, bin_size: usize) -> Result<String> {
         if bin_size == 0 {
             return Err(Error::InvalidInput(
-                "Bin-Größe muss mindestens 1 sein".to_string(),
+                "Bin size must be at least 1".to_string(),
             ));
         }
         let mut s = String::new();
@@ -460,21 +460,21 @@ fn add_range(diff: &mut [i64], start: usize, end: usize, len: usize) {
 pub fn compare(reference: &Reference, reads1: &[Read], reads2: &[Read]) -> String {
     let (a, b) = (analyze(reference, reads1), analyze(reference, reads2));
     let diff = (a.mean_depth - b.mean_depth).abs();
-    let mut s = format!("=== Coverage-Vergleich ===\n\n{}:\n", reference.id);
+    let mut s = format!("=== Coverage comparison ===\n\n{}:\n", reference.id);
     for (i, r) in [&a, &b].iter().enumerate() {
         s.push_str(&format!(
-            "  Probe {}: Mean {:.1}x, Coverage {:.0}%, Gaps {}\n",
+            "  Sample {}: mean {:.1}x, coverage {:.0}%, gaps {}\n",
             i + 1,
             r.mean_depth,
             r.percent_covered,
             r.gap_regions.len()
         ));
     }
-    s.push_str(&format!("\nDepth-Differenz: {:.1}x\n", diff));
+    s.push_str(&format!("\nDepth difference: {:.1}x\n", diff));
     s.push_str(if diff < 5.0 {
-        "Beide Proben haben ähnliche Coverage\n"
+        "Both samples have similar coverage\n"
     } else {
-        "Die Proben unterscheiden sich deutlich\n"
+        "The samples differ significantly\n"
     });
     s
 }
@@ -581,7 +581,7 @@ mod tests {
         assert!(res.covered_regions.is_empty() && res.gap_regions.is_empty());
         let none = analyze(&Reference::new("c", 10), &[]);
         assert_eq!(none.gap_regions.len(), 1);
-        assert_eq!(none.coverage_label(), "Unzureichende Coverage");
+        assert_eq!(none.coverage_label(), "Insufficient coverage");
     }
 
     #[test]
@@ -689,12 +689,12 @@ G\t0\tref\t1\t60\t2S2M2I\t*\t0\t0\tAAAAAA\tIIIIII\n";
         let r = Reference::new("chr1", 100);
         let res = analyze_with_threshold(&r, &reads(&[(0, 60)]), 1);
         let rep = res.report();
-        assert!(rep.contains("Coverage-Analyse: chr1"));
-        assert!(rep.contains("Gap-Regionen (0x Coverage): 1"));
-        assert!(rep.contains("Gesamte Gap-Länge: 40 bp (40%)"));
+        assert!(rep.contains("Coverage analysis: chr1"));
+        assert!(rep.contains("Gap regions (0x coverage): 1"));
+        assert!(rep.contains("Total gap length: 40 bp (40%)"));
         let cmp = compare(&r, &reads(&[(0, 100)]), &reads(&[(0, 100); 10]));
-        assert!(cmp.contains("Coverage-Vergleich"));
-        assert!(cmp.contains("unterscheiden sich deutlich"));
+        assert!(cmp.contains("Coverage comparison"));
+        assert!(cmp.contains("differ significantly"));
     }
 
     #[test]

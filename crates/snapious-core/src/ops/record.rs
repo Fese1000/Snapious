@@ -18,7 +18,7 @@ use crate::ops::workflow::{Workflow, WorkflowStep};
 pub fn workflow_from_history(name: &str, entries: &[HistoryEntry]) -> Result<Workflow> {
     if entries.is_empty() {
         return Err(Error::InvalidInput(
-            "Der Verlauf ist leer, es gibt nichts aufzuzeichnen".to_string(),
+            "The history is empty, there is nothing to record".to_string(),
         ));
     }
     let mut externals: Vec<String> = Vec::new();

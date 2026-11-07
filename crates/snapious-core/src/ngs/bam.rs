@@ -33,7 +33,7 @@ pub fn parse_bam(data: &[u8]) -> Result<BamFile> {
     let bad = |m: &str| Error::InvalidInput(m.to_string());
     let mut cur = Cursor { data, pos: 0 };
     if cur.take(4)? != b"BAM\x01" {
-        return Err(bad("Keine BAM-Datei (Magic fehlt)"));
+        return Err(bad("Not a BAM file (magic missing)"));
     }
     let l_text = cur.i32()? as usize;
     let mut text_bytes = cur.take(l_text)?.to_vec();
@@ -91,7 +91,7 @@ pub fn parse_bam(data: &[u8]) -> Result<BamFile> {
             let x = b.u32()?;
             let op = *OPS
                 .get((x & 0xf) as usize)
-                .ok_or_else(|| bad("Unbekannte CIGAR-Operation"))?;
+                .ok_or_else(|| bad("Unknown CIGAR operation"))?;
             cigar.push_str(&format!("{}{}", x >> 4, op as char));
         }
         if cigar.is_empty() {
@@ -147,7 +147,7 @@ pub fn read_bam(path: &Path) -> Result<BamFile> {
         .arg("-dc")
         .arg(path)
         .output()
-        .map_err(|e| Error::Io(format!("gzip konnte nicht gestartet werden: {}", e)))?;
+        .map_err(|e| Error::Io(format!("gzip could not be started: {}", e)))?;
     if !out.status.success() {
         return Err(Error::Io(format!(
             "gzip: {}",
@@ -169,7 +169,7 @@ impl<'a> Cursor<'a> {
             .pos
             .checked_add(n)
             .filter(|e| *e <= self.data.len())
-            .ok_or_else(|| Error::InvalidInput("BAM-Daten sind abgeschnitten".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("BAM data is truncated".to_string()))?;
         let s = &self.data[self.pos..end];
         self.pos = end;
         Ok(s)

@@ -18,13 +18,13 @@ pub fn parse_csfasta(text: &str) -> Result<Vec<(String, String)>> {
             last.1.extend(line.chars().filter(|c| !c.is_whitespace()));
         } else {
             return Err(Error::InvalidInput(
-                "Farbfolge vor der ersten Kopfzeile".to_string(),
+                "Color sequence before the first header line".to_string(),
             ));
         }
     }
     if out.is_empty() {
         return Err(Error::InvalidInput(
-            "Keine Einträge in der csfasta-Datei".to_string(),
+            "No entries in the csfasta file".to_string(),
         ));
     }
     Ok(out)
@@ -42,7 +42,7 @@ pub fn decode_color_space(colors: &str) -> Result<String> {
         .map(|c| c.to_ascii_uppercase())
         .filter(|c| "ACGT".contains(*c))
         .ok_or_else(|| {
-            Error::InvalidInput("Die erste Base muss A, C, G oder T sein".to_string())
+            Error::InvalidInput("The first base must be A, C, G or T".to_string())
         })?;
     let mut out = String::with_capacity(colors.len());
     out.push(first);
@@ -83,13 +83,13 @@ pub fn parse_solid_qual(text: &str) -> Result<Vec<(String, Vec<u8>)>> {
         } else if let Some(last) = out.last_mut() {
             for tok in line.split_whitespace() {
                 let v = tok.parse::<u8>().map_err(|_| {
-                    Error::InvalidInput(format!("Ungültiger Qualitätswert '{tok}'"))
+                    Error::InvalidInput(format!("Invalid quality value '{tok}'"))
                 })?;
                 last.1.push(v);
             }
         } else {
             return Err(Error::InvalidInput(
-                "Qualitätswerte vor der ersten Kopfzeile".to_string(),
+                "Quality values before the first header line".to_string(),
             ));
         }
     }

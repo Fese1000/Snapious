@@ -6,7 +6,7 @@ use crate::error::{Error, Result};
 /// `Error::InvalidInput`. Danach: leere Zeilen und Zeilen, die mit `!` beginnen (Kommentare/Titel), werden übersprungen;
 /// eine Zeile, die mit `#` beginnt, nennt einen Namen (Rest der Zeile, getrimmt) und beginnt oder setzt fort (bei gleichem Namen,
 /// z. B. in verschachtelten Blöcken) den Eintrag; alle anderen Zeilen sind Sequenzzeilen, aus denen Leerraum entfernt und
-/// die an den Eintrag angehängt werden (alle anderen Zeichen bleiben, auch `-`). Eine Sequenzzeile vor dem ersten Namen ist ein
+/// die an den Eintrag angehängt werden (alle anderen Zeichen bleiben, auch `-`). Eine Sequence line before the first name ist ein
 /// Fehler. Ergebnis `(Name, Sequenz)` in der Reihenfolge des ersten Auftretens; ohne Einträge → Fehler.
 pub fn parse_mega(text: &str) -> Result<Vec<(String, String)>> {
     let mut lines = text.lines().map(str::trim).filter(|l| !l.is_empty());
@@ -14,7 +14,7 @@ pub fn parse_mega(text: &str) -> Result<Vec<(String, String)>> {
         Some(first) if first.eq_ignore_ascii_case("#mega") => {}
         _ => {
             return Err(Error::InvalidInput(
-                "Keine MEGA-Datei (#mega fehlt)".to_string(),
+                "Not a MEGA file (#mega missing)".to_string(),
             ))
         }
     }
@@ -36,7 +36,7 @@ pub fn parse_mega(text: &str) -> Result<Vec<(String, String)>> {
         } else {
             let Some(i) = current else {
                 return Err(Error::InvalidInput(
-                    "Sequenzzeile vor dem ersten Namen".to_string(),
+                    "Sequence line before the first name".to_string(),
                 ));
             };
             rows[i]
@@ -46,7 +46,7 @@ pub fn parse_mega(text: &str) -> Result<Vec<(String, String)>> {
     }
     if rows.is_empty() {
         return Err(Error::InvalidInput(
-            "Die MEGA-Datei enthält keine Sequenzen".to_string(),
+            "The MEGA file contains no sequences".to_string(),
         ));
     }
     Ok(rows)

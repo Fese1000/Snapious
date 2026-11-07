@@ -30,19 +30,19 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
 
     // Zeilen 0, 1, 2 überspringen (Name, Programm, Kommentar)
     if lines.next().is_none() {
-        return Err(Error::InvalidInput("Zu wenige Zeilen".into()));
+        return Err(Error::InvalidInput("Too few lines".into()));
     }
     if lines.next().is_none() {
-        return Err(Error::InvalidInput("Zu wenige Zeilen".into()));
+        return Err(Error::InvalidInput("Too few lines".into()));
     }
     if lines.next().is_none() {
-        return Err(Error::InvalidInput("Zu wenige Zeilen".into()));
+        return Err(Error::InvalidInput("Too few lines".into()));
     }
 
     // Zeile 3: Zählzeile
     let count_line = lines
         .next()
-        .ok_or_else(|| Error::InvalidInput("Zu wenige Zeilen".into()))?;
+        .ok_or_else(|| Error::InvalidInput("Too few lines".into()))?;
 
     // Atomzahl (Zeichen 0-3) und Bindungszahl (Zeichen 3-6) parsen
     let atom_count_str = count_line.get(0..3).unwrap_or("").trim();
@@ -50,10 +50,10 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
 
     let atom_count: usize = atom_count_str
         .parse::<usize>()
-        .map_err(|_| Error::InvalidInput("Ungültige Atomzahl".into()))?;
+        .map_err(|_| Error::InvalidInput("Invalid atom count".into()))?;
     let _bond_count: usize = bond_count_str
         .parse::<usize>()
-        .map_err(|_| Error::InvalidInput("Ungültige Bindungszahl".into()))?;
+        .map_err(|_| Error::InvalidInput("Invalid bond count".into()))?;
 
     let mut atoms = Vec::with_capacity(atom_count);
 
@@ -61,7 +61,7 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
     for _ in 0..atom_count {
         let line = lines
             .next()
-            .ok_or_else(|| Error::InvalidInput("Zu wenige Atomzeilen".into()))?;
+            .ok_or_else(|| Error::InvalidInput("Too few atom lines".into()))?;
 
         // x: 0-10, y: 10-20, z: 20-30
         let x_str = line.get(0..10).unwrap_or("").trim();
@@ -70,13 +70,13 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
 
         let x: f64 = x_str
             .parse::<f64>()
-            .map_err(|_| Error::InvalidInput("Ungültige X-Koordinate".into()))?;
+            .map_err(|_| Error::InvalidInput("Invalid X coordinate".into()))?;
         let y: f64 = y_str
             .parse::<f64>()
-            .map_err(|_| Error::InvalidInput("Ungültige Y-Koordinate".into()))?;
+            .map_err(|_| Error::InvalidInput("Invalid Y coordinate".into()))?;
         let z: f64 = z_str
             .parse::<f64>()
-            .map_err(|_| Error::InvalidInput("Ungültige Z-Koordinate".into()))?;
+            .map_err(|_| Error::InvalidInput("Invalid Z coordinate".into()))?;
 
         // Element: 31-34
         let element = line.get(31..34).unwrap_or("").trim().to_string();
@@ -98,7 +98,7 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
             Ok(v) => v,
             Err(_) => {
                 return Err(Error::InvalidInput(
-                    "Ungültiger Atomindex in Bindung".into(),
+                    "Invalid atom index in bond".into(),
                 ))
             }
         };
@@ -107,27 +107,27 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
             Ok(v) => v,
             Err(_) => {
                 return Err(Error::InvalidInput(
-                    "Ungültiger Atomindex in Bindung".into(),
+                    "Invalid atom index in bond".into(),
                 ))
             }
         };
 
         let order: u8 = match order_str.parse::<u8>() {
             Ok(v) => v,
-            Err(_) => return Err(Error::InvalidInput("Ungültige Bindungsordnung".into())),
+            Err(_) => return Err(Error::InvalidInput("Invalid bond order".into())),
         };
 
         // 1-basiert in Datei -> 0-basiert im Vektor
         let from = atom1
             .checked_sub(1)
-            .ok_or_else(|| Error::InvalidInput("Atomindex zu klein".into()))?;
+            .ok_or_else(|| Error::InvalidInput("Atom index too small".into()))?;
         let to = atom2
             .checked_sub(1)
-            .ok_or_else(|| Error::InvalidInput("Atomindex zu klein".into()))?;
+            .ok_or_else(|| Error::InvalidInput("Atom index too small".into()))?;
 
         if from >= atom_count || to >= atom_count {
             return Err(Error::InvalidInput(
-                "Bindungsindex außerhalb der Atomzahl".into(),
+                "Bond index outside the atom count".into(),
             ));
         }
 
@@ -137,7 +137,7 @@ pub fn parse_mol(text: &str) -> Result<(Vec<MolAtom>, Vec<MolBond>)> {
     // Wenn weniger Bindungen gefunden wurden als in der Zählzeile angegeben, ist die Datei ungültig.
     if bonds.len() != _bond_count {
         return Err(Error::InvalidInput(
-            "Anzahl der Bindungen stimmt nicht mit Zählzeile überein".into(),
+            "Number of bonds does not match the counts line".into(),
         ));
     }
 

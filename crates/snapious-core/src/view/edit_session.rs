@@ -75,7 +75,7 @@ impl EditSession {
         let mut features = self.current.features().to_vec();
         if feature.location().end() > self.current.len() {
             return Err(Error::OutOfRange(format!(
-                "Feature-Ende {} liegt hinter der Dokument-Länge {}",
+                "Feature end {} lies beyond the document length {}",
                 feature.location().end(),
                 self.current.len()
             )));
@@ -91,7 +91,7 @@ impl EditSession {
         let features = self.current.features();
         if index >= features.len() {
             return Err(Error::OutOfRange(format!(
-                "Ungültiger Feature-Index {} (max {})",
+                "Invalid feature index {} (max {})",
                 index,
                 features.len().saturating_sub(1)
             )));

@@ -176,5 +176,5 @@ fn zufaellige_eingaben_stuerzen_nicht_ab() {
     }
     failures.sort();
     failures.dedup();
-    assert!(failures.is_empty(), "Abstürze in: {:?}", failures);
+    assert!(failures.is_empty(), "Crashes in: {:?}", failures);
 }

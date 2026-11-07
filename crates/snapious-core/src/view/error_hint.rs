@@ -8,31 +8,31 @@ pub struct ErrorHelp {
 }
 
 /// Wählt anhand der Meldung (Groß-/Kleinschreibung egal, Teilstring-Suche, Regeln in dieser Reihenfolge, erste passende gilt):
-/// 1. `database is locked` → Titel „Projekt gesperrt“, Hinweis „Das Projekt ist in einer anderen Instanz geöffnet. Schließen Sie sie und versuchen Sie es erneut.“
-/// 2. `permission denied` → „Kein Zugriff“, „Die App darf diese Datei nicht lesen oder schreiben. Prüfen Sie die Berechtigungen.“
-/// 3. `no such file` oder `nicht gefunden` → „Datei nicht gefunden“, „Prüfen Sie, ob die Datei verschoben oder gelöscht wurde.“
-/// 4. `curl`, `network`, `timed out` oder `could not resolve` → „Keine Verbindung“, „Prüfen Sie die Internetverbindung und versuchen Sie es später erneut.“
-/// 5. `invalid` oder `ungültig` → „Ungültige Eingabe“, „Prüfen Sie Ihre Eingaben auf Tippfehler und erlaubte Zeichen.“
-/// 6. sonst Titel „Etwas ist schiefgelaufen“, Hinweis `"Details: "` + Meldung (getrimmt; länger als 200 Zeichen → die ersten 200 Zeichen + `…`).
+/// 1. `database is locked` → Titel „Project locked“, Hinweis „The project is open in another instance. Close it and try again.“
+/// 2. `permission denied` → „No access“, „The app is not allowed to read or write this file. Check the permissions.“
+/// 3. `no such file` oder `nicht gefunden` → „File not found“, „Check whether the file was moved or deleted.“
+/// 4. `curl`, `network`, `timed out` oder `could not resolve` → „No connection“, „Check your internet connection and try again later.“
+/// 5. `invalid` oder `ungültig` → „Invalid input“, „Check your input for typos and allowed characters.“
+/// 6. sonst Titel „Something went wrong“, Hinweis `"Details: "` + Meldung (getrimmt; länger als 200 Zeichen → die ersten 200 Zeichen + `…`).
 pub fn friendly_error(message: &str) -> ErrorHelp {
     let lower = message.to_lowercase();
 
     if lower.contains("database is locked") {
         return ErrorHelp {
-            title: "Projekt gesperrt".to_string(),
-            hint: "Das Projekt ist in einer anderen Instanz geöffnet. Schließen Sie sie und versuchen Sie es erneut.".to_string(),
+            title: "Project locked".to_string(),
+            hint: "The project is open in another instance. Close it and try again.".to_string(),
         };
     }
     if lower.contains("permission denied") {
         return ErrorHelp {
-            title: "Kein Zugriff".to_string(),
-            hint: "Die App darf diese Datei nicht lesen oder schreiben. Prüfen Sie die Berechtigungen.".to_string(),
+            title: "No access".to_string(),
+            hint: "The app is not allowed to read or write this file. Check the permissions.".to_string(),
         };
     }
-    if lower.contains("no such file") || lower.contains("nicht gefunden") {
+    if lower.contains("no such file") || lower.contains("not found") {
         return ErrorHelp {
-            title: "Datei nicht gefunden".to_string(),
-            hint: "Prüfen Sie, ob die Datei verschoben oder gelöscht wurde.".to_string(),
+            title: "File not found".to_string(),
+            hint: "Check whether the file was moved or deleted.".to_string(),
         };
     }
     if lower.contains("curl")
@@ -41,15 +41,15 @@ pub fn friendly_error(message: &str) -> ErrorHelp {
         || lower.contains("could not resolve")
     {
         return ErrorHelp {
-            title: "Keine Verbindung".to_string(),
-            hint: "Prüfen Sie die Internetverbindung und versuchen Sie es später erneut."
+            title: "No connection".to_string(),
+            hint: "Check your internet connection and try again later."
                 .to_string(),
         };
     }
-    if lower.contains("invalid") || lower.contains("ungültig") {
+    if lower.contains("invalid") {
         return ErrorHelp {
-            title: "Ungültige Eingabe".to_string(),
-            hint: "Prüfen Sie Ihre Eingaben auf Tippfehler und erlaubte Zeichen.".to_string(),
+            title: "Invalid input".to_string(),
+            hint: "Check your input for typos and allowed characters.".to_string(),
         };
     }
 
@@ -63,7 +63,7 @@ pub fn friendly_error(message: &str) -> ErrorHelp {
     let hint = format!("Details: {}{}", truncated, hint_suffix);
 
     ErrorHelp {
-        title: "Etwas ist schiefgelaufen".to_string(),
+        title: "Something went wrong".to_string(),
         hint,
     }
 }
@@ -75,26 +75,26 @@ mod tests {
     #[test]
     fn regeln() {
         let h = friendly_error("Error: Database is LOCKED by another process");
-        assert_eq!(h.title, "Projekt gesperrt");
+        assert_eq!(h.title, "Project locked");
         assert!(h
             .hint
-            .starts_with("Das Projekt ist in einer anderen Instanz"));
+            .starts_with("The project is open in another instance"));
         assert_eq!(
             friendly_error("open: Permission denied").title,
-            "Kein Zugriff"
+            "No access"
         );
         assert_eq!(
             friendly_error("x.fa: No such file or directory").title,
-            "Datei nicht gefunden"
+            "File not found"
         );
         assert_eq!(
             friendly_error("curl: (6) Could not resolve host").title,
-            "Keine Verbindung"
+            "No connection"
         );
-        assert_eq!(friendly_error("Ungültige Basen").title, "Ungültige Eingabe");
+        assert_eq!(friendly_error("Invalid bases").title, "Invalid input");
         assert_eq!(
             friendly_error("invalid sequence").hint,
-            "Prüfen Sie Ihre Eingaben auf Tippfehler und erlaubte Zeichen."
+            "Check your input for typos and allowed characters."
         );
     }
 
@@ -103,10 +103,10 @@ mod tests {
         // "permission denied" steht vor "no such file"
         assert_eq!(
             friendly_error("no such file: permission denied").title,
-            "Kein Zugriff"
+            "No access"
         );
         let h = friendly_error("  seltsam  ");
-        assert_eq!(h.title, "Etwas ist schiefgelaufen");
+        assert_eq!(h.title, "Something went wrong");
         assert_eq!(h.hint, "Details: seltsam");
         let lang = "x".repeat(250);
         let h = friendly_error(&lang);

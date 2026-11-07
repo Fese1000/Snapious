@@ -71,13 +71,13 @@ pub fn binomial_phred(n: usize, k: usize, p: f64) -> f64 {
     -10.0 * sum.clamp(1e-300, 1.0).log10()
 }
 
-/// Zählt Basen je Position und meldet SNVs für die Referenz `reference_name` mit den Basen `reference` (Großbuchstaben).
+/// Zählt Basen je Position und meldet SNVs für die Referenz `reference_name` mit den Basen `reference` (Uppercase).
 /// * Berücksichtigt werden Datensätze mit `reference == reference_name`, ausgerichtet (nicht `is_unmapped`), nicht `is_secondary`, nicht
 ///   `is_duplicate`, mit `mapq >= min_mapq`, `position >= 1` und lesbarem CIGAR (`cigar_ops`; sonst `Error::InvalidInput` weitergeben).
 /// * CIGAR-Lauf: `M`, `=`, `X` verbrauchen Read und Referenz (Basen werden gezählt), `I` und `S` nur den Read, `D` und `N` nur die Referenz,
 ///   `H` und `P` nichts. Referenzposition beginnt bei `position − 1`. Positionen hinter dem Ende von `reference` werden ignoriert.
 /// * Eine Base zählt nur mit Qualitätszeichen: Phred = Zeichen − 33 `>= min_base_quality`; fehlt die Qualität (`*`), gilt Phred 0.
-///   Basen werden in Großbuchstaben gezählt; nur A, C, G, T zählen (N usw. nicht).
+///   Basen werden in Uppercase gezählt; nur A, C, G, T zählen (N usw. nicht).
 /// * An jeder Position: `depth` = Zahl gezählter Basen. Alt-Base = die häufigste Base, die nicht der Referenzbase entspricht
 ///   (bei Gleichstand die in der Reihenfolge A, C, G, T erste). Variante, wenn `depth >= min_depth` und `alt_count / depth >= min_alt_fraction`
 ///   (und `alt_count > 0`). Referenzbasen außer A, C, G, T werden übersprungen. `quality = binomial_phred(depth, alt_count, 0.01)`.
@@ -135,7 +135,7 @@ pub fn call_snvs(
                 'H' | 'P' => {}
                 other => {
                     return Err(Error::InvalidInput(format!(
-                        "Unbekannte CIGAR-Operation '{}' in {}",
+                        "Unknown CIGAR operation '{}' in {}",
                         other, r.read_name
                     )))
                 }

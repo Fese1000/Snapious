@@ -43,7 +43,7 @@ pub fn pick_part_fragment(
     let min_len = if is_circ { 2 } else { 3 };
 
     if fragments.is_empty() || fragments.len() < min_len {
-        let warn = format!("Teil {} hat weniger als 2 Schnittstellen", part.name());
+        let warn = format!("Part {} has fewer than 2 cut sites", part.name());
         return (
             Fragment {
                 top: part.bases().to_string(),
@@ -103,7 +103,7 @@ pub fn pick_part_fragment(
 
     let mut warnings = Vec::new();
     if fragments.len() > (if is_circ { 2 } else { 3 }) {
-        warnings.push(format!("Interne Erkennungsstelle in {}", part.name()));
+        warnings.push(format!("Internal recognition site in {}", part.name()));
     }
 
     (best.clone(), warnings)
@@ -126,7 +126,7 @@ fn overhang_warnings(fragments: &[Fragment]) -> Vec<String> {
         }
         let count = ends.iter().filter(|(s, o)| s == side && *o == *e).count();
         if count > 1 && seen.insert(e.overhang.clone()) {
-            out.push(format!("Doppelter Überhang {}", e.overhang));
+            out.push(format!("Duplicate overhang {}", e.overhang));
         }
     }
     // 2. palindromische Überhänge
@@ -136,7 +136,7 @@ fn overhang_warnings(fragments: &[Fragment]) -> Vec<String> {
             && e.overhang == iupac_reverse_complement(&e.overhang)
             && seen.insert(e.overhang.clone())
         {
-            out.push(format!("Palindromischer Überhang {}", e.overhang));
+            out.push(format!("Palindromic overhang {}", e.overhang));
         }
     }
     // 3. falsche Orientierung (gleiche Seite, Reverse-Komplement eines anderen Fragments)
@@ -154,7 +154,7 @@ fn overhang_warnings(fragments: &[Fragment]) -> Vec<String> {
         });
         if other && seen.insert(e.overhang.clone()) {
             out.push(format!(
-                "Überhang {} passt zum Reverse-Komplement eines anderen Teils (falsche Orientierung)",
+                "Overhang {} matches the reverse complement of another part (wrong orientation)",
                 e.overhang
             ));
         }
@@ -167,9 +167,9 @@ fn overhang_warnings(fragments: &[Fragment]) -> Vec<String> {
 /// 1. Das Enzym `enzyme_name` muss in `db` stehen, sonst `Error::InvalidInput`; ohne Teile `Error::InvalidInput`.
 ///    Jedes Teil wird mit `digest` verdaut und mit `pick_part_fragment` auf ein Fragment reduziert (Warnungen sammeln).
 /// 2. Warnungen zu Überhängen (je einmal pro betroffenen Überhangtext, in dieser Reihenfolge, nach den Teilewarnungen):
-///    - `Doppelter Überhang {x}`, wenn dasselbe Ende (Typ und Text, nicht stumpf) an mehreren rechten Enden oder an mehreren linken
+///    - `Duplicate overhang {x}`, wenn dasselbe Ende (Typ und Text, nicht stumpf) an mehreren rechten Enden oder an mehreren linken
 ///      Enden verschiedener Fragmente vorkommt;
-///    - `Palindromischer Überhang {x}`, wenn ein nicht stumpfes Ende `x` gleich seinem eigenen Reverse-Komplement ist;
+///    - `Palindromic overhang {x}`, wenn ein nicht stumpfes Ende `x` gleich seinem eigenen Reverse-Komplement ist;
 ///    - `Überhang {x} passt zum Reverse-Komplement eines anderen Teils (falsche Orientierung)`, wenn ein nicht palindromisches
 ///      rechtes Ende `x` gleich dem Reverse-Komplement des rechten Endes eines anderen Fragments ist (ebenso für linke Enden).
 ///      Reihenfolge der Prüfungen: Doppelte, Palindrome, Orientierung; innerhalb einer Prüfung nach Fragmentreihenfolge, dann links vor rechts.
@@ -178,7 +178,7 @@ fn overhang_warnings(fragments: &[Fragment]) -> Vec<String> {
 ///    Weitere Glieder: das erste noch nicht benutzte Fragment (Eingabereihenfolge), dessen linkes Ende zum rechten Ende des
 ///    letzten Gliedes passt.
 /// 4. Sind am Ende nicht alle Fragmente benutzt, oder (zirkulär) passt das letzte Glied nicht ans erste:
-///    `Error::InvalidInput("Teile lassen sich nicht zu einer Kette verbinden: {Namen der Teile, die nicht benutzt wurden bzw. der Kette}")`.
+///    `Error::InvalidInput("Parts cannot be joined into a chain: {Namen der Teile, die nicht benutzt wurden bzw. der Kette}")`.
 /// 5. Konstrukt: `join_fragments(&kette, circular)`; Name = Teilenamen (Reihenfolge der Kette) mit `" + "`; neue ID; DNA; Topologie
 ///    nach `circular`; Metadaten `source = "clone.goldengate"`; Erstellzeit `now_secs()`; Features der Fragmente, um die Länge
 ///    der vorangehenden Fragmente verschoben (`Location::shifted`, `Feature::with_location`).
@@ -192,10 +192,10 @@ pub fn assemble(
 ) -> Result<GoldenGateResult> {
     let enzyme = db
         .get(enzyme_name)
-        .ok_or_else(|| Error::InvalidInput(format!("Enzym {} nicht gefunden", enzyme_name)))?;
+        .ok_or_else(|| Error::InvalidInput(format!("Enzyme {} not found", enzyme_name)))?;
 
     if parts.is_empty() {
-        return Err(Error::InvalidInput("Keine Teile angegeben".to_string()));
+        return Err(Error::InvalidInput("No parts given".to_string()));
     }
 
     let mut all_fragments = Vec::new();
@@ -224,7 +224,7 @@ pub fn assemble(
     };
     let chain_error = |names: String| {
         Error::InvalidInput(format!(
-            "Teile lassen sich nicht zu einer Kette verbinden: {}",
+            "Parts cannot be joined into a chain: {}",
             names
         ))
     };
@@ -350,7 +350,7 @@ pub fn assemble(
         || check_bases.to_ascii_uppercase().contains(&rc_rec)
     {
         warnings.push(format!(
-            "Erkennungsstelle von {} im Konstrukt vorhanden",
+            "Recognition site of {} present in the construct",
             enzyme_name
         ));
     }
@@ -418,7 +418,7 @@ mod tests {
         );
         assert_eq!(
             w,
-            vec!["Teil kahl hat weniger als 2 Schnittstellen".to_string()]
+            vec!["Part kahl has fewer than 2 cut sites".to_string()]
         );
     }
 
@@ -466,7 +466,7 @@ mod tests {
         let p1b = part("p1b", "CGAT", &"A".repeat(12), "GCTT");
         let r = assemble(&db, "BsaI", &[p1(), p1b, p2()], false).unwrap();
         assert!(
-            r.warnings.iter().any(|w| w == "Doppelter Überhang GCTT"),
+            r.warnings.iter().any(|w| w == "Duplicate overhang GCTT"),
             "{:?}",
             r.warnings
         );
@@ -481,7 +481,7 @@ mod tests {
         assert!(
             r.warnings
                 .iter()
-                .any(|w| w == "Palindromischer Überhang GATC"),
+                .any(|w| w == "Palindromic overhang GATC"),
             "{:?}",
             r.warnings
         );
@@ -496,7 +496,7 @@ mod tests {
         assert!(
             r.warnings
                 .iter()
-                .any(|m| m == "Überhang GCTT passt zum Reverse-Komplement eines anderen Teils (falsche Orientierung)"),
+                .any(|m| m == "Overhang GCTT matches the reverse complement of another part (wrong orientation)"),
             "{:?}",
             r.warnings
         );
@@ -512,7 +512,7 @@ mod tests {
         assert!(
             r.warnings
                 .iter()
-                .any(|w| w == "Interne Erkennungsstelle in intern"),
+                .any(|w| w == "Internal recognition site in intern"),
             "{:?}",
             r.warnings
         );
@@ -524,7 +524,7 @@ mod tests {
         let fremd = part("fremd", "TTTT", &"C".repeat(12), "CCCC");
         match assemble(&db, "BsaI", &[p1(), fremd], false) {
             Err(Error::InvalidInput(m)) => assert!(
-                m.starts_with("Teile lassen sich nicht zu einer Kette verbinden"),
+                m.starts_with("Parts cannot be joined into a chain"),
                 "{}",
                 m
             ),
@@ -552,7 +552,7 @@ mod tests {
         assert_eq!(r.construct.bases(), "ACGTACGT");
         assert_eq!(
             r.warnings,
-            vec!["Teil kahl hat weniger als 2 Schnittstellen".to_string()]
+            vec!["Part kahl has fewer than 2 cut sites".to_string()]
         );
     }
 

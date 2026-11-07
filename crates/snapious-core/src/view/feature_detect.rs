@@ -9,7 +9,7 @@ use crate::model::feature::{Feature, Interval, Location, Strand};
 pub struct FeatureTemplate {
     pub name: String,
     pub feature_type: String,
-    /// Basen in Großbuchstaben (`A`, `C`, `G`, `T`).
+    /// Basen in Uppercase (`A`, `C`, `G`, `T`).
     pub bases: String,
 }
 
@@ -36,7 +36,7 @@ pub fn common_templates() -> Vec<FeatureTemplate> {
         .collect()
 }
 
-/// Großbuchstaben, `U` wird zu `T`.
+/// Uppercase, `U` wird zu `T`.
 fn normalize(bases: &str) -> String {
     bases.to_ascii_uppercase().replace('U', "T")
 }
@@ -139,7 +139,7 @@ fn orfs_on(text: &str, min_codons: usize) -> Vec<(usize, usize)> {
 /// - Reverse-Strang: auf dem Reverse-Komplement suchen und das Intervall zurückrechnen; `Strand::Reverse`,
 ///   Intervall in Koordinaten der Vorwärtssequenz.
 /// - Name: `ORF {start+1}..{end} (+)` bzw. `(-)` mit den 1-basierten Grenzen des Intervalls auf dem Vorwärtsstrang.
-/// - Qualifier: `("note", ["{n} Aminosäuren"])` mit n = Codons ohne Stopcodon.
+/// - Qualifier: `("note", ["{n} amino acids"])` mit n = Codons ohne Stopcodon.
 /// - Ergebnis sortiert nach Start, dann Ende, dann Forward vor Reverse. `U` zählt wie `T`, Schreibweise egal.
 pub fn find_orf_features(bases: &str, min_codons: usize) -> Result<Vec<Feature>> {
     let min_codons = min_codons.max(1);
@@ -158,7 +158,7 @@ pub fn find_orf_features(bases: &str, min_codons: usize) -> Result<Vec<Feature>>
             } else {
                 Strand::Forward
             };
-            let note = vec![("note".to_string(), vec![format!("{} Aminosäuren", amino)])];
+            let note = vec![("note".to_string(), vec![format!("{} amino acids", amino)])];
             all.push((
                 start,
                 end,
@@ -265,7 +265,7 @@ mod tests {
         assert_eq!(f[0].feature_type(), "CDS");
         assert_eq!(f[0].name(), "ORF 1..9 (+)");
         assert_eq!(span(&f[0]), (0, 9, Strand::Forward));
-        assert_eq!(f[0].qualifier("note"), Some("2 Aminosäuren"));
+        assert_eq!(f[0].qualifier("note"), Some("2 amino acids"));
         assert!(find_orf_features("ATGAAATAG", 3).unwrap().is_empty());
     }
 
@@ -291,7 +291,7 @@ mod tests {
         let f = find_orf_features("ATGATGAAATAG", 1).unwrap();
         assert_eq!(f.len(), 1);
         assert_eq!(span(&f[0]), (0, 12, Strand::Forward));
-        assert_eq!(f[0].qualifier("note"), Some("3 Aminosäuren"));
+        assert_eq!(f[0].qualifier("note"), Some("3 amino acids"));
     }
 
     #[test]
@@ -306,7 +306,7 @@ mod tests {
         let f = find_orf_features("augtaa", 0).unwrap();
         assert_eq!(f.len(), 1);
         assert_eq!(span(&f[0]), (0, 6, Strand::Forward));
-        assert_eq!(f[0].qualifier("note"), Some("1 Aminosäuren"));
+        assert_eq!(f[0].qualifier("note"), Some("1 amino acids"));
     }
 
     #[test]

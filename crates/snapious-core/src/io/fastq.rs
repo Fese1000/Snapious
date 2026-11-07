@@ -52,24 +52,24 @@ pub fn parse(text: &str) -> Result<Vec<FastqRecord>> {
         let header = lines[i];
         let Some(h) = header.strip_prefix('@') else {
             return Err(Error::Io(format!(
-                "Zeile {}: Kopfzeile mit '@' erwartet",
+                "Line {}: Header line starting with '@' expected",
                 i + 1
             )));
         };
         if i + 3 >= lines.len() {
             return Err(Error::Io(format!(
-                "Zeile {}: Eintrag ist unvollständig (4 Zeilen erwartet)",
+                "Line {}: Entry is incomplete (4 lines expected)",
                 i + 1
             )));
         }
         if !lines[i + 2].starts_with('+') {
-            return Err(Error::Io(format!("Zeile {}: '+' erwartet", i + 3)));
+            return Err(Error::Io(format!("Line {}: '+' expected", i + 3)));
         }
         let sequence = lines[i + 1].trim().to_ascii_uppercase();
         let quality = lines[i + 3].trim().to_string();
         if sequence.len() != quality.len() {
             return Err(Error::Io(format!(
-                "Zeile {}: Sequenz ({}) und Qualität ({}) haben unterschiedliche Länge",
+                "Line {}: Sequence ({}) and quality ({}) have different lengths",
                 i + 4,
                 sequence.len(),
                 quality.len()
@@ -163,9 +163,9 @@ mod tests {
 
     #[test]
     fn fehler_mit_zeilennummer() {
-        assert!(matches!(parse("@r\nACGT\n+\nIII\n"), Err(Error::Io(m)) if m.contains("Zeile 4")));
-        assert!(matches!(parse("r\nACGT\n+\nIIII\n"), Err(Error::Io(m)) if m.contains("Zeile 1")));
-        assert!(matches!(parse("@r\nACGT\n"), Err(Error::Io(m)) if m.contains("unvollständig")));
+        assert!(matches!(parse("@r\nACGT\n+\nIII\n"), Err(Error::Io(m)) if m.contains("Line 4")));
+        assert!(matches!(parse("r\nACGT\n+\nIIII\n"), Err(Error::Io(m)) if m.contains("Line 1")));
+        assert!(matches!(parse("@r\nACGT\n"), Err(Error::Io(m)) if m.contains("incomplete")));
         assert!(matches!(parse("@r\nACGT\nx\nIIII\n"), Err(Error::Io(m)) if m.contains("'+'")));
     }
 

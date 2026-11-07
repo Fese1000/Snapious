@@ -28,7 +28,7 @@ pub struct Pdb {
     pub atoms: Vec<Atom>,
 }
 
-/// Dreibuchstabencode → Einbuchstabencode der 20 Standard-Aminosäuren (Großbuchstaben, z. B. `GLY` → `G`); `MSE` zählt als `M`,
+/// Dreibuchstabencode → Einbuchstabencode der 20 Standard-Aminosäuren (Uppercase, z. B. `GLY` → `G`); `MSE` zählt als `M`,
 /// alles andere ist `X`.
 pub fn one_letter(residue: &str) -> char {
     let upper = residue.trim().to_uppercase();
@@ -172,7 +172,7 @@ impl Pdb {
     /// Mittelpunkt aller Atome (Mittel von x, y, z); `Error::InvalidInput` ohne Atome.
     pub fn center(&self) -> Result<(f64, f64, f64)> {
         if self.atoms.is_empty() {
-            return Err(Error::InvalidInput("Keine Atome vorhanden".into()));
+            return Err(Error::InvalidInput("No atoms present".into()));
         }
         let mut sum_x = 0.0;
         let mut sum_y = 0.0;

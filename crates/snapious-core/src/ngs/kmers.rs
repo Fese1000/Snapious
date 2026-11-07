@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-/// Zählt alle k-mer der Länge `k` in allen Sequenzen (Großbuchstaben; Groß-/Kleinschreibung egal). k-mer, die ein anderes Zeichen
+/// Zählt alle k-mer der Länge `k` in allen Sequenzen (Uppercase; Groß-/Kleinschreibung egal). k-mer, die ein anderes Zeichen
 /// als A, C, G, T enthalten, werden nicht gezählt. `k == 0` oder Sequenzen kürzer als `k` tragen nichts bei.
 pub fn count_kmers(seqs: &[String], k: usize) -> BTreeMap<String, usize> {
     let mut out: BTreeMap<String, usize> = BTreeMap::new();

@@ -49,7 +49,7 @@ pub fn parse_ace(text: &str) -> Result<Vec<AceContig>> {
                     Some(s) => c.reads[i].sequence = s,
                     None => {
                         return Err(Error::InvalidInput(format!(
-                            "Read '{name}' hat keine Sequenz (RD fehlt)"
+                            "Read '{name}' has no sequence (RD missing)"
                         )))
                     }
                 }
@@ -66,7 +66,7 @@ pub fn parse_ace(text: &str) -> Result<Vec<AceContig>> {
                 finish(&mut contigs, &mut pending)?;
                 if f.len() < 6 {
                     return Err(Error::InvalidInput(
-                        "CO-Zeile hat zu wenige Felder".to_string(),
+                        "CO line has too few fields".to_string(),
                     ));
                 }
                 let mut consensus = String::new();
@@ -91,11 +91,11 @@ pub fn parse_ace(text: &str) -> Result<Vec<AceContig>> {
             }
             Some("AF") => {
                 if f.len() < 4 || contigs.is_empty() {
-                    return Err(Error::InvalidInput("AF-Zeile ungültig".to_string()));
+                    return Err(Error::InvalidInput("Invalid AF line".to_string()));
                 }
                 let offset = f[3]
                     .parse::<i64>()
-                    .map_err(|_| Error::InvalidInput(format!("Ungültiger Versatz '{}'", f[3])))?;
+                    .map_err(|_| Error::InvalidInput(format!("Invalid offset '{}'", f[3])))?;
                 if let Some(c) = contigs.last_mut() {
                     c.reads.push(AceRead {
                         name: f[1].to_string(),
@@ -108,7 +108,7 @@ pub fn parse_ace(text: &str) -> Result<Vec<AceContig>> {
             }
             Some("RD") => {
                 if f.len() < 5 || contigs.is_empty() {
-                    return Err(Error::InvalidInput("RD-Zeile ungültig".to_string()));
+                    return Err(Error::InvalidInput("Invalid RD line".to_string()));
                 }
                 let mut seq = String::new();
                 for l in lines.by_ref() {
@@ -121,7 +121,7 @@ pub fn parse_ace(text: &str) -> Result<Vec<AceContig>> {
                     Some(slot) => slot.1 = Some(seq),
                     None => {
                         return Err(Error::InvalidInput(format!(
-                            "Read '{}' hat keine AF-Zeile",
+                            "Read '{}' has no AF line",
                             f[1]
                         )))
                     }
@@ -133,7 +133,7 @@ pub fn parse_ace(text: &str) -> Result<Vec<AceContig>> {
     finish(&mut contigs, &mut pending)?;
     if contigs.is_empty() {
         return Err(Error::InvalidInput(
-            "Keine Contigs in der ACE-Datei".to_string(),
+            "No contigs in the ACE file".to_string(),
         ));
     }
     Ok(contigs)

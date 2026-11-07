@@ -39,7 +39,7 @@ pub struct TrimStats {
 /// Schneidet einen Read zu und liefert `(Ergebnis, Adapter gefunden)`; das Ergebnis ist `None`, wenn der Rest kürzer als `min_length` ist.
 /// 1. Adapter: für `p` von 0 an (früheste Position zuerst): `m = min(Adapterlänge, Readlänge − p)`; ist `m < adapter_min_overlap`, Abbruch der Suche
 ///    (keine weitere Position kann passen). Sonst zählt Hamming-Abweichungen zwischen `bases[p..p+m]` und `adapter[..m]`
-///    (Großbuchstaben, ohne Unterschied zwischen Groß- und Kleinschreibung); `<= max_adapter_mismatches` → der Read wird bei `p` abgeschnitten,
+///    (Uppercase, ohne Unterschied zwischen Groß- und Kleinschreibung); `<= max_adapter_mismatches` → der Read wird bei `p` abgeschnitten,
 ///    Adapter gefunden. Ein leerer Adapter findet nichts.
 /// 2. Qualität: Phred = Zeichen − 33 (nicht unter 0). Fenster der Länge `window_size` (höchstens Readlänge; `window_size == 0` schaltet den Schritt ab)
 ///    von links: beginnt das erste Fenster mit Mittelwert `< window_mean_quality` bei Index `i`, wird bei `i` abgeschnitten.

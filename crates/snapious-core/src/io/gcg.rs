@@ -4,7 +4,7 @@ use crate::error::{Error, Result};
 
 /// Liest eine GCG-Sequenz. Gesucht wird die erste Zeile, die (getrimmt) mit `..` endet; der Name ist ihr erstes durch Leerraum
 /// getrenntes Wort. Alle Zeilen danach sind Sequenz: nur Buchstaben bleiben (Zeilennummern, Leerraum usw. entfallen), in
-/// Großbuchstaben. Ergebnis `(Name, Sequenz)`. Fehler `Error::InvalidInput`, wenn es keine solche Zeile gibt oder die Sequenz leer ist.
+/// Uppercase. Ergebnis `(Name, Sequenz)`. Fehler `Error::InvalidInput`, wenn es keine solche Zeile gibt oder die Sequenz leer ist.
 pub fn parse_gcg(text: &str) -> Result<(String, String)> {
     let mut found_marker = false;
     let mut name = String::new();
@@ -18,7 +18,7 @@ pub fn parse_gcg(text: &str) -> Result<(String, String)> {
                 if let Some(first_word) = trimmed.split_whitespace().next() {
                     name = first_word.to_string();
                 } else {
-                    return Err(Error::InvalidInput("Kein Name in Marker-Zeile".to_string()));
+                    return Err(Error::InvalidInput("No name in marker line".to_string()));
                 }
                 found_marker = true;
             }
@@ -34,12 +34,12 @@ pub fn parse_gcg(text: &str) -> Result<(String, String)> {
 
     if !found_marker {
         return Err(Error::InvalidInput(
-            "Keine GCG-Marker-Zeile (.. am Ende) gefunden".to_string(),
+            "No GCG marker line (.. at the end) found".to_string(),
         ));
     }
 
     if sequence.is_empty() {
-        return Err(Error::InvalidInput("Sequenz ist leer".to_string()));
+        return Err(Error::InvalidInput("Sequence is empty".to_string()));
     }
 
     Ok((name, sequence.into_iter().collect()))

@@ -10,10 +10,10 @@ fn first_sequence(inputs: &[Document]) -> Result<&SequenceDocument> {
     match inputs.first() {
         Some(Document::Sequence(d)) => Ok(d),
         Some(_) => Err(Error::Operation(
-            "Das Dokument ist keine Sequenz".to_string(),
+            "The document is not a sequence".to_string(),
         )),
         None => Err(Error::Operation(
-            "Es wurde keine Sequenz übergeben".to_string(),
+            "No sequence was provided".to_string(),
         )),
     }
 }
@@ -27,7 +27,7 @@ impl Operation for ReverseComplementOperation {
     }
 
     fn label(&self) -> &str {
-        "Reverse-Komplement"
+        "Reverse complement"
     }
 
     fn run(
@@ -43,7 +43,7 @@ impl Operation for ReverseComplementOperation {
             .derive(&format!("{} (rev-kom)", doc.name()));
         Ok(OperationResult {
             outputs: vec![Document::Sequence(rc)],
-            summary: format!("Reverse-Komplement von {} ({} bp)", doc.name(), doc.len()),
+            summary: format!("Reverse complement of {} ({} bp)", doc.name(), doc.len()),
         })
     }
 }
@@ -57,7 +57,7 @@ impl Operation for InsertOperation {
     }
 
     fn label(&self) -> &str {
-        "Basen einfügen"
+        "Insert bases"
     }
 
     fn run(
@@ -72,10 +72,10 @@ impl Operation for InsertOperation {
         let edited = doc
             .insert(position, bases)
             .map_err(|e| Error::Operation(e.to_string()))?
-            .derive(&format!("{} (bearbeitet)", doc.name()));
+            .derive(&format!("{} (edited)", doc.name()));
         Ok(OperationResult {
             outputs: vec![Document::Sequence(edited)],
-            summary: format!("{} Basen an Position {} eingefügt", bases.len(), position),
+            summary: format!("{} bases inserted at position {}", bases.len(), position),
         })
     }
 }

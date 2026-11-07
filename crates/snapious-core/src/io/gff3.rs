@@ -85,7 +85,7 @@ pub fn parse_gff3(text: &str) -> Result<Vec<Gff3Record>> {
         let cols: Vec<&str> = trimmed.split('\t').collect();
         if cols.len() != 9 {
             return Err(Error::InvalidInput(format!(
-                "Zeile {} hat {} statt 9 Spalten",
+                "Line {} has {} instead of 9 columns",
                 num,
                 cols.len()
             )));
@@ -98,7 +98,7 @@ pub fn parse_gff3(text: &str) -> Result<Vec<Gff3Record>> {
         let start: usize = parse_u32(cols[3], num)?;
         if start < 1 {
             return Err(Error::InvalidInput(format!(
-                "Zeile {}: Start muss >= 1 sein",
+                "Line {}: Start must be >= 1",
                 num
             )));
         }
@@ -106,7 +106,7 @@ pub fn parse_gff3(text: &str) -> Result<Vec<Gff3Record>> {
         let end: usize = parse_u32(cols[4], num)?;
         if end < start {
             return Err(Error::InvalidInput(format!(
-                "Zeile {}: End muss >= Start sein",
+                "Line {}: End must be >= Start",
                 num
             )));
         }
@@ -134,7 +134,7 @@ pub fn parse_gff3(text: &str) -> Result<Vec<Gff3Record>> {
 fn parse_u32(s: &str, line: usize) -> Result<usize> {
     s.parse::<u32>()
         .map(|v| v as usize)
-        .map_err(|_| Error::InvalidInput(format!("Zeile {}: ungültige Position", line)))
+        .map_err(|_| Error::InvalidInput(format!("Line {}: invalid position", line)))
 }
 
 fn parse_score(s: &str, line: usize) -> Result<Option<f64>> {
@@ -143,7 +143,7 @@ fn parse_score(s: &str, line: usize) -> Result<Option<f64>> {
     } else {
         Some(
             s.parse::<f64>()
-                .map_err(|_| Error::InvalidInput(format!("Zeile {}: ungültiger Score", line))),
+                .map_err(|_| Error::InvalidInput(format!("Line {}: invalid score", line))),
         )
         .transpose()
     }
@@ -156,7 +156,7 @@ fn parse_strand(s: &str, line: usize) -> Result<Strand> {
         "-" => Ok(Strand::Reverse),
         "?" => Ok(Strand::None),
         _ => Err(Error::InvalidInput(format!(
-            "Zeile {}: ungültiger Strang",
+            "Line {}: invalid strand",
             line
         ))),
     }
@@ -168,10 +168,10 @@ fn parse_phase(s: &str, line: usize) -> Result<Option<u8>> {
     } else {
         let p: u8 = s
             .parse()
-            .map_err(|_| Error::InvalidInput(format!("Zeile {}: ungültige Phase", line)))?;
+            .map_err(|_| Error::InvalidInput(format!("Line {}: invalid phase", line)))?;
         if p > 2 {
             Err(Error::InvalidInput(format!(
-                "Zeile {}: Phase muss 0, 1 oder 2 sein",
+                "Line {}: Phase must be 0, 1 or 2",
                 line
             )))
         } else {
@@ -192,7 +192,7 @@ fn parse_attributes(s: &str, line: usize) -> Result<Vec<(String, String)>> {
         let kv: Vec<&str> = part.splitn(2, '=').collect();
         if kv.len() != 2 {
             return Err(Error::InvalidInput(format!(
-                "Zeile {}: ungültiges Attribut '{}'",
+                "Line {}: invalid attribute '{}'",
                 line, part
             )));
         }

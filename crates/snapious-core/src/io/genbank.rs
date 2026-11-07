@@ -111,7 +111,7 @@ fn parse_record(lines: &[(usize, &str)]) -> Result<SequenceDocument> {
     }
 
     if name.is_empty() {
-        return Err(Error::Io("LOCUS-Zeile ohne Namen".to_string()));
+        return Err(Error::Io("LOCUS line without a name".to_string()));
     }
 
     let lowered: String = origin
@@ -137,7 +137,7 @@ fn parse_record(lines: &[(usize, &str)]) -> Result<SequenceDocument> {
             let u = c.to_ascii_uppercase();
             if !u.is_ascii() || !allowed.contains(&(u as u8)) {
                 return Err(Error::Io(format!(
-                    "Zeile {}: Ungültiges Zeichen '{}' in der Sequenz",
+                    "Line {}: Invalid character '{}' in the sequence",
                     no, c
                 )));
             }
@@ -214,7 +214,7 @@ fn build_feature(raw: &RawFeature, seq_len: usize) -> Result<Feature> {
     let location = parse_location(&raw.location, raw.line)?;
     if location.end() > seq_len {
         return Err(Error::Io(format!(
-            "Zeile {}: Position {} liegt hinter dem Sequenzende ({})",
+            "Line {}: Position {} lies beyond the end of the sequence ({})",
             raw.line,
             location.end(),
             seq_len
@@ -277,7 +277,7 @@ fn parse_loc_inner(s: &str, line: usize) -> Result<Parsed> {
         let (r, strand, ps, pe) = parse_loc_inner(inner, line)?;
         if strand == Strand::Reverse {
             return Err(Error::Io(format!(
-                "Zeile {}: nicht unterstützt: verschachteltes complement",
+                "Line {}: not supported: nested complement",
                 line
             )));
         }
@@ -292,7 +292,7 @@ fn parse_loc_inner(s: &str, line: usize) -> Result<Parsed> {
             for (i, part) in parts.iter().enumerate() {
                 if part.starts_with("complement(") || part.starts_with("join(") {
                     return Err(Error::Io(format!(
-                        "Zeile {}: nicht unterstützt: {}",
+                        "Line {}: not supported: {}",
                         line, s
                     )));
                 }
@@ -313,7 +313,7 @@ fn parse_loc_inner(s: &str, line: usize) -> Result<Parsed> {
 
 fn parse_num(t: &str, line: usize) -> Result<usize> {
     t.parse::<usize>()
-        .map_err(|_| Error::Io(format!("Zeile {}: Ungültige Position '{}'", line, t)))
+        .map_err(|_| Error::Io(format!("Line {}: Invalid position '{}'", line, t)))
 }
 
 fn parse_range(s: &str, line: usize) -> Result<Parsed> {
@@ -350,7 +350,7 @@ fn parse_range(s: &str, line: usize) -> Result<Parsed> {
     };
     if start == 0 || end < start {
         return Err(Error::Io(format!(
-            "Zeile {}: Ungültiger Bereich '{}'",
+            "Line {}: Invalid range '{}'",
             line, s
         )));
     }
@@ -599,7 +599,7 @@ mod tests {
     fn ungueltiges_zeichen_in_origin() {
         let text = MINI.replace("atgcatgcat gcatgcatgc", "atgcatgxat gcatgcatgc");
         match parse(&text) {
-            Err(Error::Io(m)) => assert!(m.contains("Zeile") && m.contains('x')),
+            Err(Error::Io(m)) => assert!(m.contains("Line") && m.contains('x')),
             other => panic!("unerwartet: {:?}", other),
         }
     }

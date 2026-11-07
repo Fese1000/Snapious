@@ -23,35 +23,35 @@ pub struct ScfRead {
 fn u32_at(data: &[u8], pos: usize) -> Result<u32> {
     let end = pos
         .checked_add(4)
-        .ok_or_else(|| Error::InvalidInput("SCF: Position zu groß".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("SCF: position too large".to_string()))?;
     let b = data
         .get(pos..end)
-        .ok_or_else(|| Error::InvalidInput("SCF: Datei zu kurz".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("SCF: file too short".to_string()))?;
     Ok(u32::from_be_bytes([b[0], b[1], b[2], b[3]]))
 }
 
 fn slice_at(data: &[u8], pos: usize, len: usize) -> Result<&[u8]> {
     let end = pos
         .checked_add(len)
-        .ok_or_else(|| Error::InvalidInput("SCF: Abschnitt zu groß".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("SCF: section too large".to_string()))?;
     data.get(pos..end)
-        .ok_or_else(|| Error::InvalidInput("SCF: Abschnitt reicht über das Dateiende".to_string()))
+        .ok_or_else(|| Error::InvalidInput("SCF: section extends beyond the end of the file".to_string()))
 }
 
 pub fn parse_scf(data: &[u8]) -> Result<ScfRead> {
     if data.len() < 128 || &data[..4] != b".scf" {
-        return Err(Error::InvalidInput("Keine SCF-Datei".to_string()));
+        return Err(Error::InvalidInput("Not an SCF file".to_string()));
     }
     if &data[36..40] != b"3.00" {
         return Err(Error::InvalidInput(
-            "Nur SCF Version 3.00 wird unterstützt".to_string(),
+            "Only SCF version 3.00 is supported".to_string(),
         ));
     }
     let bases = u32_at(data, 12)? as usize;
     let offset = u32_at(data, 24)? as usize;
     let peaks_len = bases
         .checked_mul(4)
-        .ok_or_else(|| Error::InvalidInput("SCF: Zahl der Basen zu groß".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("SCF: number of bases too large".to_string()))?;
     let peaks_raw = slice_at(data, offset, peaks_len)?;
     let peaks: Vec<u32> = peaks_raw
         .as_chunks::<4>()
@@ -101,11 +101,11 @@ pub fn parse_scf(data: &[u8]) -> Result<ScfRead> {
 /// Beispiel: gespeichert `[10, 0, 0]` ergibt `[10, 20, 30]`.
 pub fn parse_scf_samples(data: &[u8]) -> Result<Vec<Vec<u16>>> {
     if data.len() < 128 || &data[..4] != b".scf" {
-        return Err(Error::InvalidInput("Keine SCF-Datei".to_string()));
+        return Err(Error::InvalidInput("Not an SCF file".to_string()));
     }
     if &data[36..40] != b"3.00" {
         return Err(Error::InvalidInput(
-            "Nur SCF Version 3.00 wird unterstützt".to_string(),
+            "Only SCF version 3.00 is supported".to_string(),
         ));
     }
     let samples = u32_at(data, 4)? as usize;
@@ -113,18 +113,18 @@ pub fn parse_scf_samples(data: &[u8]) -> Result<Vec<Vec<u16>>> {
     let size = u32_at(data, 40)? as usize;
     if size != 1 && size != 2 {
         return Err(Error::InvalidInput(
-            "Die Größe der Messwerte muss 1 oder 2 Bytes sein".to_string(),
+            "The sample size must be 1 or 2 bytes".to_string(),
         ));
     }
     let channel_len = samples
         .checked_mul(size)
-        .ok_or_else(|| Error::InvalidInput("SCF: Zahl der Messwerte zu groß".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("SCF: number of samples too large".to_string()))?;
     let mut out = Vec::with_capacity(4);
     for ch in 0..4usize {
         let start = ch
             .checked_mul(channel_len)
             .and_then(|o| o.checked_add(offset))
-            .ok_or_else(|| Error::InvalidInput("SCF: Abschnitt zu groß".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("SCF: section too large".to_string()))?;
         let raw = slice_at(data, start, channel_len)?;
         let mut values: Vec<u16> = if size == 2 {
             raw.chunks(2)

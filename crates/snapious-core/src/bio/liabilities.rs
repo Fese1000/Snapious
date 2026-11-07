@@ -9,11 +9,11 @@ pub struct Liability {
     pub length: usize,
     /// Art, genau einer der Texte: `N-Glykosylierung`, `Deamidierung`, `Isomerisierung`, `Oxidation`, `Freies Cystein`.
     pub kind: String,
-    /// Die Aminosäuren des Motivs in Großbuchstaben.
+    /// Die Aminosäuren des Motivs in Uppercase.
     pub motif: String,
 }
 
-/// Sucht alle Schwachstellen (Großbuchstaben erwartet, andere Zeichen werden nur als Platzhalter gezählt; Groß-/Kleinschreibung egal).
+/// Sucht alle Schwachstellen (Uppercase erwartet, andere Zeichen werden nur als Platzhalter gezählt; Groß-/Kleinschreibung egal).
 /// Regeln, überlappende Treffer sind erlaubt:
 /// * `N-Glykosylierung`: drei Aminosäuren `N`, dann irgendeine außer `P`, dann `S` oder `T` (Länge 3).
 /// * `Deamidierung`: `NG` oder `NS` (Länge 2).
@@ -54,7 +54,7 @@ pub fn find_liabilities(protein: &str) -> Vec<Liability> {
                 results.push(Liability {
                     position: i,
                     length: 2,
-                    kind: "Deamidierung".to_string(),
+                    kind: "Deamidation".to_string(),
                     motif: String::from_utf8_lossy(&seq[i..i + 2]).to_string(),
                 });
             }
@@ -67,7 +67,7 @@ pub fn find_liabilities(protein: &str) -> Vec<Liability> {
                 results.push(Liability {
                     position: i,
                     length: 2,
-                    kind: "Isomerisierung".to_string(),
+                    kind: "Isomerization".to_string(),
                     motif: String::from_utf8_lossy(&seq[i..i + 2]).to_string(),
                 });
             }
@@ -88,7 +88,7 @@ pub fn find_liabilities(protein: &str) -> Vec<Liability> {
             results.push(Liability {
                 position: i,
                 length: 1,
-                kind: "Freies Cystein".to_string(),
+                kind: "Free cysteine".to_string(),
                 motif: String::from_utf8_lossy(&seq[i..i + 1]).to_string(),
             });
         }
@@ -116,11 +116,11 @@ mod tests {
             find_liabilities("ANSTGDSMWC"),
             vec![
                 l(1, 3, "N-Glykosylierung", "NST"),
-                l(1, 2, "Deamidierung", "NS"),
-                l(5, 2, "Isomerisierung", "DS"),
+                l(1, 2, "Deamidation", "NS"),
+                l(5, 2, "Isomerization", "DS"),
                 l(7, 1, "Oxidation", "M"),
                 l(8, 1, "Oxidation", "W"),
-                l(9, 1, "Freies Cystein", "C"),
+                l(9, 1, "Free cysteine", "C"),
             ]
         );
     }
@@ -134,7 +134,7 @@ mod tests {
             find_liabilities("ngt"),
             vec![
                 l(0, 3, "N-Glykosylierung", "NGT"),
-                l(0, 2, "Deamidierung", "NG")
+                l(0, 2, "Deamidation", "NG")
             ]
         );
         // zwei Glykosylierungsstellen überlappen: NNSS

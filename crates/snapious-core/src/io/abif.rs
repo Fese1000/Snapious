@@ -23,7 +23,7 @@ pub struct DirEntry {
 /// Inhalt einer Sequenzierspur.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Chromatogram {
-    /// Basen (Tag `PBAS`, Nummer 1; bei fehlender Nummer 1 die Nummer 2), Großbuchstaben.
+    /// Basen (Tag `PBAS`, Nummer 1; bei fehlender Nummer 1 die Nummer 2), Uppercase.
     pub bases: String,
     /// Qualitäten (Tag `PCON`, Nummer 1, sonst 2), je Base ein Byte; leer, wenn der Tag fehlt.
     pub quality: Vec<u8>,
@@ -54,15 +54,15 @@ fn be_i32(bytes: &[u8], at: usize) -> Option<i32> {
 pub fn read_directory(bytes: &[u8]) -> Result<Vec<DirEntry>> {
     if bytes.len() < 34 {
         return Err(Error::InvalidInput(
-            "Die Datei ist zu kurz für ABIF".to_string(),
+            "The file is too short for ABIF".to_string(),
         ));
     }
     if bytes.get(0..4) != Some(b"ABIF".as_slice()) {
         return Err(Error::InvalidInput(
-            "Keine ABIF-Datei (Kennung fehlt)".to_string(),
+            "Not an ABIF file (signature missing)".to_string(),
         ));
     }
-    let bad = || Error::InvalidInput("Das ABIF-Verzeichnis ist fehlerhaft".to_string());
+    let bad = || Error::InvalidInput("The ABIF directory is corrupt".to_string());
     let count = be_i32(bytes, 18).ok_or_else(bad)?;
     let offset = be_i32(bytes, 26).ok_or_else(bad)?;
     if count < 0 || offset < 0 {
@@ -100,7 +100,7 @@ pub fn read_directory(bytes: &[u8]) -> Result<Vec<DirEntry>> {
 pub fn entry_data(bytes: &[u8], entry: &DirEntry) -> Result<Vec<u8>> {
     if entry.data_size < 0 {
         return Err(Error::InvalidInput(format!(
-            "Eintrag {} hat eine negative Datengröße",
+            "Entry {} has a negative data size",
             entry.name
         )));
     }
@@ -111,7 +111,7 @@ pub fn entry_data(bytes: &[u8], entry: &DirEntry) -> Result<Vec<u8>> {
     }
     let start = usize::try_from(entry.data_offset).map_err(|_| {
         Error::InvalidInput(format!(
-            "Eintrag {} hat einen ungültigen Datenort",
+            "Entry {} has an invalid data location",
             entry.name
         ))
     })?;
@@ -120,7 +120,7 @@ pub fn entry_data(bytes: &[u8], entry: &DirEntry) -> Result<Vec<u8>> {
         .map(<[u8]>::to_vec)
         .ok_or_else(|| {
             Error::InvalidInput(format!(
-                "Die Daten von {} liegen außerhalb der Datei",
+                "The data of {} lie outside the file",
                 entry.name
             ))
         })
@@ -135,7 +135,7 @@ pub fn parse_abif(bytes: &[u8]) -> Result<Chromatogram> {
             .find_map(|n| dir.iter().find(|e| e.name == name && e.number == *n))
     };
     let base_entry = find("PBAS", &[1, 2])
-        .ok_or_else(|| Error::InvalidInput("Die Datei enthält keine Basen (PBAS)".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("The file contains no bases (PBAS)".to_string()))?;
     let bases = String::from_utf8_lossy(&entry_data(bytes, base_entry)?).to_ascii_uppercase();
     let quality = match find("PCON", &[1, 2]) {
         Some(e) => entry_data(bytes, e)?,

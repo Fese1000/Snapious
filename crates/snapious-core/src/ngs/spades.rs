@@ -54,12 +54,12 @@ pub fn parse_node_name(name: &str) -> Option<(u64, f64)> {
 
 /// Setzt den Text von `contigs.fasta` in Dokumente um: je Eintrag ein DNA-Dokument mit dem Namen des FASTA-Eintrags (erstes Wort der Kopfzeile)
 /// und Metadaten `length` (Zahl der Basen als Text), und, wenn `parse_node_name` passt, `coverage` (Abdeckung als Text mit `to_string` der Zahl, z. B. `5.5`)
-/// sowie `source = "spades"`. Ein Text ohne Einträge ergibt `Error::InvalidInput("SPAdes lieferte keine Contigs")`; FASTA-Fehler werden weitergegeben.
+/// sowie `source = "spades"`. Ein Text ohne Einträge ergibt `Error::InvalidInput("SPAdes returned no contigs")`; FASTA-Fehler werden weitergegeben.
 pub fn contigs_to_documents(fasta_text: &str) -> Result<Vec<SequenceDocument>> {
     let sequences = fasta::parse(fasta_text)?;
     if sequences.is_empty() {
         return Err(Error::InvalidInput(
-            "SPAdes lieferte keine Contigs".to_string(),
+            "SPAdes returned no contigs".to_string(),
         ));
     }
 

@@ -21,10 +21,10 @@ pub fn parse_xyz(text: &str) -> Result<Vec<XyzAtom>> {
     // Zeile 1: Atomzahl
     let atom_count_line = lines
         .next()
-        .ok_or_else(|| Error::InvalidInput("Datei ist leer".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("File is empty".to_string()))?;
 
     let n: usize = atom_count_line.trim().parse::<usize>().map_err(|_| {
-        Error::InvalidInput(format!("Ungültige Atomzahl: '{}'", atom_count_line.trim()))
+        Error::InvalidInput(format!("Invalid atom count: '{}'", atom_count_line.trim()))
     })?;
 
     // Zeile 2: Kommentar (wird ignoriert, muss aber existieren wenn n > 0 oder Datei nicht leer ist)
@@ -39,7 +39,7 @@ pub fn parse_xyz(text: &str) -> Result<Vec<XyzAtom>> {
     for i in 0..n {
         let line = lines.next().ok_or_else(|| {
             Error::InvalidInput(format!(
-                "Weniger Atomzeilen als angegeben (erwartet {}, gefunden {})",
+                "Fewer atom lines than specified (expected {}, found {})",
                 n, i
             ))
         })?;
@@ -48,7 +48,7 @@ pub fn parse_xyz(text: &str) -> Result<Vec<XyzAtom>> {
 
         if parts.len() < 4 {
             return Err(Error::InvalidInput(format!(
-                "Atomzeile {} hat weniger als 4 Felder: '{}'",
+                "Atom line {} has fewer than 4 fields: '{}'",
                 i + 1,
                 line
             )));
@@ -60,7 +60,7 @@ pub fn parse_xyz(text: &str) -> Result<Vec<XyzAtom>> {
         let mut element_chars = element_raw.chars();
         let first_char = element_chars
             .next()
-            .ok_or_else(|| Error::InvalidInput("Leeres Elementsymbol".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("Empty element symbol".to_string()))?;
 
         let element = if first_char.is_ascii_alphabetic() {
             let upper_first = first_char.to_ascii_uppercase();
@@ -75,15 +75,15 @@ pub fn parse_xyz(text: &str) -> Result<Vec<XyzAtom>> {
 
         let x: f64 = parts[1]
             .parse::<f64>()
-            .map_err(|_| Error::InvalidInput(format!("Ungültige X-Koordinate '{}'", parts[1])))?;
+            .map_err(|_| Error::InvalidInput(format!("Invalid X coordinate '{}'", parts[1])))?;
 
         let y: f64 = parts[2]
             .parse::<f64>()
-            .map_err(|_| Error::InvalidInput(format!("Ungültige Y-Koordinate '{}'", parts[2])))?;
+            .map_err(|_| Error::InvalidInput(format!("Invalid Y coordinate '{}'", parts[2])))?;
 
         let z: f64 = parts[3]
             .parse::<f64>()
-            .map_err(|_| Error::InvalidInput(format!("Ungültige Z-Koordinate '{}'", parts[3])))?;
+            .map_err(|_| Error::InvalidInput(format!("Invalid Z coordinate '{}'", parts[3])))?;
 
         atoms.push(XyzAtom { element, x, y, z });
     }

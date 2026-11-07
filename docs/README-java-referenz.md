@@ -1,185 +1,185 @@
 # Snapious BioTools
 
-**Eine moderne, quelloffene Bioinformatik-Suite inspiriert von Geneious Prime.**
+**A modern, open-source bioinformatics suite inspired by Geneious Prime.**
 
 ---
 
-## Übersicht
+## Overview
 
-Snapious BioTools ist eine vollständige Desktop-Anwendung für molekulare Sequenzanalyse.
-Im Gegensatz zu Geneious Prime (215+ Plugins, komplexe Architektur) bietet Snapious
-die **Kernfunktionalität** in einer **sauberen, gut dokumentierten Java-Codebasis**:
+Snapious BioTools is a complete desktop application for molecular sequence analysis.
+In contrast to Geneious Prime (215+ plugins, complex architecture), Snapious offers
+the **core functionality** in a **clean, well-documented Java codebase**:
 
 | Feature | Geneious Prime | Snapious BioTools |
 |---------|---------------|-------------------|
-| Komponenten | 215+ Plugins | 13 fokussierte Module |
-| Abhängigkeiten | BioJava, externe Tools | Keine externen libs |
-| Lizenz | Proprietär (ca. $5000/Jahr) | MIT Open Source |
-| Plattformen | Windows, macOS, Linux | Java 21 (cross-platform) |
-| Benutzeroberfläche | Swing-basiert | Swing |
-| Preis | Kommerziell | Kostenlos |
+| Components | 215+ plugins | 13 focused modules |
+| Dependencies | BioJava, external tools | No external libs |
+| License | Proprietary (approx. $5000/year) | MIT open source |
+| Platforms | Windows, macOS, Linux | Java 21 (cross-platform) |
+| User interface | Swing-based | Swing |
+| Price | Commercial | Free |
 
-### Kernmodule
+### Core modules
 
 ```
 com.snapious/
-├── core/          — Sequenz-Datenmodell (DNA, RNA, Protein)
-├── alignment/     — Needleman-Wunsch & Smith-Waterman Algorithmen
-├── analysis/      — Phylogenie (NJ, UPGMA, Bootstrap)
+├── core/          — Sequence data model (DNA, RNA, protein)
+├── alignment/     — Needleman-Wunsch & Smith-Waterman algorithms
+├── analysis/      — Phylogeny (NJ, UPGMA, bootstrap)
 ├── io/            — File I/O (FASTA, FASTQ, GenBank, SAM, VCF, Newick)
-├── visualization/ — Swing-Zeichnung der Phylogenie-Bäume
-└── ui/            — Zentrale UI-Steuerung (Swing)
+├── visualization/ — Swing rendering of phylogeny trees
+└── ui/            — Central UI control (Swing)
 ```
 
 ---
 
-## Installation & Aufbau
+## Installation & Build
 
-### Voraussetzungen
+### Prerequisites
 
-- **Java 21+** (OpenJDK oder Oracle JDK)
-- **Maven 3.8+** für den Build
+- **Java 21+** (OpenJDK or Oracle JDK)
+- **Maven 3.8+** for the build
 
-### Projekt aufbauen
+### Building the project
 
 ```bash
-# Repository klonen (sobald verfügbar)
+# Clone the repository (once available)
 git clone https://github.com/snapious/biotools.git
 cd biotools
 
-# Projekt kompilieren und JAR erstellen
+# Compile the project and create the JAR
 mvn clean package
 
-# Anwendung starten
+# Start the application
 java -jar target/snapious-biotools-1.0.0.jar
 ```
 
 ---
 
-## Benutzeranleitung
+## User Guide
 
-### 1. Sequenzen verwalten
+### 1. Managing sequences
 
-**Neue Sequenz erstellen:**
-- Menü: `Datei → Neue Sequenz` oder Toolbar-Button `+ Sequenz`
-- Öffnet einen Dialog zur manuellen Eingabe einer DNA/RNA-Sequenz
+**Create a new sequence:**
+- Menu: `File → New Sequence` or toolbar button `+ Sequence`
+- Opens a dialog for manually entering a DNA/RNA sequence
 
-**Sequenzen importieren:**
-- Menü: `Datei → Importieren` oder Toolbar-Button `Import`
-- Unterstützte Formate: FASTA, FASTQ, GenBank
+**Import sequences:**
+- Menu: `File → Import` or toolbar button `Import`
+- Supported formats: FASTA, FASTQ, GenBank
 
-**Sequenzen exportieren:**
-- Menü: `Datei → Exportieren` oder Toolbar-Button `Export`
-- Export als FASTA-Format
+**Export sequences:**
+- Menu: `File → Export` or toolbar button `Export`
+- Export as FASTA format
 
-### 2. Sequenzanalyse (rechtes Panel)
+### 2. Sequence analysis (right panel)
 
-Nachdem eine Sequenz im linken Explorer ausgewählt wurde:
+After a sequence has been selected in the left explorer:
 
-**GC-Gehalt:**
-- Klick auf `GC-Analyse` im Detailbereich (links unten)
-- Zeigt GC-Progressbar und Base-Verteilung
+**GC content:**
+- Click `GC Analysis` in the detail area (bottom left)
+- Shows a GC progress bar and base distribution
 
-**ORF-Finder:**
-- Klick auf `ORF finden` im Tools-Panel (Tab: Analyse)
-- Findet Open Reading Frames über 6 Leseraster hinweg
+**ORF finder:**
+- Click `Find ORFs` in the Tools panel (tab: Analysis)
+- Finds open reading frames across 6 reading frames
 
-**Restriktionsstellen:**
-- Klick auf `Restriktions-Siten` im Tools-Panel (Tab: Analyse)
-- Zeigt Schnittstellen für häufige Enzyme (EcoRI, BamHI, etc.)
+**Restriction sites:**
+- Click `Restriction Sites` in the Tools panel (tab: Analysis)
+- Shows cut sites for common enzymes (EcoRI, BamHI, etc.)
 
-### 3. Pairwise-Alignment (rechtes Panel)
+### 3. Pairwise alignment (right panel)
 
 **Tab: Alignment:**
-1. Zwei Sequenzen in die Eingabefelder eingeben oder aus Explorer laden
-2. Alignments-Methode wählen: Needleman-Wunsch (global) oder Smith-Waterman (lokal)
-3. Score-Parameter anpassen (optional): Match-Score, Mismatch-Penalty, Gap-Penalty
-4. Klick auf `Alignieren`
+1. Enter two sequences in the input fields or load them from the explorer
+2. Choose the alignment method: Needleman-Wunsch (global) or Smith-Waterman (local)
+3. Adjust score parameters (optional): match score, mismatch penalty, gap penalty
+4. Click `Align`
 
-**Ergebnis:** Formatierter Alignment-Output mit Konsistenz-Zeile (| = Match, : = Mismatch)
+**Result:** Formatted alignment output with a consistency line (| = match, : = mismatch)
 
-### 4. Phylogenetische Analyse (rechtes Panel)
+### 4. Phylogenetic analysis (right panel)
 
-**Tab: Baum:**
-1. Mindestens 2 Sequenzen im Explorer auswählen (mehrere mit Ctrl/Cmd+Klick)
-2. Baum-Methode wählen: Neighbor-Joining oder UPGMA
-3. Klick auf `Baum erstellen`
+**Tab: Tree:**
+1. Select at least 2 sequences in the explorer (multiple with Ctrl/Cmd+click)
+2. Choose the tree method: Neighbor-Joining or UPGMA
+3. Click `Build Tree`
 
-**Ergebnis:** Newick-String und visuelles Baum-Diagramm im Output-Feld
+**Result:** Newick string and visual tree diagram in the output field
 
-**Bootstrap-Analyse:**
-- Klick auf `Bootstrap` für branch support analysis (standard: 100 Replicate)
+**Bootstrap analysis:**
+- Click `Bootstrap` for branch support analysis (default: 100 replicates)
 
-**Distanzmatrix:**
-- Klick auf `Distanzmatrix` zeigt pairwise Distanzen aller exportierten Sequenzen
+**Distance matrix:**
+- Click `Distance Matrix` to show pairwise distances of all selected sequences
 
 ---
 
-## Unterstützte Dateiformate
+## Supported File Formats
 
-| Format | Import | Export | Beschreibung |
-|--------|--------|--------|--------------|
-| FASTA (.fasta, .fa) | ✓ | ✓ | Standard-Sequenzformat |
-| FASTQ (.fastq, .fq) | ✓ | ✓ | Sequenzen + Qualitätscores |
-| GenBank (.gb, .genbank) | ✓ | — | Annotationen + Sequenz |
+| Format | Import | Export | Description |
+|--------|--------|--------|-------------|
+| FASTA (.fasta, .fa) | ✓ | ✓ | Standard sequence format |
+| FASTQ (.fastq, .fq) | ✓ | ✓ | Sequences + quality scores |
+| GenBank (.gb, .genbank) | ✓ | — | Annotations + sequence |
 | SAM (.sam) | ✓ | — | Sequence Alignment/Map |
 | VCF (.vcf) | ✓ | — | Variant Call Format |
-| Newick (.newick, .nex) | ✓ | ✓ | Phylogenetische Bäume |
+| Newick (.newick, .nex) | ✓ | ✓ | Phylogenetic trees |
 
 ---
 
-## Algorithmen im Detail
+## Algorithms in Detail
 
-### Sequence-Operationen
-- **Komplementär:** Basen-paarweise Ersetzung (A↔T, C↔G)
-- **Reverse-Komplementär:** Komplementär + umgekehrte Reihenfolge
-- **Transkription:** DNA → RNA (T → U)
-- **Translation:** RNA → Protein (Codon-Tabelle: 64 Codons)
+### Sequence operations
+- **Complement:** Base-wise substitution (A↔T, C↔G)
+- **Reverse complement:** Complement + reversed order
+- **Transcription:** DNA → RNA (T → U)
+- **Translation:** RNA → protein (codon table: 64 codons)
 
-### Alignment-Algorithmen
-- **Needleman-Wunsch:** Globaler Pairwise-Alignment (O(n×m))
-  - Findet optimalen Alignment über gesamte Sequenzlänge
-  - Konfigurierbare Score-Matrix
+### Alignment algorithms
+- **Needleman-Wunsch:** Global pairwise alignment (O(n×m))
+  - Finds the optimal alignment over the entire sequence length
+  - Configurable score matrix
 
-- **Smith-Waterman:** Lokaler Pairwise-Alignment (O(n×m))
-  - Findet beste lokale Übereinstimmungen
-  - Besonders für Sequenz-Domotest
+- **Smith-Waterman:** Local pairwise alignment (O(n×m))
+  - Finds the best local matches
+  - Especially suited for sequence domains
 
-### Phylogenie-Algorithmen
-- **Neighbor-Joining (NJ):** Unrooted phylogenetischer Baum basierend auf Distanzen
-  - Kein molekularer Uhr-Annahme erforderlich
+### Phylogeny algorithms
+- **Neighbor-Joining (NJ):** Unrooted phylogenetic tree based on distances
+  - Does not require a molecular clock assumption
 
-- **UPGMA:** Rooted Baum unter Annahme einer molekularen Uhr
-  - Einfacher aber weniger genau als NJ
+- **UPGMA:** Rooted tree assuming a molecular clock
+  - Simpler but less accurate than NJ
 
-- **Bootstrap-Analyse:** Branch support durch Bootstrapping (n Replicate)
-  - Standard: 100 Replicate
+- **Bootstrap analysis:** Branch support through bootstrapping (n replicates)
+  - Default: 100 replicates
 
-### Distanzmodelle
-- **Edit-Distanz (Levenshtein):** Minimale Anzahl Einfügungen/Löschungen/Substitutionen
-- **Jukes-Cantor:** Evolutionsmodell mit einheitlicher Substitutionsrate
-- **Kimura 2-Parameter:** Unterscheidet Transitionen und Transversionen
+### Distance models
+- **Edit distance (Levenshtein):** Minimum number of insertions/deletions/substitutions
+- **Jukes-Cantor:** Evolutionary model with a uniform substitution rate
+- **Kimura 2-parameter:** Distinguishes transitions and transversions
 
 ---
 
-## Beispielnutzung
+## Usage Examples
 
-### Schnellanalyse im Dashboard:
+### Quick analysis in the dashboard:
 ```
->Test-Sequenz
+>Test-Sequence
 ATGCGTACGTAGCTAGCTAG
 
-[Analyse starten]
+[Start analysis]
 
-Ergebnis:
-Länge: 20 bp
-GC-Gehalt: 50.0%
-Basen-Verteilung: A=25%, T=25%, C=25%, G=25%
+Result:
+Length: 20 bp
+GC content: 50.0%
+Base distribution: A=25%, T=25%, C=25%, G=25%
 ```
 
-### FASTA-Import:
+### FASTA import:
 ```bash
-# sample.fasta erstellen
+# Create sample.fasta
 cat > sample.fasta << EOF
 >Human_HBB
 ATGValGlobinSequence...
@@ -189,19 +189,19 @@ ATGValGlobinSequenceVariant...
 ATGValGlobinSequenceDiverged...
 EOF
 
-# In Snapious: Datei → Importieren → sample.fasta wählen
+# In Snapious: File → Import → choose sample.fasta
 ```
 
-### Baum erstellen (Newick-Format):
+### Building a tree (Newick format):
 ```
 ((Human:0.1,Mouse:0.2):0.05,Chicken:0.3);
 ```
 
 ---
 
-## Technische Details
+## Technical Details
 
-### Architektur
+### Architecture
 
 ```
 ┌─────────────────────────────────────┐
@@ -209,11 +209,11 @@ EOF
 │  (SnapiousApp + MainViewController) │
 ├─────────────────────────────────────┤
 │         MainViewController           │
-│  (UI-Controller, Event-Handling)    │
+│  (UI controller, event handling)    │
 ├──────────┬───────────┬─────────────┤
 │  Core    │  Alignment│   Analysis  │
-│ Sequenz- │ N-Wunsch, │ Phylogeny, │
-│ operationen│ S-Water│ DistanceMat.│
+│ Sequence │ N-Wunsch, │ Phylogeny, │
+│ operations│ S-Water  │ DistanceMat.│
 ├──────────┼───────────┼─────────────┤
 │    File I/O     │  Visualization  │
 │ FASTA,FASTQ,   │  TreeCanvas    │
@@ -221,70 +221,70 @@ EOF
 └─────────────────────────────────────┘
 ```
 
-### Abhängigkeiten (pom.xml)
+### Dependencies (pom.xml)
 
-- **Java 21** — Sprachstandards
-- **Swing** (im JDK enthalten) — Desktop-GUI; keine weiteren Laufzeit-Abhängigkeiten
-- **JUnit 5** — Tests (nur Test-Scope)
+- **Java 21** — language standard
+- **Swing** (included in the JDK) — desktop GUI; no further runtime dependencies
+- **JUnit 5** — tests (test scope only)
 
-### Paketstruktur
+### Package structure
 
 ```
 com.snapious/
-├── SnapiousApp.java          — Hauptklasse (Swing, main)
-├── core/Sequence.java        — Datenmodell für biologische Sequenzen
-├── alignment/Alignment.java  — Pairwise-Alignment-Algorithmen
-├── analysis/Phylogeny.java   — Phylogenetische Analyse-Tools
-├── io/FileIO.java            — Datei-I/O für Bioinformatik-Formate
-├── visualization/TreeVisualizer.java — Baumvisualisierung
-└── ui/MainViewController.java  — Zentrale UI-Steuerung
+├── SnapiousApp.java          — Main class (Swing, main)
+├── core/Sequence.java        — Data model for biological sequences
+├── alignment/Alignment.java  — Pairwise alignment algorithms
+├── analysis/Phylogeny.java   — Phylogenetic analysis tools
+├── io/FileIO.java            — File I/O for bioinformatics formats
+├── visualization/TreeVisualizer.java — Tree visualization
+└── ui/MainViewController.java  — Central UI control
 ```
 
 ---
 
-## Lizenz
+## License
 
-**MIT License** — Freie Nutzung, Änderung und Verbreitung.
-
----
-
-## Vergleich: Was Snapious vs. Geneious Prime bietet
-
-### ✅ Was wir replizieren:
-- Sequenzverwaltung (DNA, RNA, Protein)
-- Pairwise-Alignment (Global + Lokal)
-- Phylogenetische Bäume (NJ, UPGMA)
-- File I/O für alle Hauptformate
-- GC-Analyse, ORF-Finder, Restriktionsstellen
-
-### ❌ Was wir weglassen (für Einfachheit):
-- Externe Tool-Integration (BBMap, SPAdes, BLAST)
-- 3D-Molekülvisualisierung
-- Cloud-Sync und Kollaboration
-- Plugin-System (geplant für v2.0)
-
-### 🎁 Was wir verbessern:
-- **Quelloffen** und kostenlos (statt $5000+/Jahr)
-- **Einfachere Architektur** (9 Module statt 215+ Plugins)
-- **Modernes UI** mit Dark Theme (statt veralteter Swing-Oberfläche)
-- **Keine externen Abhängigkeiten** (kein BioJava, keine Install4j)
+**MIT License** — free to use, modify, and distribute.
 
 ---
 
-## Entwicklungsstatus
+## Comparison: What Snapious Offers vs. Geneious Prime
 
-| Modul | Status | Tests |
-|-------|--------|-------|
-| Core (Sequence) | ✅ Fertig | 100% |
-| Alignment (N-Wunsch, S-Water) | ✅ Fertig | 100% |
-| Analysis (Phylogenie, NJ, UPGMA) | ✅ Fertig | 95% |
-| File I/O (FASTA, FASTQ, GenBank) | ✅ Fertig | 90% |
-| UI (Swing) | ✅ Fertig | — |
-| Visualization (TreeCanvas) | ✅ Fertig | 80% |
+### ✅ What we replicate:
+- Sequence management (DNA, RNA, protein)
+- Pairwise alignment (global + local)
+- Phylogenetic trees (NJ, UPGMA)
+- File I/O for all major formats
+- GC analysis, ORF finder, restriction sites
 
-**Gesamtstatus:** Alle Kernmodule implementiert und getestet.
+### ❌ What we leave out (for simplicity):
+- External tool integration (BBMap, SPAdes, BLAST)
+- 3D molecule visualization
+- Cloud sync and collaboration
+- Plugin system (planned for v2.0)
+
+### 🎁 What we improve:
+- **Open source** and free (instead of $5000+/year)
+- **Simpler architecture** (9 modules instead of 215+ plugins)
+- **Modern UI** with dark theme (instead of an outdated Swing interface)
+- **No external dependencies** (no BioJava, no Install4j)
 
 ---
 
-*Snapious BioTools — Mächtige Bioinformatik, einfach verständlich.*
+## Development Status
+
+| Module | Status | Tests |
+|--------|--------|-------|
+| Core (Sequence) | ✅ Done | 100% |
+| Alignment (N-Wunsch, S-Water) | ✅ Done | 100% |
+| Analysis (Phylogeny, NJ, UPGMA) | ✅ Done | 95% |
+| File I/O (FASTA, FASTQ, GenBank) | ✅ Done | 90% |
+| UI (Swing) | ✅ Done | — |
+| Visualization (TreeCanvas) | ✅ Done | 80% |
+
+**Overall status:** All core modules implemented and tested.
+
+---
+
+*Snapious BioTools — Powerful bioinformatics, easy to understand.*
 *Inspired by Geneious Prime but open source and free.*

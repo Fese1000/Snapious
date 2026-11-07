@@ -9,20 +9,20 @@ use crate::error::{Error, Result};
 pub fn validate_alignment(rows: &[(String, String)]) -> Result<()> {
     if rows.is_empty() {
         return Err(Error::InvalidInput(
-            "Ein Alignment braucht mindestens eine Zeile".to_string(),
+            "An alignment needs at least one row".to_string(),
         ));
     }
     let width = rows.first().map_or(0, |(_, r)| r.chars().count());
     for (name, row) in rows {
         if name.is_empty() || name.chars().any(char::is_whitespace) {
             return Err(Error::InvalidInput(format!(
-                "Ungültiger Zeilenname '{}'",
+                "Invalid row name '{}'",
                 name
             )));
         }
         if row.chars().count() != width {
             return Err(Error::InvalidInput(format!(
-                "Zeile '{}' hat {} statt {} Spalten",
+                "Row '{}' has {} instead of {} columns",
                 name,
                 row.chars().count(),
                 width
@@ -50,7 +50,7 @@ pub fn parse_clustal(text: &str) -> Result<Vec<(String, String)>> {
         Some((_, l)) if l.starts_with("CLUSTAL") => {}
         _ => {
             return Err(Error::InvalidInput(
-                "Die Datei beginnt nicht mit CLUSTAL".to_string(),
+                "The file does not start with CLUSTAL".to_string(),
             ))
         }
     }
@@ -68,7 +68,7 @@ pub fn parse_clustal(text: &str) -> Result<Vec<(String, String)>> {
             (Some(n), Some(p)) if words.len() <= 3 && counter_ok => (*n, *p),
             _ => {
                 return Err(Error::InvalidInput(format!(
-                    "Zeile {}: ungültige Sequenzzeile",
+                    "Line {}: invalid sequence line",
                     number
                 )))
             }
@@ -132,7 +132,7 @@ pub fn parse_phylip(text: &str) -> Result<Vec<(String, String)>> {
     let mut lines = text.lines().map(|l| l.trim()).filter(|l| !l.is_empty());
     let header = lines
         .next()
-        .ok_or_else(|| Error::InvalidInput("Leere PHYLIP-Datei".to_string()))?;
+        .ok_or_else(|| Error::InvalidInput("Empty PHYLIP file".to_string()))?;
     let numbers: Vec<&str> = header.split_whitespace().collect();
     let (ntax, nchar) = match (
         numbers.first().and_then(|a| a.parse::<usize>().ok()),
@@ -141,7 +141,7 @@ pub fn parse_phylip(text: &str) -> Result<Vec<(String, String)>> {
         (Some(a), Some(b)) if numbers.len() == 2 => (a, b),
         _ => {
             return Err(Error::InvalidInput(
-                "Ungültige PHYLIP-Kopfzeile".to_string(),
+                "Invalid PHYLIP header line".to_string(),
             ))
         }
     };
@@ -149,7 +149,7 @@ pub fn parse_phylip(text: &str) -> Result<Vec<(String, String)>> {
     for _ in 0..ntax {
         let line = lines
             .next()
-            .ok_or_else(|| Error::InvalidInput("Zu wenige Sequenzzeilen".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("Too few sequence lines".to_string()))?;
         let mut parts = line.splitn(2, char::is_whitespace);
         let name = parts.next().unwrap_or("").to_string();
         let rest: String = parts
@@ -168,7 +168,7 @@ pub fn parse_phylip(text: &str) -> Result<Vec<(String, String)>> {
     }
     if rows.iter().any(|(_, s)| s.chars().count() != nchar) {
         return Err(Error::InvalidInput(format!(
-            "Nicht jede Zeile hat {} Zeichen",
+            "Not every row has {} characters",
             nchar
         )));
     }

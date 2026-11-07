@@ -165,7 +165,7 @@ fn distance_matrix(seqs: &[Sequence]) -> Result<Vec<Vec<f64>>> {
 fn upgma_tree(d: &[Vec<f64>]) -> Result<Node> {
     let n = d.len();
     if n == 0 {
-        return Err(Error::InvalidInput("Keine Sequenzen".to_string()));
+        return Err(Error::InvalidInput("No sequences".to_string()));
     }
     let mut dist: Vec<Vec<f64>> = d.to_vec();
     let mut nodes: Vec<Option<Node>> = (0..n).map(|i| Some(Node::Leaf(i))).collect();
@@ -188,7 +188,7 @@ fn upgma_tree(d: &[Vec<f64>]) -> Result<Node> {
             nodes.get_mut(i).and_then(Option::take),
             nodes.get_mut(j).and_then(Option::take),
         ) else {
-            return Err(Error::InvalidState("Guide-Tree inkonsistent".to_string()));
+            return Err(Error::InvalidState("Guide tree inconsistent".to_string()));
         };
         let (si, sj) = (ni.size() as f64, nj.size() as f64);
         for k in 0..n {
@@ -208,7 +208,7 @@ fn upgma_tree(d: &[Vec<f64>]) -> Result<Node> {
         .into_iter()
         .flatten()
         .next()
-        .ok_or_else(|| Error::InvalidState("Guide-Tree leer".to_string()))
+        .ok_or_else(|| Error::InvalidState("Guide tree is empty".to_string()))
 }
 
 fn pair_score(x: u8, y: u8) -> i32 {
@@ -364,7 +364,7 @@ fn average_pair_score(rows: &[AlignedSequence]) -> f64 {
 pub fn progressive_alignment(seqs: &[Sequence]) -> Result<MsaResult> {
     if seqs.is_empty() {
         return Err(Error::InvalidInput(
-            "Mindestens eine Sequenz erforderlich".to_string(),
+            "At least one sequence is required".to_string(),
         ));
     }
     if seqs.len() == 1 {
@@ -438,7 +438,7 @@ fn to_newick(node: &Node, parent_height: f64, seqs: &[Sequence]) -> String {
 pub fn guide_tree_newick(seqs: &[Sequence]) -> Result<String> {
     if seqs.is_empty() {
         return Err(Error::InvalidInput(
-            "Mindestens eine Sequenz erforderlich".to_string(),
+            "At least one sequence is required".to_string(),
         ));
     }
     if seqs.len() == 1 {

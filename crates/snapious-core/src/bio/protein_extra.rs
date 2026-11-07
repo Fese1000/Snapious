@@ -3,7 +3,7 @@
 use crate::bio::protein::hydropathy_value;
 
 /// Aliphatic Index: `X_A + 2.9 * X_V + 3.9 * (X_I + X_L)`, wobei `X` der Molanteil in Prozent (0–100) der Aminosäure an **allen**
-/// Zeichen der Sequenz ist (Großbuchstaben; Groß-/Kleinschreibung egal; Leerzeichen zählen nicht mit). Leere Sequenz → `0.0`.
+/// Zeichen der Sequenz ist (Uppercase; Groß-/Kleinschreibung egal; Leerzeichen zählen nicht mit). Leere Sequenz → `0.0`.
 /// Beispiel: `AVIL` → 25 + 2.9·25 + 3.9·50 = 292.5.
 pub fn aliphatic_index(protein: &str) -> f64 {
     let chars: Vec<char> = protein

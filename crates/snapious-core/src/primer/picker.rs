@@ -160,14 +160,14 @@ pub fn pick_pairs(
     let t = check_template(template);
     if target_start >= target_end || target_end > t.len() {
         return Err(Error::InvalidInput(format!(
-            "Ungültiger Zielbereich {}-{} bei Länge {}",
+            "Invalid target range {}-{} with length {}",
             target_start,
             target_end,
             t.len()
         )));
     }
     if c.min_length == 0 || c.min_length > c.max_length {
-        return Err(Error::InvalidInput("Ungültige Primerlängen".to_string()));
+        return Err(Error::InvalidInput("Invalid primer lengths".to_string()));
     }
     let target_len = target_end - target_start;
     let slack = c.max_product.saturating_sub(target_len);

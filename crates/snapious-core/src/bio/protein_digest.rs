@@ -34,7 +34,7 @@ pub struct Peptide {
 }
 
 /// Positionen, nach denen gespalten wird: Index `i` bedeutet „zwischen Zeichen `i − 1` und `i`` (`1 <= i < Länge`).
-/// Die Regel prüft das Zeichen davor und das Zeichen danach (Großbuchstaben): z. B. Trypsin: davor K oder R und danach nicht P.
+/// Die Regel prüft das Zeichen davor und das Zeichen danach (Uppercase): z. B. Trypsin: davor K oder R und danach nicht P.
 /// Eine Spaltstelle am Ende (nach dem letzten Zeichen) gehört nicht dazu.
 pub fn cleavage_sites(protein: &str, protease: Protease) -> Vec<usize> {
     let upper = protein.to_ascii_uppercase();
@@ -88,7 +88,7 @@ pub fn digest_protein(
     // Validierung nach dem Entfernen von '*' durchführen, damit "aakpr*" gültig ist.
     if clean.is_empty() || clean.chars().any(|c| !c.is_ascii_alphabetic()) {
         return Err(Error::InvalidInput(
-            "Proteinsequenz darf nicht leer sein und nur Buchstaben enthalten".into(),
+            "Protein sequence must not be empty and may only contain letters".into(),
         ));
     }
 

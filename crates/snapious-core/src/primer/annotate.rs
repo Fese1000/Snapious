@@ -38,12 +38,12 @@ pub fn annotate_primers(
             let location = Location::new(intervals, strand, false, false)?;
             let mut qualifiers = vec![(
                 "note".to_string(),
-                vec![format!("Abweichungen: {}", b.mismatches)],
+                vec![format!("Mismatches: {}", b.mismatches)],
             )];
             if b.tail_length > 0 {
                 qualifiers.push((
                     "note".to_string(),
-                    vec![format!("5'-Schwanz: {} nt", b.tail_length)],
+                    vec![format!("5' tail: {} nt", b.tail_length)],
                 ));
             }
             let feature = Feature::new("primer_bind", &primer.name, location, qualifiers);
@@ -90,7 +90,7 @@ mod tests {
         assert_eq!(feats[0].qualifiers().len(), 1);
         assert_eq!(
             feats[0].qualifiers()[0],
-            ("note".to_string(), vec!["Abweichungen: 0".to_string()])
+            ("note".to_string(), vec!["Mismatches: 0".to_string()])
         );
     }
 
@@ -103,7 +103,7 @@ mod tests {
         assert_eq!(feats[0].qualifiers().len(), 2);
         assert_eq!(
             feats[0].qualifiers()[1],
-            ("note".to_string(), vec!["5'-Schwanz: 6 nt".to_string()])
+            ("note".to_string(), vec!["5' tail: 6 nt".to_string()])
         );
         // Abweichung an Position 1: mit max 1 gebunden
         let mut s: Vec<char> = T[..14].chars().collect();
@@ -113,7 +113,7 @@ mod tests {
         let feats = annotate_primers(T, false, &[primer("mm", &s)], &sim).unwrap();
         assert_eq!(
             feats[0].qualifiers()[0].1,
-            vec!["Abweichungen: 1".to_string()]
+            vec!["Mismatches: 1".to_string()]
         );
     }
 

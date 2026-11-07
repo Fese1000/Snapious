@@ -65,10 +65,10 @@ pub fn parse_submit(text: &str) -> Result<(String, u64)> {
                 if !val.is_empty() {
                     rid = Some(val.to_string());
                 } else {
-                    return Err(Error::Operation("Fehlende RID".to_string()));
+                    return Err(Error::Operation("Missing RID".to_string()));
                 }
             } else {
-                return Err(Error::Operation("Fehlende RID".to_string()));
+                return Err(Error::Operation("Missing RID".to_string()));
             }
         } else if trimmed.starts_with("RTOE") {
             if let Some(eq_pos) = trimmed.find('=') {
@@ -82,7 +82,7 @@ pub fn parse_submit(text: &str) -> Result<(String, u64)> {
 
     let rid = match rid {
         Some(r) => r,
-        None => return Err(Error::Operation("Fehlende RID".to_string())),
+        None => return Err(Error::Operation("Missing RID".to_string())),
     };
 
     Ok((rid, rtoe.unwrap_or(0)))
@@ -140,7 +140,7 @@ pub fn run_remote(
             }
             _ => {
                 return Err(Error::Operation(format!(
-                    "BLAST fehlgeschlagen (RID {})",
+                    "BLAST failed (RID {})",
                     rid
                 )));
             }
@@ -148,7 +148,7 @@ pub fn run_remote(
     }
 
     Err(Error::Operation(format!(
-        "BLAST: Zeitüberschreitung (RID {})",
+        "BLAST: timeout (RID {})",
         rid
     )))
 }
@@ -265,7 +265,7 @@ mod tests {
         let f2 = fake(&waiting);
         let s2 = Sleeps(RefCell::new(Vec::new()));
         let e2 = run_remote(&f2, &s2, "blastn", "nt", "ACGT").unwrap_err();
-        assert!(e2.to_string().contains("Zeitüberschreitung"));
+        assert!(e2.to_string().contains("timeout"));
         assert_eq!(s2.0.borrow().len(), 61);
         assert!(matches!(e2, Error::Operation(_)));
     }

@@ -134,16 +134,16 @@ pub fn parse_features(xml: &str) -> Result<Vec<Feature>> {
             "Segment" => {
                 if let (Some(cur), Some(range)) = (current.as_mut(), attribute(tag, "range")) {
                     let (a, b) = range.split_once('-').ok_or_else(|| {
-                        Error::InvalidInput(format!("Ungültiger Bereich '{}'", range))
+                        Error::InvalidInput(format!("Invalid range '{}'", range))
                     })?;
-                    let bad = |_| Error::InvalidInput(format!("Ungültiger Bereich '{}'", range));
+                    let bad = |_| Error::InvalidInput(format!("Invalid range '{}'", range));
                     let (a, b): (usize, usize) = (
                         a.trim().parse().map_err(bad)?,
                         b.trim().parse().map_err(bad)?,
                     );
                     if a == 0 || b < a {
                         return Err(Error::InvalidInput(format!(
-                            "Ungültiger Bereich '{}'",
+                            "Invalid range '{}'",
                             range
                         )));
                     }
@@ -180,7 +180,7 @@ pub fn parse_features(xml: &str) -> Result<Vec<Feature>> {
 /// kein DNA-Block, Sequenz mit ungültigen Zeichen. Ein Feature hinter dem Sequenzende ist ebenfalls ein Fehler.
 pub fn parse_snapgene(bytes: &[u8], name: &str) -> Result<SequenceDocument> {
     if !is_snapgene(bytes) {
-        return Err(Error::InvalidInput("Keine SnapGene-Datei".to_string()));
+        return Err(Error::InvalidInput("Not a SnapGene file".to_string()));
     }
     let mut pos = 0usize;
     let mut dna: Option<(bool, String)> = None;
@@ -189,11 +189,11 @@ pub fn parse_snapgene(bytes: &[u8], name: &str) -> Result<SequenceDocument> {
         let kind = bytes.get(pos).copied().unwrap_or(0);
         let len_bytes = bytes
             .get(pos + 1..pos + 5)
-            .ok_or_else(|| Error::InvalidInput("Abgeschnittene SnapGene-Datei".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("Truncated SnapGene file".to_string()))?;
         let len =
             u32::from_be_bytes([len_bytes[0], len_bytes[1], len_bytes[2], len_bytes[3]]) as usize;
         let data = bytes.get(pos + 5..pos + 5 + len).ok_or_else(|| {
-            Error::InvalidInput("Abgeschnittener Block in der SnapGene-Datei".to_string())
+            Error::InvalidInput("Truncated block in the SnapGene file".to_string())
         })?;
         match kind {
             0x00 => {
@@ -210,11 +210,11 @@ pub fn parse_snapgene(bytes: &[u8], name: &str) -> Result<SequenceDocument> {
         pos += 5 + len;
     }
     let (circular, bases) = dna.ok_or_else(|| {
-        Error::InvalidInput("Die SnapGene-Datei enthält keine Sequenz".to_string())
+        Error::InvalidInput("The SnapGene file contains no sequence".to_string())
     })?;
     if let Some(f) = features.iter().find(|f| f.location().end() > bases.len()) {
         return Err(Error::InvalidInput(format!(
-            "Das Feature '{}' liegt hinter dem Ende der Sequenz",
+            "The feature '{}' lies beyond the end of the sequence",
             f.name()
         )));
     }

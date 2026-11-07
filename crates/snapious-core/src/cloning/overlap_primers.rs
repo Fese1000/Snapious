@@ -41,7 +41,7 @@ pub fn choose_binding_length(tm_of: &dyn Fn(usize) -> Option<f64>) -> Option<usi
 
 /// Entwirft Primer, damit `insert[insert_start..insert_end]` an der Stelle `cut_position` (zwischen Basen des Vektors) eingebaut werden kann.
 ///
-/// - Alle Texte werden in Großbuchstaben mit `T` statt `U` gelesen.
+/// - Alle Texte werden in Uppercase mit `T` statt `U` gelesen.
 /// - Vorwärtsprimer = `vector[cut − overlap_length .. cut]` + `insert[insert_start .. insert_start + L]`, wobei `L` mit
 ///   `choose_binding_length` aus der Tm (`nearest_neighbor(teil, 250.0, 50.0)`) des Insertanfangs gewählt wird.
 /// - Rückwärtsprimer = `iupac_reverse_complement(vector[cut .. cut + overlap_length])` + `iupac_reverse_complement(insert[insert_end − L' .. insert_end])`,
@@ -63,34 +63,34 @@ pub fn design_overlap_primers(
 ) -> Result<OverlapPrimers> {
     if overlap_length == 0 {
         return Err(Error::InvalidInput(
-            "overlap_length muss größer als 0 sein".into(),
+            "overlap_length must be greater than 0".into(),
         ));
     }
     if overlap_length > cut_position {
         return Err(Error::InvalidInput(
-            "overlap_length darf nicht größer als cut_position sein".into(),
+            "overlap_length must not be greater than cut_position".into(),
         ));
     }
     if (cut_position + overlap_length) > vector.len() {
         return Err(Error::InvalidInput(
-            "Schnittstelle + Überhang liegt außerhalb des Vektors".into(),
+            "Cut site + overhang lies outside the vector".into(),
         ));
     }
     if insert_start >= insert_end {
         return Err(Error::InvalidInput(
-            "insert_start muss kleiner als insert_end sein".into(),
+            "insert_start must be less than insert_end".into(),
         ));
     }
     if insert_end > insert.len() {
         return Err(Error::InvalidInput(
-            "insert_end liegt außerhalb der Insert-Sequenz".into(),
+            "insert_end lies outside the insert sequence".into(),
         ));
     }
 
     let insert_len = insert_end - insert_start;
     if insert_len < 30 {
         return Err(Error::InvalidInput(
-            "Insertbereich muss mindestens 30 Basen lang sein".into(),
+            "Insert region must be at least 30 bases long".into(),
         ));
     }
 
@@ -103,7 +103,7 @@ pub fn design_overlap_primers(
     };
 
     let forward_l = find_binding_length(&insert[insert_start..]).ok_or_else(|| {
-        Error::InvalidInput("Keine berechenbare Länge für den Vorwärtsprimer".into())
+        Error::InvalidInput("No computable length for the forward primer".into())
     })?;
 
     let reverse_overlap =
@@ -115,7 +115,7 @@ pub fn design_overlap_primers(
             nearest_neighbor(&iupac_reverse_complement(slice), 250.0, 50.0).ok()
         };
         choose_binding_length(&tm_of).ok_or_else(|| {
-            Error::InvalidInput("Keine berechenbare Länge für den Rückwärtsprimer".into())
+            Error::InvalidInput("No computable length for the reverse primer".into())
         })?
     };
 

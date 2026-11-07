@@ -31,7 +31,7 @@ pub fn back_translate_preferred(protein: &str) -> Result<String> {
             'Y' => "TAT",
             'V' => "GTG",
             '*' => "TAA",
-            _ => return Err(Error::InvalidInput(format!("Unbekanntes Zeichen: '{}'", c))),
+            _ => return Err(Error::InvalidInput(format!("Unknown character: '{}'", c))),
         };
         dna.push_str(codon);
     }
@@ -66,7 +66,7 @@ pub fn back_translate_degenerate(protein: &str) -> Result<String> {
             'Y' => "TAY",
             'V' => "GTN",
             '*' => "TRR",
-            _ => return Err(Error::InvalidInput(format!("Unbekanntes Zeichen: '{}'", c))),
+            _ => return Err(Error::InvalidInput(format!("Unknown character: '{}'", c))),
         };
         dna.push_str(codon);
     }

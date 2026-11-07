@@ -20,7 +20,7 @@ pub struct PastedRecord {
 /// Zerlegt den Text in Einträge. Beginnt der Text (nach führendem Leerraum) mit `>`, ist es FASTA: jede Zeile, die mit `>`
 /// beginnt, startet einen Eintrag (Name = Rest der Zeile getrimmt); die folgenden Zeilen gehören dazu. Sonst ist der ganze Text
 /// ein einziger Eintrag mit leerem Namen. Aus den Sequenzzeilen werden nur ASCII-Buchstaben behalten (Leerzeichen, Ziffern,
-/// `*`, `-`, `\r` usw. fallen weg) und in Großbuchstaben gewandelt. Einträge ohne Buchstaben entfallen; leerer Text → leere Liste.
+/// `*`, `-`, `\r` usw. fallen weg) und in Uppercase gewandelt. Einträge ohne Buchstaben entfallen; leerer Text → leere Liste.
 pub fn parse_pasted(text: &str) -> Vec<PastedRecord> {
     fn letters(line: &str) -> String {
         line.chars()

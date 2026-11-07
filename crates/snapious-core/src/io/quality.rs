@@ -55,7 +55,7 @@ pub fn detect_encoding(quality: &str) -> Result<EncodingType> {
         .bytes()
         .min()
         .map(classify)
-        .ok_or_else(|| Error::InvalidInput("Qualitätsstring darf nicht leer sein".to_string()))
+        .ok_or_else(|| Error::InvalidInput("Quality string must not be empty".to_string()))
 }
 
 /// Erkennt die Kodierung über mehrere Strings gemeinsam (leer → Sanger).
@@ -135,13 +135,13 @@ pub struct QualityStats {
 impl QualityStats {
     pub fn label(&self) -> &'static str {
         if self.mean >= 30.0 {
-            "Hochwertig (Q30+)"
+            "High (Q30+)"
         } else if self.mean >= 20.0 {
-            "Mittelwertig (Q20+)"
+            "Medium (Q20+)"
         } else if self.mean >= 10.0 {
-            "Niedrig (Q10+)"
+            "Low (Q10+)"
         } else {
-            "Unzureichend (<Q10)"
+            "Insufficient (<Q10)"
         }
     }
 }
@@ -219,7 +219,7 @@ pub fn mask_low_quality(
 pub fn report(qualities: &[String]) -> String {
     let enc = detect_encoding_many(qualities);
     let mut out = format!(
-        "=== Quality-Bericht ===\n\nReads: {}\nKodierung: {}\n",
+        "=== Quality report ===\n\nReads: {}\nEncoding: {}\n",
         qualities.len(),
         enc.description()
     );
@@ -231,7 +231,7 @@ pub fn report(qualities: &[String]) -> String {
     if !stats.is_empty() {
         let n = stats.len() as f64;
         out.push_str(&format!(
-            "Mittlere Qualität: {:.1}\nBewertung: {}\n",
+            "Mean quality: {:.1}\nRating: {}\n",
             stats.iter().map(|s| s.mean).sum::<f64>() / n,
             QualityStats {
                 mean: stats.iter().map(|s| s.mean).sum::<f64>() / n,
@@ -329,13 +329,13 @@ mod tests {
         assert_eq!(s.mean, 17.5);
         assert_eq!(s.median, 10.0); // sortiert 0,10,20,40 → Index 1
         assert_eq!((s.min, s.max), (0.0, 40.0));
-        assert_eq!(s.label(), "Niedrig (Q10+)");
+        assert_eq!(s.label(), "Low (Q10+)");
         let leer = calculate_stats("", EncodingType::Sanger);
         assert_eq!(leer.length, 0);
-        assert_eq!(leer.label(), "Unzureichend (<Q10)");
+        assert_eq!(leer.label(), "Insufficient (<Q10)");
         assert_eq!(
             calculate_stats("IIII", EncodingType::Sanger).label(),
-            "Hochwertig (Q30+)"
+            "High (Q30+)"
         );
     }
 
@@ -372,7 +372,7 @@ mod tests {
     #[test]
     fn bericht() {
         let r = report(&["!!!###".to_string(), "%%%&&&".to_string()]);
-        assert!(r.contains("Quality-Bericht"));
+        assert!(r.contains("Quality report"));
         assert!(r.contains("Reads: 2"));
         assert!(r.contains("Sanger"));
     }

@@ -37,7 +37,7 @@ impl ProjectStore {
     ) -> Result<ExternalFile> {
         if path.trim().is_empty() || kind.trim().is_empty() {
             return Err(Error::InvalidInput(
-                "Pfad und Art der Datei dürfen nicht leer sein".to_string(),
+                "Path and kind of the file must not be empty".to_string(),
             ));
         }
         let default_label = path.rsplit(['/', '\\']).next().unwrap_or(path).to_string();
@@ -108,7 +108,7 @@ impl ProjectStore {
             .execute("DELETE FROM external_files WHERE id = ?1", params![id])?;
         if n == 0 {
             return Err(Error::InvalidInput(format!(
-                "Keine verknüpfte Datei mit der ID {}",
+                "No linked file with ID {}",
                 id
             )));
         }

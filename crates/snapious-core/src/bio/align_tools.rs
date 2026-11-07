@@ -18,12 +18,12 @@ const GAP_COST: f64 = -2.0;
 
 fn check_group(rows: &[String], what: &str) -> Result<usize> {
     let Some(first) = rows.first() else {
-        return Err(Error::InvalidInput(format!("{} ist leer", what)));
+        return Err(Error::InvalidInput(format!("{} is empty", what)));
     };
     let n = first.chars().count();
     if rows.iter().any(|r| r.chars().count() != n) {
         return Err(Error::InvalidInput(format!(
-            "Zeilen von {} sind verschieden lang",
+            "Rows of {} have different lengths",
             what
         )));
     }
@@ -41,8 +41,8 @@ fn check_group(rows: &[String], what: &str) -> Result<usize> {
 ///
 /// Fehler `Error::InvalidInput`, wenn `a` oder `b` leer ist oder die Zeilen innerhalb einer Gruppe verschieden lang sind.
 pub fn align_profiles(a: &[String], b: &[String]) -> Result<Vec<String>> {
-    let n = check_group(a, "Profil A")?;
-    let m = check_group(b, "Profil B")?;
+    let n = check_group(a, "Profile A")?;
+    let m = check_group(b, "Profile B")?;
     let ca: Vec<Vec<char>> = a.iter().map(|r| r.chars().collect()).collect();
     let cb: Vec<Vec<char>> = b.iter().map(|r| r.chars().collect()).collect();
     let col_score = |i: usize, j: usize| -> f64 {
@@ -122,7 +122,7 @@ pub type ProteinAligner = dyn Fn(&[(String, String)]) -> Result<Vec<(String, Str
 /// `amino_acid_for(&[u8])` (liefert das Aminosäurezeichen als Byte, Stopp `*`) übersetzt. Die Proteine `(Name, Protein)` gehen an
 /// `aligner`, das ausgerichtete Proteine `(Name, Zeile)` zurückgibt (beliebige Reihenfolge, Zuordnung über den Namen).
 /// Rückübersetzung: jede Aminosäure der ausgerichteten Zeile wird durch das Original-Codon ersetzt (der Reihe nach), jedes `-` durch `---`.
-/// Das Ergebnis hat die Zeilen in der Reihenfolge der Eingabe. Basen in Großbuchstaben.
+/// Das Ergebnis hat die Zeilen in der Reihenfolge der Eingabe. Basen in Uppercase.
 /// Fehler `Error::InvalidInput`: leere Eingabe; Länge einer Zeile kein Vielfaches von 3 (Meldung enthält den Namen);
 /// `aligner` liefert eine Zeile nicht zurück oder mit einer Zahl Aminosäuren (ohne `-`), die nicht zum Protein passt. Fehler des `aligner` werden weitergegeben.
 pub fn translation_align(
@@ -130,7 +130,7 @@ pub fn translation_align(
     aligner: &ProteinAligner,
 ) -> Result<Vec<(String, String)>> {
     if rows.is_empty() {
-        return Err(Error::InvalidInput("Keine Sequenzen übergeben".to_string()));
+        return Err(Error::InvalidInput("No sequences provided".to_string()));
     }
     let mut codons: Vec<Vec<String>> = Vec::new();
     let mut proteins: Vec<(String, String)> = Vec::new();
@@ -138,7 +138,7 @@ pub fn translation_align(
         let up = bases.to_ascii_uppercase();
         if up.len() % 3 != 0 || !up.is_ascii() {
             return Err(Error::InvalidInput(format!(
-                "Die Länge von '{}' ist kein Vielfaches von 3",
+                "The length of '{}' is not a multiple of 3",
                 name
             )));
         }
@@ -159,7 +159,7 @@ pub fn translation_align(
     for (idx, (name, _)) in rows.iter().enumerate() {
         let Some((_, line)) = aligned.iter().find(|(n, _)| n == name) else {
             return Err(Error::InvalidInput(format!(
-                "Das Alignment enthält die Zeile '{}' nicht",
+                "The alignment does not contain row '{}'",
                 name
             )));
         };
@@ -171,7 +171,7 @@ pub fn translation_align(
             } else {
                 let Some(codon) = codons[idx].get(next) else {
                     return Err(Error::InvalidInput(format!(
-                        "Zeile '{}' passt nicht zum Protein",
+                        "Row '{}' does not match the protein",
                         name
                     )));
                 };
@@ -181,7 +181,7 @@ pub fn translation_align(
         }
         if next != codons[idx].len() {
             return Err(Error::InvalidInput(format!(
-                "Zeile '{}' passt nicht zum Protein",
+                "Row '{}' does not match the protein",
                 name
             )));
         }
@@ -206,18 +206,18 @@ pub fn realign_region(
     selected: &[usize],
     aligner: &dyn Fn(&[String]) -> Result<Vec<String>>,
 ) -> Result<Vec<String>> {
-    let width = check_group(rows, "das Alignment")?;
+    let width = check_group(rows, "the alignment")?;
     if selected.is_empty() {
-        return Err(Error::InvalidInput("Keine Zeilen gewählt".to_string()));
+        return Err(Error::InvalidInput("No rows selected".to_string()));
     }
     for (k, &i) in selected.iter().enumerate() {
         if i >= rows.len() || selected[..k].contains(&i) {
-            return Err(Error::InvalidInput(format!("Ungültiger Zeilenindex {}", i)));
+            return Err(Error::InvalidInput(format!("Invalid row index {}", i)));
         }
     }
     if from >= to || to > width {
         return Err(Error::OutOfRange(format!(
-            "Bereich {}..{} liegt nicht in 0..{}",
+            "Range {}..{} is not within 0..{}",
             from, to, width
         )));
     }
@@ -229,7 +229,7 @@ pub fn realign_region(
     let aligned = aligner(&pieces)?;
     if aligned.len() != pieces.len() {
         return Err(Error::InvalidInput(
-            "Der Aligner lieferte eine falsche Zahl von Zeilen".to_string(),
+            "The aligner returned the wrong number of rows".to_string(),
         ));
     }
     let w = aligned.iter().map(|r| r.chars().count()).max().unwrap_or(0);

@@ -121,7 +121,7 @@ mod tests {
     #[test]
     fn rangfolge() {
         let cmds = vec![
-            cmd("Primer entwerfen", &["pcr"]),
+            cmd("Design primers", &["pcr"]),
             cmd("Verdau simulieren", &[]),
             cmd("Primer prüfen", &[]),
         ];

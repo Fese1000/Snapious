@@ -1,7 +1,7 @@
 //! Sequenzen aus einer Tabelle (CSV/TSV, bereits in Zeilen und Felder zerlegt) übernehmen.
 
 /// Liest `(Name, Sequenz)` aus den Spalten `name_col` und `seq_col` (0-basiert). Ist `has_header` wahr, wird die erste Zeile
-/// übersprungen. Die Sequenz wird von Leerraum befreit und in Großbuchstaben gewandelt. Zeilen, in denen eine der Spalten fehlt
+/// übersprungen. Die Sequenz wird von Leerraum befreit und in Uppercase gewandelt. Zeilen, in denen eine der Spalten fehlt
 /// oder die Sequenz danach leer ist, entfallen. Ist der Name (getrimmt) leer, heißt der Eintrag `Zeile {n}` mit `n` = Index der
 /// Zeile in `rows` plus 1 (die Kopfzeile zählt mit).
 pub fn sequences_from_table(
@@ -36,12 +36,12 @@ pub fn sequences_from_table(
         let name = name_raw.trim().to_string();
         let final_name = if name.is_empty() {
             // Index in `rows` plus 1 (da "Kopfzeile zählt mit" und i der Index in rows ist)
-            format!("Zeile {}", i + 1)
+            format!("Row {}", i + 1)
         } else {
             name
         };
 
-        // Sequenz verarbeiten: Trimmen, Leerzeichen entfernen und Großbuchstaben.
+        // Sequenz verarbeiten: Trimmen, Leerzeichen entfernen und Uppercase.
         // "Leerraum befreien" bedeutet hier, alle Whitespaces zu entfernen (nicht nur Trimmen),
         // da "AC GT" zu "ACGT" werden soll.
         let seq: String = seq_raw.chars().filter(|c| !c.is_whitespace()).collect();
@@ -79,7 +79,7 @@ mod tests {
             sequences_from_table(&rows, 0, 1, true),
             vec![
                 ("a".to_string(), "ACGT".to_string()),
-                ("Zeile 3".to_string(), "TT".to_string())
+                ("Row 3".to_string(), "TT".to_string())
             ]
         );
     }

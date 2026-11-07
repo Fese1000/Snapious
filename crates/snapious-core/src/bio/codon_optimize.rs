@@ -15,18 +15,18 @@ pub struct CodonTable {
 
 impl CodonTable {
     /// Aus Paaren `(Codon, Häufigkeit)`. Fehler `Error::InvalidInput`, wenn ein Codon nicht aus genau drei Zeichen
-    /// A, C, G, T (Großbuchstaben) besteht oder eine Häufigkeit negativ oder keine Zahl ist.
+    /// A, C, G, T (Uppercase) besteht oder eine Häufigkeit negativ oder keine Zahl ist.
     /// Nicht genannte Codons haben die Häufigkeit 0.
     pub fn from_frequencies(pairs: &[(&str, f64)]) -> Result<CodonTable> {
         let mut freq = BTreeMap::new();
         for (codon, f) in pairs {
             let c = codon.to_ascii_uppercase().replace('U', "T");
             if c.len() != 3 || !c.chars().all(|b| matches!(b, 'A' | 'C' | 'G' | 'T')) {
-                return Err(Error::InvalidInput(format!("Ungültiges Codon: {}", codon)));
+                return Err(Error::InvalidInput(format!("Invalid codon: {}", codon)));
             }
             if f.is_nan() || *f < 0.0 {
                 return Err(Error::InvalidInput(format!(
-                    "Ungültige Häufigkeit für {}: {}",
+                    "Invalid frequency for {}: {}",
                     codon, f
                 )));
             }
@@ -59,7 +59,7 @@ impl CodonTable {
         CodonTable { freq }
     }
 
-    /// Häufigkeit des Codons (Großbuchstaben, `U` wie `T`); unbekannt → 0.0.
+    /// Häufigkeit des Codons (Uppercase, `U` wie `T`); unbekannt → 0.0.
     pub fn frequency(&self, codon: &str) -> f64 {
         self.freq
             .get(codon.to_ascii_uppercase().replace('U', "T").as_str())
@@ -67,7 +67,7 @@ impl CodonTable {
             .unwrap_or(0.0)
     }
 
-    /// Alle Codons der Aminosäure (Einbuchstabencode, Stopp = `*`, Großbuchstaben), nach Häufigkeit absteigend,
+    /// Alle Codons der Aminosäure (Einbuchstabencode, Stopp = `*`, Uppercase), nach Häufigkeit absteigend,
     /// bei Gleichstand alphabetisch. Unbekannte Aminosäure → leere Liste. Verwende `codon_families`.
     pub fn codons_for(&self, amino_acid: char) -> Vec<String> {
         let mut codons = codon_families()
@@ -96,7 +96,7 @@ pub enum Strategy {
 #[derive(Clone, Debug, PartialEq)]
 pub struct OptimizationOptions {
     pub strategy: Strategy,
-    /// Verbotene Erkennungsstellen (nur A, C, G, T; Großbuchstaben); auch ihr Reverse-Komplement ist verboten.
+    /// Verbotene Erkennungsstellen (nur A, C, G, T; Uppercase); auch ihr Reverse-Komplement ist verboten.
     pub avoid_sites: Vec<String>,
     /// Längste erlaubte Folge gleicher Basen.
     pub max_homopolymer: usize,
@@ -170,7 +170,7 @@ impl SplitMix64 {
 ///    (bei zu wenig GC mehr G/C, bei zu viel weniger), wird die mit dem kleinsten Häufigkeitsverlust gewählt,
 ///    also dem kleinsten `frequency(aktuell) − frequency(alt)`, bei Gleichstand die erste in der genannten Reihenfolge. Sie wird nur genommen, wenn sie weder die Zahl verbotener Vorkommen noch die
 ///    Homopolymer-Kennzahl erhöht. Gibt es keine, wird die Schleife beendet.
-/// 3. Das Ergebnis codiert immer dasselbe Protein (Großbuchstaben, T statt U).
+/// 3. Das Ergebnis codiert immer dasselbe Protein (Uppercase, T statt U).
 ///
 /// Fehler `Error::InvalidInput` bei Zeichen, die keine Aminosäure (20 Standard-Aminosäuren oder `*`) sind. Leere Eingabe → "".
 pub fn optimize(
@@ -187,7 +187,7 @@ pub fn optimize(
     for c in protein.bytes() {
         if !valid_aa.contains(&c) {
             return Err(Error::InvalidInput(format!(
-                "Ungültiges Zeichen in Protein: {}",
+                "Invalid character in protein: {}",
                 c as char
             )));
         }
@@ -380,17 +380,17 @@ pub fn optimize_dna(
 ) -> Result<String> {
     let dna = coding_dna.to_ascii_uppercase().replace('U', "T");
     if !dna.chars().all(|c| matches!(c, 'A' | 'C' | 'G' | 'T')) {
-        return Err(Error::InvalidInput("Ungültige Zeichen in DNA".to_string()));
+        return Err(Error::InvalidInput("Invalid characters in DNA".to_string()));
     }
     if !dna.len().is_multiple_of(3) {
         return Err(Error::InvalidInput(
-            "DNA-Länge nicht durch 3 teilbar".to_string(),
+            "DNA length not divisible by 3".to_string(),
         ));
     }
     let protein_bytes: Vec<u8> = dna.as_bytes().chunks(3).map(amino_acid_for).collect();
     if protein_bytes.contains(&b'X') {
         return Err(Error::InvalidInput(
-            "Unbekannte Aminosäure in Übersetzung".to_string(),
+            "Unknown amino acid in translation".to_string(),
         ));
     }
     let protein: String = protein_bytes.iter().map(|&b| b as char).collect();

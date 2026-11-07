@@ -1,5 +1,5 @@
 //! Plugins als externe Programme. Jedes Plugin ist ein Ordner mit einer Datei `plugin.json`:
-//! `{"name": "hello", "version": "1.0", "operations": [{"id": "hello.upper", "label": "Großbuchstaben", "command": "run.sh", "args": ["--x"]}]}`.
+//! `{"name": "hello", "version": "1.0", "operations": [{"id": "hello.upper", "label": "Uppercase", "command": "run.sh", "args": ["--x"]}]}`.
 //! Eine Plugin-Operation startet `command` (Pfad relativ zum Plugin-Ordner), schreibt die Eingabesequenzen als FASTA auf die Standardeingabe,
 //! übergibt die Parameter als JSON-Objekt in der Umgebungsvariablen `SNAPIOUS_PARAMS` und liest FASTA von der Standardausgabe.
 //! Plugins laufen ohne Schutzraum (Sandbox) mit den Rechten des Programms.
@@ -36,12 +36,12 @@ pub struct Plugin {
 pub fn parse_manifest(json: &str, dir: &Path) -> Result<Plugin> {
     let bad = |m: &str| Error::InvalidInput(m.to_string());
     let v: serde_json::Value = serde_json::from_str(json)
-        .map_err(|e| Error::InvalidInput(format!("Ungültiges JSON im Manifest: {}", e)))?;
+        .map_err(|e| Error::InvalidInput(format!("Invalid JSON in manifest: {}", e)))?;
     let name = v
         .get("name")
         .and_then(|x| x.as_str())
         .filter(|s| !s.trim().is_empty())
-        .ok_or_else(|| bad("Manifest: 'name' fehlt oder ist leer"))?
+        .ok_or_else(|| bad("Manifest: 'name' is missing or empty"))?
         .to_string();
     let version = v
         .get("version")
@@ -51,7 +51,7 @@ pub fn parse_manifest(json: &str, dir: &Path) -> Result<Plugin> {
     let ops = v
         .get("operations")
         .and_then(|x| x.as_array())
-        .ok_or_else(|| bad("Manifest: 'operations' fehlt oder ist keine Liste"))?;
+        .ok_or_else(|| bad("Manifest: 'operations' is missing or not a list"))?;
     let mut operations = Vec::new();
     for (i, o) in ops.iter().enumerate() {
         let text = |key: &str| {
@@ -61,10 +61,10 @@ pub fn parse_manifest(json: &str, dir: &Path) -> Result<Plugin> {
                 .map(|s| s.to_string())
         };
         let id = text("id")
-            .ok_or_else(|| bad(&format!("Manifest: Operation {} hat keine 'id'", i + 1)))?;
+            .ok_or_else(|| bad(&format!("Manifest: operation {} has no 'id'", i + 1)))?;
         let command = text("command").ok_or_else(|| {
             bad(&format!(
-                "Manifest: Operation '{}' hat keinen 'command'",
+                "Manifest: operation '{}' has no 'command'",
                 id
             ))
         })?;
@@ -156,7 +156,7 @@ impl Operation for PluginOperation {
                 Document::Sequence(s) => seqs.push(s.sequence().clone()),
                 _ => {
                     return Err(Error::Operation(
-                        "Alle Eingaben müssen Sequenzen sein".to_string(),
+                        "All inputs must be sequences".to_string(),
                     ))
                 }
             }
@@ -173,7 +173,7 @@ impl Operation for PluginOperation {
             .spawn()
             .map_err(|e| {
                 Error::Operation(format!(
-                    "Das Plugin-Programm '{}' lässt sich nicht starten: {}",
+                    "The plugin program '{}' cannot be started: {}",
                     self.spec.command, e
                 ))
             })?;
@@ -189,7 +189,7 @@ impl Operation for PluginOperation {
             let err = String::from_utf8_lossy(&out.stderr);
             let short: String = err.trim().chars().take(300).collect();
             return Err(Error::Operation(format!(
-                "Plugin '{}' endete mit Fehler: {}",
+                "Plugin '{}' exited with an error: {}",
                 self.spec.id, short
             )));
         }
@@ -206,13 +206,13 @@ impl Operation for PluginOperation {
                 Document::Sequence(crate::model::document::SequenceDocument::of(&name, s))
             })
             .collect();
-        let summary = format!("{}: {} Sequenz(en)", self.spec.label, outputs.len());
+        let summary = format!("{}: {} sequence(s)", self.spec.label, outputs.len());
         Ok(OperationResult { outputs, summary })
     }
 }
 
 /// Trägt die Operationen aller Plugins in die Registry ein. Doppelte IDs (schon vorhanden) werden übersprungen und als Warnung
-/// `"Operation {id} aus Plugin {name} übersprungen: ID schon vergeben"` gemeldet.
+/// `"Operation {id} aus Plugin {name} übersprungen: ID already taken"` gemeldet.
 pub fn register_plugins(registry: &mut OperationRegistry, plugins: &[Plugin]) -> Vec<String> {
     let mut warnings = Vec::new();
     for p in plugins {
@@ -223,7 +223,7 @@ pub fn register_plugins(registry: &mut OperationRegistry, plugins: &[Plugin]) ->
             };
             if registry.register(Box::new(op)).is_err() {
                 warnings.push(format!(
-                    "Operation {} aus Plugin {} übersprungen: ID schon vergeben",
+                    "Operation {} from plugin {} skipped: ID already taken",
                     spec.id, p.name
                 ));
             }
@@ -247,7 +247,7 @@ mod tests {
     }
 
     const MANIFEST: &str = r#"{"name":"hello","version":"1.2","operations":[
-        {"id":"hello.upper","label":"Großbuchstaben","command":"run.sh","args":["-x"]},
+        {"id":"hello.upper","label":"Uppercase","command":"run.sh","args":["-x"]},
         {"id":"hello.other","command":"run.sh"}]}"#;
 
     #[test]
@@ -257,7 +257,7 @@ mod tests {
         assert_eq!(p.version, "1.2");
         assert_eq!(p.dir, PathBuf::from("/p/hello"));
         assert_eq!(p.operations.len(), 2);
-        assert_eq!(p.operations[0].label, "Großbuchstaben");
+        assert_eq!(p.operations[0].label, "Uppercase");
         assert_eq!(p.operations[0].args, vec!["-x"]);
         assert_eq!(p.operations[1].label, "hello.other");
         assert!(p.operations[1].args.is_empty());
@@ -325,7 +325,7 @@ mod tests {
         let op = PluginOperation {
             spec: PluginOperationSpec {
                 id: "hello.upper".to_string(),
-                label: "Großbuchstaben".to_string(),
+                label: "Uppercase".to_string(),
                 command: "run.sh".to_string(),
                 args: vec![],
             },
@@ -342,7 +342,7 @@ mod tests {
             }
             _ => panic!("keine Sequenz"),
         }
-        assert_eq!(r.summary, "Großbuchstaben: 1 Sequenz(en)");
+        assert_eq!(r.summary, "Uppercase: 1 sequence(s)");
         assert_eq!(op.id(), "hello.upper");
         let _ = std::fs::remove_dir_all(d);
     }
@@ -408,7 +408,7 @@ mod tests {
         assert!(reg.find("hello.upper").is_some());
         let w2 = register_plugins(&mut reg, &[p]);
         assert_eq!(w2.len(), 2);
-        assert!(w2[0].contains("hello.upper") && w2[0].contains("schon vergeben"));
+        assert!(w2[0].contains("hello.upper") && w2[0].contains("already taken"));
         assert_eq!(reg.all().len(), before + 2);
     }
 }

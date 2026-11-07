@@ -37,8 +37,8 @@ pub struct Gateway {
     pub att2: GatewaySite,
 }
 
-/// Findet `site` (Großbuchstaben) genau einmal in `bases` (Großbuchstaben) und gibt den Beginn zurück.
-/// Fehler `Error::InvalidInput` mit `"{name} nicht gefunden"` (kein Treffer) oder `"{name} kommt mehrfach vor"` (mehr als ein Treffer, auch
+/// Findet `site` (Uppercase) genau einmal in `bases` (Uppercase) und gibt den Beginn zurück.
+/// Fehler `Error::InvalidInput` mit `"{name} nicht gefunden"` (kein Treffer) oder `"{name} occurs multiple times"` (mehr als ein Treffer, auch
 /// überlappend).
 pub fn find_unique(bases: &str, site: &str, name: &str) -> Result<usize> {
     let hits: Vec<usize> = if site.is_empty() || site.len() > bases.len() {
@@ -50,8 +50,8 @@ pub fn find_unique(bases: &str, site: &str, name: &str) -> Result<usize> {
     };
     match hits.as_slice() {
         [one] => Ok(*one),
-        [] => Err(Error::InvalidInput(format!("{} nicht gefunden", name))),
-        _ => Err(Error::InvalidInput(format!("{} kommt mehrfach vor", name))),
+        [] => Err(Error::InvalidInput(format!("{} not found", name))),
+        _ => Err(Error::InvalidInput(format!("{} occurs multiple times", name))),
     }
 }
 
@@ -75,7 +75,7 @@ fn split_between(
     let second_pos = find_unique(&rotated, second, second_name)?;
     if second_pos < after_first {
         return Err(Error::InvalidInput(format!(
-            "{} liegt nicht hinter {}",
+            "{} is not downstream of {}",
             second_name, first_name
         )));
     }
@@ -116,7 +116,7 @@ impl Gateway {
     /// BP-Reaktion `attB × attP → attL + attR`; Rückgabe ist der Entry-Klon.
     ///
     /// - `att_b_product` muss linear, `donor` zirkulär sein, sonst `Error::InvalidInput`.
-    /// - Im Produkt (Großbuchstaben) steht `attB1` vor `attB2` (je genau einmal, mit `find_unique` und den Namen `attB1`/`attB2`);
+    /// - Im Produkt (Uppercase) steht `attB1` vor `attB2` (je genau einmal, mit `find_unique` und den Namen `attB1`/`attB2`);
     ///   das Insert ist der Text dazwischen. Im Spender ist `attP1` + `attP2` zu finden (Namen `attP1`/`attP2`), zirkulär: der Spender
     ///   wird so gedreht, dass er bei `attP1` beginnt; `attP2` muss danach hinter `attP1` liegen (sonst `Error::InvalidInput`).
     ///   Der Rest ist der Text hinter `attP2` bis zum Ende des gedrehten Spenders.
@@ -129,12 +129,12 @@ impl Gateway {
     ) -> Result<SequenceDocument> {
         if att_b_product.topology() != Topology::Linear {
             return Err(Error::InvalidInput(
-                "Das Produkt mit den attB-Stellen muss linear sein".to_string(),
+                "The product with the attB sites must be linear".to_string(),
             ));
         }
         if donor.topology() != Topology::Circular {
             return Err(Error::InvalidInput(
-                "Der Spendervektor muss zirkulär sein".to_string(),
+                "The donor vector must be circular".to_string(),
             ));
         }
         let product = att_b_product.bases().to_ascii_uppercase();
@@ -143,7 +143,7 @@ impl Gateway {
         let insert_start = b1 + self.att1.att_b().len();
         if b2 < insert_start {
             return Err(Error::InvalidInput(
-                "attB2 liegt nicht hinter attB1".to_string(),
+                "attB2 is not downstream of attB1".to_string(),
             ));
         }
         let insert = product.get(insert_start..b2).unwrap_or("");
@@ -184,7 +184,7 @@ impl Gateway {
             || destination.topology() != Topology::Circular
         {
             return Err(Error::InvalidInput(
-                "Entry-Klon und Zielvektor müssen zirkulär sein".to_string(),
+                "Entry clone and destination vector must be circular".to_string(),
             ));
         }
         let (insert, _) = split_between(
@@ -258,11 +258,11 @@ mod tests {
     fn eindeutige_suche() {
         assert_eq!(find_unique("GGAAAATTGTGG", "AAAATTGT", "x").unwrap(), 2);
         match find_unique("GGGG", "AAAA", "attB1") {
-            Err(Error::InvalidInput(m)) => assert_eq!(m, "attB1 nicht gefunden"),
+            Err(Error::InvalidInput(m)) => assert_eq!(m, "attB1 not found"),
             other => panic!("unerwartet: {:?}", other),
         }
         match find_unique("AAAAAA", "AAAA", "attB2") {
-            Err(Error::InvalidInput(m)) => assert_eq!(m, "attB2 kommt mehrfach vor"),
+            Err(Error::InvalidInput(m)) => assert_eq!(m, "attB2 occurs multiple times"),
             other => panic!("unerwartet: {:?}", other),
         }
     }
@@ -349,7 +349,7 @@ mod tests {
         // fehlende att-Stelle
         let ohne = doc("ohne", "GATCGATC", Topology::Linear);
         match g.bp_reaction(&ohne, &donor()) {
-            Err(Error::InvalidInput(m)) => assert_eq!(m, "attB1 nicht gefunden"),
+            Err(Error::InvalidInput(m)) => assert_eq!(m, "attB1 not found"),
             other => panic!("unerwartet: {:?}", other),
         }
         // falsche Reihenfolge der Stellen im Produkt

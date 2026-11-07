@@ -23,12 +23,12 @@ impl ProjectStore {
         let name = name.trim();
         if name.is_empty() {
             return Err(Error::InvalidInput(
-                "Der Ordnername darf nicht leer sein".to_string(),
+                "The folder name must not be empty".to_string(),
             ));
         }
         if !parent_id.is_empty() && !self.folder_exists(parent_id)? {
             return Err(Error::InvalidInput(format!(
-                "Unbekannter Ordner {}",
+                "Unknown folder {}",
                 parent_id
             )));
         }
@@ -68,7 +68,7 @@ impl ProjectStore {
         let name = name.trim();
         if name.is_empty() {
             return Err(Error::InvalidInput(
-                "Der Ordnername darf nicht leer sein".to_string(),
+                "The folder name must not be empty".to_string(),
             ));
         }
         let n = self.conn.execute(
@@ -76,7 +76,7 @@ impl ProjectStore {
             params![name, id],
         )?;
         if n == 0 {
-            return Err(Error::InvalidInput(format!("Unbekannter Ordner {}", id)));
+            return Err(Error::InvalidInput(format!("Unknown folder {}", id)));
         }
         Ok(())
     }
@@ -85,7 +85,7 @@ impl ProjectStore {
     /// (`delete`), sonst nur aus dem Ordner gelöst (sie liegen danach in der Wurzel). Unbekannte ID → `Error::InvalidInput`.
     pub fn delete_folder(&mut self, id: &str, delete_contents: bool) -> Result<()> {
         if !self.folder_exists(id)? {
-            return Err(Error::InvalidInput(format!("Unbekannter Ordner {}", id)));
+            return Err(Error::InvalidInput(format!("Unknown folder {}", id)));
         }
         // Ordner und alle Unterordner einsammeln
         let all = self.folders()?;
@@ -128,7 +128,7 @@ impl ProjectStore {
     pub fn move_document(&mut self, doc_id: &str, folder_id: &str) -> Result<()> {
         if self.load(doc_id)?.is_none() {
             return Err(Error::InvalidInput(format!(
-                "Unbekanntes Dokument {}",
+                "Unknown document {}",
                 doc_id
             )));
         }
@@ -139,7 +139,7 @@ impl ProjectStore {
         }
         if !self.folder_exists(folder_id)? {
             return Err(Error::InvalidInput(format!(
-                "Unbekannter Ordner {}",
+                "Unknown folder {}",
                 folder_id
             )));
         }

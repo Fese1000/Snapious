@@ -45,11 +45,11 @@ impl<'a> Cursor<'a> {
         let end = self
             .pos
             .checked_add(n)
-            .ok_or_else(|| Error::InvalidInput("SFF: Länge zu groß".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("SFF: length too large".to_string()))?;
         let out = self
             .data
             .get(self.pos..end)
-            .ok_or_else(|| Error::InvalidInput("SFF: Datei zu kurz".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("SFF: file too short".to_string()))?;
         self.pos = end;
         Ok(out)
     }
@@ -68,11 +68,11 @@ impl<'a> Cursor<'a> {
 pub fn parse_sff(data: &[u8]) -> Result<SffFile> {
     let mut c = Cursor { data, pos: 0 };
     if c.take(4)? != b".sff" {
-        return Err(Error::InvalidInput("Keine SFF-Datei".to_string()));
+        return Err(Error::InvalidInput("Not an SFF file".to_string()));
     }
     if c.take(4)? != [0, 0, 0, 1] {
         return Err(Error::InvalidInput(
-            "Nur SFF Version 1 wird unterstützt".to_string(),
+            "Only SFF version 1 is supported".to_string(),
         ));
     }
     c.take(8)?; // index_offset
@@ -85,11 +85,11 @@ pub fn parse_sff(data: &[u8]) -> Result<SffFile> {
     let flow_chars = String::from_utf8_lossy(c.take(flows)?).to_string();
     let key = String::from_utf8_lossy(c.take(key_length)?).to_string();
     if header_length < c.pos {
-        return Err(Error::InvalidInput("SFF: Kopflänge zu klein".to_string()));
+        return Err(Error::InvalidInput("SFF: header length too small".to_string()));
     }
     c.pos = header_length;
     if c.pos > data.len() {
-        return Err(Error::InvalidInput("SFF: Datei zu kurz".to_string()));
+        return Err(Error::InvalidInput("SFF: file too short".to_string()));
     }
     let mut reads = Vec::new();
     for _ in 0..reads_total {
@@ -104,7 +104,7 @@ pub fn parse_sff(data: &[u8]) -> Result<SffFile> {
         let name = String::from_utf8_lossy(c.take(name_length)?).to_string();
         c.pos = start
             .checked_add(read_header_length)
-            .ok_or_else(|| Error::InvalidInput("SFF: Lesekopf zu groß".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("SFF: read header too large".to_string()))?;
         let data_start = c.pos;
         let mut flowgram = Vec::with_capacity(flows);
         for _ in 0..flows {

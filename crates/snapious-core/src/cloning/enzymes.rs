@@ -127,7 +127,7 @@ impl RestrictionEnzyme {
             .collect();
         if site.is_empty() || !site.bytes().all(|b| IUPAC.contains(&b)) {
             return Err(Error::InvalidInput(format!(
-                "Ungültige Erkennungssequenz für {}: '{}'",
+                "Invalid recognition sequence for {}: '{}'",
                 name, recognition
             )));
         }
@@ -181,7 +181,7 @@ impl RestrictionEnzyme {
         &self.name
     }
 
-    /// Erkennungssequenz (IUPAC, Großbuchstaben, ohne Schnittmarkierung).
+    /// Erkennungssequenz (IUPAC, Uppercase, ohne Schnittmarkierung).
     pub fn recognition(&self) -> &str {
         &self.recognition
     }
@@ -279,7 +279,7 @@ impl RestrictionEnzyme {
         true
     }
 
-    /// Alle Treffer in `sequence` (Großbuchstaben, T statt U) auf beiden Strängen, nach `start` sortiert.
+    /// Alle Treffer in `sequence` (Uppercase, T statt U) auf beiden Strängen, nach `start` sortiert.
     pub fn find_matches(&self, sequence: &[u8]) -> Vec<SiteMatch> {
         let len = self.recognition.len();
         let mut out = Vec::new();

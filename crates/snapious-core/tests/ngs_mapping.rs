@@ -8,7 +8,7 @@ use snapious_core::util::Rng;
 #[test]
 fn reads_landen_an_der_herkunft() {
     let Some(minimap2) = ToolRegistry::defaults().executable("minimap2") else {
-        eprintln!("minimap2 nicht installiert, Test übersprungen");
+        eprintln!("minimap2 not installed, test skipped");
         return;
     };
     let mut rng = Rng::new(21);
@@ -52,6 +52,6 @@ fn reads_landen_an_der_herkunft() {
             }
         }
     }
-    assert!(good >= 190, "nur {} von 200 Reads an der Herkunft", good);
+    assert!(good >= 190, "only {} of 200 reads at their origin", good);
     let _ = std::fs::remove_dir_all(dir);
 }

@@ -74,13 +74,13 @@ pub fn parse_cml(text: &str) -> Result<(Vec<CmlAtom>, Vec<CmlBond>)> {
     let mut atoms = Vec::new();
     for t in tags(text, "<atom") {
         let get = |n: &str| {
-            attr(t, n).ok_or_else(|| Error::InvalidInput(format!("Atom ohne Attribut '{n}'")))
+            attr(t, n).ok_or_else(|| Error::InvalidInput(format!("Atom without attribute '{n}'")))
         };
         let num = |n: &str| -> Result<f64> {
             get(n)?
                 .trim()
                 .parse::<f64>()
-                .map_err(|_| Error::InvalidInput(format!("Ungültige Koordinate '{n}'")))
+                .map_err(|_| Error::InvalidInput(format!("Invalid coordinate '{n}'")))
         };
         atoms.push(CmlAtom {
             id: get("id")?,
@@ -92,24 +92,24 @@ pub fn parse_cml(text: &str) -> Result<(Vec<CmlAtom>, Vec<CmlBond>)> {
     }
     if atoms.is_empty() {
         return Err(Error::InvalidInput(
-            "Keine Atome in der CML-Datei".to_string(),
+            "No atoms in the CML file".to_string(),
         ));
     }
     let mut bonds = Vec::new();
     for t in tags(text, "<bond") {
         let refs = attr(t, "atomRefs2")
-            .ok_or_else(|| Error::InvalidInput("Bindung ohne atomRefs2".to_string()))?;
+            .ok_or_else(|| Error::InvalidInput("Bond without atomRefs2".to_string()))?;
         let mut ids = refs.split_whitespace();
         let (Some(a), Some(b)) = (ids.next(), ids.next()) else {
             return Err(Error::InvalidInput(
-                "atomRefs2 braucht zwei Atome".to_string(),
+                "atomRefs2 needs two atoms".to_string(),
             ));
         };
         let find = |id: &str| {
             atoms
                 .iter()
                 .position(|x| x.id == id)
-                .ok_or_else(|| Error::InvalidInput(format!("Unbekanntes Atom '{id}'")))
+                .ok_or_else(|| Error::InvalidInput(format!("Unknown atom '{id}'")))
         };
         let order = match attr(t, "order").as_deref().map(str::trim) {
             Some("2") | Some("D") => 2,

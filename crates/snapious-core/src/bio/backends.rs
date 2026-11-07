@@ -33,7 +33,7 @@ impl AlignBackend {
     }
 }
 
-/// Liest FASTA-Text mit mehrzeiligen Sequenzen in `(Kopfzeile bis zum ersten Leerzeichen, Sequenz in Großbuchstaben)`.
+/// Liest FASTA-Text mit mehrzeiligen Sequenzen in `(Kopfzeile bis zum ersten Leerzeichen, Sequenz in Uppercase)`.
 pub fn parse_fasta_rows(text: &str) -> Vec<(String, String)> {
     let mut rows: Vec<(String, String)> = Vec::new();
     for line in text.lines() {
@@ -62,7 +62,7 @@ fn map_back(seqs: &[Sequence], rows: Vec<(String, String)>) -> Result<Vec<(Strin
         let key = format!("s{}", i);
         let row = rows.iter().find(|(n, _)| *n == key).ok_or_else(|| {
             Error::Io(format!(
-                "Das Programm lieferte keine Zeile für '{}'",
+                "The program returned no row for '{}'",
                 s.name()
             ))
         })?;
@@ -71,7 +71,7 @@ fn map_back(seqs: &[Sequence], rows: Vec<(String, String)>) -> Result<Vec<(Strin
     let width = out.first().map_or(0, |r| r.1.chars().count());
     if out.iter().any(|r| r.1.chars().count() != width) {
         return Err(Error::Io(
-            "Das Programm lieferte Zeilen unterschiedlicher Länge".to_string(),
+            "The program returned rows of different lengths".to_string(),
         ));
     }
     Ok(out)
@@ -87,14 +87,14 @@ fn run_checked(
     let reg = ToolRegistry::defaults();
     if !reg.is_available(tool) {
         return Err(Error::Io(format!(
-            "Programm '{}' ist nicht installiert",
+            "Program '{}' is not installed",
             tool
         )));
     }
     let r = reg.run(tool, args, dir, stdin, Duration::from_secs(secs))?;
     if !r.ok() {
         return Err(Error::Io(format!(
-            "'{}' meldete einen Fehler: {}",
+            "'{}' reported an error: {}",
             tool,
             r.stderr.trim()
         )));
@@ -102,12 +102,12 @@ fn run_checked(
     Ok(r.stdout)
 }
 
-/// Richtet Sequenzen aus; Rückgabe `(Name, ausgerichtete Zeile)` in Eingabereihenfolge. Mindestens zwei Sequenzen nötig
+/// Richtet Sequenzen aus; Rückgabe `(Name, ausgerichtete Zeile)` in Eingabereihenfolge. At least two sequences required
 /// (`Error::InvalidInput`). Nicht installierte Programme ergeben `Error::Io`.
 pub fn align_with(backend: AlignBackend, seqs: &[Sequence]) -> Result<Vec<(String, String)>> {
     if seqs.len() < 2 {
         return Err(Error::InvalidInput(
-            "Für ein Alignment sind mindestens zwei Sequenzen nötig".to_string(),
+            "An alignment needs at least two sequences".to_string(),
         ));
     }
     if backend == AlignBackend::Builtin {
@@ -210,7 +210,7 @@ mod tests {
 
     fn pruefe_aligner(backend: AlignBackend, tool: &str) {
         if !is_available(tool) {
-            eprintln!("übersprungen: {} nicht installiert", tool);
+            eprintln!("skipped: {} not installed", tool);
             return;
         }
         let input = seqs();

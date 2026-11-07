@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 /// Durchschnittliche Restmassen in Da: G 57.0519, A 71.0788, S 87.0782, P 97.1167, V 99.1326, T 101.1051, C 103.1388,
 /// L 113.1594, I 113.1594, N 114.1038, D 115.0886, Q 128.1307, K 128.1741, E 129.1155, M 131.1926, H 137.1411,
 /// F 147.1766, R 156.1875, Y 163.1760, W 186.2132.
-/// Rückgabe: Masse des Restes oder `None` für ein Zeichen, das keine Standard-Aminosäure ist (Großbuchstaben erwartet).
+/// Rückgabe: Masse des Restes oder `None` für ein Zeichen, das keine Standard-Aminosäure ist (Uppercase erwartet).
 pub fn residue_mass(aa: char) -> Option<f64> {
     match aa {
         'A' => Some(71.0788),
@@ -36,7 +36,7 @@ pub fn residue_mass(aa: char) -> Option<f64> {
 }
 
 /// Kyte-Doolittle-Wert: A 1.8, R −4.5, N −3.5, D −3.5, C 2.5, Q −3.5, E −3.5, G −0.4, H −3.2, I 4.5, L 3.8, K −3.9,
-/// M 1.9, F 2.8, P −1.6, S −0.8, T −0.7, W −0.9, Y −1.3, V 4.2. Sonst `None` (Großbuchstaben erwartet).
+/// M 1.9, F 2.8, P −1.6, S −0.8, T −0.7, W −0.9, Y −1.3, V 4.2. Sonst `None` (Uppercase erwartet).
 pub fn hydropathy_value(aa: char) -> Option<f64> {
     match aa {
         'A' => Some(1.8),
@@ -83,7 +83,7 @@ pub fn molecular_weight(protein: &str) -> f64 {
     }
 }
 
-/// Anzahl je Standard-Aminosäure (Großbuchstaben als Schlüssel); nur Aminosäuren, die vorkommen.
+/// Anzahl je Standard-Aminosäure (Uppercase als Schlüssel); nur Aminosäuren, die vorkommen.
 pub fn composition(protein: &str) -> BTreeMap<char, usize> {
     let mut map = BTreeMap::new();
 

@@ -1,31 +1,31 @@
-# Karte 1.3: Annotationsspuren (Feature-Lane-Zuordnung)
+# Card 1.3: Annotation tracks (feature lane assignment)
 
-Datei: `crates/snapious-core/src/view/feature_layout.rs` (Gerüst und Tests vorhanden)
-Voraussetzung: Karte 0.1 (Feature-Modell mit `Location`, `Interval`, `Strand`)
-Ziel: Features so auf Spuren (Lanes) verteilen, dass sich keine Segmente derselben Spur überlappen — wie ein Intervall-Färbungsproblem.
+File: `crates/snapious-core/src/view/feature_layout.rs` (skeleton and tests exist)
+Prerequisite: Card 0.1 (feature model with `Location`, `Interval`, `Strand`)
+Goal: Distribute features onto tracks (lanes) so that no segments of the same track overlap, like an interval coloring problem.
 
-Funktionen:
-  `PlacedFeature::new(feature, segment, lane) -> Self`      // Ein Feature-Segment auf einer bestimmten Spur
-  `FeatureLayout::assign_lanes(features) -> Vec<PlacedFeature>` // Verteilt alle Intervalle aller Features auf Spuren
+Functions:
+  `PlacedFeature::new(feature, segment, lane) -> Self`      // A feature segment on a specific lane
+  `FeatureLayout::assign_lanes(features) -> Vec<PlacedFeature>` // Distributes all intervals of all features onto lanes
 
-Algorithmus (greedy, nach Start sortiert, dann Länge absteigend):
-  1. Für jedes Feature alle Intervalle extrahieren als `(start, end, feature_index)`.
-  2. Sortiere alle Intervalle nach `start` aufsteigend, dann nach `end - start` absteigend.
-  3. Für jedes Intervall: finde die erste Spur, deren letztes Ende `<= interval.start` ist; lege dort hinein.
-     Andernfalls: neue Spur anlegen (Index = aktuelle Anzahl der Spuren).
-  4. Alle Intervalle **eines** Features müssen in derselben Spur landen:
-     - Berechne zuerst für jedes Feature die minimale Spur, in der **alle** seine Intervalle passen.
-     - Dazu: sortiere Features nach `location.start()`, dann Länge absteigend.
-     - Für jedes Feature prüfe, ob alle seine Intervalle in die bisherige Spur passen (keine Überlappung).
-     - Wenn nicht, lege eine neue Spur an und weise alle Segmente dieses Features dieser neuen Spur zu.
+Algorithm (greedy, sorted by start, then length descending):
+  1. For each feature, extract all intervals as `(start, end, feature_index)`.
+  2. Sort all intervals by `start` ascending, then by `end - start` descending.
+  3. For each interval: find the first lane whose last end is `<= interval.start`; place it there.
+     Otherwise create a new lane (index = current number of lanes).
+  4. All intervals of **one** feature must end up in the same lane:
+     - First compute, for each feature, the lowest lane in which **all** its intervals fit.
+     - To do so: sort features by `location.start()`, then length descending.
+     - For each feature check whether all its intervals fit into the existing lane (no overlap).
+     - If not, create a new lane and assign all segments of this feature to that new lane.
 
-Datenstrukturen:
+Data structures:
   `struct PlacedFeature { feature: Feature, segment: Interval, lane: usize }`
   `struct FeatureLayout;`
 
-Randfälle: Leere Liste → leere Ausgabe, `lane_count = 0`; zwei disjunkte Features → beide Spur 0;
-drei überlappende Features `[0,10)`, `[5,15)`, `[10,20)` → Spuren 0, 1, 0;
-Join-Feature `[0,5)+[20,25)` und Feature `[10,15)`: alle passen in Spur 0.
+Edge cases: empty list → empty output, `lane_count = 0`; two disjoint features → both lane 0;
+three overlapping features `[0,10)`, `[5,15)`, `[10,20)` → lanes 0, 1, 0;
+join feature `[0,5)+[20,25)` and feature `[10,15)`: all fit into lane 0.
 
-Fertig, wenn: `cargo test -p snapious-core feature_layout` grün.
-Nicht tun: Tests ändern; andere Dateien ändern; `unwrap()`.
+Done when: `cargo test -p snapious-core feature_layout` is green.
+Do not: change tests; change other files; use `unwrap()`.

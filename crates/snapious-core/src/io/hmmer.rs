@@ -40,7 +40,7 @@ pub fn parse_domtblout(text: &str) -> Result<Vec<DomainHit>> {
 
         if fields.len() < 22 {
             return Err(Error::InvalidInput(format!(
-                "Zeile {}: Mindestens 22 Felder erwartet, {} gefunden.",
+                "Line {}: At least 22 fields expected, {} found.",
                 current_line,
                 fields.len()
             )));
@@ -95,7 +95,7 @@ fn parse_evalue(s: &str, line: usize) -> Result<f64> {
     // std::str::FromStr für f64 unterstützt das standardmäßig.
     f64::from_str(s).map_err(|_| {
         Error::InvalidInput(format!(
-            "Zeile {}: Konnte E-Wert '{}' nicht parsen.",
+            "Line {}: Could not parse E-value '{}'.",
             line, s
         ))
     })
@@ -105,7 +105,7 @@ fn parse_evalue(s: &str, line: usize) -> Result<f64> {
 fn parse_float(s: &str, field_name: &str, line: usize) -> Result<f64> {
     f64::from_str(s).map_err(|_| {
         Error::InvalidInput(format!(
-            "Zeile {}: Konnte {} '{}' nicht parsen.",
+            "Line {}: Could not parse {} '{}'.",
             line, field_name, s
         ))
     })
@@ -115,7 +115,7 @@ fn parse_float(s: &str, field_name: &str, line: usize) -> Result<f64> {
 fn parse_usize(s: &str, field_name: &str, line: usize) -> Result<usize> {
     s.parse::<usize>().map_err(|_| {
         Error::InvalidInput(format!(
-            "Zeile {}: Konnte {} '{}' nicht parsen.",
+            "Line {}: Could not parse {} '{}'.",
             line, field_name, s
         ))
     })

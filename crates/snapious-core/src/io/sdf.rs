@@ -46,7 +46,7 @@ pub fn parse_sdf(text: &str) -> Result<Vec<SdfMolecule>> {
                         // Wir müssen also wissen, welches Molekül wir gerade verarbeiten.
                         let mol_num = molecules.len() + 1; // Da erfolgreiche Moleküle schon addiert wurden
                         let wrapped_error =
-                            Error::InvalidInput(format!("Molekül {}: {}", mol_num, e));
+                            Error::InvalidInput(format!("Molecule {}: {}", mol_num, e));
                         return Err(wrapped_error);
                     }
                 }
@@ -83,14 +83,14 @@ pub fn parse_sdf(text: &str) -> Result<Vec<SdfMolecule>> {
                 molecules.push(SdfMolecule { name, atoms, bonds });
             }
             Err(e) => {
-                let wrapped_error = Error::InvalidInput(format!("Molekül {}: {}", mol_num, e));
+                let wrapped_error = Error::InvalidInput(format!("Molecule {}: {}", mol_num, e));
                 return Err(wrapped_error);
             }
         }
     }
 
     if molecules.is_empty() {
-        return Err(Error::InvalidInput("Keine Moleküle gefunden".into()));
+        return Err(Error::InvalidInput("No molecules found".into()));
     }
 
     Ok(molecules)
@@ -118,7 +118,7 @@ mod tests {
         assert!(parse_sdf("$$$$\n\n$$$$\n").is_err());
         let t = format!("{BLOCK}$$$$\nkaputt\nx\ny\nz\n$$$$\n");
         let e = parse_sdf(&t).unwrap_err().to_string();
-        assert!(e.contains("Molekül 2"), "{e}");
+        assert!(e.contains("Molecule 2"), "{e}");
         assert_eq!(parse_sdf(&format!("{BLOCK}$$$$")).unwrap().len(), 1);
     }
 }

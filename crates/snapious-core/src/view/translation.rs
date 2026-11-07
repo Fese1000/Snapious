@@ -36,7 +36,7 @@ pub fn translate_frame(bases: &str, frame: usize, from: usize, to: usize) -> Vec
 
     let mut cells = Vec::new();
     while pos + 2 < to.min(len) {
-        // Konvertiere zu Großbuchstaben, zähle U wie T.
+        // Konvertiere zu Uppercase, zähle U wie T.
         let codon: String = (pos..pos + 3)
             .map(|i| match bases.as_bytes()[i].to_ascii_uppercase() {
                 b'U' => 'T',
@@ -76,7 +76,7 @@ pub fn translate_feature(bases: &str, feature: &Feature) -> Result<Vec<AminoAcid
     for interval in intervals {
         if interval.end() > seq_len {
             return Err(Error::OutOfRange(format!(
-                "Feature-Intervall [{}..{}) liegt hinter dem Ende der Sequenz (Länge {})",
+                "Feature interval [{}..{}) lies beyond the end of the sequence (length {})",
                 interval.start(),
                 interval.end(),
                 seq_len
@@ -93,7 +93,7 @@ pub fn translate_feature(bases: &str, feature: &Feature) -> Result<Vec<AminoAcid
             .filter(|&v| (1..=3).contains(&v))
             .ok_or_else(|| {
                 Error::InvalidInput(format!(
-                    "Ungültiger codon_start-Wert '{}'. Muss 1, 2 oder 3 sein.",
+                    "Invalid codon_start value '{}'. Must be 1, 2 or 3.",
                     v
                 ))
             })?,

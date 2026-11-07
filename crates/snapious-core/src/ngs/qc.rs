@@ -36,7 +36,7 @@ pub struct QcReport {
 /// * Qualitätszeichen `c` ergibt Phred `c − 33` (auf 0 bis 93 begrenzt).
 /// * Duplikation und überrepräsentierte Sequenzen: Schlüssel = die ersten 50 Basen (oder der ganze Read, wenn kürzer) der ersten
 ///   `max_dup_reads` Reads; `unique` = Zahl der verschiedenen Schlüssel, `total` = Zahl dieser Reads; ohne Reads 0.
-/// * Adapter: die ersten 12 Zeichen von `adapter` (oder alle, wenn kürzer); ein Read zählt, wenn seine Basen (Großbuchstaben) dieses Wort
+/// * Adapter: die ersten 12 Zeichen von `adapter` (oder alle, wenn kürzer); ein Read zählt, wenn seine Basen (Uppercase) dieses Wort
 ///   enthalten. Ist `adapter` leer, ist der Anteil 0.
 /// * Ohne Reads: alles 0, leere Listen und Verteilungen, `min_length = max_length = 0`; keine Division durch 0.
 pub fn analyze_reads<I: IntoIterator<Item = FastqRecord>>(

@@ -23,7 +23,7 @@ pub struct InterProHit {
 }
 
 /// Liest die TSV-Ausgabe (Felder durch Tabulator getrennt). Leere Zeilen und Zeilen mit `#` am Anfang werden übersprungen. Jede Zeile
-/// braucht mindestens 9 Felder. Fehler `Error::InvalidInput`: zu wenige Felder oder Beginn/Ende keine ganzen Zahlen (mit Zeilennummer).
+/// braucht mindestens 9 Felder. Fehler `Error::InvalidInput`: too few fields oder Beginn/Ende keine ganzen Zahlen (mit Zeilennummer).
 pub fn parse_interpro_tsv(text: &str) -> Result<Vec<InterProHit>> {
     let mut hits = Vec::new();
 
@@ -40,7 +40,7 @@ pub fn parse_interpro_tsv(text: &str) -> Result<Vec<InterProHit>> {
         // Mindestens 9 Felder erforderlich (Indizes 0 bis 8)
         if fields.len() < 9 {
             return Err(Error::InvalidInput(format!(
-                "Zeile {}: Zu wenige Felder ({} vorhanden, 9 benötigt)",
+                "Line {}: Too few fields ({} present, 9 needed)",
                 line_num + 1,
                 fields.len()
             )));
@@ -65,7 +65,7 @@ pub fn parse_interpro_tsv(text: &str) -> Result<Vec<InterProHit>> {
         // Spalte 7: Start (Index 6), muss eine ganze Zahl sein
         let start = fields[6].parse::<usize>().map_err(|_| {
             Error::InvalidInput(format!(
-                "Zeile {}: Start '{}' ist keine gültige Zahl",
+                "Line {}: Start '{}' is not a valid number",
                 line_num + 1,
                 fields[6]
             ))
@@ -74,13 +74,13 @@ pub fn parse_interpro_tsv(text: &str) -> Result<Vec<InterProHit>> {
         // Spalte 8: Ende (Index 7), muss eine ganze Zahl sein
         let end = fields[7].parse::<usize>().map_err(|_| {
             Error::InvalidInput(format!(
-                "Zeile {}: Ende '{}' ist keine gültige Zahl",
+                "Line {}: End '{}' is not a valid number",
                 line_num + 1,
                 fields[7]
             ))
         })?;
 
-        // Spalte 9: Score (Index 8), '-' oder ungültige Zahl -> None
+        // Spalte 9: Score (Index 8), '-' oder invalid number -> None
         let score = if fields[8] == "-" {
             None
         } else {

@@ -8,19 +8,19 @@ use crate::ops::operation::{required_usize, Operation, OperationContext, Operati
 use crate::primer::picker::{pick_pairs, PrimerConstraints};
 use crate::seqcheck::{DifferenceType, SequencingCheck};
 
-/// Genau ein Sequenzdokument aus den Eingaben; sonst `Error::Operation("Es wird genau eine Sequenz erwartet")`.
+/// Genau ein Sequenzdokument aus den Eingaben; sonst `Error::Operation("Exactly one sequence expected")`.
 fn single(inputs: &[Document]) -> Result<&SequenceDocument> {
     match inputs {
         [Document::Sequence(d)] => Ok(d),
         _ => Err(Error::Operation(
-            "Es wird genau eine Sequenz erwartet".to_string(),
+            "Exactly one sequence expected".to_string(),
         )),
     }
 }
 
 /// `primer.pick`: Primerpaare für einen Zielbereich. Eingabe: eine Sequenz. Parameter: `start` und `end` (Pflicht, 0-basiert, `end` exklusiv, über
 /// `required_usize`), optional `max_results` (Standard 3). Aufruf `pick_pairs(bases, start, end, &PrimerConstraints::standard(), max_results)`; Fehler als
-/// `Error::Operation` mit dem Text. `outputs` leer. `summary`: ist die Liste leer, `"Keine passenden Primerpaare"`; sonst je Paar eine Zeile
+/// `Error::Operation` mit dem Text. `outputs` leer. `summary`: ist die Liste leer, `"No matching primer pairs"`; sonst je Paar eine Zeile
 /// `"{i}. {forward} / {reverse} · Produkt {product_size} bp"` (`i` ab 1; die Felder des Rückgabetyps `PickedPair` selbst nachsehen: Sequenzen beider Primer und Produktgröße).
 pub struct PrimerPickOperation;
 
@@ -30,7 +30,7 @@ impl Operation for PrimerPickOperation {
     }
 
     fn label(&self) -> &str {
-        "Primer entwerfen"
+        "Design primers"
     }
 
     fn run(
@@ -44,7 +44,7 @@ impl Operation for PrimerPickOperation {
         let end = required_usize(params, "end")?;
         let max_results = match params.get("max_results") {
             Some(t) => t.trim().parse::<usize>().map_err(|_| {
-                Error::Operation(format!("Parameter 'max_results' ist keine Zahl: {}", t))
+                Error::Operation(format!("Parameter 'max_results' is not a number: {}", t))
             })?,
             None => 3,
         };
@@ -57,14 +57,14 @@ impl Operation for PrimerPickOperation {
         )
         .map_err(|e| Error::Operation(e.to_string()))?;
         let summary = if pairs.is_empty() {
-            "Keine passenden Primerpaare".to_string()
+            "No matching primer pairs".to_string()
         } else {
             pairs
                 .iter()
                 .enumerate()
                 .map(|(i, p)| {
                     format!(
-                        "{}. {} / {} · Produkt {} bp",
+                        "{}. {} / {} · product {} bp",
                         i + 1,
                         p.forward.sequence,
                         p.reverse.sequence,
@@ -93,7 +93,7 @@ impl Operation for CrisprFindOperation {
     }
 
     fn label(&self) -> &str {
-        "CRISPR-Guides suchen"
+        "Find CRISPR guides"
     }
 
     fn run(
@@ -113,17 +113,17 @@ impl Operation for CrisprFindOperation {
             Some("cas12a") => PamSpec::cas12a(),
             Some(other) => {
                 return Err(Error::Operation(format!(
-                    "Unbekannte Nuklease '{}' (spcas9, sacas9, cas12a)",
+                    "Unknown nuclease '{}' (spcas9, sacas9, cas12a)",
                     other
                 )))
             }
         };
         let circular = d.topology() == Topology::Circular;
         let guides = find_guides(&spec, d.bases(), 0, d.len(), circular);
-        let mut lines = vec![format!("{} Guides ({})", guides.len(), spec.name)];
+        let mut lines = vec![format!("{} guides ({})", guides.len(), spec.name)];
         for g in guides.iter().take(10) {
             lines.push(format!(
-                "{}–{} {} {} {} · Wertung {:.0}",
+                "{}–{} {} {} {} · score {:.0}",
                 g.start + 1,
                 g.end,
                 if g.forward { "+" } else { "−" },
@@ -152,7 +152,7 @@ impl Operation for SeqCheckOperation {
     }
 
     fn label(&self) -> &str {
-        "Sequenzierung prüfen"
+        "Check sequencing"
     }
 
     fn run(
@@ -163,12 +163,12 @@ impl Operation for SeqCheckOperation {
     ) -> Result<OperationResult> {
         let [Document::Sequence(reference), reads @ ..] = inputs else {
             return Err(Error::Operation(
-                "Es werden eine Referenz und mindestens ein Read erwartet".to_string(),
+                "One reference and at least one read expected".to_string(),
             ));
         };
         if reads.is_empty() {
             return Err(Error::Operation(
-                "Es wird mindestens ein Read erwartet".to_string(),
+                "At least one read expected".to_string(),
             ));
         }
         let min_quality = match params.get("min_quality") {
@@ -179,7 +179,7 @@ impl Operation for SeqCheckOperation {
                 .filter(|q| *q <= 93)
                 .ok_or_else(|| {
                     Error::Operation(format!(
-                        "Parameter 'min_quality' ist keine Zahl von 0 bis 93: {}",
+                        "Parameter 'min_quality' is not a number from 0 to 93: {}",
                         t
                     ))
                 })?,
@@ -191,7 +191,7 @@ impl Operation for SeqCheckOperation {
         for r in reads {
             let Document::Sequence(read) = r else {
                 return Err(Error::Operation(
-                    "Alle Eingaben müssen Sequenzen sein".to_string(),
+                    "All inputs must be sequences".to_string(),
                 ));
             };
             let res = check
@@ -203,11 +203,11 @@ impl Operation for SeqCheckOperation {
                 .filter(|d| d.kind != DifferenceType::LowQuality)
                 .count();
             lines.push(format!(
-                "{}: {:.1} % Identität, {} Unterschied(e){}",
+                "{}: {:.1} % identity, {} difference(s){}",
                 read.name(),
                 res.identity,
                 diffs,
-                if res.reversed { ", revers" } else { "" }
+                if res.reversed { ", reverse" } else { "" }
             ));
         }
         Ok(OperationResult {
@@ -258,7 +258,7 @@ mod tests {
         .unwrap();
         assert!(r.outputs.is_empty());
         assert!(r.summary.starts_with("1. "), "{}", r.summary);
-        assert!(r.summary.contains(" · Produkt "));
+        assert!(r.summary.contains(" · product "));
         let lines = r.summary.lines().count();
         assert!((1..=3).contains(&lines));
         let one = run(
@@ -276,7 +276,7 @@ mod tests {
             &params(&[("start", "150"), ("end", "250")]),
         )
         .unwrap();
-        assert_eq!(none.summary, "Keine passenden Primerpaare");
+        assert_eq!(none.summary, "No matching primer pairs");
         // Fehler
         assert!(run(
             &PrimerPickOperation,
@@ -311,7 +311,7 @@ mod tests {
         assert!(r.outputs.is_empty());
         let first = r.summary.lines().next().unwrap();
         assert!(
-            first.contains("Guides (SpCas9") || first.contains("Guides ("),
+            first.contains("guides (SpCas9") || first.contains("guides ("),
             "{}",
             first
         );
@@ -323,7 +323,7 @@ mod tests {
             &params(&[("nuclease", "CAS12A")]),
         )
         .unwrap();
-        assert!(cas12a.summary.lines().next().unwrap().contains("Guides ("));
+        assert!(cas12a.summary.lines().next().unwrap().contains("guides ("));
         assert!(run(
             &CrisprFindOperation,
             std::slice::from_ref(&d),
@@ -349,9 +349,9 @@ mod tests {
         assert!(r.outputs.is_empty());
         let lines: Vec<&str> = r.summary.lines().collect();
         assert_eq!(lines.len(), 2);
-        assert_eq!(lines[0], "read1: 100.0 % Identität, 0 Unterschied(e)");
+        assert_eq!(lines[0], "read1: 100.0 % identity, 0 difference(s)");
         assert!(
-            lines[1].starts_with("read2: 98.3 % Identität, 1 Unterschied(e)"),
+            lines[1].starts_with("read2: 98.3 % identity, 1 difference(s)"),
             "{}",
             lines[1]
         );

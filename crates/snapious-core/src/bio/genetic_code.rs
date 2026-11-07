@@ -7,7 +7,7 @@ use crate::model::sequence::amino_acid_for;
 pub struct GeneticCode {
     pub id: u8,
     pub name: String,
-    /// Abweichungen vom Standardcode: Codon (Großbuchstaben, `T` statt `U`) und Aminosäure (`*` für Stopp).
+    /// Abweichungen vom Standardcode: Codon (Uppercase, `T` statt `U`) und Aminosäure (`*` für Stopp).
     pub changes: Vec<(String, char)>,
 }
 

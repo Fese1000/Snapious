@@ -13,7 +13,7 @@ const AVOGADRO: f64 = 6.022_140_76e23;
 /// Fehler `Error::InvalidInput`, wenn `bp` 0 ist.
 pub fn dsdna_mass(bp: usize) -> Result<f64> {
     if bp == 0 {
-        return Err(Error::InvalidInput("Basenpaare müssen > 0 sein".into()));
+        return Err(Error::InvalidInput("Base pairs must be > 0".into()));
     }
     Ok((bp as f64) * BP_MASS + END_MASS)
 }
@@ -22,11 +22,11 @@ pub fn dsdna_mass(bp: usize) -> Result<f64> {
 /// Fehler `Error::InvalidInput` bei `bp == 0` oder negativem/nicht endlichem `ng`.
 pub fn ng_to_pmol(ng: f64, bp: usize) -> Result<f64> {
     if bp == 0 {
-        return Err(Error::InvalidInput("Basenpaare müssen > 0 sein".into()));
+        return Err(Error::InvalidInput("Base pairs must be > 0".into()));
     }
     if ng < 0.0 || !ng.is_finite() {
         return Err(Error::InvalidInput(
-            "ng muss positiv und endlich sein".into(),
+            "ng must be positive and finite".into(),
         ));
     }
     let mass = dsdna_mass(bp)?;
@@ -36,11 +36,11 @@ pub fn ng_to_pmol(ng: f64, bp: usize) -> Result<f64> {
 /// Umrechnung pmol → ng: `pmol * dsdna_mass(bp) / 1000`. Fehler wie bei `ng_to_pmol`.
 pub fn pmol_to_ng(pmol: f64, bp: usize) -> Result<f64> {
     if bp == 0 {
-        return Err(Error::InvalidInput("Basenpaare müssen > 0 sein".into()));
+        return Err(Error::InvalidInput("Base pairs must be > 0".into()));
     }
     if pmol < 0.0 || !pmol.is_finite() {
         return Err(Error::InvalidInput(
-            "pmol muss positiv und endlich sein".into(),
+            "pmol must be positive and finite".into(),
         ));
     }
     let mass = dsdna_mass(bp)?;
@@ -50,11 +50,11 @@ pub fn pmol_to_ng(pmol: f64, bp: usize) -> Result<f64> {
 /// Zahl der Moleküle: `ng * 1e-9 / dsdna_mass(bp) * 6,02214076e23`. Fehler wie bei `ng_to_pmol`.
 pub fn copy_number(ng: f64, bp: usize) -> Result<f64> {
     if bp == 0 {
-        return Err(Error::InvalidInput("Basenpaare müssen > 0 sein".into()));
+        return Err(Error::InvalidInput("Base pairs must be > 0".into()));
     }
     if ng < 0.0 || !ng.is_finite() {
         return Err(Error::InvalidInput(
-            "ng muss positiv und endlich sein".into(),
+            "ng must be positive and finite".into(),
         ));
     }
     let mass = dsdna_mass(bp)?;
@@ -72,12 +72,12 @@ pub fn ligation_insert_ng(
 ) -> Result<f64> {
     if vector_bp == 0 || insert_bp == 0 {
         return Err(Error::InvalidInput(
-            "Vektor- und Insertlänge müssen > 0 sein".into(),
+            "Vector and insert lengths must be > 0".into(),
         ));
     }
     if vector_ng < 0.0 || molar_ratio <= 0.0 {
         return Err(Error::InvalidInput(
-            "Vektor-ng muss >= 0 und molar_ratio > 0 sein".into(),
+            "Vector ng must be >= 0 and molar_ratio > 0".into(),
         ));
     }
     Ok(molar_ratio * vector_ng * (insert_bp as f64) / (vector_bp as f64))
@@ -88,12 +88,12 @@ pub fn ligation_insert_ng(
 pub fn dilution_volume(c_stock: f64, c_final: f64, v_final: f64) -> Result<f64> {
     if c_stock <= 0.0 || c_final < 0.0 || v_final < 0.0 {
         return Err(Error::InvalidInput(
-            "Konzentrationen und Endvolumen müssen >= 0 sein, c_stock > 0".into(),
+            "Concentrations and final volume must be >= 0, c_stock > 0".into(),
         ));
     }
     if c_final > c_stock {
         return Err(Error::InvalidInput(
-            "c_final darf nicht größer als c_stock sein".into(),
+            "c_final must not be greater than c_stock".into(),
         ));
     }
     Ok((c_final * v_final) / c_stock)

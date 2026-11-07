@@ -3,7 +3,7 @@
 /// Konsens und Qualität je Konsensbase.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReadConsensus {
-    /// Konsenssequenz ohne Lücken (Großbuchstaben).
+    /// Konsenssequenz ohne Lücken (Uppercase).
     pub bases: String,
     /// Qualität je Base von `bases` (Phred-ähnlich, 0–93).
     pub qualities: Vec<u8>,
