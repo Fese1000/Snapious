@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/AppIcon.png" width="128" alt="Snapious icon"></p>
+
 # Snapious
 
 **Snapious** is a hobby project: a re-implementation of the core features of Geneious Prime and SnapGene for molecular biology, native to macOS.
