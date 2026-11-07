@@ -15,11 +15,11 @@ enum Snapshot {
             renderer.scale = 2
             guard let image = renderer.nsImage, let tiff = image.tiffRepresentation,
                   let rep = NSBitmapImageRep(data: tiff), let png = rep.representation(using: .png, properties: [:]) else {
-                print("Keine Grafik für \(name)")
+                print(tr("Keine Grafik für %@", "\(name)"))
                 return
             }
             try? png.write(to: URL(fileURLWithPath: outDir).appendingPathComponent("\(name).png"))
-            print("geschrieben: \(name).png")
+            print(tr("geschrieben: %@.png", "\(name)"))
         }
         if let pdb = try? pdbOpen(path: "/tmp/gen/test.pdb") {
             render("struktur", width: 560, height: 420) { StructureView(pdb: pdb, name: "test.pdb").chart }

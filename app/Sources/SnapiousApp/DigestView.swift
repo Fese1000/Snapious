@@ -22,7 +22,7 @@ struct DigestView: View {
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
-                TextField("Enzym suchen", text: $search)
+                TextField(tr("Enzym suchen"), text: $search)
                     .textFieldStyle(.roundedBorder)
                 List(filtered, id: \.name) { e in
                     Toggle(isOn: Binding(
@@ -39,19 +39,19 @@ struct DigestView: View {
                         }
                     }
                 }
-                Button("Nach Annotation schneiden …") { showAnnotation = true }
+                Button(tr("Nach Annotation schneiden …")) { showAnnotation = true }
                     .popover(isPresented: $showAnnotation) {
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Schnitt an Annotationen").font(.headline)
-                            Picker("Feature-Typ", selection: $annotType) {
-                                Text("Alle Typen").tag("")
+                            Text(tr("Schnitt an Annotationen")).font(.headline)
+                            Picker(tr("Feature-Typ"), selection: $annotType) {
+                                Text(tr("Alle Typen")).tag("")
                                 ForEach(Array(Set(model.features.map { $0.featureType })).sorted(), id: \.self) { Text($0).tag($0) }
                             }
-                            Toggle("Am Anfang jedes Features", isOn: $atStart)
-                            Toggle("Am Ende jedes Features", isOn: $atEnd)
+                            Toggle(tr("Am Anfang jedes Features"), isOn: $atStart)
+                            Toggle(tr("Am Ende jedes Features"), isOn: $atEnd)
                             HStack {
                                 Spacer()
-                                Button("Schneiden") { cutByAnnotation(); showAnnotation = false }
+                                Button(tr("Schneiden")) { cutByAnnotation(); showAnnotation = false }
                                     .keyboardShortcut(.defaultAction)
                                     .disabled(!atStart && !atEnd)
                             }
@@ -60,7 +60,7 @@ struct DigestView: View {
                         .frame(width: 280)
                     }
                 HStack {
-                    Text("\(chosen.count) Enzyme gewählt").font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
+                    Text(tr("%@ Enzyme gewählt", "\(chosen.count)")).font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
                     Spacer()
                     EnzymeSetMenu(current: chosen.sorted()) { names in
                         chosen = Set(names.filter { n in model.enzymes.contains { $0.name == n } })
@@ -76,17 +76,17 @@ struct DigestView: View {
                     Text(message).foregroundStyle(Theme.danger)
                 }
                 if fragments.isEmpty {
-                    ContentUnavailableView("Kein Verdau", systemImage: "scissors",
-                                           description: Text("Wähle links ein oder mehrere Enzyme."))
+                    ContentUnavailableView(tr("Kein Verdau"), systemImage: "scissors",
+                                           description: Text(tr("Wähle links ein oder mehrere Enzyme.")))
                 } else {
                     gel
                         .frame(height: 232)
                     Table(fragments) {
-                        TableColumn("Nr.") { f in Text("\(f.index)") }.width(40)
-                        TableColumn("Länge") { f in Text("\(f.dto.length) bp") }.width(90)
-                        TableColumn("Bereich") { f in Text("\(f.dto.start + 1)–\(f.dto.end)") }
-                        TableColumn("Linkes Ende", value: \.dto.leftEnd)
-                        TableColumn("Rechtes Ende", value: \.dto.rightEnd)
+                        TableColumn(tr("Nr.")) { f in Text("\(f.index)") }.width(40)
+                        TableColumn(tr("Länge")) { f in Text("\(f.dto.length) bp") }.width(90)
+                        TableColumn(tr("Bereich")) { f in Text("\(f.dto.start + 1)–\(f.dto.end)") }
+                        TableColumn(tr("Linkes Ende"), value: \.dto.leftEnd)
+                        TableColumn(tr("Rechtes Ende"), value: \.dto.rightEnd)
                     }
                 }
             }
@@ -129,7 +129,7 @@ struct DigestView: View {
             }
             .frame(width: 280, height: 200)
             HStack {
-                Text("Agarose \(String(format: "%.2f", agarose)) %").font(Theme.label(11))
+                Text(tr("Agarose %@ %", "\(String(format: "%.2f", agarose))")).font(Theme.label(11))
                 Slider(value: $agarose, in: 0.5...3.0, step: 0.25).frame(width: 140)
             }
         }
@@ -143,7 +143,7 @@ struct DigestView: View {
         do {
             let result = try project.fragmentsByAnnotation(id: id, featureType: annotType, atStart: atStart, atEnd: atEnd)
             fragments = result.enumerated().map { FragmentRow(index: $0.offset + 1, dto: $0.element) }
-            if fragments.isEmpty { message = "Keine Features dieses Typs." }
+            if fragments.isEmpty { message = tr("Keine Features dieses Typs.") }
         } catch {
             fragments = []
             message = error.localizedDescription

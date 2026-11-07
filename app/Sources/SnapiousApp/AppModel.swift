@@ -77,7 +77,7 @@ final class AppModel: ObservableObject {
     }
 
     var currentDirty: Bool { selection.map { isDirty($0) } ?? false }
-    var selectedName: String { summary?.name ?? "Sequenz" }
+    var selectedName: String { summary?.name ?? tr("Sequenz") }
 
     /// Änderungen sind schon im Projekt gespeichert; „Speichern“ übernimmt sie als neuen Ausgangspunkt.
     func commitEdits() {
@@ -154,6 +154,10 @@ final class AppModel: ObservableObject {
     @Published var selStats: SelectionStatsDto?
     @Published var errorMessage: String?
     /// Gewählter Reiter der Detailansicht (0 = Übersicht … 12 = NGS).
+    /// Interface language: `en` or `de` (setting, applies immediately).
+    @Published var language: String = L10n.language {
+        didSet { L10n.language = language }
+    }
     @Published var tab = 0 {
         didSet {
             if !guardBypass, oldValue == 1, tab != 1, let id = selection, isDirty(id) {
@@ -186,7 +190,7 @@ final class AppModel: ObservableObject {
     }
 
     var projectTitle: String {
-        guard let p = project else { return "Kein Projekt geöffnet" }
+        guard let p = project else { return tr("Kein Projekt geöffnet") }
         return URL(fileURLWithPath: p.path()).deletingPathExtension().lastPathComponent
     }
 
@@ -207,7 +211,7 @@ final class AppModel: ObservableObject {
 
     func newProject() {
         let panel = NSSavePanel()
-        panel.title = "Neues Snapious-Projekt"
+        panel.title = tr("Neues Snapious-Projekt")
         panel.nameFieldStringValue = "Projekt.snapious"
         panel.canCreateDirectories = true
         // Immer im Dokumente-Ordner beginnen (das Panel merkt sich sonst den zuletzt benutzten Ordner)
@@ -218,7 +222,7 @@ final class AppModel: ObservableObject {
 
     func openProject() {
         let panel = NSOpenPanel()
-        panel.title = "Snapious-Projekt öffnen"
+        panel.title = tr("Snapious-Projekt öffnen")
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
@@ -229,7 +233,7 @@ final class AppModel: ObservableObject {
 
     func importFiles(_ urls: [URL]) {
         guard let project else {
-            errorMessage = "Bitte zuerst ein Projekt anlegen oder öffnen."
+            errorMessage = tr("Bitte zuerst ein Projekt anlegen oder öffnen.")
             return
         }
         run {
@@ -240,13 +244,13 @@ final class AppModel: ObservableObject {
             }
             try self.refresh()
             if let last { self.selection = last }
-            self.announce(urls.count == 1 ? "„\(urls[0].lastPathComponent)“ importiert" : "\(urls.count) Dateien importiert")
+            self.announce(urls.count == 1 ? tr("„%@“ importiert", "\(urls[0].lastPathComponent)") : tr("%@ Dateien importiert", "\(urls.count)"))
         }
     }
 
     func chooseFilesToImport() {
         let panel = NSOpenPanel()
-        panel.title = "Importieren (FASTA, FASTQ, GenBank, EMBL, SnapGene, PIR, GCG, MEGA, NEXUS, Clustal, PHYLIP)"
+        panel.title = tr("Importieren (FASTA, FASTQ, GenBank, EMBL, SnapGene, PIR, GCG, MEGA, NEXUS, Clustal, PHYLIP)")
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         guard panel.runModal() == .OK else { return }
@@ -257,7 +261,7 @@ final class AppModel: ObservableObject {
     func export(id: String, format: String, ext: String) {
         guard let project, let info = documents.first(where: { $0.id == id }) else { return }
         let panel = NSSavePanel()
-        panel.title = "Exportieren als \(format)"
+        panel.title = tr("Exportieren als %@", "\(format)")
         panel.nameFieldStringValue = "\(info.name).\(ext)"
         panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         guard panel.runModal() == .OK, let url = panel.url else { return }
@@ -268,13 +272,13 @@ final class AppModel: ObservableObject {
     func importAnnotations(id: String) {
         guard let project else { return }
         let panel = NSOpenPanel()
-        panel.title = "Annotationen importieren (GFF3 oder BED)"
+        panel.title = tr("Annotationen importieren (GFF3 oder BED)")
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         run {
             let n = try project.importAnnotations(id: id, path: url.path)
             if self.selection == id { self.reloadCurrent() }
-            self.assemblyNotice = "\(n) Annotation(en) importiert"
+            self.assemblyNotice = tr("%@ Annotation(en) importiert", "\(n)")
         }
     }
 
@@ -361,7 +365,7 @@ final class AppModel: ObservableObject {
             try self.refresh()
             self.multiSelection = Set(infos.prefix(1).map { $0.id })
             self.selection = infos.first?.id
-            self.announce(infos.count == 1 ? "Sequenz „\(infos[0].name)“ angelegt" : "\(infos.count) Sequenzen angelegt")
+            self.announce(infos.count == 1 ? tr("Sequenz „%@“ angelegt", "\(infos[0].name)") : tr("%@ Sequenzen angelegt", "\(infos.count)"))
             ok = true
         }
         return ok
@@ -385,7 +389,7 @@ final class AppModel: ObservableObject {
             try self.refresh()
             self.multiSelection = [result.document.id]
             self.selection = result.document.id
-            self.announce("Konstrukt „\(result.document.name)“ angelegt")
+            self.announce(tr("Konstrukt „%@“ angelegt", "\(result.document.name)"))
             warnings = result.warnings
         }
         return warnings
@@ -446,7 +450,7 @@ final class AppModel: ObservableObject {
         guard let project, multiSelection.count >= 2 else { return }
         let ids = documents.filter { multiSelection.contains($0.id) && $0.docType == "sequence" }.map { $0.id }
         run {
-            let info = try project.alignDocuments(ids: ids, name: "Alignment", backend: backend)
+            let info = try project.alignDocuments(ids: ids, name: tr("Alignment"), backend: backend)
             try self.refresh()
             self.selection = info.id
         }
@@ -500,7 +504,7 @@ final class AppModel: ObservableObject {
             let infos = try project.assembleReads(ids: ids, minOverlap: UInt64(minOverlap))
             try self.refresh()
             if let first = infos.first { self.selection = first.id }
-            self.assemblyNotice = "\(infos.count) Contig(s) aus \(ids.count) Reads"
+            self.assemblyNotice = tr("%@ Contig(s) aus %@ Reads", "\(infos.count)", "\(ids.count)")
         }
     }
 
@@ -548,7 +552,7 @@ final class AppModel: ObservableObject {
             try self.refresh()
             self.multiSelection = [info.id]
             self.selection = info.id
-            self.announce("Konsens aus \(ids.count) Reads angelegt (Alignment der Reads ebenfalls)")
+            self.announce(tr("Konsens aus %@ Reads angelegt (Alignment der Reads ebenfalls)", "\(ids.count)"))
             ok = true
         }
         return ok
@@ -588,7 +592,7 @@ final class AppModel: ObservableObject {
         do {
             motifHits = try project.findMotifHits(id: id, motif: motif)
             motifIndex = -1
-            if motifHits.isEmpty { motifMessage = "Nicht gefunden" } else { nextMotif(1) }
+            if motifHits.isEmpty { motifMessage = tr("Nicht gefunden") } else { nextMotif(1) }
         } catch {
             motifHits = []
             motifMessage = error.localizedDescription
@@ -601,7 +605,7 @@ final class AppModel: ObservableObject {
         motifIndex = ((motifIndex + step) % motifHits.count + motifHits.count) % motifHits.count
         let h = motifHits[motifIndex]
         select(from: Int(h.start), to: Int(min(h.end, UInt64(fullBytes.count))))
-        motifMessage = "Treffer \(motifIndex + 1) von \(motifHits.count)" + (h.reverse ? " (Gegenstrang)" : "")
+        motifMessage = tr("Treffer %@ von %@", "\(motifIndex + 1)", "\(motifHits.count)") + (h.reverse ? tr(" (Gegenstrang)") : "")
     }
 
     // MARK: Karte: Enzymfilter und Zoom
@@ -931,7 +935,7 @@ final class AppModel: ObservableObject {
         guard let project else { return nil }
         let ids = documents.filter { multiSelection.contains($0.id) && $0.docType == "sequence" }.map { $0.id }
         guard ids.count == 2 else {
-            errorMessage = "Zum Vergleichen genau zwei Sequenzen wählen."
+            errorMessage = tr("Zum Vergleichen genau zwei Sequenzen wählen.")
             return nil
         }
         var result: AnnotationComparisonDto?
@@ -998,7 +1002,7 @@ final class AppModel: ObservableObject {
             let infos = try project.extractFeatures(id: id, featureType: type, flank: UInt64(max(0, flank)))
             try self.refresh()
             count = infos.count
-            self.announce("\(infos.count) neue Sequenz(en) aus Features angelegt")
+            self.announce(tr("%@ neue Sequenz(en) aus Features angelegt", "\(infos.count)"))
         }
         return count
     }

@@ -90,11 +90,11 @@ struct SequenceView: View {
             let maxDepth = max(model.coverage.max() ?? 1, 1)
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
-                    Text("Coverage: \(model.coverageLabel)").font(Theme.label(11))
-                    Text(String(format: "max %.0f×, Ø %.1f×", maxDepth, model.coverage.reduce(0, +) / Double(model.coverage.count)))
+                    Text(tr("Coverage: %@", "\(model.coverageLabel)")).font(Theme.label(11))
+                    Text(String(format: tr("max %.0f×, Ø %.1f×"), maxDepth, model.coverage.reduce(0, +) / Double(model.coverage.count)))
                         .font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
                     Spacer()
-                    Button { model.coverage = [] } label: { Image(systemName: "xmark.circle") }.accessibilityLabel("Coverage ausblenden").buttonStyle(.plain)
+                    Button { model.coverage = [] } label: { Image(systemName: "xmark.circle") }.accessibilityLabel(tr("Coverage ausblenden")).buttonStyle(.plain)
                 }
                 Canvas { ctx, size in
                     let n = model.coverage.count
@@ -271,20 +271,20 @@ struct SequenceView: View {
             if let s = model.selStats, model.hasSelection {
                 Text("\(s.length) bp").lineLimit(1).fixedSize()
                 Text(String(format: "GC %.1f %%", s.gcPercent)).lineLimit(1).fixedSize()
-                Text(String(format: "Tm %.1f °C", s.tmCelsius)).lineLimit(1).fixedSize()
+                Text(String(format: tr("Tm %.1f °C"), s.tmCelsius)).lineLimit(1).fixedSize()
                 Spacer()
-                Button("Kopieren") { model.copySelection(format: "bases") }
+                Button(tr("Kopieren")) { model.copySelection(format: "bases") }
                 Button("FASTA") { model.copySelection(format: "fasta") }
-                Button("Rev.-kompl.") { model.copySelection(format: "reverse_complement") }
-                Button("Feature…") { showFeature = true }
+                Button(tr("Rev.-kompl.")) { model.copySelection(format: "reverse_complement") }
+                Button(tr("Feature…")) { showFeature = true }
                     .popover(isPresented: $showFeature) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Auswahl als Feature eintragen").font(Theme.heading())
-                            TextField("Name", text: $featureName).textFieldStyle(.roundedBorder).frame(width: 220)
-                            Picker("Typ", selection: $featureType) {
+                            Text(tr("Auswahl als Feature eintragen")).font(Theme.heading())
+                            TextField(tr("Name"), text: $featureName).textFieldStyle(.roundedBorder).frame(width: 220)
+                            Picker(tr("Typ"), selection: $featureType) {
                                 ForEach(["misc_feature", "gene", "CDS", "promoter", "terminator", "rep_origin", "primer_bind", "protein_bind", "misc_binding"], id: \.self) { Text($0).tag($0) }
                             }
-                            Picker("Strang", selection: $featureStrand) {
+                            Picker(tr("Strang"), selection: $featureStrand) {
                                 Text("+").tag("FORWARD")
                                 Text("−").tag("REVERSE")
                                 Text("ohne").tag("NONE")
@@ -292,7 +292,7 @@ struct SequenceView: View {
                             .pickerStyle(.segmented)
                             HStack {
                                 Spacer()
-                                Button("Eintragen") {
+                                Button(tr("Eintragen")) {
                                     model.addFeatureFromSelection(name: featureName.isEmpty ? featureType : featureName, type: featureType, strand: featureStrand)
                                     showFeature = false
                                     featureName = ""
@@ -302,28 +302,28 @@ struct SequenceView: View {
                         }
                         .padding(14)
                     }
-                Button("Aufheben") { model.clearSelection() }
+                Button(tr("Aufheben")) { model.clearSelection() }
             } else {
-                TextField("Motiv suchen (IUPAC)", text: $searchText)
+                TextField(tr("Motiv suchen (IUPAC)"), text: $searchText)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 200)
                     .onSubmit { model.findMotif(searchText) }
-                Button { model.nextMotif(-1) } label: { Image(systemName: "chevron.up") }.accessibilityLabel("Voriger Treffer")
+                Button { model.nextMotif(-1) } label: { Image(systemName: "chevron.up") }.accessibilityLabel(tr("Voriger Treffer"))
                     .disabled(model.motifHits.isEmpty)
-                Button { model.nextMotif(1) } label: { Image(systemName: "chevron.down") }.accessibilityLabel("Nächster Treffer")
+                Button { model.nextMotif(1) } label: { Image(systemName: "chevron.down") }.accessibilityLabel(tr("Nächster Treffer"))
                     .disabled(model.motifHits.isEmpty)
                 if let m = model.motifMessage { Text(m).foregroundStyle(Theme.inkSoft) }
                 Spacer()
             }
             if model.summary?.seqType != "PROTEIN" { AminoMenu(model: model) }
-            Button { model.undo() } label: { Image(systemName: "arrow.uturn.backward") }.accessibilityLabel("Rückgängig")
+            Button { model.undo() } label: { Image(systemName: "arrow.uturn.backward") }.accessibilityLabel(tr("Rückgängig"))
                 .keyboardShortcut("z", modifiers: .command)
                 .disabled(model.undoState.undo == 0)
-                .help("Rückgängig")
-            Button { model.redo() } label: { Image(systemName: "arrow.uturn.forward") }.accessibilityLabel("Wiederholen")
+                .help(tr("Rückgängig"))
+            Button { model.redo() } label: { Image(systemName: "arrow.uturn.forward") }.accessibilityLabel(tr("Wiederholen"))
                 .keyboardShortcut("z", modifiers: [.command, .shift])
                 .disabled(!model.undoState.redo)
-                .help("Wiederholen")
+                .help(tr("Wiederholen"))
         }
         .font(Theme.label(13))
         .padding(.horizontal, 12)

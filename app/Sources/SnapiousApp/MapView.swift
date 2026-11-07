@@ -57,56 +57,56 @@ struct MapView: View {
         HStack(spacing: 12) {
             if s.seqType != "PROTEIN" {
                 Picker("", selection: Binding(get: { ring ? "ring" : "linear" }, set: { model.mapStyle = $0; model.setZoom(model.zoom) })) {
-                    Text("Plasmid").tag("ring")
-                    Text("Linear").tag("linear")
+                    Text(tr("Plasmid")).tag("ring")
+                    Text(tr("Linear")).tag("linear")
                 }
                 .pickerStyle(.segmented).labelsHidden().frame(width: 150)
-                .help("Darstellung: Plasmidring oder lineare Sequenz (bearbeitbar in beiden)")
+                .help(tr("Darstellung: Plasmidring oder lineare Sequenz (bearbeitbar in beiden)"))
             }
             if ring && s.seqType != "PROTEIN" {
                 HStack(spacing: 4) {
                     Button { model.setZoom(model.zoom / 1.6) } label: { Image(systemName: "minus.magnifyingglass") }
-                        .accessibilityLabel("Herauszoomen").disabled(model.zoom <= 1.001)
+                        .accessibilityLabel(tr("Herauszoomen")).disabled(model.zoom <= 1.001)
                     Slider(value: Binding(get: { zoomPosition }, set: { model.setZoom(zoom(from: $0)) }), in: 0...1)
                         .frame(width: 140)
                     Button { model.setZoom(model.zoom * 1.6) } label: { Image(systemName: "plus.magnifyingglass") }
                         .disabled(model.zoom >= model.maxZoom - 0.001)
-                        .accessibilityLabel("Hineinzoomen")
-                    Text(model.zoom <= 1.001 ? "Ganz" : String(format: "%.0f×", model.zoom)).font(Theme.label(11)).foregroundStyle(Theme.inkSoft).frame(width: 40, alignment: .leading)
+                        .accessibilityLabel(tr("Hineinzoomen"))
+                    Text(model.zoom <= 1.001 ? tr("Ganz") : String(format: "%.0f×", model.zoom)).font(Theme.label(11)).foregroundStyle(Theme.inkSoft).frame(width: 40, alignment: .leading)
                 }
             } else {
                 HStack(spacing: 4) {
                     Button { model.textScale = max(0.15, model.textScale / 1.25) } label: { Image(systemName: "minus.magnifyingglass") }
-                        .accessibilityLabel("Herauszoomen").disabled(model.textScale <= 0.151)
+                        .accessibilityLabel(tr("Herauszoomen")).disabled(model.textScale <= 0.151)
                     Slider(value: Binding(get: { log(model.textScale / 0.15) / log(4 / 0.15) },
                                           set: { model.textScale = 0.15 * exp($0 * log(4 / 0.15)) }), in: 0...1)
                         .frame(width: 140)
                     Button { model.textScale = min(4, model.textScale * 1.25) } label: { Image(systemName: "plus.magnifyingglass") }
-                        .accessibilityLabel("Hineinzoomen").disabled(model.textScale >= 3.99)
+                        .accessibilityLabel(tr("Hineinzoomen")).disabled(model.textScale >= 3.99)
                     Text("\(Int(model.textScale * 100)) %").font(Theme.label(11)).foregroundStyle(Theme.inkSoft).frame(width: 44, alignment: .leading)
                 }
             }
             Spacer()
             if s.seqType != "PROTEIN" {
                 Menu {
-                    Picker("Schnittstellen", selection: $model.siteFilter) {
-                        Text("Einzelschneider").tag("unique")
-                        Text("Zweifachschneider").tag("double")
+                    Picker(tr("Schnittstellen"), selection: $model.siteFilter) {
+                        Text(tr("Einzelschneider")).tag("unique")
+                        Text(tr("Zweifachschneider")).tag("double")
                         ForEach(enzymeSets(), id: \.name) { Text($0.name).tag("set:\($0.name)") }
-                        Text("Alle bekannten Enzyme").tag("all")
-                        Text("Eigene Auswahl").tag("custom")
+                        Text(tr("Alle bekannten Enzyme")).tag("all")
+                        Text(tr("Eigene Auswahl")).tag("custom")
                     }
                     .pickerStyle(.inline)
                     Divider()
-                    Button("Enzyme einzeln wählen …") { model.siteFilter = "custom"; showEnzymes = true }
+                    Button(tr("Enzyme einzeln wählen …")) { model.siteFilter = "custom"; showEnzymes = true }
                 } label: {
-                    Label("Schnittstellen: \(filterTitle) (\(model.visibleSites.count))", systemImage: "scissors")
+                    Label(tr("Schnittstellen: %@ (%@)", "\(filterTitle)", "\(model.visibleSites.count)"), systemImage: "scissors")
                 }
                 .menuStyle(.borderlessButton).fixedSize()
                 .popover(isPresented: $showEnzymes) { EnzymePicker(model: model) }
             }
-            Button { model.showAnnotations.toggle() } label: { Label("Annotationen", systemImage: "tag") }
-                .help("Annotationsliste ein-/ausblenden")
+            Button { model.showAnnotations.toggle() } label: { Label(tr("Annotationen"), systemImage: "tag") }
+                .help(tr("Annotationsliste ein-/ausblenden"))
         }
         .font(Theme.label(13))
         .padding(.horizontal, 12).padding(.vertical, 6)
@@ -116,10 +116,10 @@ struct MapView: View {
 
     private var filterTitle: String {
         switch model.siteFilter {
-        case "unique": return "Einzelschneider"
-        case "double": return "Zweifachschneider"
+        case "unique": return tr("Einzelschneider")
+        case "double": return tr("Zweifachschneider")
         case "all": return "alle"
-        case "custom": return "Auswahl"
+        case "custom": return tr("Auswahl")
         default: return String(model.siteFilter.dropFirst(4))
         }
     }
@@ -153,12 +153,12 @@ struct EnzymePicker: View {
         let list = model.enzymes.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
             .sorted { (counts[$0.name] ?? 0) > 0 && (counts[$1.name] ?? 0) == 0 || $0.name < $1.name && ((counts[$0.name] ?? 0) > 0) == ((counts[$1.name] ?? 0) > 0) }
         VStack(alignment: .leading, spacing: 8) {
-            TextField("Enzym suchen", text: $query).textFieldStyle(.roundedBorder)
+            TextField(tr("Enzym suchen"), text: $query).textFieldStyle(.roundedBorder)
             HStack {
-                Button("Alle schneidenden") { model.customEnzymes = Set(counts.keys) }
-                Button("Keine") { model.customEnzymes = [] }
+                Button(tr("Alle schneidenden")) { model.customEnzymes = Set(counts.keys) }
+                Button(tr("Keine")) { model.customEnzymes = [] }
                 Spacer()
-                Text("\(model.customEnzymes.count) gewählt").foregroundStyle(Theme.inkSoft)
+                Text(tr("%@ gewählt", "\(model.customEnzymes.count)")).foregroundStyle(Theme.inkSoft)
             }
             .font(Theme.label(12))
             List(list, id: \.name) { e in
@@ -187,24 +187,24 @@ struct MapEditBar: View {
         HStack(spacing: 10) {
             if let a = model.selStart, let b = model.selEnd {
                 let lo = min(a, b), hi = max(a, b)
-                Text(lo == hi ? "Cursor bei \(lo + 1)" : "Auswahl \(lo + 1)–\(hi) (\(hi - lo) bp)").lineLimit(1).fixedSize()
-                TextField(lo == hi ? "Basen einfügen" : "Ersetzen durch …", text: $text)
+                Text(lo == hi ? tr("Cursor bei %@", "\(lo + 1)") : tr("Auswahl %@–%@ (%@ bp)", "\(lo + 1)", "\(hi)", "\(hi - lo)")).lineLimit(1).fixedSize()
+                TextField(lo == hi ? tr("Basen einfügen") : tr("Ersetzen durch …"), text: $text)
                     .textFieldStyle(.roundedBorder).frame(maxWidth: 260)
                     .font(.system(size: 12, design: .monospaced))
                     .onSubmit { apply() }
-                Button(lo == hi ? "Einfügen" : "Ersetzen") { apply() }.disabled(text.isEmpty)
-                Button("Löschen") { model.replaceSelection(with: "") }.disabled(lo == hi)
-                Button("Kopieren") { model.copySelection(format: "bases") }.disabled(lo == hi)
-                Button("Aufheben") { model.clearSelection() }
+                Button(lo == hi ? tr("Einfügen") : tr("Ersetzen")) { apply() }.disabled(text.isEmpty)
+                Button(tr("Löschen")) { model.replaceSelection(with: "") }.disabled(lo == hi)
+                Button(tr("Kopieren")) { model.copySelection(format: "bases") }.disabled(lo == hi)
+                Button(tr("Aufheben")) { model.clearSelection() }
             } else {
-                Text("Auf die Karte klicken oder ziehen, um eine Stelle oder einen Bereich zu wählen – dann bearbeiten.")
+                Text(tr("Auf die Karte klicken oder ziehen, um eine Stelle oder einen Bereich zu wählen – dann bearbeiten."))
                     .foregroundStyle(Theme.inkSoft)
             }
             Spacer()
             AminoMenu(model: model)
-            Button { model.undo() } label: { Image(systemName: "arrow.uturn.backward") }.accessibilityLabel("Rückgängig")
+            Button { model.undo() } label: { Image(systemName: "arrow.uturn.backward") }.accessibilityLabel(tr("Rückgängig"))
                 .disabled(model.undoState.undo == 0)
-            Button { model.redo() } label: { Image(systemName: "arrow.uturn.forward") }.accessibilityLabel("Wiederholen")
+            Button { model.redo() } label: { Image(systemName: "arrow.uturn.forward") }.accessibilityLabel(tr("Wiederholen"))
                 .disabled(!model.undoState.redo)
         }
         .font(Theme.label(13))

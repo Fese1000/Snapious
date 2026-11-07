@@ -8,11 +8,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MainActor.assumeIsolated {
             guard let m = AppModel.current, m.currentDirty else { return .terminateNow }
             let alert = NSAlert()
-            alert.messageText = "Änderungen an „\(m.selectedName)“ speichern?"
-            alert.informativeText = "Verwerfen nimmt alle Änderungen seit dem Öffnen zurück."
-            alert.addButton(withTitle: "Speichern")
-            alert.addButton(withTitle: "Verwerfen")
-            alert.addButton(withTitle: "Abbrechen")
+            alert.messageText = tr("Änderungen an „%@“ speichern?", "\(m.selectedName)")
+            alert.informativeText = tr("Verwerfen nimmt alle Änderungen seit dem Öffnen zurück.")
+            alert.addButton(withTitle: tr("Speichern"))
+            alert.addButton(withTitle: tr("Verwerfen"))
+            alert.addButton(withTitle: tr("Abbrechen"))
             switch alert.runModal() {
             case .alertFirstButtonReturn: m.commitEdits(); return .terminateNow
             case .alertSecondButtonReturn: m.discardEdits(); return .terminateNow
@@ -39,19 +39,31 @@ struct SnapiousApp: App {
     var body: some Scene {
         WindowGroup("Snapious") {
             ContentView(model: model)
+                .id(model.language)
         }
         .defaultSize(width: 1280, height: 820)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Neues Projekt…") { model.newProject() }
+                Button(tr("Neues Projekt…")) { model.newProject() }
                     .keyboardShortcut("n")
-                Button("Projekt öffnen…") { model.openProject() }
+                Button(tr("Projekt öffnen…")) { model.openProject() }
                     .keyboardShortcut("o")
                 Divider()
-                Button("Sequenzen importieren…") { model.chooseFilesToImport() }
+                Button(tr("Sequenzen importieren…")) { model.chooseFilesToImport() }
                     .keyboardShortcut("i")
                     .disabled(model.project == nil)
             }
+        }
+        Settings {
+            Form {
+                Picker("Language / Sprache", selection: $model.language) {
+                    Text("English").tag("en")
+                    Text("Deutsch").tag("de")
+                }
+                .pickerStyle(.radioGroup)
+            }
+            .padding(20)
+            .frame(width: 320)
         }
     }
 }

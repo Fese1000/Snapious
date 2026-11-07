@@ -22,7 +22,7 @@ struct ContentView: View {
     private func openStructure() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = ["pdb", "xyz", "mol", "sdf", "cml", "hin"].compactMap { UTType(filenameExtension: $0) }
-        panel.message = "Struktur wählen (PDB, XYZ, MOL, SDF, CML, HIN)"
+        panel.message = tr("Struktur wählen (PDB, XYZ, MOL, SDF, CML, HIN)")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             structure = try structureOpen(path: url.path)
@@ -42,34 +42,34 @@ struct ContentView: View {
         .navigationTitle(model.projectTitle)
         .toolbar {
             ToolbarItemGroup {
-                Button { showNewSequence = true } label: { Label("Neue Sequenz", systemImage: "plus.square") }
-                    .help("Sequenz eintippen oder einfügen (⇧⌘N)")
+                Button { showNewSequence = true } label: { Label(tr("Neue Sequenz"), systemImage: "plus.square") }
+                    .help(tr("Sequenz eintippen oder einfügen (⇧⌘N)"))
                     .keyboardShortcut("n", modifiers: [.command, .shift])
                     .disabled(model.project == nil)
                 Menu {
-                    Button("Sequenz- und Alignmentdateien …") { model.chooseFilesToImport() }
-                    Button("Tabelle (CSV/TSV) …") { showTableImport = true }
-                    Button("Aus NCBI …") { showNcbi = true }
-                } label: { Label("Importieren", systemImage: "square.and.arrow.down") }
-                    .help("Dateien, Tabellen oder NCBI-Datensätze importieren")
+                    Button(tr("Sequenz- und Alignmentdateien …")) { model.chooseFilesToImport() }
+                    Button(tr("Tabelle (CSV/TSV) …")) { showTableImport = true }
+                    Button(tr("Aus NCBI …")) { showNcbi = true }
+                } label: { Label(tr("Importieren"), systemImage: "square.and.arrow.down") }
+                    .help(tr("Dateien, Tabellen oder NCBI-Datensätze importieren"))
                     .disabled(model.project == nil)
-                Button { showPalette = true } label: { Label("Suchen", systemImage: "magnifyingglass") }
-                    .help("Befehle, Ansichten und Dokumente suchen (⌘K)")
+                Button { showPalette = true } label: { Label(tr("Suchen"), systemImage: "magnifyingglass") }
+                    .help(tr("Befehle, Ansichten und Dokumente suchen (⌘K)"))
                     .keyboardShortcut("k")
-                Button { showInspector.toggle() } label: { Label("Inspektor", systemImage: "sidebar.right") }
-                    .help("Eckdaten, Features und Notiz einblenden")
+                Button { showInspector.toggle() } label: { Label(tr("Inspektor"), systemImage: "sidebar.right") }
+                    .help(tr("Eckdaten, Features und Notiz einblenden"))
                     .disabled(model.project == nil)
                 Menu {
-                    Button("Neues Projekt …") { model.newProject() }
-                    Button("Projekt öffnen …") { model.openProject() }
+                    Button(tr("Neues Projekt …")) { model.newProject() }
+                    Button(tr("Projekt öffnen …")) { model.openProject() }
                     Divider()
-                    Button("Workflows …") { showWorkflows = true }.disabled(model.project == nil)
-                    Button("Verwaltung …") { showManage = true }.disabled(model.project == nil)
-                    Button("Struktur öffnen …") { openStructure() }
+                    Button(tr("Workflows …")) { showWorkflows = true }.disabled(model.project == nil)
+                    Button(tr("Verwaltung …")) { showManage = true }.disabled(model.project == nil)
+                    Button(tr("Struktur öffnen …")) { openStructure() }
                     Divider()
-                    Button("Tastenkürzel …") { showShortcuts = true }.keyboardShortcut("/")
-                } label: { Label("Mehr", systemImage: "ellipsis.circle") }
-                    .help("Projekt, Workflows, Verwaltung und weitere Funktionen")
+                    Button(tr("Tastenkürzel …")) { showShortcuts = true }.keyboardShortcut("/")
+                } label: { Label(tr("Mehr"), systemImage: "ellipsis.circle") }
+                    .help(tr("Projekt, Workflows, Verwaltung und weitere Funktionen"))
             }
         }
         .sheet(isPresented: $showNcbi) { NcbiView(model: model) }
@@ -108,26 +108,26 @@ struct ContentView: View {
                     .allowsHitTesting(false)
             }
         }
-        .alert(model.errorMessage.map { friendlyError(message: $0).title } ?? "Fehler", isPresented: Binding(
+        .alert(model.errorMessage.map { friendlyError(message: $0).title } ?? tr("Fehler"), isPresented: Binding(
             get: { model.errorMessage != nil },
             set: { if !$0 { model.errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(tr("OK"), role: .cancel) {}
         } message: {
             if let m = model.errorMessage {
                 Text(friendlyError(message: m).hint + (m.count < 400 ? "\n\n" + m : ""))
             }
         }
-        .alert("Dokument umbenennen", isPresented: Binding(
+        .alert(tr("Dokument umbenennen"), isPresented: Binding(
             get: { renameTarget != nil },
             set: { if !$0 { renameTarget = nil } }
         )) {
-            TextField("Name", text: $renameText)
-            Button("Umbenennen") {
+            TextField(tr("Name"), text: $renameText)
+            Button(tr("Umbenennen")) {
                 if let t = renameTarget { model.rename(id: t.id, to: renameText) }
                 renameTarget = nil
             }
-            Button("Abbrechen", role: .cancel) { renameTarget = nil }
+            Button(tr("Abbrechen"), role: .cancel) { renameTarget = nil }
         }
         .frame(minWidth: 820, minHeight: 520)
                         .groupBoxStyle(PanelGroupBoxStyle())
@@ -136,27 +136,27 @@ struct ContentView: View {
     /// Alle Befehle der Befehlspalette: Aktionen, Reiter und Dokumente.
     private var commands: [AppCommand] {
         var list: [AppCommand] = [
-            AppCommand(title: "Neue Sequenz …", keywords: ["einfügen", "tippen", "fasta"], shortcut: "⇧⌘N") { showNewSequence = true },
-            AppCommand(title: "Sequenzdateien importieren …", keywords: ["import", "genbank", "fasta", "datei"], shortcut: "⌘I") { model.chooseFilesToImport() },
-            AppCommand(title: "Tabelle importieren (CSV/TSV) …", keywords: ["csv", "excel", "tabelle"]) { showTableImport = true },
-            AppCommand(title: "Aus NCBI importieren …", keywords: ["genbank", "datenbank", "suchen"]) { showNcbi = true },
-            AppCommand(title: "Neues Projekt …", keywords: ["anlegen"], shortcut: "⌘N") { model.newProject() },
-            AppCommand(title: "Projekt öffnen …", keywords: ["laden"], shortcut: "⌘O") { model.openProject() },
-            AppCommand(title: "Workflows …", keywords: ["abfolge", "automatisieren"]) { showWorkflows = true },
-            AppCommand(title: "Verwaltung …", keywords: ["ordner", "version", "einstellungen", "plugins", "suche"]) { showManage = true },
-            AppCommand(title: "Struktur öffnen …", keywords: ["pdb", "3d", "molekül", "xyz", "mol"]) { openStructure() },
-            AppCommand(title: "Inspektor ein-/ausblenden", keywords: ["notiz", "features", "seitenleiste"]) { showInspector.toggle() },
-            AppCommand(title: "Tastenkürzel anzeigen", keywords: ["hilfe", "shortcuts"], shortcut: "⌘/") { showShortcuts = true },
+            AppCommand(title: tr("Neue Sequenz …"), keywords: [tr("einfügen"), "tippen", "fasta"], shortcut: "⇧⌘N") { showNewSequence = true },
+            AppCommand(title: tr("Sequenzdateien importieren …"), keywords: ["import", "genbank", "fasta", "datei"], shortcut: "⌘I") { model.chooseFilesToImport() },
+            AppCommand(title: tr("Tabelle importieren (CSV/TSV) …"), keywords: ["csv", "excel", "tabelle"]) { showTableImport = true },
+            AppCommand(title: tr("Aus NCBI importieren …"), keywords: ["genbank", "datenbank", "suchen"]) { showNcbi = true },
+            AppCommand(title: tr("Neues Projekt …"), keywords: ["anlegen"], shortcut: "⌘N") { model.newProject() },
+            AppCommand(title: tr("Projekt öffnen …"), keywords: ["laden"], shortcut: "⌘O") { model.openProject() },
+            AppCommand(title: tr("Workflows …"), keywords: ["abfolge", "automatisieren"]) { showWorkflows = true },
+            AppCommand(title: tr("Verwaltung …"), keywords: ["ordner", "version", "einstellungen", "plugins", "suche"]) { showManage = true },
+            AppCommand(title: tr("Struktur öffnen …"), keywords: ["pdb", "3d", tr("molekül"), "xyz", "mol"]) { openStructure() },
+            AppCommand(title: tr("Inspektor ein-/ausblenden"), keywords: ["notiz", "features", "seitenleiste"]) { showInspector.toggle() },
+            AppCommand(title: tr("Tastenkürzel anzeigen"), keywords: ["hilfe", "shortcuts"], shortcut: "⌘/") { showShortcuts = true },
         ]
         if model.selection != nil {
-            list.append(AppCommand(title: "Rückgängig", keywords: ["undo", "zurück"], shortcut: "⌘Z") { model.undo() })
-            list.append(AppCommand(title: "Wiederholen", keywords: ["redo"], shortcut: "⇧⌘Z") { model.redo() })
+            list.append(AppCommand(title: tr("Rückgängig"), keywords: ["undo", tr("zurück")], shortcut: "⌘Z") { model.undo() })
+            list.append(AppCommand(title: tr("Wiederholen"), keywords: ["redo"], shortcut: "⇧⌘Z") { model.redo() })
             for (i, t) in DetailView.tabNames.enumerated() {
-                list.append(AppCommand(title: "Gehe zu: \(t)", keywords: ["ansicht", "reiter", "tab"]) { model.tab = i })
+                list.append(AppCommand(title: tr("Gehe zu: %@", "\(t)"), keywords: ["ansicht", "reiter", "tab"]) { model.tab = i })
             }
         }
         for d in model.documents {
-            list.append(AppCommand(title: "Öffnen: \(d.name)", keywords: [d.docType, "dokument"]) {
+            list.append(AppCommand(title: tr("Öffnen: %@", "\(d.name)"), keywords: [d.docType, "dokument"]) {
                 model.multiSelection = [d.id]
                 model.selection = d.id
             })
@@ -170,36 +170,36 @@ struct ContentView: View {
                 docRow(doc)
                     .tag(doc.id)
                     .contextMenu {
-                        Button("Umbenennen…") {
+                        Button(tr("Umbenennen…")) {
                             renameText = doc.name
                             renameTarget = doc
                         }
                         if doc.docType == "sequence" {
-                            Button("Annotationen importieren…") { model.importAnnotations(id: doc.id) }
+                            Button(tr("Annotationen importieren…")) { model.importAnnotations(id: doc.id) }
                         }
-                        Menu("Exportieren") {
+                        Menu(tr("Exportieren")) {
                             ForEach(exportFormats(for: doc.docType), id: \.0) { f in
                                 Button(f.1) { model.export(id: doc.id, format: f.0, ext: f.2) }
                             }
                         }
-                        Button("Löschen", role: .destructive) { model.delete(id: doc.id) }
+                        Button(tr("Löschen"), role: .destructive) { model.delete(id: doc.id) }
                     }
             }
         }
         .listStyle(.sidebar)
-        .searchable(text: $filterText, placement: .sidebar, prompt: "Dokumente filtern")
+        .searchable(text: $filterText, placement: .sidebar, prompt: tr("Dokumente filtern"))
         .overlay {
             if model.project == nil {
                 EmptyState(
-                    icon: "tray", title: "Kein Projekt",
-                    message: "Lege ein neues Projekt an oder öffne ein vorhandenes.",
-                    actions: [("Neues Projekt", { model.newProject() }), ("Projekt öffnen", { model.openProject() })]
+                    icon: "tray", title: tr("Kein Projekt"),
+                    message: tr("Lege ein neues Projekt an oder öffne ein vorhandenes."),
+                    actions: [(tr("Neues Projekt"), { model.newProject() }), (tr("Projekt öffnen"), { model.openProject() })]
                 )
             } else if model.documents.isEmpty {
                 EmptyState(
-                    icon: "dna", title: "Noch keine Dokumente",
-                    message: "Importiere Sequenzen oder ziehe Dateien in dieses Fenster.",
-                    actions: [("Neue Sequenz", { showNewSequence = true }), ("Importieren", { model.chooseFilesToImport() })]
+                    icon: "dna", title: tr("Noch keine Dokumente"),
+                    message: tr("Importiere Sequenzen oder ziehe Dateien in dieses Fenster."),
+                    actions: [(tr("Neue Sequenz"), { showNewSequence = true }), (tr("Importieren"), { model.chooseFilesToImport() })]
                 )
             }
         }
@@ -219,8 +219,8 @@ struct ContentView: View {
 
     private func typeName(_ t: String) -> String {
         switch t {
-        case "sequence": return "Sequenz"
-        case "alignment": return "Alignment"
+        case "sequence": return tr("Sequenz")
+        case "alignment": return tr("Alignment")
         default: return t
         }
     }
@@ -228,7 +228,7 @@ struct ContentView: View {
     /// (Formatname im Kern, Anzeigename, Dateiendung)
     private func exportFormats(for type: String) -> [(String, String, String)] {
         switch type {
-        case "sequence": return [("genbank", "GenBank (.gb)", "gb"), ("embl", "EMBL (.embl)", "embl"), ("fasta", "FASTA (.fasta)", "fasta"), ("gff3", "Annotationen (.gff3)", "gff3"), ("svg", "Kartenbild (.svg)", "svg")]
+        case "sequence": return [("genbank", "GenBank (.gb)", "gb"), ("embl", "EMBL (.embl)", "embl"), ("fasta", "FASTA (.fasta)", "fasta"), ("gff3", tr("Annotationen (.gff3)"), "gff3"), ("svg", tr("Kartenbild (.svg)"), "svg")]
         case "alignment": return [("clustal", "Clustal (.aln)", "aln"), ("phylip", "PHYLIP (.phy)", "phy"), ("nexus", "NEXUS (.nex)", "nex"), ("mega", "MEGA (.meg)", "meg"), ("fasta", "FASTA (.fasta)", "fasta")]
         default: return []
         }
@@ -262,14 +262,14 @@ struct DetailView: View {
     @State private var featSort = "start"
     @State private var featAsc = true
 
-    static let tabNames = ["Übersicht", "Sequenz & Karte", "Verdau", "CRISPR", "Klonieren", "Primer", "Analyse", "Protein", "Sequenzierung", "RNA", "Werkzeuge", "NGS"]
+    static var tabNames: [String] { [tr("Übersicht"), tr("Sequenz & Karte"), tr("Verdau"), "CRISPR", tr("Klonieren"), tr("Primer"), tr("Analyse"), tr("Protein"), tr("Sequenzierung"), "RNA", tr("Werkzeuge"), "NGS"] }
     /// Aufgabengruppen: Name und Indizes der Reiter.
-    private static let groups: [(String, [Int])] = [
-        ("Ansehen", [0, 1]),
-        ("Bauen", [2, 3, 4, 5]),
-        ("Prüfen", [6, 7, 8, 9]),
-        ("Daten", [10, 11]),
-    ]
+    private static var groups: [(String, [Int])] { [
+        (tr("Ansehen"), [0, 1]),
+        (tr("Bauen"), [2, 3, 4, 5]),
+        (tr("Prüfen"), [6, 7, 8, 9]),
+        (tr("Daten"), [10, 11]),
+    ] }
 
     private var group: Int { Self.groups.firstIndex { $0.1.contains(model.tab) } ?? 0 }
 
@@ -301,13 +301,13 @@ struct DetailView: View {
 
     var body: some View {
         content
-            .alert("Änderungen an „\(model.selectedName)“ speichern?",
+            .alert(tr("Änderungen an „%@“ speichern?", "\(model.selectedName)"),
                    isPresented: Binding(get: { model.pendingLeave != nil }, set: { if !$0 { model.pendingLeave = nil } })) {
-                Button("Speichern") { model.resolveLeave("save") }
-                Button("Verwerfen", role: .destructive) { model.resolveLeave("discard") }
-                Button("Abbrechen", role: .cancel) { model.resolveLeave("cancel") }
+                Button(tr("Speichern")) { model.resolveLeave("save") }
+                Button(tr("Verwerfen"), role: .destructive) { model.resolveLeave("discard") }
+                Button(tr("Abbrechen"), role: .cancel) { model.resolveLeave("cancel") }
             } message: {
-                Text("Du hast die Sequenz bearbeitet. Verwerfen nimmt alle Änderungen seit dem Öffnen zurück.")
+                Text(tr("Du hast die Sequenz bearbeitet. Verwerfen nimmt alle Änderungen seit dem Öffnen zurück."))
             }
     }
 
@@ -340,7 +340,7 @@ struct DetailView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     } else {
-            EmptyState(icon: "dna", title: "Kein Dokument ausgewählt", message: "Wähle links ein Dokument aus.")
+            EmptyState(icon: "dna", title: tr("Kein Dokument ausgewählt"), message: tr("Wähle links ein Dokument aus."))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
     }
@@ -364,7 +364,7 @@ struct DetailView: View {
             if !s.description.isEmpty {
                 Text(s.description).font(Theme.label(13)).foregroundStyle(Theme.inkSoft)
             }
-            Text([s.seqType == "PROTEIN" ? "Protein" : s.seqType, s.topology == "CIRCULAR" ? "zirkulär" : "linear", s.organism]
+            Text([s.seqType == "PROTEIN" ? tr("Protein") : s.seqType, s.topology == "CIRCULAR" ? tr("zirkulär") : "linear", s.organism]
                     .filter { !$0.isEmpty }.joined(separator: " · "))
                 .foregroundStyle(.secondary)
         }
@@ -373,11 +373,11 @@ struct DetailView: View {
     private func facts(_ s: DocumentSummary) -> some View {
         VStack(spacing: Theme.gap) {
             HStack(spacing: Theme.gap) {
-                StatTile(title: "Länge", value: "\(s.length) \(s.seqType == "PROTEIN" ? "aa" : "bp")")
+                StatTile(title: tr("Länge"), value: "\(s.length) \(s.seqType == "PROTEIN" ? "aa" : "bp")")
                 if s.seqType != "PROTEIN" {
-                    StatTile(title: "GC-Gehalt", value: String(format: "%.1f %%", s.gcPercent), tint: Theme.amber)
+                    StatTile(title: tr("GC-Gehalt"), value: String(format: "%.1f %%", s.gcPercent), tint: Theme.amber)
                 }
-                StatTile(title: "Features", value: "\(s.featureCount)", tint: Theme.good)
+                StatTile(title: tr("Features"), value: "\(s.featureCount)", tint: Theme.good)
             }
             if !s.accession.isEmpty {
                 Card(padding: 12) {
@@ -394,38 +394,38 @@ struct DetailView: View {
         let order = featureTableOrder(features: model.features, typeFilter: featType, text: featFilter, column: featSort, ascending: featAsc)
         let rows = order.map { IndexedFeature(index: Int($0), info: model.features[Int($0)]) }
         return VStack(alignment: .leading, spacing: 8) {
-            SectionHeader(text: "Features", detail: rows.count == model.features.count ? "\(rows.count)" : "\(rows.count) von \(model.features.count)")
+            SectionHeader(text: tr("Features"), detail: rows.count == model.features.count ? "\(rows.count)" : tr("%@ von %@", "\(rows.count)", "\(model.features.count)"))
             HStack {
-                TextField("Name filtern", text: $featFilter).textFieldStyle(.roundedBorder).frame(width: 170)
-                Picker("Typ", selection: $featType) {
-                    Text("Alle Typen").tag("")
+                TextField(tr("Name filtern"), text: $featFilter).textFieldStyle(.roundedBorder).frame(width: 170)
+                Picker(tr("Typ"), selection: $featType) {
+                    Text(tr("Alle Typen")).tag("")
                     ForEach(Array(Set(model.features.map { $0.featureType })).sorted(), id: \.self) { Text($0).tag($0) }
                 }
                 .frame(width: 170)
-                Picker("Sortieren", selection: $featSort) {
-                    Text("Beginn").tag("start")
-                    Text("Ende").tag("end")
-                    Text("Länge").tag("length")
-                    Text("Name").tag("name")
-                    Text("Typ").tag("type")
+                Picker(tr("Sortieren"), selection: $featSort) {
+                    Text(tr("Beginn")).tag("start")
+                    Text(tr("Ende")).tag("end")
+                    Text(tr("Länge")).tag("length")
+                    Text(tr("Name")).tag("name")
+                    Text(tr("Typ")).tag("type")
                 }
                 .frame(width: 160)
-                Button { featAsc.toggle() } label: { Image(systemName: featAsc ? "arrow.up" : "arrow.down") }.accessibilityLabel(featAsc ? "Aufsteigend sortiert" : "Absteigend sortiert")
-                    .help(featAsc ? "Aufsteigend" : "Absteigend")
+                Button { featAsc.toggle() } label: { Image(systemName: featAsc ? "arrow.up" : "arrow.down") }.accessibilityLabel(featAsc ? tr("Aufsteigend sortiert") : tr("Absteigend sortiert"))
+                    .help(featAsc ? tr("Aufsteigend") : tr("Absteigend"))
                 Spacer()
-                Button("Als CSV …") { exportFeatureCsv() }
+                Button(tr("Als CSV …")) { exportFeatureCsv() }
             }
             Table(rows) {
-                TableColumn("Typ") { f in Text(f.info.featureType) }
-                TableColumn("Name") { f in Text(f.info.name) }
-                TableColumn("Bereich") { f in Text(verbatim: "\(f.info.start + 1)–\(f.info.end)") }
-                TableColumn("Länge") { f in Text("\(f.info.end - f.info.start)") }.width(70)
-                TableColumn("Strang") { f in Text(strand(f.info.strand)) }
+                TableColumn(tr("Typ")) { f in Text(f.info.featureType) }
+                TableColumn(tr("Name")) { f in Text(f.info.name) }
+                TableColumn(tr("Bereich")) { f in Text(verbatim: "\(f.info.start + 1)–\(f.info.end)") }
+                TableColumn(tr("Länge")) { f in Text("\(f.info.end - f.info.start)") }.width(70)
+                TableColumn(tr("Strang")) { f in Text(strand(f.info.strand)) }
                 TableColumn("") { f in
                     Button { model.removeFeature(index: f.index) } label: { Image(systemName: "trash") }
-                        .accessibilityLabel("Feature löschen")
+                        .accessibilityLabel(tr("Feature löschen"))
                         .buttonStyle(.borderless)
-                        .help("Feature löschen")
+                        .help(tr("Feature löschen"))
                 }.width(30)
             }
             .frame(minHeight: 120, maxHeight: 240)
@@ -434,7 +434,7 @@ struct DetailView: View {
 
     /// Alle Features des Dokuments als CSV speichern.
     private func exportFeatureCsv() {
-        guard let project = model.project, let id = model.selection, let url = FilePick.save("Features als CSV speichern", name: "features.csv") else { return }
+        guard let project = model.project, let id = model.selection, let url = FilePick.save(tr("Features als CSV speichern"), name: "features.csv") else { return }
         do { try project.exportText(id: id, kind: "features_csv").write(to: url, atomically: true, encoding: .utf8) } catch { model.errorMessage = error.localizedDescription }
     }
 
@@ -448,7 +448,7 @@ struct DetailView: View {
 
     private func previewBox(_ s: DocumentSummary) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionHeader(text: "Ganze Sequenz")
+            SectionHeader(text: tr("Ganze Sequenz"))
             Card(padding: 12) {
                 let full = String(model.fullBases.prefix(200_000))
                 Text(s.seqType == "PROTEIN" || full.count > 30_000 ? AttributedString(grouped(full)) : coloredBases(grouped(full)))
@@ -456,7 +456,7 @@ struct DetailView: View {
                     .textSelection(.enabled)
             }
             if s.length > 200_000 {
-                Text("… weitere \(s.length - 200_000) Basen (nicht angezeigt)")
+                Text(tr("… weitere %@ Basen (nicht angezeigt)", "\(s.length - 200_000)"))
                     .font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
             }
         }
@@ -512,45 +512,45 @@ struct MultiSelectionView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("\(model.multiSelection.count) Dokumente gewählt").font(.title2.bold())
+            Text(tr("%@ Dokumente gewählt", "\(model.multiSelection.count)")).font(.title2.bold())
             ReadConsensusSection(model: model)
             ConcatSection(model: model)
             CompareAnnotationsSection(model: model)
             PairedReadsSection(model: model)
             LengthHistogramSection(model: model)
-            GroupBox("Ausrichten") {
+            GroupBox(tr("Ausrichten")) {
                 HStack {
-                    Picker("Verfahren", selection: $aligner) {
-                        Text("Eingebaut").tag("builtin")
+                    Picker(tr("Verfahren"), selection: $aligner) {
+                        Text(tr("Eingebaut")).tag("builtin")
                         Text("MAFFT").tag("mafft")
                         Text("MUSCLE").tag("muscle")
                         Text("Clustal Omega").tag("clustalo")
                     }
                     .frame(width: 240)
                     Spacer()
-                    Button("Ausrichten") { model.alignSelected(backend: aligner) }
+                    Button(tr("Ausrichten")) { model.alignSelected(backend: aligner) }
                 }
                 .padding(6)
             }
-            GroupBox("BLAST (lokal): erste gewählte Sequenz gegen die übrigen") {
+            GroupBox(tr("BLAST (lokal): erste gewählte Sequenz gegen die übrigen")) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Picker("Programm", selection: $blastProgram) {
+                        Picker(tr("Programm"), selection: $blastProgram) {
                             Text("blastn (DNA)").tag("blastn")
                             Text("blastp (Protein)").tag("blastp")
                         }
                         .frame(width: 220)
-                        Button("Suchen") { runBlast() }
+                        Button(tr("Suchen")) { runBlast() }
                         if let blastMessage { Text(blastMessage).foregroundStyle(Theme.danger) }
                     }
                     if !blastHits.isEmpty {
                         Table(blastHits) {
-                            TableColumn("Treffer") { h in Text(h.dto.subject) }
-                            TableColumn("Identität") { h in Text(String(format: "%.1f %%", h.dto.identityPercent)) }.width(80)
-                            TableColumn("Länge") { h in Text("\(h.dto.alignmentLength)") }.width(60)
+                            TableColumn(tr("Treffer")) { h in Text(h.dto.subject) }
+                            TableColumn(tr("Identität")) { h in Text(String(format: "%.1f %%", h.dto.identityPercent)) }.width(80)
+                            TableColumn(tr("Länge")) { h in Text("\(h.dto.alignmentLength)") }.width(60)
                             TableColumn("Query") { h in Text("\(h.dto.queryStart)–\(h.dto.queryEnd)") }.width(90)
                             TableColumn("Subject") { h in Text("\(h.dto.subjectStart)–\(h.dto.subjectEnd)" + (h.dto.reverseStrand ? " (−)" : "")) }.width(110)
-                            TableColumn("E-Wert") { h in Text(String(format: "%.1e", h.dto.evalue)) }.width(80)
+                            TableColumn(tr("E-Wert")) { h in Text(String(format: "%.1e", h.dto.evalue)) }.width(80)
                             TableColumn("Bit") { h in Text(String(format: "%.1f", h.dto.bitScore)) }.width(60)
                         }
                         .frame(minHeight: 120, maxHeight: 220)
@@ -558,39 +558,39 @@ struct MultiSelectionView: View {
                 }
                 .padding(6)
             }
-            GroupBox("Reads: Contigs bilden oder auf die erste Sequenz abbilden") {
+            GroupBox(tr("Reads: Contigs bilden oder auf die erste Sequenz abbilden")) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Stepper("Mindestüberlappung \(minOverlap) bp", value: $minOverlap, in: 5...200)
+                        Stepper(tr("Mindestüberlappung %@ bp", "\(minOverlap)"), value: $minOverlap, in: 5...200)
                             .frame(width: 280)
-                        Button("Contigs bilden") { model.assembleReadsSelected(minOverlap: minOverlap) }
+                        Button(tr("Contigs bilden")) { model.assembleReadsSelected(minOverlap: minOverlap) }
                     }
                     HStack {
-                        Stepper("Fehlpaarungen ≤ \(maxMismatch)", value: $maxMismatch, in: 0...20)
+                        Stepper(tr("Fehlpaarungen ≤ %@", "\(maxMismatch)"), value: $maxMismatch, in: 0...20)
                             .frame(width: 280)
-                        Button("Auf Referenz abbilden") { mapRows = model.mapReadsSelected(maxMismatches: maxMismatch) }
+                        Button(tr("Auf Referenz abbilden")) { mapRows = model.mapReadsSelected(maxMismatches: maxMismatch) }
                     }
                     if !mapRows.isEmpty {
                         ForEach(Array(mapRows.enumerated()), id: \.offset) { _, r in
                             Text(r.mapped
-                                 ? "\(r.name): Position \(r.position + 1)\(r.reverse ? " (−)" : "") · \(r.mismatches) Fehlpaarung(en)"
-                                 : "\(r.name): nicht abgebildet")
+                                 ? tr("%@: Position %@%@ · %@ Fehlpaarung(en)", "\(r.name)", "\(r.position + 1)", "\(r.reverse ? " (−)" : "")", "\(r.mismatches)")
+                                 : tr("%@: nicht abgebildet", "\(r.name)"))
                                 .font(Theme.label(13))
                         }
                     }
                 }
                 .padding(6)
             }
-            GroupBox("Zusammenbauen (Reihenfolge wie in der Liste)") {
+            GroupBox(tr("Zusammenbauen (Reihenfolge wie in der Liste)")) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Toggle("Zirkuläres Konstrukt", isOn: $circular)
+                    Toggle(tr("Zirkuläres Konstrukt"), isOn: $circular)
                     HStack {
                         Button("Gibson") { model.assembleSelected(kind: "gibson", circular: circular) }
                         Button("In-Fusion") { model.assembleSelected(kind: "infusion", circular: circular) }
                         Button("SLIC") { model.assembleSelected(kind: "slic", circular: circular) }
                     }
                     HStack {
-                        Picker("Enzym", selection: $enzyme) {
+                        Picker(tr("Enzym"), selection: $enzyme) {
                             ForEach(["BsaI", "BsmBI", "Esp3I", "BbsI", "SapI"], id: \.self) { Text($0).tag($0) }
                         }
                         .frame(width: 180)
@@ -619,7 +619,7 @@ struct MultiSelectionView: View {
         do {
             let hits = try project.blastSearch(queryId: ids[0], subjectIds: Array(ids.dropFirst()), program: blastProgram, maxHits: 25)
             blastHits = hits.enumerated().map { BlastRow(index: $0.offset, dto: $0.element) }
-            if hits.isEmpty { blastMessage = "Keine Treffer." }
+            if hits.isEmpty { blastMessage = tr("Keine Treffer.") }
         } catch {
             blastHits = []
             blastMessage = error.localizedDescription

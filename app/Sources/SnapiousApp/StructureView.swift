@@ -114,8 +114,8 @@ struct StructureView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(name).font(Theme.heading())
             Text(pdb.atoms.isEmpty
-                 ? "\(pdb.atomCount) Atome, \(pdb.chains.count) Kette(n): " + pdb.chains.map { "\($0.id) (\($0.sequence.count) aa)" }.joined(separator: ", ")
-                 : "Molekül: \(pdb.atomCount) Atome, \(pdb.bonds.count / 2) Bindungen")
+                 ? tr("%@ Atome, %@ Kette(n): ", "\(pdb.atomCount)", "\(pdb.chains.count)") + pdb.chains.map { tr("%@ (%@ aa)", "\($0.id)", "\($0.sequence.count)") }.joined(separator: ", ")
+                 : tr("Molekül: %@ Atome, %@ Bindungen", "\(pdb.atomCount)", "\(pdb.bonds.count / 2)"))
                 .font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
             chart
                 .frame(minWidth: 480, minHeight: 360)
@@ -131,7 +131,7 @@ struct StructureView: View {
                 Slider(value: $zoom, in: 0.5...3).frame(width: 160)
                 Text("Zoom").font(Theme.label(11))
                 Spacer()
-                Button("Schließen") { dismiss() }
+                Button(tr("Schließen")) { dismiss() }
             }
         }
         .padding(16)

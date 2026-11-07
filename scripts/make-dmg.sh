@@ -1,6 +1,6 @@
 #!/bin/sh
-# Baut die App neu und packt sie als DMG für Apple-Silicon-Macs: build/Snapious-<Version>-arm64.dmg
-# Aufruf aus dem Projektordner:  scripts/make-dmg.sh
+# Rebuilds the app and packs it as a DMG for Apple-silicon Macs: build/Snapious-<version>-arm64.dmg
+# Run from the project folder:  scripts/make-dmg.sh
 set -eu
 cd "$(dirname "$0")/.."
 
@@ -12,13 +12,13 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 
 cp -R build/Snapious.app "$STAGE/"
-ln -s /Applications "$STAGE/Programme"
-cat > "$STAGE/Erst-Start.txt" <<'TXT'
-Snapious ist nicht von Apple notarisiert. Beim ersten Start:
-Rechtsklick auf Snapious -> Öffnen -> Öffnen,
-oder im Terminal:  xattr -cr /Applications/Snapious.app
+ln -s /Applications "$STAGE/Applications"
+cat > "$STAGE/First-launch.txt" <<'TXT'
+Snapious is not notarized by Apple. On first launch:
+right-click Snapious -> Open -> Open,
+or in Terminal:  xattr -cr /Applications/Snapious.app
 TXT
 
 rm -f "$OUT"
 hdiutil create -volname "Snapious $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$OUT" >/dev/null
-echo "Fertig: $OUT ($(du -h "$OUT" | cut -f1))"
+echo "Done: $OUT ($(du -h "$OUT" | cut -f1))"

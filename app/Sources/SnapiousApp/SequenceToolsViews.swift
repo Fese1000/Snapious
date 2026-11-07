@@ -8,20 +8,20 @@ struct BackTranslateSection: View {
     @State private var name = ""
 
     var body: some View {
-        GroupBox("Rückübersetzung (Protein → DNA)") {
+        GroupBox(tr("Rückübersetzung (Protein → DNA)")) {
             VStack(alignment: .leading, spacing: 8) {
                 Picker("", selection: $mode) {
-                    Text("Häufigste E.-coli-Codons").tag("preferred")
-                    Text("Mehrdeutig (IUPAC, z. B. GCN für Ala)").tag("degenerate")
+                    Text(tr("Häufigste E.-coli-Codons")).tag("preferred")
+                    Text(tr("Mehrdeutig (IUPAC, z. B. GCN für Ala)")).tag("degenerate")
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .frame(width: 460)
                 HStack {
-                    TextField("Name der DNA (optional)", text: $name).textFieldStyle(.roundedBorder).frame(width: 260)
-                    Button("Als neue Sequenz anlegen") { model.backTranslateSelected(mode: mode, name: name) }
+                    TextField(tr("Name der DNA (optional)"), text: $name).textFieldStyle(.roundedBorder).frame(width: 260)
+                    Button(tr("Als neue Sequenz anlegen")) { model.backTranslateSelected(mode: mode, name: name) }
                 }
-                Text("Für ein Protein mit Stopp (*) wird dieses als Stopp-Codon übernommen, wenn es in der Sequenz steht.")
+                Text(tr("Für ein Protein mit Stopp (*) wird dieses als Stopp-Codon übernommen, wenn es in der Sequenz steht."))
                     .font(.caption).foregroundStyle(.secondary)
             }
             .padding(6)
@@ -42,34 +42,34 @@ struct SilentMutationsSection: View {
     }
 
     var body: some View {
-        GroupBox("Stille Mutationen (gleiche Aminosäure, andere Base)") {
+        GroupBox(tr("Stille Mutationen (gleiche Aminosäure, andere Base)")) {
             VStack(alignment: .leading, spacing: 8) {
                 if cdsList.isEmpty {
-                    Text("Diese Sequenz hat kein CDS auf dem Vorwärtsstrang. Trage zuerst ein CDS-Feature ein (Sequenz → Auswahl → Feature…).")
+                    Text(tr("Diese Sequenz hat kein CDS auf dem Vorwärtsstrang. Trage zuerst ein CDS-Feature ein (Sequenz → Auswahl → Feature…)."))
                         .foregroundStyle(.secondary)
                 } else {
                     HStack {
                         Picker("CDS", selection: $feature) {
-                            Text("Bitte wählen").tag(-1)
+                            Text(tr("Bitte wählen")).tag(-1)
                             ForEach(cdsList, id: \.0) { Text("\($0.1.name) (\($0.1.start + 1)–\($0.1.end))").tag($0.0) }
                         }.frame(width: 260)
-                        Picker("Gesucht", selection: $mode) {
-                            Text("Alle").tag("all")
-                            Text("Erzeugt Stelle").tag("create")
-                            Text("Zerstört Stelle").tag("remove")
+                        Picker(tr("Gesucht"), selection: $mode) {
+                            Text(tr("Alle")).tag("all")
+                            Text(tr("Erzeugt Stelle")).tag("create")
+                            Text(tr("Zerstört Stelle")).tag("remove")
                         }.frame(width: 220)
                     }
                     HStack {
-                        TextField("Enzym oder DNA-Folge, z. B. EcoRI", text: $site).textFieldStyle(.roundedBorder).frame(width: 260)
-                        Button("Suchen") { search() }.disabled(feature < 0)
+                        TextField(tr("Enzym oder DNA-Folge, z. B. EcoRI"), text: $site).textFieldStyle(.roundedBorder).frame(width: 260)
+                        Button(tr("Suchen")) { search() }.disabled(feature < 0)
                     }
                     if !changes.isEmpty {
                         Table(changes) {
-                            TableColumn("Position") { c in Text("\(c.dto.position + 1)") }.width(80)
-                            TableColumn("Codon") { c in Text("\(c.dto.codon)") }.width(60)
-                            TableColumn("Änderung") { c in Text("\(c.dto.from) → \(c.dto.to)") }.width(100)
+                            TableColumn(tr("Position")) { c in Text("\(c.dto.position + 1)") }.width(80)
+                            TableColumn(tr("Codon")) { c in Text("\(c.dto.codon)") }.width(60)
+                            TableColumn(tr("Änderung")) { c in Text("\(c.dto.from) → \(c.dto.to)") }.width(100)
                             TableColumn("") { c in
-                                Button("Anwenden") { model.applySilentChange(c.dto); search() }.buttonStyle(.borderless)
+                                Button(tr("Anwenden")) { model.applySilentChange(c.dto); search() }.buttonStyle(.borderless)
                             }.width(90)
                         }
                         .frame(minHeight: 120, maxHeight: 220)
@@ -99,14 +99,14 @@ struct ConcatSection: View {
     @State private var circular = false
 
     var body: some View {
-        GroupBox("Zusammenfügen (hintereinander, Reihenfolge wie in der Liste)") {
+        GroupBox(tr("Zusammenfügen (hintereinander, Reihenfolge wie in der Liste)")) {
             VStack(alignment: .leading, spacing: 8) {
-                Toggle("Ergebnis zirkulär", isOn: $circular)
+                Toggle(tr("Ergebnis zirkulär"), isOn: $circular)
                 HStack {
-                    TextField("Name (optional)", text: $name).textFieldStyle(.roundedBorder).frame(width: 260)
-                    Button("Zusammenfügen") { model.concatenateSelected(name: name, circular: circular) }
+                    TextField(tr("Name (optional)"), text: $name).textFieldStyle(.roundedBorder).frame(width: 260)
+                    Button(tr("Zusammenfügen")) { model.concatenateSelected(name: name, circular: circular) }
                 }
-                Text("Die Basen werden direkt aneinandergehängt, Features wandern mit. Ohne Überlappung – für überlappende Enden Gibson verwenden.")
+                Text(tr("Die Basen werden direkt aneinandergehängt, Features wandern mit. Ohne Überlappung – für überlappende Enden Gibson verwenden."))
                     .font(.caption).foregroundStyle(.secondary)
             }
             .padding(6)
@@ -123,19 +123,19 @@ struct CompareAnnotationsSection: View {
     @State private var namesB: [FeatureInfo] = []
 
     var body: some View {
-        GroupBox("Annotationen vergleichen (genau zwei Sequenzen)") {
+        GroupBox(tr("Annotationen vergleichen (genau zwei Sequenzen)")) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Picker("Gleich, wenn", selection: $mode) {
-                        Text("Typ gleich und überlappend").tag("overlap")
-                        Text("Typ, Beginn und Ende gleich").tag("exact")
+                    Picker(tr("Gleich, wenn"), selection: $mode) {
+                        Text(tr("Typ gleich und überlappend")).tag("overlap")
+                        Text(tr("Typ, Beginn und Ende gleich")).tag("exact")
                     }.frame(width: 340)
-                    Button("Vergleichen") { compare() }.disabled(model.multiSelection.count != 2)
+                    Button(tr("Vergleichen")) { compare() }.disabled(model.multiSelection.count != 2)
                 }
                 if let r = result {
-                    list("Nur in der ersten", r.onlyA, namesA)
-                    list("Nur in der zweiten", r.onlyB, namesB)
-                    list("In beiden (erste)", r.commonA, namesA)
+                    list(tr("Nur in der ersten"), r.onlyA, namesA)
+                    list(tr("Nur in der zweiten"), r.onlyB, namesB)
+                    list(tr("In beiden (erste)"), r.commonA, namesA)
                 }
             }
             .padding(6)
@@ -152,7 +152,7 @@ struct CompareAnnotationsSection: View {
                     Text("\(f.featureType) \(f.name) \(f.start + 1)–\(f.end)").font(.callout).foregroundStyle(.secondary)
                 }
             }
-            if idx.count > 30 { Text("… und \(idx.count - 30) weitere").font(.caption).foregroundStyle(.secondary) }
+            if idx.count > 30 { Text(tr("… und %@ weitere", "\(idx.count - 30)")).font(.caption).foregroundStyle(.secondary) }
         }
     }
 
@@ -177,32 +177,32 @@ struct ColumnStripSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Spalten entfernen").font(.title2.bold())
-            Picker("Welche Spalten", selection: $kind) {
-                Text("Mit vielen Lücken").tag("gaps")
-                Text("Ohne Unterschied (konstant)").tag("constant")
-                Text("Eine Codonposition").tag("codon")
+            Text(tr("Spalten entfernen")).font(.title2.bold())
+            Picker(tr("Welche Spalten"), selection: $kind) {
+                Text(tr("Mit vielen Lücken")).tag("gaps")
+                Text(tr("Ohne Unterschied (konstant)")).tag("constant")
+                Text(tr("Eine Codonposition")).tag("codon")
             }
             .pickerStyle(.segmented)
             switch kind {
             case "gaps":
-                Stepper("Lückenanteil mindestens \(Int(gapPercent)) %", value: $gapPercent, in: 1...100, step: 5)
+                Stepper(tr("Lückenanteil mindestens %@ %", "\(Int(gapPercent))"), value: $gapPercent, in: 1...100, step: 5)
             case "codon":
-                Picker("Codonposition", selection: $codonPosition) {
-                    Text("1. Position").tag(1)
-                    Text("2. Position").tag(2)
-                    Text("3. Position (wackelnd)").tag(3)
+                Picker(tr("Codonposition"), selection: $codonPosition) {
+                    Text(tr("1. Position")).tag(1)
+                    Text(tr("2. Position")).tag(2)
+                    Text(tr("3. Position (wackelnd)")).tag(3)
                 }
-                Stepper("Erstes Codon beginnt in Spalte \(start)", value: $start, in: 1...100000)
+                Stepper(tr("Erstes Codon beginnt in Spalte %@", "\(start)"), value: $start, in: 1...100000)
             default:
-                Text("Entfernt alle Spalten, in denen alle Zeilen dieselbe Base haben und keine Lücke steht.")
+                Text(tr("Entfernt alle Spalten, in denen alle Zeilen dieselbe Base haben und keine Lücke steht."))
                     .font(.callout).foregroundStyle(.secondary)
             }
-            TextField("Name des neuen Alignments (optional)", text: $name).textFieldStyle(.roundedBorder)
+            TextField(tr("Name des neuen Alignments (optional)"), text: $name).textFieldStyle(.roundedBorder)
             HStack {
                 Spacer()
-                Button("Abbrechen", role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
-                Button("Entfernen") {
+                Button(tr("Abbrechen"), role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(tr("Entfernen")) {
                     let param = kind == "gaps" ? gapPercent / 100 : Double(codonPosition)
                     if model.stripColumns(kind: kind, param: param, start: start - 1, name: name) { dismiss() }
                 }
@@ -225,20 +225,20 @@ struct ApplyVariantsSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Sequenz mit Varianten").font(.title2.bold())
-            Text("Erzeugt die Referenzsequenz (ohne Lücken) mit allen Substitutionen, Einfügungen und Löschungen der gewählten Zeile.")
+            Text(tr("Sequenz mit Varianten")).font(.title2.bold())
+            Text(tr("Erzeugt die Referenzsequenz (ohne Lücken) mit allen Substitutionen, Einfügungen und Löschungen der gewählten Zeile."))
                 .font(.callout).foregroundStyle(.secondary)
-            Picker("Referenz", selection: $reference) {
+            Picker(tr("Referenz"), selection: $reference) {
                 ForEach(Array(rowNames.enumerated()), id: \.offset) { Text($0.element).tag($0.offset) }
             }
-            Picker("Varianten von", selection: $row) {
+            Picker(tr("Varianten von"), selection: $row) {
                 ForEach(Array(rowNames.enumerated()), id: \.offset) { Text($0.element).tag($0.offset) }
             }
-            TextField("Name (optional)", text: $name).textFieldStyle(.roundedBorder)
+            TextField(tr("Name (optional)"), text: $name).textFieldStyle(.roundedBorder)
             HStack {
                 Spacer()
-                Button("Abbrechen", role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
-                Button("Anlegen") {
+                Button(tr("Abbrechen"), role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(tr("Anlegen")) {
                     if model.sequenceWithVariants(reference: reference, row: row, name: name) { dismiss() }
                 }
                 .keyboardShortcut(.defaultAction)
@@ -262,33 +262,33 @@ struct EnzymeSetMenu: View {
     @State private var error: String?
 
     var body: some View {
-        Menu("Sets") {
+        Menu(tr("Sets")) {
             ForEach(sets, id: \.name) { s in
                 Button("\(s.name) (\(s.enzymes.count))") { onPick(s.enzymes) }
             }
             Divider()
-            Button("Auswahl als Set speichern …") { showSave = true }.disabled(current.isEmpty)
+            Button(tr("Auswahl als Set speichern …")) { showSave = true }.disabled(current.isEmpty)
             let own = sets.filter { !$0.builtin }
             if !own.isEmpty {
-                Menu("Eigenes Set löschen") {
+                Menu(tr("Eigenes Set löschen")) {
                     ForEach(own, id: \.name) { s in Button(s.name) { try? enzymeSetDelete(name: s.name); sets = enzymeSets() } }
                 }
             }
         }
         .menuStyle(.borderlessButton).fixedSize()
         .onAppear { sets = enzymeSets() }
-        .alert("Enzymset speichern", isPresented: $showSave) {
-            TextField("Name", text: $saveName)
-            Button("Speichern") {
+        .alert(tr("Enzymset speichern"), isPresented: $showSave) {
+            TextField(tr("Name"), text: $saveName)
+            Button(tr("Speichern")) {
                 do {
                     try enzymeSetSave(name: saveName, enzymes: current.joined(separator: ", "))
                     sets = enzymeSets()
                     saveName = ""
                 } catch { self.error = error.localizedDescription }
             }
-            Button("Abbrechen", role: .cancel) { saveName = "" }
+            Button(tr("Abbrechen"), role: .cancel) { saveName = "" }
         } message: {
-            Text(error ?? "\(current.count) Enzyme: \(current.joined(separator: ", "))")
+            Text(error ?? tr("%@ Enzyme: %@", "\(current.count)", "\(current.joined(separator: ", "))"))
         }
     }
 }
@@ -299,11 +299,11 @@ struct ReadConsensusSection: View {
     @State private var minQuality = 20
 
     var body: some View {
-        GroupBox("Konsens aus Sanger-Reads (Qualitäten der .ab1/.scf-Dateien)") {
+        GroupBox(tr("Konsens aus Sanger-Reads (Qualitäten der .ab1/.scf-Dateien)")) {
             VStack(alignment: .leading, spacing: 8) {
-                Stepper("Basen unter Qualität \(minQuality) zählen nicht", value: $minQuality, in: 0...60)
-                Button("Konsens bilden") { model.consensusOfSelectedReads(minQuality: minQuality) }
-                Text("Reads, die als Gegenstrang besser passen, werden umgedreht. Ohne gespeicherte Spur gilt für jede Base die Qualität 20. Das Alignment der Reads wird mit angelegt.")
+                Stepper(tr("Basen unter Qualität %@ zählen nicht", "\(minQuality)"), value: $minQuality, in: 0...60)
+                Button(tr("Konsens bilden")) { model.consensusOfSelectedReads(minQuality: minQuality) }
+                Text(tr("Reads, die als Gegenstrang besser passen, werden umgedreht. Ohne gespeicherte Spur gilt für jede Base die Qualität 20. Das Alignment der Reads wird mit angelegt."))
                     .font(.caption).foregroundStyle(.secondary)
             }
             .padding(6)

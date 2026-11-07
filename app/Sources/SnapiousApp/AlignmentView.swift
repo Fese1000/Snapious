@@ -26,20 +26,20 @@ struct AlignmentView: View {
             VStack(spacing: 0) {
                 HStack {
                     Text(a.name).font(Theme.heading())
-                    Text("\(a.rowNames.count) Zeilen, \(a.rows.first?.count ?? 0) Spalten").foregroundStyle(Theme.inkSoft)
+                    Text(tr("%@ Zeilen, %@ Spalten", "\(a.rowNames.count)", "\(a.rows.first?.count ?? 0)")).foregroundStyle(Theme.inkSoft)
                     Spacer()
-                    Menu("Bearbeiten") {
-                        Button("Reine Lückenspalten entfernen") { model.stripSelectedAlignment(threshold: 1.0) }
-                        Button("Spalten mit ≥ 50 % Lücken entfernen") { model.stripSelectedAlignment(threshold: 0.5) }
-                        Button("Alle Spalten mit Lücken entfernen") { model.stripSelectedAlignment(threshold: 0.0001) }
-                        Button("Weitere Spalten entfernen …") { showStrip = true }
+                    Menu(tr("Bearbeiten")) {
+                        Button(tr("Reine Lückenspalten entfernen")) { model.stripSelectedAlignment(threshold: 1.0) }
+                        Button(tr("Spalten mit ≥ 50 % Lücken entfernen")) { model.stripSelectedAlignment(threshold: 0.5) }
+                        Button(tr("Alle Spalten mit Lücken entfernen")) { model.stripSelectedAlignment(threshold: 0.0001) }
+                        Button(tr("Weitere Spalten entfernen …")) { showStrip = true }
                         Divider()
-                        Button("Varianten gegen erste Zeile …") { loadVariants() }
-                        Button("Identitäts-Heatmap …") { matrix = try? model.project?.alignmentIdentityMatrix(id: a.id) }
-                        Button("Sequenzlogo …") { loadLogo() }
-                        Button("Konsens als Sequenz speichern") { model.consensusOfSelectedAlignment() }
-                        Button("Sequenz mit Varianten anlegen …") { showApply = true }
-                        Button("Ähnlichkeitsverlauf …") { showSimilarity = true }
+                        Button(tr("Varianten gegen erste Zeile …")) { loadVariants() }
+                        Button(tr("Identitäts-Heatmap …")) { matrix = try? model.project?.alignmentIdentityMatrix(id: a.id) }
+                        Button(tr("Sequenzlogo …")) { loadLogo() }
+                        Button(tr("Konsens als Sequenz speichern")) { model.consensusOfSelectedAlignment() }
+                        Button(tr("Sequenz mit Varianten anlegen …")) { showApply = true }
+                        Button(tr("Ähnlichkeitsverlauf …")) { showSimilarity = true }
                     }
                 }
                 .padding(8)
@@ -53,34 +53,34 @@ struct AlignmentView: View {
             .sheet(isPresented: $showApply) { ApplyVariantsSheet(model: model, rowNames: a.rowNames) }
             .sheet(isPresented: Binding(get: { matrix != nil }, set: { if !$0 { matrix = nil } })) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Paarweise Identität (%)").font(Theme.heading())
+                    Text(tr("Paarweise Identität (%)")).font(Theme.heading())
                     if let matrix { IdentityHeatmapView(matrix: matrix) }
-                    HStack { Spacer(); Button("Schließen") { matrix = nil } }
+                    HStack { Spacer(); Button(tr("Schließen")) { matrix = nil } }
                 }
                 .padding(16)
                 .frame(minWidth: 560, minHeight: 380)
             }
             .sheet(isPresented: $showLogo) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Sequenzlogo (Bit)").font(Theme.heading())
+                    Text(tr("Sequenzlogo (Bit)")).font(Theme.heading())
                     SequenceLogoView(columns: logo, protein: a.seqType == "PROTEIN")
-                    HStack { Spacer(); Button("Schließen") { showLogo = false } }
+                    HStack { Spacer(); Button(tr("Schließen")) { showLogo = false } }
                 }
                 .padding(16)
                 .frame(minWidth: 560, minHeight: 280)
             }
             .sheet(isPresented: $showVariants) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Varianten gegen \(a.rowNames.first ?? "Referenz"): \(variants.count)").font(Theme.heading())
+                    Text(tr("Varianten gegen %@: %@", "\(a.rowNames.first ?? "Referenz")", "\(variants.count)")).font(Theme.heading())
                     Table(Array(variants.enumerated()).map { VariantRow(id: $0.offset, dto: $0.element) }) {
-                        TableColumn("Zeile") { v in Text(v.dto.rowName) }
-                        TableColumn("Spalte") { v in Text("\(v.dto.column + 1)") }.width(70)
-                        TableColumn("Ref-Pos.") { v in Text("\(v.dto.referencePosition + 1)") }.width(70)
+                        TableColumn(tr("Zeile")) { v in Text(v.dto.rowName) }
+                        TableColumn(tr("Spalte")) { v in Text("\(v.dto.column + 1)") }.width(70)
+                        TableColumn(tr("Ref-Pos.")) { v in Text("\(v.dto.referencePosition + 1)") }.width(70)
                         TableColumn("Ref") { v in Text(v.dto.referenceBase) }.width(40)
                         TableColumn("Alt") { v in Text(v.dto.altBase) }.width(40)
-                        TableColumn("Art") { v in Text(v.dto.kind) }.width(100)
+                        TableColumn(tr("Art")) { v in Text(v.dto.kind) }.width(100)
                     }
-                    HStack { Spacer(); Button("Schließen") { showVariants = false } }
+                    HStack { Spacer(); Button(tr("Schließen")) { showVariants = false } }
                 }
                 .padding(16)
                 .frame(minWidth: 560, minHeight: 360)
@@ -119,10 +119,10 @@ struct AlignmentView: View {
                 ctx.fill(Path(CGRect(x: nameX + CGFloat(i) * cw, y: rowHeight - h, width: cw - 1, height: h)),
                          with: .color(.green.opacity(0.7)))
             }
-            ctx.draw(Text("Identität").font(.system(size: 10)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: 4, y: rowHeight / 2), anchor: .leading)
+            ctx.draw(Text(tr("Identität")).font(.system(size: 10)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: 4, y: rowHeight / 2), anchor: .leading)
             // Konsens
             let cy = rowHeight * 1.5
-            ctx.draw(Text("Konsens").font(.system(size: 10)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: 4, y: cy), anchor: .leading)
+            ctx.draw(Text(tr("Konsens")).font(.system(size: 10)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: 4, y: cy), anchor: .leading)
             for (i, ch) in a.consensus.enumerated() {
                 ctx.draw(Text(String(ch)).font(.system(size: 12, design: .monospaced)),
                          at: CGPoint(x: nameX + CGFloat(i) * cw, y: cy), anchor: .leading)

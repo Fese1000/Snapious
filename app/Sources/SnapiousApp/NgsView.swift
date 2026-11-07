@@ -22,11 +22,11 @@ struct NgsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 if let message { Text(message).foregroundStyle(Theme.danger) }
-                GroupBox("Qualität (FASTQ, auch .gz)") {
+                GroupBox(tr("Qualität (FASTQ, auch .gz)")) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Button("FASTQ prüfen …") { chooseFastq(forTrim: false) }.disabled(busy)
-                            Button("FASTQ trimmen …") { chooseFastq(forTrim: true) }.disabled(busy)
+                            Button(tr("FASTQ prüfen …")) { chooseFastq(forTrim: false) }.disabled(busy)
+                            Button(tr("FASTQ trimmen …")) { chooseFastq(forTrim: true) }.disabled(busy)
                             if busy { ProgressView().controlSize(.small) }
                         }
                         if let trimMessage { Text(trimMessage).font(Theme.label(13)) }
@@ -40,31 +40,31 @@ struct NgsView: View {
                 BarcodeSection()
                 FastqConvertSection()
                 ExpressionSection()
-                GroupBox("Mapping: Reads auf die gewählte Sequenz abbilden") {
+                GroupBox(tr("Mapping: Reads auf die gewählte Sequenz abbilden")) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Picker("Programm", selection: $mapper) {
+                            Picker(tr("Programm"), selection: $mapper) {
                                 Text("minimap2").tag("minimap2")
                                 Text("BWA").tag("bwa")
                             }.frame(width: 190)
-                            Picker("Preset", selection: $preset) {
-                                Text("Kurze Reads (sr)").tag("sr")
+                            Picker(tr("Preset"), selection: $preset) {
+                                Text(tr("Kurze Reads (sr)")).tag("sr")
                                 Text("Nanopore (map-ont)").tag("map-ont")
                                 Text("PacBio (map-pb)").tag("map-pb")
                             }.frame(width: 250).disabled(mapper == "bwa")
-                            Stepper("Threads \(threads)", value: $threads, in: 1...16).frame(width: 130)
+                            Stepper(tr("Threads %@", "\(threads)"), value: $threads, in: 1...16).frame(width: 130)
                         }
                         HStack {
-                            Button("Reads wählen und abbilden …") { chooseReadsAndMap() }.disabled(busy || model.selection == nil)
+                            Button(tr("Reads wählen und abbilden …")) { chooseReadsAndMap() }.disabled(busy || model.selection == nil)
                             if busy { ProgressView().controlSize(.small) }
                         }
                         if let mapMessage { Text(mapMessage).font(Theme.label(13)) }
                     }
                     .padding(6)
                 }
-                GroupBox("Verknüpfte Dateien dieser Sequenz") {
+                GroupBox(tr("Verknüpfte Dateien dieser Sequenz")) {
                     VStack(alignment: .leading, spacing: 6) {
-                        if files.isEmpty { Text("Noch keine.").foregroundStyle(Theme.inkSoft) }
+                        if files.isEmpty { Text(tr("Noch keine.")).foregroundStyle(Theme.inkSoft) }
                         ForEach(files, id: \.id) { f in
                             HStack {
                                 Text(f.kind.uppercased()).font(.caption.monospaced()).padding(.horizontal, 5)
@@ -75,21 +75,21 @@ struct NgsView: View {
                                 }
                                 Spacer()
                                 if f.kind == "sam" || f.kind == "bam" {
-                                    Button("Coverage zeigen") { model.showCoverage(path: f.path, label: f.label) }
+                                    Button(tr("Coverage zeigen")) { model.showCoverage(path: f.path, label: f.label) }
                                 }
-                                Button { remove(f) } label: { Image(systemName: "trash") }.accessibilityLabel("Verknüpfung entfernen").buttonStyle(.plain)
+                                Button { remove(f) } label: { Image(systemName: "trash") }.accessibilityLabel(tr("Verknüpfung entfernen")).buttonStyle(.plain)
                             }
                         }
-                        Button("Datei verknüpfen …") { linkFile() }
+                        Button(tr("Datei verknüpfen …")) { linkFile() }
                     }
                     .padding(6)
                 }
-                GroupBox("Varianten (SAM oder BAM gegen die gewählte Sequenz)") {
+                GroupBox(tr("Varianten (SAM oder BAM gegen die gewählte Sequenz)")) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Button("Alignment-Datei wählen …") { chooseAlignment() }.disabled(busy)
+                        Button(tr("Alignment-Datei wählen …")) { chooseAlignment() }.disabled(busy)
                         if let variantMessage { Text(variantMessage).font(Theme.label(13)) }
                         ForEach(Array(snvs.prefix(200).enumerated()), id: \.offset) { _, s in
-                            Text("Position \(s.position + 1): \(s.refBase) → \(s.altBase) · Tiefe \(s.depth) · \(String(format: "%.0f", s.altFraction * 100)) % · Q \(String(format: "%.0f", s.quality))")
+                            Text(tr("Position %@: %@ → %@ · Tiefe %@ · %@ % · Q %@", "\(s.position + 1)", "\(s.refBase)", "\(s.altBase)", "\(s.depth)", "\(String(format: "%.0f", s.altFraction * 100))", "\(String(format: "%.0f", s.quality))"))
                                 .font(.system(.callout, design: .monospaced))
                         }
                     }
@@ -120,7 +120,7 @@ struct NgsView: View {
     private func linkFile() {
         guard let project = model.project, let id = model.selection else { return }
         let panel = NSOpenPanel()
-        panel.message = "SAM, BAM, FASTQ oder VCF verknüpfen (die Datei wird nicht kopiert)"
+        panel.message = tr("SAM, BAM, FASTQ oder VCF verknüpfen (die Datei wird nicht kopiert)")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         var kind = url.pathExtension.lowercased()
         if kind == "gz" { kind = URL(fileURLWithPath: url.deletingPathExtension().path).pathExtension.lowercased() }
@@ -136,7 +136,7 @@ struct NgsView: View {
     private func chooseReadsAndMap() {
         guard let project = model.project, let id = model.selection else { return }
         let panel = NSOpenPanel()
-        panel.message = "Eine oder zwei FASTQ-Dateien wählen (gepaarte Reads: beide)"
+        panel.message = tr("Eine oder zwei FASTQ-Dateien wählen (gepaarte Reads: beide)")
         panel.allowsMultipleSelection = true
         guard panel.runModal() == .OK, !panel.urls.isEmpty else { return }
         let paths = Array(panel.urls.prefix(2)).map { $0.path }
@@ -150,7 +150,7 @@ struct NgsView: View {
                 let f = try project.mapReadsToReference(referenceId: id, readPaths: paths, mapper: m, preset: p,
                                                         threads: UInt64(t), outputDir: outDir)
                 await MainActor.run {
-                    mapMessage = "Fertig: \(f.path)"
+                    mapMessage = tr("Fertig: %@", "\(f.path)")
                     busy = false
                     reload()
                     model.showCoverage(path: f.path, label: f.label)
@@ -163,7 +163,7 @@ struct NgsView: View {
 
     private func chooseFastq(forTrim: Bool) {
         let panel = NSOpenPanel()
-        panel.message = "FASTQ-Datei wählen"
+        panel.message = tr("FASTQ-Datei wählen")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         busy = true
         message = nil
@@ -183,7 +183,7 @@ struct NgsView: View {
                 if forTrim {
                     let s = try trimFastq(input: path, output: output)
                     await MainActor.run {
-                        trimMessage = "\(s.inputReads) → \(s.outputReads) Reads, \(s.basesRemoved) Basen entfernt, Adapter in \(s.adaptersFound) Reads."
+                        trimMessage = tr("%@ → %@ Reads, %@ Basen entfernt, Adapter in %@ Reads.", "\(s.inputReads)", "\(s.outputReads)", "\(s.basesRemoved)", "\(s.adaptersFound)")
                         busy = false
                     }
                 } else {
@@ -199,7 +199,7 @@ struct NgsView: View {
     private func chooseAlignment() {
         guard let project = model.project, let id = model.selection else { return }
         let panel = NSOpenPanel()
-        panel.message = "SAM- oder BAM-Datei wählen"
+        panel.message = tr("SAM- oder BAM-Datei wählen")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         busy = true
         variantMessage = nil
@@ -209,7 +209,7 @@ struct NgsView: View {
                 let v = try project.callVariants(referenceId: id, alignmentPath: url.path, vcfPath: vcf)
                 await MainActor.run {
                     snvs = v
-                    variantMessage = "\(v.count) Variante(n); VCF: \(vcf)"
+                    variantMessage = tr("%@ Variante(n); VCF: %@", "\(v.count)", "\(vcf)")
                     busy = false
                 }
             } catch {
@@ -233,15 +233,15 @@ struct QcSummary: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(name).font(Theme.heading())
-            row("\(qc.reads) Reads, Länge \(qc.minLength)–\(qc.maxLength) (Ø \(String(format: "%.1f", qc.meanLength)))", .secondary)
-            row("Mittlere Qualität \(String(format: "%.1f", meanOfMeans))", light(meanOfMeans >= 28, meanOfMeans >= 20))
-            row("GC-Gehalt \(String(format: "%.1f", qc.gcPercent)) %", light(qc.gcPercent > 35 && qc.gcPercent < 65, qc.gcPercent > 25 && qc.gcPercent < 75))
-            row("Duplikation \(String(format: "%.1f", qc.duplicationPercent)) %", light(qc.duplicationPercent < 20, qc.duplicationPercent < 50))
-            row("Adapter \(String(format: "%.1f", qc.adapterPercent)) %", light(qc.adapterPercent < 1, qc.adapterPercent < 5))
+            row(tr("%@ Reads, Länge %@–%@ (Ø %@)", "\(qc.reads)", "\(qc.minLength)", "\(qc.maxLength)", "\(String(format: "%.1f", qc.meanLength))"), .secondary)
+            row(tr("Mittlere Qualität %@", "\(String(format: "%.1f", meanOfMeans))"), light(meanOfMeans >= 28, meanOfMeans >= 20))
+            row(tr("GC-Gehalt %@ %", "\(String(format: "%.1f", qc.gcPercent))"), light(qc.gcPercent > 35 && qc.gcPercent < 65, qc.gcPercent > 25 && qc.gcPercent < 75))
+            row(tr("Duplikation %@ %", "\(String(format: "%.1f", qc.duplicationPercent))"), light(qc.duplicationPercent < 20, qc.duplicationPercent < 50))
+            row(tr("Adapter %@ %", "\(String(format: "%.1f", qc.adapterPercent))"), light(qc.adapterPercent < 1, qc.adapterPercent < 5))
             chart.frame(height: 160)
                 .background(Theme.panel, in: RoundedRectangle(cornerRadius: 6))
             if !qc.overrepresented.isEmpty {
-                Text("Häufige Sequenzen: " + qc.overrepresented.prefix(3).joined(separator: ", "))
+                Text(tr("Häufige Sequenzen: ") + qc.overrepresented.prefix(3).joined(separator: ", "))
                     .font(Theme.label(11)).foregroundStyle(Theme.inkSoft).lineLimit(2)
             }
         }
@@ -273,7 +273,7 @@ struct QcSummary: View {
             var line = Path()
             for (i, q) in qc.meanQuality.enumerated() { i == 0 ? line.move(to: CGPoint(x: x(i), y: y(q))) : line.addLine(to: CGPoint(x: x(i), y: y(q))) }
             ctx.stroke(line, with: .color(Theme.accent), lineWidth: 1.6)
-            ctx.draw(Text("Phred je Position").font(.system(size: 9)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: 6, y: 8), anchor: .leading)
+            ctx.draw(Text(tr("Phred je Position")).font(.system(size: 9)).foregroundStyle(Theme.inkSoft), at: CGPoint(x: 6, y: 8), anchor: .leading)
         }
     }
 }

@@ -1,6 +1,6 @@
-## Was ändert sich und warum?
+## What changes and why?
 
-## Geprüft
+## Checked
 - [ ] `cargo test --workspace`
 - [ ] `cargo clippy --workspace --all-targets -- -D warnings`
-- [ ] `scripts/bundle-app.sh` und Selbsttest (bei Änderungen an App oder Schnittstelle)
+- [ ] `scripts/bundle-app.sh` and self-test (for app or interface changes)

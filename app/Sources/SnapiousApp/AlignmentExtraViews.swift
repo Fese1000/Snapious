@@ -13,10 +13,10 @@ struct SimilarityGraphSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Ähnlichkeitsverlauf").font(.title2.bold())
-            Text("Mittlere paarweise Identität je Spalte (Lücken zählen nicht). 1 = alle gleich.")
+            Text(tr("Ähnlichkeitsverlauf")).font(.title2.bold())
+            Text(tr("Mittlere paarweise Identität je Spalte (Lücken zählen nicht). 1 = alle gleich."))
                 .font(.callout).foregroundStyle(.secondary)
-            Stepper("Glättungsfenster: \(window) Spalten", value: $window, in: 1...201, step: 2)
+            Stepper(tr("Glättungsfenster: %@ Spalten", "\(window)"), value: $window, in: 1...201, step: 2)
                 .onChange(of: window) { _, _ in load() }
             Canvas { ctx, size in
                 guard raw.count > 1 else { return }
@@ -35,11 +35,11 @@ struct SimilarityGraphSheet: View {
             .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
             if let message { Text(message).foregroundStyle(.red) }
             if !smooth.isEmpty {
-                Text(String(format: "Mittelwert %.1f %% · niedrigster geglätteter Wert %.1f %%",
+                Text(String(format: tr("Mittelwert %.1f %% · niedrigster geglätteter Wert %.1f %%"),
                             100 * smooth.reduce(0, +) / Double(smooth.count), 100 * (smooth.min() ?? 0)))
                     .font(.callout).foregroundStyle(.secondary)
             }
-            HStack { Spacer(); Button("Schließen") { dismiss() }.keyboardShortcut(.defaultAction) }
+            HStack { Spacer(); Button(tr("Schließen")) { dismiss() }.keyboardShortcut(.defaultAction) }
         }
         .padding(20)
         .frame(width: 560)

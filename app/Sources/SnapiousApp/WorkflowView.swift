@@ -12,7 +12,7 @@ struct WorkflowView: View {
     @State private var message: String?
     @State private var showOperations = false
     @State private var mode = "steps"
-    @State private var wfName = "Neuer Workflow"
+    @State private var wfName = tr("Neuer Workflow")
     @State private var wfDescription = ""
     @State private var steps: [BuilderStep] = []
 
@@ -42,17 +42,17 @@ struct WorkflowView: View {
                 List(workflows, id: \.name, selection: $chosen) { w in
                     VStack(alignment: .leading) {
                         Text(w.name)
-                        Text("\(w.stepCount) Schritte, \(w.inputCount) Eingabe(n)").font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
+                        Text(tr("%@ Schritte, %@ Eingabe(n)", "\(w.stepCount)", "\(w.inputCount)")).font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
                     }
                 }
-                Button("Neuer Workflow") { chosen = nil; text = Self.template; stepsFromJSON() }
+                Button(tr("Neuer Workflow")) { chosen = nil; text = Self.template; stepsFromJSON() }
             }
             .frame(minWidth: 200, maxWidth: 280)
             .padding(8)
 
             VStack(alignment: .leading, spacing: 8) {
                 Picker("", selection: $mode) {
-                    Text("Schritte").tag("steps")
+                    Text(tr("Schritte")).tag("steps")
                     Text("JSON").tag("json")
                 }
                 .pickerStyle(.segmented).labelsHidden().frame(width: 220)
@@ -64,11 +64,11 @@ struct WorkflowView: View {
                         .font(Theme.mono(13))
                         .frame(minHeight: 260)
                 }
-                if let message { Text(message).foregroundStyle(message.hasPrefix("OK") ? Theme.good : Theme.danger) }
+                if let message { Text(message).foregroundStyle(message.hasPrefix(tr("OK")) ? Theme.good : Theme.danger) }
                 HStack {
-                    Button("Speichern") { if mode == "steps" { text = jsonFromSteps() }; save() }.disabled(mode == "steps" ? steps.isEmpty : text.isEmpty)
-                    Button("Löschen", role: .destructive) { delete() }.disabled(chosen == nil)
-                    Button("Operationen…") { showOperations.toggle() }
+                    Button(tr("Speichern")) { if mode == "steps" { text = jsonFromSteps() }; save() }.disabled(mode == "steps" ? steps.isEmpty : text.isEmpty)
+                    Button(tr("Löschen"), role: .destructive) { delete() }.disabled(chosen == nil)
+                    Button(tr("Operationen…")) { showOperations.toggle() }
                         .popover(isPresented: $showOperations) {
                             ScrollView {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -83,11 +83,11 @@ struct WorkflowView: View {
                     Spacer()
                 }
                 HStack {
-                    Text("\(model.multiSelection.count) Dokument(e) gewählt").foregroundStyle(Theme.inkSoft)
+                    Text(tr("%@ Dokument(e) gewählt", "\(model.multiSelection.count)")).foregroundStyle(Theme.inkSoft)
                     Spacer()
-                    Button("Auf Auswahl anwenden") { run() }
+                    Button(tr("Auf Auswahl anwenden")) { run() }
                         .disabled(chosen == nil || model.multiSelection.isEmpty)
-                    Button("Schließen") { dismiss() }
+                    Button(tr("Schließen")) { dismiss() }
                 }
             }
             .padding(8)
@@ -103,10 +103,10 @@ struct WorkflowView: View {
     private var stepEditor: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                TextField("Name", text: $wfName).textFieldStyle(.roundedBorder).frame(width: 240)
-                TextField("Beschreibung", text: $wfDescription).textFieldStyle(.roundedBorder)
+                TextField(tr("Name"), text: $wfName).textFieldStyle(.roundedBorder).frame(width: 240)
+                TextField(tr("Beschreibung"), text: $wfDescription).textFieldStyle(.roundedBorder)
             }
-            Text("Jeder Schritt bekommt das Ergebnis des vorigen Schritts (der erste die erste gewählte Eingabe). Parameter als JSON-Objekt, z. B. {\"position\": 1, \"bases\": \"GG\"}.")
+            Text(tr("Jeder Schritt bekommt das Ergebnis des vorigen Schritts (der erste die erste gewählte Eingabe). Parameter als JSON-Objekt, z. B. {\"position\": 1, \"bases\": \"GG\"}."))
                 .font(.caption).foregroundStyle(.secondary)
             List {
                 ForEach($steps) { $st in
@@ -117,15 +117,15 @@ struct WorkflowView: View {
                             Text(st.operation).font(.caption.monospaced()).foregroundStyle(.secondary)
                         }
                         .frame(width: 210, alignment: .leading)
-                        TextField("Parameter (JSON)", text: $st.parameters).textFieldStyle(.roundedBorder).font(.system(.body, design: .monospaced))
-                        Button { move(st, -1) } label: { Image(systemName: "chevron.up") }.buttonStyle(.borderless).accessibilityLabel("Schritt nach oben")
-                        Button { move(st, 1) } label: { Image(systemName: "chevron.down") }.buttonStyle(.borderless).accessibilityLabel("Schritt nach unten")
-                        Button { steps.removeAll { $0.id == st.id } } label: { Image(systemName: "minus.circle") }.buttonStyle(.borderless).accessibilityLabel("Schritt entfernen")
+                        TextField(tr("Parameter (JSON)"), text: $st.parameters).textFieldStyle(.roundedBorder).font(.system(.body, design: .monospaced))
+                        Button { move(st, -1) } label: { Image(systemName: "chevron.up") }.buttonStyle(.borderless).accessibilityLabel(tr("Schritt nach oben"))
+                        Button { move(st, 1) } label: { Image(systemName: "chevron.down") }.buttonStyle(.borderless).accessibilityLabel(tr("Schritt nach unten"))
+                        Button { steps.removeAll { $0.id == st.id } } label: { Image(systemName: "minus.circle") }.buttonStyle(.borderless).accessibilityLabel(tr("Schritt entfernen"))
                     }
                 }
             }
             .frame(minHeight: 190)
-            Menu("Schritt hinzufügen") {
+            Menu(tr("Schritt hinzufügen")) {
                 ForEach(operations, id: \.id) { o in Button("\(o.label) (\(o.id))") { steps.append(BuilderStep(operation: o.id)) } }
             }
             .menuStyle(.borderlessButton).fixedSize()
@@ -175,7 +175,7 @@ struct WorkflowView: View {
         guard let project = model.project else { return }
         do {
             let name = try project.workflowSave(json: text)
-            message = "OK: „\(name)“ gespeichert"
+            message = tr("OK: „%@“ gespeichert", "\(name)")
             reload()
             chosen = name
         } catch {
@@ -198,8 +198,8 @@ struct WorkflowView: View {
             let r = try project.workflowRun(name: c, inputIds: ids)
             model.reload(selecting: r.documents.last?.id)
             message = r.errors.isEmpty
-                ? "OK: \(r.documents.count) Ergebnis(se) im Projekt"
-                : r.errors.joined(separator: "\n") + (r.documents.isEmpty ? "" : "\n(\(r.documents.count) Ergebnis(se) trotzdem gespeichert)")
+                ? tr("OK: %@ Ergebnis(se) im Projekt", "\(r.documents.count)")
+                : r.errors.joined(separator: "\n") + (r.documents.isEmpty ? "" : tr("\n(%@ Ergebnis(se) trotzdem gespeichert)", "\(r.documents.count)"))
         } catch {
             message = error.localizedDescription
         }

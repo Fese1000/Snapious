@@ -14,36 +14,36 @@ struct NcbiView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker("Datenbank", selection: $source) {
+            Picker(tr("Datenbank"), selection: $source) {
                 Text("NCBI Nucleotide").tag("ncbi")
-                Text("UniProt (Proteine)").tag("uniprot")
+                Text(tr("UniProt (Proteine)")).tag("uniprot")
             }
             .pickerStyle(.segmented)
             .frame(width: 360)
             .onChange(of: source) { _, _ in result = nil; chosen = nil; message = nil }
             HStack {
-                TextField(source == "ncbi" ? "Suchbegriff, z. B. pUC19 oder L09137" : "Suchbegriff, z. B. hemoglobin alpha human", text: $term)
+                TextField(source == "ncbi" ? tr("Suchbegriff, z. B. pUC19 oder L09137") : tr("Suchbegriff, z. B. hemoglobin alpha human"), text: $term)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { search() }
-                Button("Suchen") { search() }.disabled(term.trimmingCharacters(in: .whitespaces).isEmpty || busy)
+                Button(tr("Suchen")) { search() }.disabled(term.trimmingCharacters(in: .whitespaces).isEmpty || busy)
                 if busy { ProgressView().controlSize(.small) }
             }
             if let message { Text(message).foregroundStyle(Theme.danger) }
             if let r = result {
-                Text("\(r.total) Treffer, \(r.records.count) angezeigt").foregroundStyle(Theme.inkSoft)
+                Text(tr("%@ Treffer, %@ angezeigt", "\(r.total)", "\(r.records.count)")).foregroundStyle(Theme.inkSoft)
                 Table(r.records, selection: $chosen) {
-                    TableColumn("Zugang") { x in Text(x.accession) }.width(110)
-                    TableColumn("Titel") { x in Text(x.title) }
-                    TableColumn("Organismus") { x in Text(x.organism) }.width(160)
-                    TableColumn("Länge") { x in Text(x.length > 0 ? "\(x.length) bp" : "–") }.width(90)
+                    TableColumn(tr("Zugang")) { x in Text(x.accession) }.width(110)
+                    TableColumn(tr("Titel")) { x in Text(x.title) }
+                    TableColumn(tr("Organismus")) { x in Text(x.organism) }.width(160)
+                    TableColumn(tr("Länge")) { x in Text(x.length > 0 ? "\(x.length) bp" : "–") }.width(90)
                 }
             } else {
                 Spacer()
             }
             HStack {
                 Spacer()
-                Button("Schließen") { dismiss() }
-                Button("Importieren") { importChosen() }
+                Button(tr("Schließen")) { dismiss() }
+                Button(tr("Importieren")) { importChosen() }
                     .disabled(chosen == nil || busy)
                     .keyboardShortcut(.defaultAction)
             }

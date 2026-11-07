@@ -10,16 +10,16 @@ struct ManageView: View {
     var body: some View {
         VStack(spacing: 0) {
             TabView {
-                FoldersTab(model: model).tabItem { Text("Ordner") }
-                SearchTab(model: model).tabItem { Text("Suche") }
-                DocumentTab(model: model).tabItem { Text("Dokument") }
-                SettingsTab().tabItem { Text("Einstellungen") }
+                FoldersTab(model: model).tabItem { Text(tr("Ordner")) }
+                SearchTab(model: model).tabItem { Text(tr("Suche")) }
+                DocumentTab(model: model).tabItem { Text(tr("Dokument")) }
+                SettingsTab().tabItem { Text(tr("Einstellungen")) }
             }
             .padding(10)
             Divider()
             HStack {
                 Spacer()
-                Button("Schließen") { dismiss() }.keyboardShortcut(.defaultAction)
+                Button(tr("Schließen")) { dismiss() }.keyboardShortcut(.defaultAction)
             }
             .padding(10)
         }
@@ -55,40 +55,40 @@ struct FoldersTab: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Ordner").font(Theme.heading())
+                Text(tr("Ordner")).font(Theme.heading())
                 List {
-                    row(id: "", name: "Ohne Ordner (Wurzel)", level: 0)
+                    row(id: "", name: tr("Ohne Ordner (Wurzel)"), level: 0)
                     ForEach(ordered, id: \.id) { f in row(id: f.id, name: f.name, level: depth(f) + 1) }
                 }
                 .frame(minHeight: 220)
                 HStack {
-                    TextField("Neuer Ordner", text: $newName).textFieldStyle(.roundedBorder)
-                    Button("Anlegen") { create() }.disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    TextField(tr("Neuer Ordner"), text: $newName).textFieldStyle(.roundedBorder)
+                    Button(tr("Anlegen")) { create() }.disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
                 HStack {
-                    Button("Umbenennen") { rename() }.disabled(selectedFolder.isEmpty || newName.isEmpty)
-                    Button("Löschen") { delete(contents: false) }.disabled(selectedFolder.isEmpty)
-                    Button("Mit Inhalt löschen") { delete(contents: true) }.disabled(selectedFolder.isEmpty)
+                    Button(tr("Umbenennen")) { rename() }.disabled(selectedFolder.isEmpty || newName.isEmpty)
+                    Button(tr("Löschen")) { delete(contents: false) }.disabled(selectedFolder.isEmpty)
+                    Button(tr("Mit Inhalt löschen")) { delete(contents: true) }.disabled(selectedFolder.isEmpty)
                 }
                 if let message { Text(message).foregroundStyle(Theme.danger).font(Theme.label(11)) }
             }
             .frame(width: 280)
             VStack(alignment: .leading, spacing: 6) {
-                Text("Dokumente im Ordner").font(Theme.heading())
+                Text(tr("Dokumente im Ordner")).font(Theme.heading())
                 List(docs, id: \.id) { d in
                     HStack {
                         Text(d.name)
                         Spacer()
-                        Menu("Verschieben") {
-                            Button("Wurzel") { move(d, to: "") }
+                        Menu(tr("Verschieben")) {
+                            Button(tr("Wurzel")) { move(d, to: "") }
                             ForEach(folders, id: \.id) { f in Button(f.name) { move(d, to: f.id) } }
                         }
                         .fixedSize()
-                        Button { toggleFavorite(d) } label: { Image(systemName: "star") }.accessibilityLabel("Favorit umschalten").buttonStyle(.plain)
+                        Button { toggleFavorite(d) } label: { Image(systemName: "star") }.accessibilityLabel(tr("Favorit umschalten")).buttonStyle(.plain)
                     }
                 }
                 .frame(minHeight: 260)
-                Text("Der Stern markiert ein Dokument als Favorit.").font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
+                Text(tr("Der Stern markiert ein Dokument als Favorit.")).font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
             }
         }
         .onAppear { reload() }
@@ -145,17 +145,17 @@ struct SearchTab: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Picker("Suche nach", selection: $kind) {
-                    Text("Name").tag("name")
-                    Text("Typ").tag("type")
-                    Text("Feature-Text").tag("feature")
-                    Text("Metadaten").tag("metadata")
-                    Text("Motiv (IUPAC)").tag("motif")
+                Picker(tr("Suche nach"), selection: $kind) {
+                    Text(tr("Name")).tag("name")
+                    Text(tr("Typ")).tag("type")
+                    Text(tr("Feature-Text")).tag("feature")
+                    Text(tr("Metadaten")).tag("metadata")
+                    Text(tr("Motiv (IUPAC)")).tag("motif")
                 }.frame(width: 240)
-                TextField(kind == "metadata" ? "Schlüssel" : "Suchtext", text: $text).textFieldStyle(.roundedBorder)
-                if kind == "metadata" { TextField("Wert (leer = nur Schlüssel)", text: $text2).textFieldStyle(.roundedBorder) }
-                Button("Suchen") { search() }
-                Button("Dubletten") { duplicates() }
+                TextField(kind == "metadata" ? tr("Schlüssel") : tr("Suchtext"), text: $text).textFieldStyle(.roundedBorder)
+                if kind == "metadata" { TextField(tr("Wert (leer = nur Schlüssel)"), text: $text2).textFieldStyle(.roundedBorder) }
+                Button(tr("Suchen")) { search() }
+                Button(tr("Dubletten")) { duplicates() }
             }
             List(results, id: \.id) { d in
                 HStack { Text(d.name); Spacer(); Text(d.docType).foregroundStyle(Theme.inkSoft) }
@@ -164,18 +164,18 @@ struct SearchTab: View {
             }
             .frame(minHeight: 200)
             HStack {
-                TextField("Muster", text: $pattern).textFieldStyle(.roundedBorder).frame(width: 240)
-                Button("Treffer umbenennen") { rename() }.disabled(results.isEmpty)
+                TextField(tr("Muster"), text: $pattern).textFieldStyle(.roundedBorder).frame(width: 240)
+                Button(tr("Treffer umbenennen")) { rename() }.disabled(results.isEmpty)
                 Text("{name} {n} {n:03} {type}").font(Theme.label(11)).foregroundStyle(Theme.inkSoft)
             }
-            if let message { Text(message).font(Theme.label(11)).foregroundStyle(message.hasPrefix("Fehler") ? .red : .secondary) }
+            if let message { Text(message).font(Theme.label(11)).foregroundStyle(message.hasPrefix(tr("Fehler")) ? .red : .secondary) }
         }
     }
 
     private func search() {
         guard let p = model.project else { return }
-        do { results = try p.searchDocuments(kind: kind, text: text, text2: text2); message = "\(results.count) Treffer" }
-        catch { message = "Fehler: \(error.localizedDescription)" }
+        do { results = try p.searchDocuments(kind: kind, text: text, text2: text2); message = tr("%@ Treffer", "\(results.count)") }
+        catch { message = tr("Fehler: %@", "\(error.localizedDescription)") }
     }
 
     private func duplicates() {
@@ -183,8 +183,8 @@ struct SearchTab: View {
         do {
             let groups = try p.findDuplicates()
             results = groups.flatMap { $0 }
-            message = groups.isEmpty ? "Keine Dubletten." : "\(groups.count) Gruppe(n) mit gleicher Sequenz."
-        } catch { message = "Fehler: \(error.localizedDescription)" }
+            message = groups.isEmpty ? tr("Keine Dubletten.") : tr("%@ Gruppe(n) mit gleicher Sequenz.", "\(groups.count)")
+        } catch { message = tr("Fehler: %@", "\(error.localizedDescription)") }
     }
 
     private func rename() {
@@ -192,9 +192,9 @@ struct SearchTab: View {
         do {
             let n = try p.batchRename(ids: results.map { $0.id }, pattern: pattern)
             try model.refresh()
-            message = "\(n) Dokument(e) umbenannt."
+            message = tr("%@ Dokument(e) umbenannt.", "\(n)")
             results = []
-        } catch { message = "Fehler: \(error.localizedDescription)" }
+        } catch { message = tr("Fehler: %@", "\(error.localizedDescription)") }
     }
 }
 
@@ -210,42 +210,42 @@ struct DocumentTab: View {
         VStack(alignment: .leading, spacing: 10) {
             if let id = model.selection, let name = model.documents.first(where: { $0.id == id })?.name {
                 Text(name).font(Theme.heading())
-                GroupBox("Notiz") {
+                GroupBox(tr("Notiz")) {
                     VStack(alignment: .leading) {
                         TextEditor(text: $note).frame(height: 70).font(.body)
-                        Button("Notiz speichern") { try? model.project?.setNote(docId: id, text: note); message = "Notiz gespeichert." }
+                        Button(tr("Notiz speichern")) { try? model.project?.setNote(docId: id, text: note); message = tr("Notiz gespeichert.") }
                     }.padding(4)
                 }
-                GroupBox("Versionen") {
+                GroupBox(tr("Versionen")) {
                     VStack(alignment: .leading) {
-                        if versions.isEmpty { Text("Noch keine Versionen (entstehen beim Bearbeiten).").foregroundStyle(Theme.inkSoft) }
+                        if versions.isEmpty { Text(tr("Noch keine Versionen (entstehen beim Bearbeiten).")).foregroundStyle(Theme.inkSoft) }
                         ForEach(versions.prefix(8), id: \.version) { v in
                             HStack {
-                                Text("Version \(v.version) · \(Date(timeIntervalSince1970: TimeInterval(v.time)).formatted(date: .abbreviated, time: .shortened)) · \(v.summary)")
+                                Text(tr("Version %@ · %@ · %@", "\(v.version)", "\(Date(timeIntervalSince1970: TimeInterval(v.time)).formatted(date: .abbreviated, time: .shortened))", "\(v.summary)"))
                                     .font(Theme.label(13))
                                 Spacer()
-                                Button("Wiederherstellen") { restore(id, v) }
+                                Button(tr("Wiederherstellen")) { restore(id, v) }
                             }
                         }
                     }.padding(4)
                 }
-                GroupBox("Workflow aus dem Verlauf") {
+                GroupBox(tr("Workflow aus dem Verlauf")) {
                     HStack {
-                        TextField("Name des Workflows", text: $workflowName).textFieldStyle(.roundedBorder)
-                        Button("Aufzeichnen") { record(id) }.disabled(workflowName.isEmpty)
+                        TextField(tr("Name des Workflows"), text: $workflowName).textFieldStyle(.roundedBorder)
+                        Button(tr("Aufzeichnen")) { record(id) }.disabled(workflowName.isEmpty)
                     }.padding(4)
                 }
-                GroupBox("Export") {
+                GroupBox(tr("Export")) {
                     HStack {
-                        Button("Text mit Positionen …") { export(id, kind: "text", ext: "txt") }
-                        Button("Bericht (Markdown) …") { export(id, kind: "report", ext: "md") }
-                        Button("Features als CSV …") { export(id, kind: "features_csv", ext: "csv") }
-                        Button("Features als TSV …") { export(id, kind: "features_tsv", ext: "tsv") }
+                        Button(tr("Text mit Positionen …")) { export(id, kind: "text", ext: "txt") }
+                        Button(tr("Bericht (Markdown) …")) { export(id, kind: "report", ext: "md") }
+                        Button(tr("Features als CSV …")) { export(id, kind: "features_csv", ext: "csv") }
+                        Button(tr("Features als TSV …")) { export(id, kind: "features_tsv", ext: "tsv") }
                     }.padding(4)
                 }
                 if let message { Text(message).font(Theme.label(11)).foregroundStyle(Theme.inkSoft) }
             } else {
-                Text("Wähle links ein Dokument aus.").foregroundStyle(Theme.inkSoft)
+                Text(tr("Wähle links ein Dokument aus.")).foregroundStyle(Theme.inkSoft)
             }
             Spacer()
         }
@@ -263,16 +263,16 @@ struct DocumentTab: View {
             try model.project?.restoreVersion(docId: id, version: v.version)
             try model.refresh()
             model.selection = id
-            message = "Version \(v.version) wiederhergestellt."
+            message = tr("Version %@ wiederhergestellt.", "\(v.version)")
             load()
-        } catch { message = "Fehler: \(error.localizedDescription)" }
+        } catch { message = tr("Fehler: %@", "\(error.localizedDescription)") }
     }
 
     private func record(_ id: String) {
         do {
             let n = try model.project?.recordWorkflow(docId: id, name: workflowName) ?? 0
-            message = "Workflow mit \(n) Schritt(en) gespeichert (Dialog „Workflows“)."
-        } catch { message = "Fehler: \(error.localizedDescription)" }
+            message = tr("Workflow mit %@ Schritt(en) gespeichert (Dialog „Workflows“).", "\(n)")
+        } catch { message = tr("Fehler: %@", "\(error.localizedDescription)") }
     }
 
     private func export(_ id: String, kind: String, ext: String) {
@@ -283,8 +283,8 @@ struct DocumentTab: View {
         do {
             let text = try p.exportText(id: id, kind: kind)
             try text.write(to: url, atomically: true, encoding: .utf8)
-            message = "Gespeichert: \(url.lastPathComponent)"
-        } catch { message = "Fehler: \(error.localizedDescription)" }
+            message = tr("Gespeichert: %@", "\(url.lastPathComponent)")
+        } catch { message = tr("Fehler: %@", "\(error.localizedDescription)") }
     }
 }
 
@@ -296,27 +296,27 @@ struct SettingsTab: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            GroupBox("Programm") {
+            GroupBox(tr("Programm")) {
                 Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 6) {
-                    GridRow { Text("NCBI-E-Mail"); TextField("", text: $s.ncbiEmail).textFieldStyle(.roundedBorder) }
-                    GridRow { Text("NCBI-API-Schlüssel"); SecureField("", text: $s.ncbiApiKey).textFieldStyle(.roundedBorder) }
-                    GridRow { Text("Standardorganismus"); TextField("", text: $s.defaultOrganism).textFieldStyle(.roundedBorder) }
-                    GridRow { Text("Rückgängig-Schritte"); Stepper("\(s.undoLimit)", value: Binding(get: { Int(s.undoLimit) }, set: { s.undoLimit = UInt64($0) }), in: 10...1000, step: 10) }
+                    GridRow { Text(tr("NCBI-E-Mail")); TextField("", text: $s.ncbiEmail).textFieldStyle(.roundedBorder) }
+                    GridRow { Text(tr("NCBI-API-Schlüssel")); SecureField("", text: $s.ncbiApiKey).textFieldStyle(.roundedBorder) }
+                    GridRow { Text(tr("Standardorganismus")); TextField("", text: $s.defaultOrganism).textFieldStyle(.roundedBorder) }
+                    GridRow { Text(tr("Rückgängig-Schritte")); Stepper("\(s.undoLimit)", value: Binding(get: { Int(s.undoLimit) }, set: { s.undoLimit = UInt64($0) }), in: 10...1000, step: 10) }
                 }.padding(4)
                 HStack {
-                    Button("Speichern") { do { try settingsSave(s: s); message = "Gespeichert (nur für dich lesbar)." } catch { message = error.localizedDescription } }
+                    Button(tr("Speichern")) { do { try settingsSave(s: s); message = tr("Gespeichert (nur für dich lesbar).") } catch { message = error.localizedDescription } }
                     if let message { Text(message).font(Theme.label(11)).foregroundStyle(Theme.inkSoft) }
                 }.padding(4)
             }
-            GroupBox("Plugins (Programme mit plugin.json im Ordner)") {
+            GroupBox(tr("Plugins (Programme mit plugin.json im Ordner)")) {
                 VStack(alignment: .leading, spacing: 4) {
-                    if plugins.isEmpty { Text("Keine Plugins gefunden.").foregroundStyle(Theme.inkSoft) }
+                    if plugins.isEmpty { Text(tr("Keine Plugins gefunden.")).foregroundStyle(Theme.inkSoft) }
                     ForEach(plugins, id: \.self) { Text($0).font(Theme.label(13)) }
                     HStack {
-                        Button("Plugin-Ordner öffnen") { NSWorkspace.shared.open(URL(fileURLWithPath: pluginsDirectory())) }
-                        Button("Neu laden") { plugins = pluginsList() }
+                        Button(tr("Plugin-Ordner öffnen")) { NSWorkspace.shared.open(URL(fileURLWithPath: pluginsDirectory())) }
+                        Button(tr("Neu laden")) { plugins = pluginsList() }
                     }
-                    Text("Achtung: Plugins laufen ohne Schutzraum mit deinen Rechten.").font(Theme.label(11)).foregroundStyle(Theme.amber)
+                    Text(tr("Achtung: Plugins laufen ohne Schutzraum mit deinen Rechten.")).font(Theme.label(11)).foregroundStyle(Theme.amber)
                 }.padding(4)
             }
             Spacer()

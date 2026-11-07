@@ -32,39 +32,39 @@ struct ToolsView: View {
                 } else {
                     SilentMutationsSection(model: model)
                 }
-                GroupBox("Gezielte Mutagenese (Positionen 1-basiert, Ende einschließlich)") {
+                GroupBox(tr("Gezielte Mutagenese (Positionen 1-basiert, Ende einschließlich)")) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             TextField("von", text: $start).frame(width: 70)
                             TextField("bis", text: $end).frame(width: 70)
-                            TextField("neue Basen (leer = Deletion)", text: $replacement).frame(width: 220)
-                            Stepper("Ziel-Tm \(Int(targetTm)) °C", value: $targetTm, in: 50...75).frame(width: 170)
-                            Button("Primer berechnen") { design() }
+                            TextField(tr("neue Basen (leer = Deletion)"), text: $replacement).frame(width: 220)
+                            Stepper(tr("Ziel-Tm %@ °C", "\(Int(targetTm))"), value: $targetTm, in: 50...75).frame(width: 170)
+                            Button(tr("Primer berechnen")) { design() }
                         }
                         .textFieldStyle(.roundedBorder)
                         if let p = primers {
-                            Text("Vorwärts: \(p.forward)").font(Theme.mono(13)).textSelection(.enabled)
-                            Text("Rückwärts: \(p.reverse)").font(Theme.mono(13)).textSelection(.enabled)
-                            Text("Flanken \(p.leftFlank)/\(p.rightFlank) · Tm \(String(format: "%.1f", p.tm)) °C").foregroundStyle(Theme.inkSoft)
+                            Text(tr("Vorwärts: %@", "\(p.forward)")).font(Theme.mono(13)).textSelection(.enabled)
+                            Text(tr("Rückwärts: %@", "\(p.reverse)")).font(Theme.mono(13)).textSelection(.enabled)
+                            Text(tr("Flanken %@/%@ · Tm %@ °C", "\(p.leftFlank)", "\(p.rightFlank)", "\(String(format: "%.1f", p.tm))")).foregroundStyle(Theme.inkSoft)
                         }
                     }
                     .padding(6)
                 }
                 ExternalResultsSection(model: model)
                 StatsSection()
-                GroupBox("BLAST bei NCBI (Sequenz wird an NCBI gesendet, dauert Minuten)") {
+                GroupBox(tr("BLAST bei NCBI (Sequenz wird an NCBI gesendet, dauert Minuten)")) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Picker("Programm", selection: $blastProgram) {
+                            Picker(tr("Programm"), selection: $blastProgram) {
                                 Text("blastn").tag("blastn")
                                 Text("blastp").tag("blastp")
                             }.frame(width: 170)
-                            Picker("Datenbank", selection: $blastDb) {
+                            Picker(tr("Datenbank"), selection: $blastDb) {
                                 Text("nt").tag("nt")
                                 Text("nr").tag("nr")
                                 Text("refseq_rna").tag("refseq_rna")
                             }.frame(width: 190)
-                            Button(blastRunning ? "läuft …" : "Suchen") { remoteBlast() }
+                            Button(blastRunning ? tr("läuft …") : tr("Suchen")) { remoteBlast() }
                                 .disabled(blastRunning)
                         }
                         ForEach(Array(blastHits.prefix(15).enumerated()), id: \.offset) { _, h in
@@ -74,9 +74,9 @@ struct ToolsView: View {
                     }
                     .padding(6)
                 }
-                GroupBox("Wiederholungen") {
+                GroupBox(tr("Wiederholungen")) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Button("Tandem- und invertierte Wiederholungen suchen") { findRepeats() }
+                        Button(tr("Tandem- und invertierte Wiederholungen suchen")) { findRepeats() }
                         ForEach(Array(repeats.enumerated()), id: \.offset) { _, r in
                             Text("\(r.kind == "tandem" ? "Tandem" : "Invertiert") \(r.start + 1)–\(r.end): \(r.detail)")
                                 .font(Theme.label(13))
@@ -84,21 +84,21 @@ struct ToolsView: View {
                     }
                     .padding(6)
                 }
-                GroupBox("Laborrechner (dsDNA)") {
+                GroupBox(tr("Laborrechner (dsDNA)")) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             field("ng", $ng); field("bp", $bp)
-                            Text(calc { try "= " + fmt(calcNgToPmol(ng: num(ng), bp: UInt64(num(bp)))) + " pmol, "
-                                + fmt(calcCopyNumber(ng: num(ng), bp: UInt64(num(bp)))) + " Kopien" })
+                            Text(calc { try "= " + fmt(calcNgToPmol(ng: num(ng), bp: UInt64(num(bp)))) + tr(" pmol, ")
+                                + fmt(calcCopyNumber(ng: num(ng), bp: UInt64(num(bp)))) + tr(" Kopien") })
                         }
                         HStack {
-                            field("Insert bp", $insertBp); field("Verhältnis", $ratio)
-                            Text(calc { try "Insert: " + fmt(calcLigationInsertNg(vectorNg: num(ng), vectorBp: UInt64(num(bp)),
-                                insertBp: UInt64(num(insertBp)), molarRatio: num(ratio))) + " ng (Vektor wie oben)" })
+                            field(tr("Insert bp"), $insertBp); field(tr("Verhältnis"), $ratio)
+                            Text(calc { try tr("Insert: ") + fmt(calcLigationInsertNg(vectorNg: num(ng), vectorBp: UInt64(num(bp)),
+                                insertBp: UInt64(num(insertBp)), molarRatio: num(ratio))) + tr(" ng (Vektor wie oben)") })
                         }
                         HStack {
-                            field("Stamm", $stock); field("Ziel", $final); field("Volumen µl", $volume)
-                            Text(calc { try "Stammlösung: " + fmt(calcDilutionVolume(cStock: num(stock), cFinal: num(final), vFinal: num(volume))) + " µl" })
+                            field(tr("Stamm"), $stock); field(tr("Ziel"), $final); field(tr("Volumen µl"), $volume)
+                            Text(calc { try tr("Stammlösung: ") + fmt(calcDilutionVolume(cStock: num(stock), cFinal: num(final), vFinal: num(volume))) + " µl" })
                         }
                     }
                     .padding(6)
@@ -131,7 +131,7 @@ struct ToolsView: View {
     private func design() {
         guard let project = model.project, let id = model.selection,
               let s = Int(start), let e = Int(end), s >= 1, e >= s - 1 else {
-            message = "Bitte gültige Positionen eingeben."
+            message = tr("Bitte gültige Positionen eingeben.")
             return
         }
         do {
@@ -152,7 +152,7 @@ struct ToolsView: View {
         Task.detached {
             do {
                 let hits = try project.blastRemote(queryId: id, program: program, database: db)
-                await MainActor.run { blastHits = hits; blastRunning = false; if hits.isEmpty { message = "Keine Treffer." } }
+                await MainActor.run { blastHits = hits; blastRunning = false; if hits.isEmpty { message = tr("Keine Treffer.") } }
             } catch {
                 await MainActor.run { blastRunning = false; message = error.localizedDescription }
             }

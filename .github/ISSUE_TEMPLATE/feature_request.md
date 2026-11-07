@@ -1,11 +1,11 @@
 ---
-name: Funktion vorschlagen
-about: Eine Idee oder fehlende Funktion
+name: Suggest a feature
+about: An idea or missing function
 labels: enhancement
 ---
 
-**Was soll Snapious können?**
+**What should Snapious be able to do?**
 
-**Wofür brauchst du das (Arbeitsablauf)?**
+**What do you need it for (workflow)?**
 
-**Wie macht es Geneious oder SnapGene?** (optional)
+**How do Geneious or SnapGene do it?** (optional)

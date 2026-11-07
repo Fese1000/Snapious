@@ -12,13 +12,13 @@ struct RnaView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Button(model.hasSelection ? "Auswahl falten" : "Ganze Sequenz falten") { fold() }
+                Button(model.hasSelection ? tr("Auswahl falten") : tr("Ganze Sequenz falten")) { fold() }
                     .disabled(busy)
-                Button("Einfache Faltung (ohne Energie)") { simpleFold() }
-                    .help("Größte Zahl nicht kreuzender Basenpaare nach Nussinov, auch für DNA; ohne ViennaRNA")
+                Button(tr("Einfache Faltung (ohne Energie)")) { simpleFold() }
+                    .help(tr("Größte Zahl nicht kreuzender Basenpaare nach Nussinov, auch für DNA; ohne ViennaRNA"))
                 if busy { ProgressView().controlSize(.small) }
                 if let r = result {
-                    Text(String(format: "Freie Energie %.2f kcal/mol, %d Basenpaare", r.energy, r.pairs.count))
+                    Text(String(format: tr("Freie Energie %.2f kcal/mol, %d Basenpaare"), r.energy, r.pairs.count))
                         .foregroundStyle(Theme.inkSoft)
                 }
                 Spacer()
@@ -27,7 +27,7 @@ struct RnaView: View {
             if let r = result {
                 ArcDiagram(length: r.sequence.count, pairs: r.pairs)
                     .frame(height: 220)
-                GroupBox("Sequenz und Struktur") {
+                GroupBox(tr("Sequenz und Struktur")) {
                     ScrollView(.horizontal) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(r.sequence)
@@ -39,7 +39,7 @@ struct RnaView: View {
                 }
             }
             if let s = simple {
-                GroupBox("Einfache Faltung: \(s.pairs) Basenpaare") {
+                GroupBox(tr("Einfache Faltung: %@ Basenpaare", "\(s.pairs)")) {
                     ScrollView(.horizontal) {
                         Text(s.structure).font(Theme.mono(13)).textSelection(.enabled)
                     }

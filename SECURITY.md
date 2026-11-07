@@ -1,6 +1,6 @@
-# Sicherheit
+# Security
 
-Snapious ist ein Hobbyprojekt ohne Gewähr. Wenn du ein Sicherheitsproblem findest (etwa beim Öffnen manipulierter Dateien oder beim Ausführen externer Programme), melde es bitte **nicht öffentlich**, sondern über
-*Security → Report a vulnerability* in diesem GitHub-Repository. Ich antworte, sobald ich kann.
+Snapious is a hobby project provided without warranty. If you find a security problem (for example when opening crafted files or running external programs), please do **not** report it publicly. Use
+*Security → Report a vulnerability* in this GitHub repository. I will respond as soon as I can.
 
-Unterstützt wird jeweils der aktuelle Stand von `main`.
+The current state of `main` is the supported version.

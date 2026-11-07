@@ -1,18 +1,18 @@
 ---
-name: Fehler melden
-about: Etwas funktioniert nicht wie erwartet
+name: Report a bug
+about: Something does not work as expected
 labels: bug
 ---
 
-**Was ist passiert?**
+**What happened?**
 
-**Was hast du erwartet?**
+**What did you expect?**
 
-**Schritte zum Nachstellen**
+**Steps to reproduce**
 1.
 
-**Umgebung**
-- macOS-Version:
-- Snapious-Stand (Commit oder Datum):
+**Environment**
+- macOS version:
+- Snapious version (release or commit):
 
-**Beispieldatei** (nur wenn ohne private Daten möglich)
+**Sample file** (only if possible without private data)

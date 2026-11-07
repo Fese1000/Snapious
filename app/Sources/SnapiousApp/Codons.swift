@@ -61,18 +61,18 @@ struct AminoMenu: View {
     /// Auswahl der angezeigten Aminosäure-Leserahmen.
     var body: some View {
         Menu {
-            Toggle("Aminosäuren der CDS-Features", isOn: Binding(
+            Toggle(tr("Aminosäuren der CDS-Features"), isOn: Binding(
                 get: { model.showCdsTranslation },
                 set: { model.setFrames(model.aaFrames, cds: $0) }))
-            Picker("Markierte Basen", selection: $model.translateSelection) {
-                Text("Markierung: nicht übersetzen").tag("off")
-                Text("Markierung übersetzen (Vorwärts)").tag("forward")
-                Text("Markierung übersetzen (Gegenstrang)").tag("reverse")
+            Picker(tr("Markierte Basen"), selection: $model.translateSelection) {
+                Text(tr("Markierung: nicht übersetzen")).tag("off")
+                Text(tr("Markierung übersetzen (Vorwärts)")).tag("forward")
+                Text(tr("Markierung übersetzen (Gegenstrang)")).tag("reverse")
             }
             .pickerStyle(.inline)
             Divider()
             ForEach([1, 2, 3, -1, -2, -3], id: \.self) { f in
-                Toggle(f > 0 ? "Vorwärts, Start bei Base \(f)" : "Rückwärts (Gegenstrang), Start bei Base \(-f) vom Ende", isOn: Binding(
+                Toggle(f > 0 ? tr("Vorwärts, Start bei Base %@", "\(f)") : tr("Rückwärts (Gegenstrang), Start bei Base %@ vom Ende", "\(-f)"), isOn: Binding(
                     get: { model.aaFrames.contains(f) },
                     set: { on in
                         var list = model.aaFrames.filter { $0 != f }
@@ -82,13 +82,13 @@ struct AminoMenu: View {
                     }))
             }
             Divider()
-            Button("Alle 6 Leseraster") { model.setFrames([1, 2, 3, -1, -2, -3], cds: model.showCdsTranslation) }
-            Button("Aus") { model.setFrames([], cds: false) }
+            Button(tr("Alle 6 Leseraster")) { model.setFrames([1, 2, 3, -1, -2, -3], cds: model.showCdsTranslation) }
+            Button(tr("Aus")) { model.setFrames([], cds: false) }
         } label: {
-            Label("Aminosäuren", systemImage: "textformat.abc")
+            Label(tr("Aminosäuren"), systemImage: "textformat.abc")
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .help("Aminosäuren unter der Sequenz anzeigen")
+        .help(tr("Aminosäuren unter der Sequenz anzeigen"))
     }
 }

@@ -15,19 +15,19 @@ struct ReadCheckView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Button("Sequenzierdatei wählen…") { choose() }
+                Button(tr("Sequenzierdatei wählen…")) { choose() }
                 if let r = result {
-                    Text("\(r.readName): \(r.reversed ? "reverse-komplementär, " : "")Referenz \(r.referenceStart + 1)–\(r.referenceEnd), Identität \(String(format: "%.2f", r.identity)) %")
+                    Text(tr("%@: %@Referenz %@–%@, Identität %@ %", "\(r.readName)", "\(r.reversed ? "reverse-komplementär, " : "")", "\(r.referenceStart + 1)", "\(r.referenceEnd)", "\(String(format: "%.2f", r.identity))"))
                         .foregroundStyle(Theme.inkSoft)
                 }
                 Spacer()
             }
             if let message { Text(message).foregroundStyle(Theme.danger) }
             if let own = ownTrace {
-                GroupBox("Spur der Sequenzierdatei „\(ownFile)“ (im Projektordner abgelegt)") {
+                GroupBox(tr("Spur der Sequenzierdatei „%@“ (im Projektordner abgelegt)", "\(ownFile)")) {
                     VStack(alignment: .leading, spacing: 4) {
                         TraceCanvas(trace: own).frame(height: 160)
-                        Text("Qualität: " + qualitySummary(own)).font(.caption).foregroundStyle(.secondary)
+                        Text(tr("Qualität: ") + qualitySummary(own)).font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -37,15 +37,15 @@ struct ReadCheckView: View {
             }
             if !rows.isEmpty {
                 Table(rows) {
-                    TableColumn("Art") { r in Text(kindName(r.dto.kind)) }.width(120)
-                    TableColumn("Referenz") { r in Text("\(r.dto.referencePosition + 1)") }.width(80)
-                    TableColumn("Read") { r in Text("\(r.dto.readPosition + 1)") }.width(70)
-                    TableColumn("Erwartet") { r in Text(r.dto.expected.isEmpty ? "–" : r.dto.expected) }.width(80)
-                    TableColumn("Gefunden") { r in Text(r.dto.observed.isEmpty ? "–" : r.dto.observed) }.width(80)
-                    TableColumn("Qualität") { r in Text("\(r.dto.quality)") }.width(70)
+                    TableColumn(tr("Art")) { r in Text(kindName(r.dto.kind)) }.width(120)
+                    TableColumn(tr("Referenz")) { r in Text("\(r.dto.referencePosition + 1)") }.width(80)
+                    TableColumn(tr("Read")) { r in Text("\(r.dto.readPosition + 1)") }.width(70)
+                    TableColumn(tr("Erwartet")) { r in Text(r.dto.expected.isEmpty ? "–" : r.dto.expected) }.width(80)
+                    TableColumn(tr("Gefunden")) { r in Text(r.dto.observed.isEmpty ? "–" : r.dto.observed) }.width(80)
+                    TableColumn(tr("Qualität")) { r in Text("\(r.dto.quality)") }.width(70)
                 }
             } else if result != nil {
-                Text("Keine Unterschiede.").foregroundStyle(Theme.inkSoft)
+                Text(tr("Keine Unterschiede.")).foregroundStyle(Theme.inkSoft)
             }
             Spacer(minLength: 0)
         }
@@ -72,18 +72,18 @@ struct ReadCheckView: View {
     }
 
     private func qualitySummary(_ t: TraceDto) -> String {
-        guard !t.quality.isEmpty else { return "nicht gespeichert" }
+        guard !t.quality.isEmpty else { return tr("nicht gespeichert") }
         let mean = Double(t.quality.reduce(0) { $0 + Int($1) }) / Double(t.quality.count)
         let good = t.quality.filter { $0 >= 20 }.count
-        return String(format: "Mittel %.1f, %d von %d Basen mit Q ≥ 20", mean, good, t.quality.count)
+        return String(format: tr("Mittel %.1f, %d von %d Basen mit Q ≥ 20"), mean, good, t.quality.count)
     }
 
     private func kindName(_ k: String) -> String {
         switch k {
-        case "MISMATCH": return "Austausch"
-        case "INSERTION": return "Einfügung"
-        case "DELETION": return "Löschung"
-        default: return "Niedrige Qualität"
+        case "MISMATCH": return tr("Austausch")
+        case "INSERTION": return tr("Einfügung")
+        case "DELETION": return tr("Löschung")
+        default: return tr("Niedrige Qualität")
         }
     }
 
@@ -91,7 +91,7 @@ struct ReadCheckView: View {
         message = nil
         guard let project = model.project, let id = model.selection else { return }
         let panel = NSOpenPanel()
-        panel.title = "Sequenzierdatei (.ab1) wählen"
+        panel.title = tr("Sequenzierdatei (.ab1) wählen")
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
@@ -130,19 +130,19 @@ struct TraceCanvas: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Button { zoomBy(1 / 1.5) } label: { Image(systemName: "minus.magnifyingglass") }
-                    .accessibilityLabel("Herauszoomen")
+                    .accessibilityLabel(tr("Herauszoomen"))
                 Slider(value: Binding(get: { log2(zoom) }, set: { zoom = pow(2, $0) }), in: -2...4).frame(width: 140)
                 Button { zoomBy(1.5) } label: { Image(systemName: "plus.magnifyingglass") }
-                    .accessibilityLabel("Hineinzoomen")
+                    .accessibilityLabel(tr("Hineinzoomen"))
                 Text(String(format: "%.0f %%", zoom * 100)).font(.caption).foregroundStyle(.secondary).frame(width: 48, alignment: .leading)
-                Button("Anpassen") { zoom = max(0.25, Double(viewWidth / baseWidth)) }
-                    .help("Die ganze Spur ins Fenster einpassen")
+                Button(tr("Anpassen")) { zoom = max(0.25, Double(viewWidth / baseWidth)) }
+                    .help(tr("Die ganze Spur ins Fenster einpassen"))
                 Button("1:1") { zoom = 1 }
                 Divider().frame(height: 14)
-                Image(systemName: "arrow.up.and.down").foregroundStyle(.secondary).accessibilityLabel("Höhe der Peaks")
+                Image(systemName: "arrow.up.and.down").foregroundStyle(.secondary).accessibilityLabel(tr("Höhe der Peaks"))
                 Slider(value: $height, in: 0.5...6).frame(width: 90)
                 Spacer()
-                Text("Zoomen auch mit zwei Fingern").font(.caption).foregroundStyle(.secondary)
+                Text(tr("Zoomen auch mit zwei Fingern")).font(.caption).foregroundStyle(.secondary)
             }
             .buttonStyle(.borderless)
             ScrollView(.horizontal) {

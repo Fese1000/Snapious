@@ -28,7 +28,7 @@ struct CommandPaletteView: View {
         VStack(spacing: 0) {
             HStack {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField("Befehl, Ansicht oder Dokument …", text: $query)
+                TextField(tr("Befehl, Ansicht oder Dokument …"), text: $query)
                     .textFieldStyle(.plain)
                     .font(.title3)
                     .focused($focused)
@@ -55,7 +55,7 @@ struct CommandPaletteView: View {
                             .id(i)
                         }
                         if ranked.isEmpty {
-                            Text("Nichts gefunden").foregroundStyle(.secondary).padding(20)
+                            Text(tr("Nichts gefunden")).foregroundStyle(.secondary).padding(20)
                         }
                     }
                 }
@@ -83,16 +83,16 @@ struct WelcomeView: View {
         VStack(spacing: 20) {
             Image(systemName: "dna").font(.system(size: 54, weight: .light)).foregroundStyle(Color.accentColor)
             Text("Snapious").font(.largeTitle.bold())
-            Text("Sequenzen ansehen, bearbeiten und klonieren").foregroundStyle(.secondary)
+            Text(tr("Sequenzen ansehen, bearbeiten und klonieren")).foregroundStyle(.secondary)
             HStack(spacing: 12) {
-                Button { model.newProject() } label: { Label("Neues Projekt", systemImage: "doc.badge.plus").frame(width: 150) }
+                Button { model.newProject() } label: { Label(tr("Neues Projekt"), systemImage: "doc.badge.plus").frame(width: 150) }
                     .buttonStyle(.borderedProminent).controlSize(.large)
-                Button { model.openProject() } label: { Label("Projekt öffnen", systemImage: "folder").frame(width: 150) }
+                Button { model.openProject() } label: { Label(tr("Projekt öffnen"), systemImage: "folder").frame(width: 150) }
                     .controlSize(.large)
             }
             if !model.recentProjects.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Zuletzt geöffnet").font(.headline)
+                    Text(tr("Zuletzt geöffnet")).font(.headline)
                     ForEach(model.recentProjects.prefix(6), id: \.self) { p in
                         Button { model.open(path: p) } label: {
                             HStack {
@@ -135,7 +135,7 @@ struct InspectorView: View {
                         if s.seqType != "PROTEIN" { Text(String(format: "GC %.1f %%", s.gcPercent)).foregroundStyle(.secondary) }
                     }
                     Divider()
-                    Text("Features (\(model.features.count))").font(.headline)
+                    Text(tr("Features (%@)", "\(model.features.count)")).font(.headline)
                     ForEach(Array(model.features.prefix(60).enumerated()), id: \.offset) { _, f in
                         Button {
                             model.select(from: Int(f.start), to: Int(f.end))
@@ -149,15 +149,15 @@ struct InspectorView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    if model.features.count > 60 { Text("… und \(model.features.count - 60) weitere").font(.caption).foregroundStyle(.secondary) }
+                    if model.features.count > 60 { Text(tr("… und %@ weitere", "\(model.features.count - 60)")).font(.caption).foregroundStyle(.secondary) }
                     Divider()
-                    Text("Notiz").font(.headline)
+                    Text(tr("Notiz")).font(.headline)
                     TextEditor(text: $note)
                         .frame(minHeight: 100)
                         .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.separator))
-                    Button("Notiz speichern") { saveNote() }
+                    Button(tr("Notiz speichern")) { saveNote() }
                 } else {
-                    Text("Wähle ein Dokument.").foregroundStyle(.secondary)
+                    Text(tr("Wähle ein Dokument.")).foregroundStyle(.secondary)
                 }
             }
             .padding(14)
@@ -182,19 +182,19 @@ struct InspectorView: View {
 struct ShortcutsView: View {
     @Environment(\.dismiss) private var dismiss
     static let all: [(String, String)] = [
-        ("Befehlspalette", "cmd+k"),
-        ("Neue Sequenz", "cmd+shift+n"),
-        ("Neues Projekt", "cmd+n"),
-        ("Projekt öffnen", "cmd+o"),
-        ("Importieren", "cmd+i"),
-        ("Rückgängig (Sequenzansicht)", "cmd+z"),
-        ("Wiederholen (Sequenzansicht)", "cmd+shift+z"),
-        ("Tastenkürzel anzeigen", "cmd+/"),
+        (tr("Befehlspalette"), "cmd+k"),
+        (tr("Neue Sequenz"), "cmd+shift+n"),
+        (tr("Neues Projekt"), "cmd+n"),
+        (tr("Projekt öffnen"), "cmd+o"),
+        (tr("Importieren"), "cmd+i"),
+        (tr("Rückgängig (Sequenzansicht)"), "cmd+z"),
+        (tr("Wiederholen (Sequenzansicht)"), "cmd+shift+z"),
+        (tr("Tastenkürzel anzeigen"), "cmd+/"),
     ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Tastenkürzel").font(.title2.bold())
+            Text(tr("Tastenkürzel")).font(.title2.bold())
             ForEach(Self.all, id: \.0) { item in
                 HStack {
                     Text(item.0)
@@ -204,12 +204,12 @@ struct ShortcutsView: View {
             }
             let conflicts = shortcutConflictPairs(keys: Self.all.map { $0.1 })
             if !conflicts.isEmpty {
-                Text("Doppelt belegt: " + conflicts.map { "\(Self.all[Int($0[0])].0) / \(Self.all[Int($0[1])].0)" }.joined(separator: "; "))
+                Text(tr("Doppelt belegt: ") + conflicts.map { "\(Self.all[Int($0[0])].0) / \(Self.all[Int($0[1])].0)" }.joined(separator: "; "))
                     .foregroundStyle(.orange)
             }
-            Text("In der Sequenzansicht: Klicken setzt den Cursor, Tippen fügt Basen ein, Rücktaste löscht, ⌘V fügt Text ein.")
+            Text(tr("In der Sequenzansicht: Klicken setzt den Cursor, Tippen fügt Basen ein, Rücktaste löscht, ⌘V fügt Text ein."))
                 .font(.caption).foregroundStyle(.secondary)
-            HStack { Spacer(); Button("Schließen") { dismiss() }.keyboardShortcut(.defaultAction) }
+            HStack { Spacer(); Button(tr("Schließen")) { dismiss() }.keyboardShortcut(.defaultAction) }
         }
         .padding(20)
         .frame(width: 420)

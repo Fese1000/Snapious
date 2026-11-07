@@ -20,20 +20,20 @@ struct TableImportView: View {
 
     private func columnTitle(_ i: Int) -> String {
         if hasHeader, let h = preview.first, i < h.count, !h[i].isEmpty { return "\(i + 1): \(h[i])" }
-        return "Spalte \(i + 1)"
+        return tr("Spalte %@", "\(i + 1)")
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Tabelle importieren").font(.title2.bold())
+            Text(tr("Tabelle importieren")).font(.title2.bold())
             HStack {
-                Button("Datei wählen …") { choose() }
-                Text(url?.lastPathComponent ?? "keine Datei").foregroundStyle(.secondary)
+                Button(tr("Datei wählen …")) { choose() }
+                Text(url?.lastPathComponent ?? tr("keine Datei")).foregroundStyle(.secondary)
                 Spacer()
-                Picker("Trennzeichen", selection: $sep) {
-                    Text("Komma").tag(",")
-                    Text("Semikolon").tag(";")
-                    Text("Tabulator").tag("\t")
+                Picker(tr("Trennzeichen"), selection: $sep) {
+                    Text(tr("Komma")).tag(",")
+                    Text(tr("Semikolon")).tag(";")
+                    Text(tr("Tabulator")).tag("\t")
                 }
                 .frame(width: 220)
                 .onChange(of: sep) { _, _ in loadPreview() }
@@ -55,23 +55,23 @@ struct TableImportView: View {
                 .frame(height: 120)
                 .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.separator))
                 Form {
-                    Toggle("Erste Zeile ist die Kopfzeile", isOn: $hasHeader)
-                    Picker("Name", selection: $nameCol) { ForEach(0..<columnCount, id: \.self) { Text(columnTitle($0)).tag($0) } }
-                    Picker("Sequenz", selection: $seqCol) { ForEach(0..<columnCount, id: \.self) { Text(columnTitle($0)).tag($0) } }
-                    Picker("Art", selection: $kind) {
-                        Text("Automatisch erkennen").tag("AUTO")
+                    Toggle(tr("Erste Zeile ist die Kopfzeile"), isOn: $hasHeader)
+                    Picker(tr("Name"), selection: $nameCol) { ForEach(0..<columnCount, id: \.self) { Text(columnTitle($0)).tag($0) } }
+                    Picker(tr("Sequenz"), selection: $seqCol) { ForEach(0..<columnCount, id: \.self) { Text(columnTitle($0)).tag($0) } }
+                    Picker(tr("Art"), selection: $kind) {
+                        Text(tr("Automatisch erkennen")).tag("AUTO")
                         Text("DNA").tag("DNA")
                         Text("RNA").tag("RNA")
-                        Text("Protein").tag("PROTEIN")
+                        Text(tr("Protein")).tag("PROTEIN")
                     }
-                    Toggle("Zirkulär", isOn: $circular).disabled(kind == "PROTEIN")
+                    Toggle(tr("Zirkulär"), isOn: $circular).disabled(kind == "PROTEIN")
                 }
             }
             if let message { Text(message).foregroundStyle(.red) }
             HStack {
                 Spacer()
-                Button("Abbrechen", role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
-                Button("Importieren") { run() }.keyboardShortcut(.defaultAction).disabled(url == nil || preview.isEmpty)
+                Button(tr("Abbrechen"), role: .cancel) { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(tr("Importieren")) { run() }.keyboardShortcut(.defaultAction).disabled(url == nil || preview.isEmpty)
             }
         }
         .padding(20)
@@ -80,7 +80,7 @@ struct TableImportView: View {
 
     private func choose() {
         let p = NSOpenPanel()
-        p.title = "Tabelle wählen (CSV, TSV)"
+        p.title = tr("Tabelle wählen (CSV, TSV)")
         guard p.runModal() == .OK, let u = p.url else { return }
         url = u
         sep = Self.guessSeparator(u)

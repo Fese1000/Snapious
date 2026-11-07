@@ -32,30 +32,30 @@ struct BarcodeSection: View {
     @State private var busy = false
 
     var body: some View {
-        GroupBox("Barcodes aufteilen (FASTQ nach MID am Anfang der Reads)") {
+        GroupBox(tr("Barcodes aufteilen (FASTQ nach MID am Anfang der Reads)")) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Button("FASTQ wählen …") { fastq = FilePick.open("FASTQ-Datei wählen") }
-                    Text(fastq?.lastPathComponent ?? "keine Datei").foregroundStyle(.secondary)
-                    Button("Zielordner …") { outDir = FilePick.open("Ordner für die Ergebnisse", directories: true) }
-                    Text(outDir?.lastPathComponent ?? "kein Ordner").foregroundStyle(.secondary)
+                    Button(tr("FASTQ wählen …")) { fastq = FilePick.open(tr("FASTQ-Datei wählen")) }
+                    Text(fastq?.lastPathComponent ?? tr("keine Datei")).foregroundStyle(.secondary)
+                    Button(tr("Zielordner …")) { outDir = FilePick.open(tr("Ordner für die Ergebnisse"), directories: true) }
+                    Text(outDir?.lastPathComponent ?? tr("kein Ordner")).foregroundStyle(.secondary)
                 }
                 TextEditor(text: $barcodes)
                     .font(.system(.body, design: .monospaced))
                     .frame(height: 80)
                     .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.separator))
                 HStack {
-                    Stepper("Erlaubte Unterschiede: \(mismatch)", value: $mismatch, in: 0...3).frame(width: 240)
-                    Button("Aufteilen") { run() }.disabled(fastq == nil || outDir == nil || busy)
+                    Stepper(tr("Erlaubte Unterschiede: %@", "\(mismatch)"), value: $mismatch, in: 0...3).frame(width: 240)
+                    Button(tr("Aufteilen")) { run() }.disabled(fastq == nil || outDir == nil || busy)
                     if busy { ProgressView().controlSize(.small) }
                 }
                 if let message { Text(message).foregroundStyle(.red) }
                 ForEach(groups, id: \.name) { g in
                     HStack {
                         Text(g.name).frame(width: 140, alignment: .leading)
-                        Text("\(g.count) Reads").foregroundStyle(.secondary)
+                        Text(tr("%@ Reads", "\(g.count)")).foregroundStyle(.secondary)
                         Spacer()
-                        Button("Im Finder zeigen") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: g.path)]) }
+                        Button(tr("Im Finder zeigen")) { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: g.path)]) }
                             .buttonStyle(.borderless)
                     }
                 }
@@ -85,9 +85,9 @@ struct FastqConvertSection: View {
     @State private var message: String?
 
     var body: some View {
-        GroupBox("FASTQ → FASTA + QUAL") {
+        GroupBox(tr("FASTQ → FASTA + QUAL")) {
             VStack(alignment: .leading, spacing: 8) {
-                Button("FASTQ wählen und umwandeln …") { convert() }
+                Button(tr("FASTQ wählen und umwandeln …")) { convert() }
                 if let message { Text(message).font(.callout) }
             }
             .padding(6)
@@ -95,13 +95,13 @@ struct FastqConvertSection: View {
     }
 
     private func convert() {
-        guard let src = FilePick.open("FASTQ-Datei wählen"),
-              let dest = FilePick.save("Name für FASTA (die QUAL-Datei bekommt dieselbe Basis)", name: src.deletingPathExtension().lastPathComponent + ".fasta")
+        guard let src = FilePick.open(tr("FASTQ-Datei wählen")),
+              let dest = FilePick.save(tr("Name für FASTA (die QUAL-Datei bekommt dieselbe Basis)"), name: src.deletingPathExtension().lastPathComponent + ".fasta")
         else { return }
         let qual = dest.deletingPathExtension().appendingPathExtension("qual")
         do {
             let n = try fastqToFastaQual(path: src.path, fastaPath: dest.path, qualPath: qual.path)
-            message = "\(n) Reads: \(dest.lastPathComponent) und \(qual.lastPathComponent) geschrieben."
+            message = tr("%@ Reads: %@ und %@ geschrieben.", "\(n)", "\(dest.lastPathComponent)", "\(qual.lastPathComponent)")
         } catch {
             message = error.localizedDescription
         }
@@ -115,19 +115,19 @@ struct ExpressionSection: View {
     @State private var busy = false
 
     var body: some View {
-        GroupBox("Expression aus SAM/BAM (Reads, RPKM, TPM je Referenz)") {
+        GroupBox(tr("Expression aus SAM/BAM (Reads, RPKM, TPM je Referenz)")) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Button("Alignment-Datei wählen …") { choose() }.disabled(busy)
+                    Button(tr("Alignment-Datei wählen …")) { choose() }.disabled(busy)
                     if busy { ProgressView().controlSize(.small) }
-                    if !rows.isEmpty { Button("Als CSV speichern …") { saveCsv() } }
+                    if !rows.isEmpty { Button(tr("Als CSV speichern …")) { saveCsv() } }
                 }
                 if let message { Text(message).foregroundStyle(.red) }
                 if !rows.isEmpty {
                     Table(rows) {
-                        TableColumn("Referenz") { r in Text(r.dto.reference) }
-                        TableColumn("Länge") { r in Text("\(r.dto.length)") }.width(80)
-                        TableColumn("Reads") { r in Text("\(r.dto.count)") }.width(80)
+                        TableColumn(tr("Referenz")) { r in Text(r.dto.reference) }
+                        TableColumn(tr("Länge")) { r in Text("\(r.dto.length)") }.width(80)
+                        TableColumn(tr("Reads")) { r in Text("\(r.dto.count)") }.width(80)
                         TableColumn("RPKM") { r in Text(String(format: "%.2f", r.dto.rpkm)) }.width(100)
                         TableColumn("TPM") { r in Text(String(format: "%.2f", r.dto.tpm)) }.width(100)
                     }
@@ -139,7 +139,7 @@ struct ExpressionSection: View {
     }
 
     private func choose() {
-        guard let url = FilePick.open("SAM- oder BAM-Datei wählen") else { return }
+        guard let url = FilePick.open(tr("SAM- oder BAM-Datei wählen")) else { return }
         busy = true
         message = nil
         Task.detached {
@@ -153,7 +153,7 @@ struct ExpressionSection: View {
     }
 
     private func saveCsv() {
-        guard let url = FilePick.save("Expression als CSV speichern", name: "expression.csv") else { return }
+        guard let url = FilePick.save(tr("Expression als CSV speichern"), name: "expression.csv") else { return }
         var text = "Referenz,Länge,Reads,RPKM,TPM\n"
         for r in rows {
             text += "\"\(r.dto.reference.replacingOccurrences(of: "\"", with: "\"\""))\",\(r.dto.length),\(r.dto.count),\(r.dto.rpkm),\(r.dto.tpm)\n"
@@ -174,17 +174,17 @@ struct PairedReadsSection: View {
     @State private var report: PairReportDto?
 
     var body: some View {
-        GroupBox("Paired Reads prüfen (Namen mit /1, /2 oder 1:, 2:)") {
+        GroupBox(tr("Paired Reads prüfen (Namen mit /1, /2 oder 1:, 2:)")) {
             VStack(alignment: .leading, spacing: 8) {
-                Button("Paare suchen") { find() }
+                Button(tr("Paare suchen")) { find() }
                 if let r = report {
-                    Text("\(r.pairs.count) Paare, \(r.unpaired.count) ohne Partner").font(.headline)
+                    Text(tr("%@ Paare, %@ ohne Partner", "\(r.pairs.count)", "\(r.unpaired.count)")).font(.headline)
                     ForEach(Array(r.pairs.prefix(20).enumerated()), id: \.offset) { _, p in
                         Text("\(p[0])  ↔  \(p[1])").font(.callout).foregroundStyle(.secondary)
                     }
-                    if r.pairs.count > 20 { Text("… und \(r.pairs.count - 20) weitere Paare").font(.caption).foregroundStyle(.secondary) }
+                    if r.pairs.count > 20 { Text(tr("… und %@ weitere Paare", "\(r.pairs.count - 20)")).font(.caption).foregroundStyle(.secondary) }
                     if !r.unpaired.isEmpty {
-                        Text("Ohne Partner: " + r.unpaired.prefix(10).joined(separator: ", ") + (r.unpaired.count > 10 ? " …" : ""))
+                        Text(tr("Ohne Partner: ") + r.unpaired.prefix(10).joined(separator: ", ") + (r.unpaired.count > 10 ? " …" : ""))
                             .font(.callout).foregroundStyle(.orange)
                     }
                 }
@@ -208,11 +208,11 @@ struct LengthHistogramSection: View {
     @State private var bins: [HistogramBinDto] = []
 
     var body: some View {
-        GroupBox("Längenverteilung der gewählten Sequenzen") {
+        GroupBox(tr("Längenverteilung der gewählten Sequenzen")) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Stepper("Klassenbreite \(width) bp", value: $width, in: 1...100_000, step: width >= 100 ? 100 : 10).frame(width: 220)
-                    Button("Anzeigen") { load() }
+                    Stepper(tr("Klassenbreite %@ bp", "\(width)"), value: $width, in: 1...100_000, step: width >= 100 ? 100 : 10).frame(width: 220)
+                    Button(tr("Anzeigen")) { load() }
                 }
                 if !bins.isEmpty {
                     let maxCount = max(bins.map { Int($0.count) }.max() ?? 1, 1)
@@ -228,7 +228,7 @@ struct LengthHistogramSection: View {
                     HStack {
                         Text("\(bins.first?.start ?? 0) bp").font(.caption)
                         Spacer()
-                        Text("\(Int(bins.last?.start ?? 0) + width) bp  ·  höchste Klasse: \(maxCount) Sequenzen").font(.caption)
+                        Text(tr("%@ bp  ·  höchste Klasse: %@ Sequenzen", "\(Int(bins.last?.start ?? 0) + width)", "\(maxCount)")).font(.caption)
                     }
                     .foregroundStyle(.secondary)
                 }
